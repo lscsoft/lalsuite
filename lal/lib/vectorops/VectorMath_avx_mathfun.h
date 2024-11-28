@@ -67,13 +67,13 @@ typedef ALIGN32_BEG union {
 
 
 // ---------- Prototypes ----------
-static v8sf sin256_ps(v8sf x);
-static v8sf cos256_ps(v8sf x);
-static v8sf exp256_ps(v8sf x);
-static v8sf log256_ps(v8sf x);
-static v8sf log256_ps(v8sf x);
-static void sincos256_ps(v8sf x, v8sf *s, v8sf *c);
-static void sincos256_ps_2pi(v8sf xx, v8sf *s, v8sf *c);
+UNUSED static v8sf sin256_ps(v8sf x);
+UNUSED static v8sf cos256_ps(v8sf x);
+UNUSED static v8sf exp256_ps(v8sf x);
+UNUSED static v8sf log256_ps(v8sf x);
+UNUSED static v8sf log256_ps(v8sf x);
+UNUSED static void sincos256_ps(v8sf x, v8sf *s, v8sf *c);
+UNUSED static void sincos256_ps_2pi(v8sf xx, v8sf *s, v8sf *c);
 // --------------------------------
 
 

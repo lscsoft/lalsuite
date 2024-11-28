@@ -38,6 +38,28 @@
 // this module.
 %header %{
 #include <numpy/arrayobject.h>
+
+/*
+ * Allow compiling on NumPy 1.x.
+ * FIXME: drop once we do all builds against Numpy 2.x (although we may still
+ * support Numpy 1.x and 2.x at runtime).
+ * See hhttps://numpy.org/devdocs/numpy_2_0_migration_guide.html#c-api-changes.
+ */
+#if NPY_ABI_VERSION < 0x02000000
+  /*
+   * Define 2.0 feature version as it is needed below to decide whether we
+   * compile for both 1.x and 2.x (defining it gaurantees 1.x only).
+   */
+  #define NPY_2_0_API_VERSION 0x00000012
+  /*
+   * If we are compiling with NumPy 1.x, PyArray_RUNTIME_VERSION so we
+   * pretend the `PyArray_RUNTIME_VERSION` is `NPY_FEATURE_VERSION`.
+   * This allows downstream to use `PyArray_RUNTIME_VERSION` if they need to.
+   */
+  #define PyArray_RUNTIME_VERSION NPY_FEATURE_VERSION
+  /* Compiling on NumPy 1.x where these are the same: */
+  #define PyArray_DescrProto PyArray_Descr
+#endif
 %}
 %init %{
 import_array();
@@ -64,10 +86,20 @@ import_array();
 SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); return v; }
 %}
 
-// Append an argument to the output argument list of an Python SWIG-wrapped function, if the list is
-// empty.
+// Remove the first argument (i.e. the XLAL error code) from the output argument list of a
+// Python SWIG-wrapped function, if the list has more than one output argument.
 %header %{
-#define swiglal_append_output_if_empty(v) if (resultobj == Py_None) resultobj = SWIG_Python_AppendOutput(resultobj, v)
+SWIGINTERN PyObject* swiglal_py_remove_first_output(PyObject *result) {
+  PySequence_DelItem(result, 0);
+  if (PySequence_Size(result) == 1) {
+    PyObject *obj = result;
+    result = PySequence_GetItem(obj, 0);
+    Py_DECREF(obj);
+  }
+  return result;
+}
+#define swiglal_maybe_return_int() \
+  if (PySequence_Check(resultobj) && PySequence_Size(resultobj) > 1) resultobj = swiglal_py_remove_first_output(resultobj)
 %}
 
 // Evaluates true if a PyObject represents a null pointer, false otherwise.
@@ -648,15 +680,15 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     // Copy array element.
     if (src != NULL) {
-      memcpy(dst, src, PyArray_DESCR(nparr)->elsize);
+      memcpy(dst, src, PyArray_ITEMSIZE(nparr));
     }
 
     // Byte-swap array element, if required.
     if (swap) {
-      const size_t n = PyArray_DESCR(nparr)->elsize / 2;
+      const size_t n = PyArray_ITEMSIZE(nparr) / 2;
       char *a, *b, c;
       a = (char *)dst;
-      b = a + (PyArray_DESCR(nparr)->elsize-1);
+      b = a + (PyArray_ITEMSIZE(nparr)-1);
       for (size_t i = 0; i < n; i++) {
         c = *a;
         *a++ = *b;
@@ -709,7 +741,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     // Get the Python object wrapping the C array element.
     const bool copyobj = false;
-    const size_t esize = PyArray_DESCR(nparr)->elsize;
+    const size_t esize = PyArray_ITEMSIZE(nparr);
     const int tflags = 0;
     PyObject* parent = PyArray_BASE(nparr);
     return OUTCALL;
@@ -742,7 +774,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     const int tflags = isptr ? SWIG_POINTER_DISOWN : 0;
 
     // Set the C array element to the supplied Python object.
-    const size_t esize = PyArray_DESCR(nparr)->elsize;
+    const size_t esize = PyArray_ITEMSIZE(nparr);
     PyObject* parent = PyArray_BASE(nparr);
     int elemalloc = 0;
     int *pelemalloc = &elemalloc;
@@ -767,7 +799,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     assert(PyArray_DESCR(nptoarr) != NULL);
 
     // 'toarr' should be an array of pointers to PyObjects.
-    assert(PyArray_DESCR(nptoarr)->elsize == sizeof(PyObject*));
+    assert(PyArray_ITEMSIZE(nptoarr) == sizeof(PyObject*));
 
     // Loop over 'n' elements, and assign each element of 'toarr' the Python object wrapping the
     // corresponding element of 'fromarr'.
@@ -775,7 +807,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     PyObject** toelem = (PyObject**)to;
     while (--n >= 0) {
       *toelem = swiglal_py_array_objview_##ACFTYPE##_getitem(fromelem, fromarr);
-      fromelem += PyArray_DESCR(npfromarr)->elsize;
+      fromelem += PyArray_ITEMSIZE(npfromarr);
       ++toelem;
     }
 
@@ -802,47 +834,64 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     (PyArray_ScalarKindFunc*)NULL,   // scalarkind
     (int**)NULL,   // cancastscalarkindto
     (int*)swiglal_py_array_objview_copyswap_cancastto,   // cancastto
-    (PyArray_FastClipFunc*)NULL,   // fastclip
-    (PyArray_FastPutmaskFunc*)NULL,   // fastputmask
-    (PyArray_FastTakeFunc*)NULL,   // fasttake
+    (void*)NULL,   // fastclip, deprecated and unused
+    (void*)NULL,   // fastputmask, deprecated and unused
+    (void*)NULL,   // fasttake, deprecated and unused
   };
 
   // This function returns the NumPy array descriptor appropriate for the supplied SWIG type
   // descriptor. If no array descriptor exists, it creates one from the array descriptor for type
   // ACFTYPE.
+  //
+  // Returns a new reference.
   SWIGINTERN PyArray_Descr* swiglal_py_array_objview_##ACFTYPE##_descr(const bool isptr, swig_type_info* tinfo, const int esize) {
 
     // Lookup existing NumPy array descriptor for SWIG type descriptor.
     PyArray_Descr* *pdescr = swiglal_py_array_descr_from_tinfo(isptr, tinfo);
-
-    // Create NumPy array descriptor if none yet exists.
     if (*pdescr == NULL) {
-      *pdescr = PyArray_DescrNewFromType(NPY_VOID);
-      if (*pdescr == NULL) {
-        return NULL;
-      }
-      (*pdescr)->typeobj = SwigPyObject_type();
-      (*pdescr)->byteorder = '=';
-      (*pdescr)->flags = NPY_LIST_PICKLE | NPY_NEEDS_INIT | NPY_NEEDS_PYAPI | NPY_USE_GETITEM | NPY_USE_SETITEM;
-      (*pdescr)->type_num = 0;
-      (*pdescr)->elsize = esize;
-      (*pdescr)->alignment = 1;
-      (*pdescr)->subarray = NULL;
-      (*pdescr)->names = NULL;
-      (*pdescr)->fields = NULL;
-      (*pdescr)->f = &swiglal_py_array_objview_##ACFTYPE##_arrfuncs;
+      // Create NumPy array descriptor if none yet exists.
 
-      if (PyArray_RegisterDataType(*pdescr) < 0) {
-        return NULL;
+      // Note that PyArray_DescrProto structs are supposed to be immortal. They
+      // must not be Py_DECREF'ed. See
+      // https://github.com/numpy/numpy/issues/26763#issuecomment-2181177478.
+      PyArray_DescrProto *proto = PyObject_Malloc(sizeof(PyArray_DescrProto));
+      if (proto == NULL) {
+        PyErr_NoMemory();
+      } else {
+        PyArray_DescrProto src = {
+          PyObject_HEAD_INIT(&PyArrayDescr_Type)
+          .typeobj = SwigPyObject_type(),
+          .kind = 'V',
+          .type = 'V',
+          .byteorder = '=',
+          .flags = NPY_LIST_PICKLE | NPY_NEEDS_INIT | NPY_NEEDS_PYAPI | NPY_USE_GETITEM | NPY_USE_SETITEM,
+          .elsize = esize,
+          .alignment = 1,
+          .f = &swiglal_py_array_objview_##ACFTYPE##_arrfuncs,
+          .hash = -1
+        };
+        *proto = src;
+
+        int typenum = PyArray_RegisterDataType(proto);
+        // FIXME: In Numpy 1.x, PyArray_RegisterDataType steals a reference,
+        // whereas in Numpy 2.x, it does not. See
+        // https://github.com/numpy/numpy/issues/26763
+        if (typenum < 0 || PyArray_RUNTIME_VERSION >= NPY_2_0_API_VERSION) {
+          PyObject_Free(proto);
+        }
+
+        if (typenum >= 0) {
+          *pdescr = PyArray_DescrFromType(typenum);
+        }
       }
     }
 
-    // PyArray_NewFromDescr appears to steal a reference to the descriptor passed to it, so a
-    // reference count increment is needed here.
-    Py_INCREF(*pdescr);
+    // PyArray_NewFromDescr steals a reference to the descriptor passed to it:
+    //   https://numpy.org/devdocs/reference/c-api/array.html#from-scratch
+    // so a reference count increment is needed here.
+    Py_XINCREF(*pdescr);
 
     return *pdescr;
-
   }
 
 } // %swiglal_py_array_objview_frag(ACFTYPE)

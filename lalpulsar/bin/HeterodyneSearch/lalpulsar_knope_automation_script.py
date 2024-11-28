@@ -1,4 +1,9 @@
+##python
+## \file
+## \ingroup lalpulsar_bin_HeterodyneSearch
 """
+The KNOwn Pulsar pipelinE - lalpulsar_knope_automation_script
+
 Script to be setup and launch a cron job for the automated running of the known pulsar analysis.
 
 The script requires an initial configuration file. Each time the script will be re-run by cron it will itself
@@ -21,7 +26,7 @@ import smtplib
 import stat
 
 import argparse
-from six.moves.configparser import RawConfigParser
+from configparser import RawConfigParser
 
 from lalpulsar import git_version
 

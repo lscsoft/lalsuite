@@ -35,11 +35,11 @@ extern "C" {
 ///
 
 /// @{
-void XLALSinCosLUTInit (void);
+void XLALSinCosLUTInit( void );
 
-int XLALSinCosLUT ( REAL4 *sinx, REAL4 *cosx, REAL8 x );
-int XLALSinCos2PiLUT ( REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x );
-int XLALSinCos2PiLUTtrimmed ( REAL4 *s, REAL4 *c, REAL8 x );
+int XLALSinCosLUT( REAL4 *sinx, REAL4 *cosx, REAL8 x );
+int XLALSinCos2PiLUT( REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x );
+int XLALSinCos2PiLUTtrimmed( REAL4 *s, REAL4 *c, REAL8 x );
 /// @}
 
 #ifdef  __cplusplus

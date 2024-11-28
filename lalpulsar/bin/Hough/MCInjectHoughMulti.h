@@ -21,7 +21,7 @@
  *
  * File Name: MCInjectHoughMULTI.h
  *
- * Authors: Sintes, A.M., Krishnan, B. 
+ * Authors: Sintes, A.M., Krishnan, B.
  *
 *-----------------------------------------------------------------------
  */
@@ -42,7 +42,7 @@
 #include <lal/PulsarDataTypes.h>
 #include <lal/SFTfileIO.h>
 #include <lal/UserInput.h>
-#include <lal/GeneratePulsarSignal.h> 
+#include <lal/GeneratePulsarSignal.h>
 #include <lal/SFTClean.h>
 
 #include "DriveHoughColor.h"
@@ -57,7 +57,7 @@ extern "C" {
 #endif
 
 /* ************************************************************
- * Usage format string. 
+ * Usage format string.
  */
 
 
@@ -73,11 +73,11 @@ extern "C" {
  */
 
 
-typedef struct tagHoughInjectParams{
+typedef struct tagHoughInjectParams {
   REAL8       h0;
   REAL8       fmin;   /* first_search_frequency_in_Hz */
   REAL8       fSearchBand;  /* search_band_in_Hz */
-  REAL8	      deltaF; /* frequency resolution */
+  REAL8       deltaF; /* frequency resolution */
   UCHAR       fullSky; /* full sky 1, little patch 0 */
   REAL8       alpha;  /* patch center in equatorial coordinates (in radians) */
   REAL8       delta;
@@ -90,21 +90,21 @@ typedef struct tagHoughInjectParams{
   REAL8Vector spnFmin;
 } HoughInjectParams;
 
-typedef struct tagHoughTemplate{
+typedef struct tagHoughTemplate {
   REAL8        f0;
   REAL8        latitude;   /* of the source in radians */
   REAL8        longitude;  /* of the source in radians */
-  REAL8Vector  spindown;   /* SpinOrder and parameters */ 
+  REAL8Vector  spindown;   /* SpinOrder and parameters */
 } HoughTemplate;
 
-typedef struct tagHoughNearTemplates{
+typedef struct tagHoughNearTemplates {
   REAL8        f0[2]; /* f0 values */
   REAL8        f1[2]; /* 1st spindown parameters */
   REAL8UnitPolarCoor skytemp[4]; /* near sky template parameters */
 } HoughNearTemplates;
 
 
-typedef struct tagPulsarData{
+typedef struct tagPulsarData {
   REAL8        f0;
   REAL8        latitude;   /* of the source in radians */
   REAL8        longitude;  /* of the source in radians */
@@ -118,41 +118,41 @@ typedef struct tagPulsarData{
 
 /*
  *  Functions Declarations (i.e., prototypes). Not declared in DriveHoughColor.h */
-			     
-void GenerateInjectParams(LALStatus  *status,
-                        PulsarData           *injectPulsar,
-                        HoughTemplate        *templatePulsar,
-			HoughNearTemplates   *closeTemplates,
-                        HoughInjectParams    *params,
-			LineNoiseInfo        *lines  );
-			     
-void GenerateInjectParamsNoVeto(LALStatus  *status,
-                        PulsarData           *injectPulsar,
-                        HoughTemplate        *templatePulsar,
-			HoughNearTemplates   *closeTemplates,
-                        HoughInjectParams    *params );
 
-void ComputeFoft(LALStatus   *status,
-                 REAL8Vector          *foft,
-                 HoughTemplate        *pulsarTemplate,
-                 REAL8Vector          *timeDiffV,
-                 REAL8Cart3CoorVector *velV,
-		 REAL8                timeBase);
+void GenerateInjectParams( LALStatus  *status,
+                           PulsarData           *injectPulsar,
+                           HoughTemplate        *templatePulsar,
+                           HoughNearTemplates   *closeTemplates,
+                           HoughInjectParams    *params,
+                           LineNoiseInfo        *lines );
+
+void GenerateInjectParamsNoVeto( LALStatus  *status,
+                                 PulsarData           *injectPulsar,
+                                 HoughTemplate        *templatePulsar,
+                                 HoughNearTemplates   *closeTemplates,
+                                 HoughInjectParams    *params );
+
+void ComputeFoft( LALStatus   *status,
+                  REAL8Vector          *foft,
+                  HoughTemplate        *pulsarTemplate,
+                  REAL8Vector          *timeDiffV,
+                  REAL8Cart3CoorVector *velV,
+                  REAL8                timeBase );
 
 
-void PrintLogFile(LALStatus       *status, 
-                  CHAR            *dir, 
-		  CHAR            *basename, 
-		  CHAR            *skyfile, 
-		  LALStringVector *linefiles,
-		  CHAR            *executable );
+void PrintLogFile( LALStatus       *status,
+                   CHAR            *dir,
+                   CHAR            *basename,
+                   CHAR            *skyfile,
+                   LALStringVector *linefiles,
+                   CHAR            *executable );
 
-		  
+
 void FindNearestPatch( LALStatus      *status,
-		REAL8		      latitude,
-		REAL8		      longitude, 
-		REAL8Cart3CoorVector *skyPatchCenterV,
-                INT4		      *skyIndex);
+                       REAL8                 latitude,
+                       REAL8                 longitude,
+                       REAL8Cart3CoorVector *skyPatchCenterV,
+                       INT4                  *skyIndex );
 /* ****************************************************** */
 
 #ifdef  __cplusplus

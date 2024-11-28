@@ -1,3 +1,4 @@
+##python
 # -*- coding: utf-8 -*-
 #
 #       lalpulsar_knope_result_page.py
@@ -20,12 +21,18 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-# Script from creating results pages for pulsars from the known pulsar search
+## \file
+## \ingroup lalpulsar_bin_HeterodyneSearch
+"""
+The KNOwn Pulsar pipelinE - lalpulsar_knope_result_page
+
+Script from creating results pages for pulsars from the known pulsar search
+"""
 
 from __future__ import print_function, division
 
 import argparse
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 import sys
 import ast
 import numpy as np
@@ -2506,7 +2513,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
             "http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version="
             + ATNF_VERSION
         )
-        atnfurl += "&startUserDefined=true&pulsar_names=" + re.sub("\+", "%2B", pname)
+        atnfurl += "&startUserDefined=true&pulsar_names=" + re.sub(r"\+", "%2B", pname)
         atnfurl += "&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query"
 
         # try getting information already parsed from ATNF catalogue by lalpulsar_knope pipeline setup

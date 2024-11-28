@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes  
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *  MA  02110-1301  USA
  */
 
@@ -32,7 +32,7 @@
  *
  * -----------------------------------------------------------------------
  */
- 
+
 /*
  *   Protection against double inclusion (include-loop protection)
  *     Note the naming convention!
@@ -52,7 +52,7 @@
 #include <math.h>
 #include <glob.h>
 #include <time.h>
-#include <errno.h> 
+#include <errno.h>
 
 #include <gsl/gsl_cdf.h>
 
@@ -86,7 +86,7 @@ extern "C" {
 /******************************************************
  *  Error codes and messages.
  */
- 
+
 #define DRIVEHOUGHCOLOR_ENORM 0
 #define DRIVEHOUGHCOLOR_ESUB  1
 #define DRIVEHOUGHCOLOR_EARG  2
@@ -136,62 +136,62 @@ do {                                                                 \
 } while (0)
 /******************************************************************/
 
-#define PIXELFACTOR  2 
+#define PIXELFACTOR  2
 
 
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
  */
 
-  typedef struct tagREAL8Cart3CoorVector{
-    UINT4   	  length; /**< number of elements */
-    REAL8Cart3Coor  *data; /**< x.y.z */
-  } REAL8Cart3CoorVector;
-  
-  typedef struct tagHoughSignificantEvent{
-    REAL8  nStar;  /**< most significant number count in a skypatch*/
-    REAL8  nStarSignificance; /**< significance of number count nStar */
-    REAL8  freqStar;  /**< frequency of nStar */
-    REAL8  alphaStar; /**< right-ascension of nStar */
-    REAL8  deltaStar; /**< declination of nStar */
-    REAL8  fdotStar; /**< value of first spindown parameter */
-  } HoughSignificantEvent;
+typedef struct tagREAL8Cart3CoorVector {
+  UINT4         length; /**< number of elements */
+  REAL8Cart3Coor  *data; /**< x.y.z */
+} REAL8Cart3CoorVector;
 
-  typedef struct tagHoughSignificantEventVector{
-    INT4  length;
-    HoughSignificantEvent *event;
-  } HoughSignificantEventVector;
+typedef struct tagHoughSignificantEvent {
+  REAL8  nStar;  /**< most significant number count in a skypatch*/
+  REAL8  nStarSignificance; /**< significance of number count nStar */
+  REAL8  freqStar;  /**< frequency of nStar */
+  REAL8  alphaStar; /**< right-ascension of nStar */
+  REAL8  deltaStar; /**< declination of nStar */
+  REAL8  fdotStar; /**< value of first spindown parameter */
+} HoughSignificantEvent;
+
+typedef struct tagHoughSignificantEventVector {
+  INT4  length;
+  HoughSignificantEvent *event;
+} HoughSignificantEventVector;
 
 
-  typedef struct tagHoughSkyPatchesInfo{
-    UINT4 numSkyPatches;
-    REAL8 *alpha;
-    REAL8 *delta;
-    REAL8 *alphaSize;
-    REAL8 *deltaSize;
-  } HoughSkyPatchesInfo;
-    
+typedef struct tagHoughSkyPatchesInfo {
+  UINT4 numSkyPatches;
+  REAL8 *alpha;
+  REAL8 *delta;
+  REAL8 *alphaSize;
+  REAL8 *deltaSize;
+} HoughSkyPatchesInfo;
+
 /**
  * struct fo storing all the variables affected by the
  * selection of a subset of SFTs
  */
-  typedef struct tagBestVariables{
-    UINT4 length;   /**< the number of SFTs to be selected */
-    REAL8Vector *weightsV; /**< noise and AM weights */
-    REAL8Vector *timeDiffV; /**< the vector of time diffs */
-    REAL8Cart3CoorVector *velV; /**< vector of detector velocities */
-    HOUGHPeakGramVector *pgV; /**< the vector of peakgrams */
-  } BestVariables;
+typedef struct tagBestVariables {
+  UINT4 length;   /**< the number of SFTs to be selected */
+  REAL8Vector *weightsV; /**< noise and AM weights */
+  REAL8Vector *timeDiffV; /**< the vector of time diffs */
+  REAL8Cart3CoorVector *velV; /**< vector of detector velocities */
+  HOUGHPeakGramVector *pgV; /**< the vector of peakgrams */
+} BestVariables;
 
 
 /*
  *  Functions Declarations (i.e., prototypes).
  */
 
-void Periodo2PSDrng (LALStatus  *status,
-		     REAL8Periodogram1    *psd,
-		     REAL8Periodogram1    *peri,
-		     UINT2                *blocksRNG);
+void Periodo2PSDrng( LALStatus  *status,
+                     REAL8Periodogram1    *psd,
+                     REAL8Periodogram1    *peri,
+                     UINT2                *blocksRNG );
 
 
 /* ****************************************************** */

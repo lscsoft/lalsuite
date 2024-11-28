@@ -1,5 +1,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 #include <lal/StringVector.h>
 #include <lal/H5FileIO.h>
 
@@ -508,6 +509,50 @@ LALH5Dataset *XLALH5DatasetAllocStringVector(LALH5File *file, const char *name, 
  * @copydoc XLALH5DatasetReadCHARVector()
  */
 
+/* helper routine to read a sequence of fixed-length character vectors */
+static CHARVectorSequence *XLALH5DatasetReadCHARVectorSequence(LALH5Dataset *dset)
+{
+    CHARVectorSequence *sequence;
+    size_t npoints;
+    size_t nbytes;
+    size_t size;
+    int ndim;
+
+    XLAL_CHECK_NULL(dset, XLAL_EFAULT);
+
+	if (!XLALH5DatasetCheckFixedLengthStringData(dset))
+		XLAL_ERROR_NULL(XLAL_ETYPE);
+
+    ndim = XLALH5DatasetQueryNDim(dset);
+    XLAL_CHECK_NULL(ndim == 1, XLAL_EDIMS);
+   
+    npoints = XLALH5DatasetQueryNPoints(dset);
+    XLAL_CHECK_NULL(npoints != (size_t)(-1), XLAL_EFUNC);
+
+    nbytes = XLALH5DatasetQueryNBytes(dset);
+    XLAL_CHECK_NULL(npoints != (size_t)(-1), XLAL_EFUNC);
+
+    size = nbytes / npoints;
+    XLAL_CHECK_NULL(nbytes == size * npoints, XLAL_EBADLEN, "Number of bytes not divisible by number of points");
+
+    sequence = XLALCreateCHARVectorSequence(npoints, size);
+    XLAL_CHECK_NULL(sequence, XLAL_EFUNC);
+
+    if (XLALH5DatasetQueryData(sequence->data, dset) == -1) {
+         XLALDestroyCHARVectorSequence(sequence);
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+    }
+
+    return sequence;
+}
+
+
+#if 0
+    UINT4 length; /**< The number \a l of vectors. */
+    UINT4 vectorLength; /**< The length \a n of each vector. */
+    CHAR *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c ]. */
+#endif
+
 /**
  * @fn LALStringVector *XLALH5DatasetReadStringVector(LALH5Dataset *dset)
  * @copydoc XLALH5DatasetReadCHARVector()
@@ -521,12 +566,30 @@ LALStringVector *XLALH5DatasetReadStringVector(LALH5Dataset *dset)
 	if (!dset)
 		XLAL_ERROR_NULL(XLAL_EFAULT);
 
+	if (!XLALH5DatasetCheckStringData(dset)) {
+		/* it might be fixed-length string data... */
+		CHARVectorSequence *sequence;
+		sequence = XLALH5DatasetReadCHARVectorSequence(dset);
+		if (!sequence)
+			XLAL_ERROR_NULL(XLAL_EFUNC);
+		/* translate CHARVectorSequence to StringVector */
+		vector = NULL;
+		for (size_t j = 0; j < sequence->length; ++j) {
+			LALStringVector *new = XLALAppendString2Vector(vector, sequence->data + j * sequence->vectorLength);
+			if (!new) {
+         			XLALDestroyCHARVectorSequence(sequence);
+				XLALDestroyStringVector(vector);
+				XLAL_ERROR_NULL(XLAL_EFUNC);
+			}
+			vector = new;
+		}
+         	XLALDestroyCHARVectorSequence(sequence);
+		return vector;
+	}
+ 
 	ndim = XLALH5DatasetQueryNDim(dset);
 	if (ndim != 1)
 		XLAL_ERROR_NULL(XLAL_EDIMS);
- 
-	if (!XLALH5DatasetCheckStringData(dset))
-		XLAL_ERROR_NULL(XLAL_ETYPE);
  
 	npoints = XLALH5DatasetQueryNPoints(dset);
 	if (npoints == (size_t)(-1))

@@ -1,143 +1,232 @@
+## test exit status
+status=0
+
 ## common variables
-seg1_tstart=1257741529
-seg1_tend=1257743329
-seg2_tstart=1257743330
-seg2_tend=1257745130
 Tsft=1800
+seg1_tstart=1257741529
+seg1_tend=`echo "${seg1_tstart} + ${Tsft}" | bc`
+seg1_sft1="${seg1_tstart}"
+seg2_tstart=1257743330
+seg2_tend=`echo "${seg2_tstart} + 1.5*${Tsft}" | bc | xargs printf '%0.0f'`
+seg2_sft1_half_overlap="${seg2_tstart}"
+seg2_sft2_half_overlap=`echo "${seg2_tstart} + 0.5*${Tsft}" | bc | xargs printf '%0.0f'`
+seg2_sft1_no_overlap=`echo "${seg2_tstart} + 0.25*${Tsft}" | bc | xargs printf '%0.0f'`
 fmin=10
 Band=1990
+chan1="H1:GDS-CALIB_STRAIN_CLEAN"
+chan2="H1:GDS-CALIB_STRAIN"
+acctgtag="ligo.sim.o4.cw.explore.test"
+acctgusr="albert.einstein"
+MSFTpath="/tmp/path/to"
+cachepath="/tmp/path/to.cache"
 
-## a segment file
-segs="./segs"
-echo "${seg1_tstart} ${seg1_tend}" > $segs
-echo "${seg2_tstart} ${seg2_tend}" >> $segs
+## channels names in SFT names
+chan1sft=`echo "${chan1}" | sed 's/^H1://;s/[-_]//g'`
+chan2sft=`echo "${chan2}" | sed 's/^H1://;s/[-_]//g'`
 
-for SFT_name_opts in "-O 4 -K DEV -R 1" "-O 0 -X private"; do
+## common segment file
+segs="${PWD}/segs"
+echo "${seg1_tstart} ${seg1_tend}" > ${segs}
+echo "${seg2_tstart} ${seg2_tend}" >> ${segs}
 
-for chans in "H1:GDS-CALIB_STRAIN_CLEAN" "H1:GDS-CALIB_STRAIN,H1:GDS-CALIB_STRAIN_CLEAN"; do
+## common unit test function
+unittest() {
 
-## run lalpulsar_MakeSFTDAG to create a fake output
-cmdline="./lalpulsar_MakeSFTDAG ${SFT_name_opts} -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . -N ${chans} -F ${fmin} -B ${Band} -w 3 -P 0.5 -m 1 -A ligo.sim.o4.cw.explore.test -U albert.einstein -g segs -J /tmp/path/to"
-if ! eval "$cmdline"; then
-    echo "ERROR: something failed when running '$cmdline'"
-    exit 1
-fi
-dagfile="test.dag"
-datafindsub="datafind.sub"
-sftsub="MakeSFTs.sub"
-for file in $dagfile $datafindsub $sftsub; do
-    if ! test -f $file; then
-        echo "ERROR: could not find file '$file'"
+    # first argument is name of unit test
+    # remaining arguments are passed to lalpulsar_MakeSFTDAG
+    local name="$1"
+    shift
+
+    echo
+    echo "############### unit test: ${name} ###############"
+    echo
+
+    # run lalpulsar_MakeSFTDAG in unit test directory
+    local testdir="./${name}_unittest"
+    rm -rf ${testdir}
+    mkdir ${testdir}
+    cd ${testdir}
+    echo "Running lalpulsar_MakeSFTDAG..."
+    if ! ../lalpulsar_MakeSFTDAG "$@"; then
+        echo "ERROR: something failed when running 'lalpulsar_MakeSFTDAG $@'"
         exit 1
     fi
-done
+    cd ..
+    echo
 
-testdagcontent=$(<$dagfile)
-dagfilecontent="JOB datafind_1 datafind.sub
-RETRY datafind_1 1
-VARS datafind_1 gpsstarttime=\"1257741529\" gpsendtime=\"1257743329\" observatory=\"H\" inputdatatype=\"H1_HOFT_C00\" tagstring=\"TEST_1\"
-JOB MakeSFTs_1 MakeSFTs.sub
-RETRY MakeSFTs_1 1
-VARS MakeSFTs_1 argList=\"${SFT_name_opts} -f 7 -t 1800 -p . -C cache/H-1257741529-1257743329.cache -s 1257741529 -e 1257743329 -N ${chans} -F 10 -B 1990 -w 3 -P 0.5\" tagstring=\"TEST_1\"
-PARENT datafind_1 CHILD MakeSFTs_1
-JOB datafind_2 datafind.sub
-RETRY datafind_2 1
-VARS datafind_2 gpsstarttime=\"1257743330\" gpsendtime=\"1257745130\" observatory=\"H\" inputdatatype=\"H1_HOFT_C00\" tagstring=\"TEST_2\"
-JOB MakeSFTs_2 MakeSFTs.sub
-RETRY MakeSFTs_2 1
-VARS MakeSFTs_2 argList=\"${SFT_name_opts} -f 7 -t 1800 -p . -C cache/H-1257743330-1257745130.cache -s 1257743330 -e 1257745130 -N ${chans} -F 10 -B 1990 -w 3 -P 0.5\" tagstring=\"TEST_2\"
-PARENT datafind_2 CHILD MakeSFTs_2"
-if ! [[ $testdagcontent == $dagfilecontent ]]; then
-   echo "ERROR: dagfile content did not match expected content"
-   echo "test content:"
-   echo $testdagcontent
-   echo "Expected content:"
-   echo $dagfilecontent
-   exit 1
-fi
+    # store contents of all files in unit test directory
+    local output="./${name}_output.txt"
+    find ${testdir} -type f | LC_ALL=C sort | xargs grep -H . > ${output}
 
-testdatafindcontent=$(<$datafindsub)
-datafindfilecontent="universe = vanilla
-executable = /usr/bin/gw_data_find
-arguments = --observatory \$(observatory) --url-type file --gps-start-time \$(gpsstarttime) --gps-end-time \$(gpsendtime) --lal-cache --gaps --type \$(inputdatatype)
-getenv = *DATAFIND*, KRB5*, X509*, BEARER_TOKEN*, SCITOKEN*
-request_disk = 5MB
-request_memory = 2000MB
-accounting_group = ligo.sim.o4.cw.explore.test
-accounting_group_user = albert.einstein
-log = logs/datafind_test.dag.log
-error = logs/datafind_\$(tagstring).err
-output = cache/\$(observatory)-\$(gpsstarttime)-\$(gpsendtime).cache
-notification = never
-queue 1"
-if ! [[ $testdatafindcontent == $datafindfilecontent ]]; then
-   echo "ERROR: datafind.sub content did not match expected content"
-   echo "test content:"
-   echo $testdatafindcontent
-   echo "Expected content:"
-   echo $datafindfilecontent
-   exit 1
-fi
+    # compare output to reference
+    local output_ref="./${name}_output_ref.txt"
+    touch ${output_ref}
+    if ! diff ${output_ref} ${output} >/dev/null 2>&1; then
+        echo "ERROR: output of unit test ${name} differs from reference as follows:"
+        echo "--------------------------------------------------------------------------------"
+        diff ${output_ref} ${output} || true
+        echo "--------------------------------------------------------------------------------"
+        echo
+        status=1
 
-testsftsubcontent=$(<$sftsub)
-sftsubfilecontent="universe = vanilla
-executable = /tmp/path/to/lalpulsar_MakeSFTs
-arguments = \$(argList)
-accounting_group = ligo.sim.o4.cw.explore.test
-accounting_group_user = albert.einstein
-log = logs/MakeSFTs_test.dag.log
-error = logs/MakeSFTs_\$(tagstring).err
-output = logs/MakeSFTs_\$(tagstring).out
-notification = never
-request_memory = 2048MB
-request_disk = 1024MB
-RequestCpus = 1
-queue 1"
-if ! [[ $testsftsubcontent == $sftsubfilecontent ]]; then
-   echo "ERROR: MakeSFT.sub content did not match expected content"
-   echo "test content:"
-   echo $testsftsubcontent
-   echo "Expected content:"
-   echo $sftsubfilecontent
-   exit 1
-fi
+        # create new reference tarball
+        cp -f ${output} ${output_ref}
+        rm -f testMakeSFTDAG.tar.gz
+        tar zcf testMakeSFTDAG.tar.gz *_output_ref.txt
 
-## run lalpulsar_MakeSFTDAG to create a fake output using a frame cache file
-cmdline="./lalpulsar_MakeSFTDAG ${SFT_name_opts} -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . -N ${chans} -F ${fmin} -B ${Band} -w 3 -P 0.5 -m 1 -A ligo.sim.o4.cw.explore.test -U albert.einstein -g segs -J /tmp/path/to -e /tmp/path/to.cache"
-if ! eval "$cmdline"; then
-    echo "ERROR: something failed when running '$cmdline'"
-    exit 1
-fi
-dagfile="test.dag"
-sftsub="MakeSFTs.sub"
-for file in $dagfile $sftsub; do
-    if ! test -f $file; then
-        echo "ERROR: could not find file '$file'"
-        exit 1
+    else
+        echo "INFO: output of unit test ${name} is identical to reference:"
+        echo "--------------------------------------------------------------------------------"
+        cat ${output}
+        echo "--------------------------------------------------------------------------------"
+        echo
     fi
-done
 
-testdagcontent=$(<$dagfile)
-dagfilecontent="JOB MakeSFTs_1 MakeSFTs.sub
-RETRY MakeSFTs_1 1
-VARS MakeSFTs_1 argList=\"${SFT_name_opts} -f 7 -t 1800 -p . -C /tmp/path/to.cache -s 1257741529 -e 1257743329 -N ${chans} -F 10 -B 1990 -w 3 -P 0.5\" tagstring=\"TEST_1\"
-JOB MakeSFTs_2 MakeSFTs.sub
-RETRY MakeSFTs_2 1
-VARS MakeSFTs_2 argList=\"${SFT_name_opts} -f 7 -t 1800 -p . -C /tmp/path/to.cache -s 1257743330 -e 1257745130 -N ${chans} -F 10 -B 1990 -w 3 -P 0.5\" tagstring=\"TEST_2\""
-if ! [[ $testdagcontent == $dagfilecontent ]]; then
-   echo "ERROR: dagfile content did not match expected content"
-   echo "test content:"
-   echo $testdagcontent
-   echo "Expected content:"
-   echo $dagfilecontent
-   exit 1
+}
+
+## function to grep test output for strings
+greptest() {
+
+    # first argument is name of unit test
+    # remaining arguents are strings to grep
+    local name="$1"
+    shift
+
+    # grep test output for strings
+    local output="./${name}_output.txt"
+    while test "X$1" != X; do
+        if grep -q -e "$1" "${output}"; then
+            echo "INFO: output of unit test ${name} contains the string '$1'"
+        else
+            echo "ERROR: output of unit test ${name} should contain the string '$1'"
+            status=1
+        fi
+        echo
+        shift
+    done
+
+}
+
+############### unit tests ###############
+
+## public SFTs
+unittest public_SFTs \
+    -O 4 -K DEV -R 1 \
+    -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
+    -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
+    -A ${acctgtag} -U ${acctgusr} \
+    -g ${segs} -J ${MSFTpath}
+greptest public_SFTs \
+    "-O 4 -K DEV -R 1" \
+    "-w hann -P 0.5" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
+
+## two SFTs per job
+unittest two_SFTs_per_job \
+    -O 4 -K DEV -R 1 \
+    -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
+    -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 2 \
+    -A ${acctgtag} -U ${acctgusr} \
+    -g ${segs} -J ${MSFTpath}
+greptest two_SFTs_per_job \
+    "-O 4 -K DEV -R 1" \
+    "-w hann -P 0.5" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
+
+## two channels
+unittest two_channels \
+    -O 4 -K DEV -R 1 \
+    -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p dir1 dir2 \
+    -N ${chan1} ${chan2} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
+    -A ${acctgtag} -U ${acctgusr} \
+    -g ${segs} -J ${MSFTpath}
+greptest two_channels \
+    "-O 4 -K DEV -R 1" \
+    "-w hann -P 0.5" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan2sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan2sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan2sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
+
+## private SFTs
+unittest private_SFTs \
+    -O 0 -X private \
+    -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
+    -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
+    -A ${acctgtag} -U ${acctgusr} \
+    -g ${segs} -J ${MSFTpath}
+greptest private_SFTs \
+    "-O 0 -X private" \
+    "-w hann -P 0.5" \
+    "H-1_H1_${Tsft}SFT_private-${seg1_sft1}-1800.sft" \
+    "H-1_H1_${Tsft}SFT_private-${seg2_sft1_half_overlap}-1800.sft" \
+    "H-1_H1_${Tsft}SFT_private-${seg2_sft2_half_overlap}-1800.sft"
+
+## frame cache file
+unittest frame_cache_file \
+    -O 0 -X private \
+    -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
+    -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
+    -A ${acctgtag} -U ${acctgusr} \
+    -g ${segs} -J ${MSFTpath} -e ${cachepath}
+greptest frame_cache_file \
+    "-O 0 -X private" \
+    "-w hann -P 0.5" \
+    "H-1_H1_${Tsft}SFT_private-${seg1_sft1}-1800.sft" \
+    "H-1_H1_${Tsft}SFT_private-${seg2_sft1_half_overlap}-1800.sft" \
+    "H-1_H1_${Tsft}SFT_private-${seg2_sft2_half_overlap}-1800.sft"
+
+## default window
+unittest default_window \
+    -O 4 -K DEV -R 1 \
+    -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
+    -N ${chan1} -F ${fmin} -B ${Band} -m 1 \
+    -A ${acctgtag} -U ${acctgusr} \
+    -g ${segs} -J ${MSFTpath}
+greptest default_window \
+    "-O 4 -K DEV -R 1" \
+    "-w tukey -r 0.001" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg1_sft1}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg2_sft1_no_overlap}-${Tsft}.sft"
+
+## Tukey window with parameter 0.001
+unittest Tukey_window \
+    -O 4 -K DEV -R 1 \
+    -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
+    -N ${chan1} -F ${fmin} -B ${Band} -w tukey:0.001 -m 1 \
+    -A ${acctgtag} -U ${acctgusr} \
+    -g ${segs} -J ${MSFTpath}
+greptest Tukey_window \
+    "-O 4 -K DEV -R 1" \
+    "-w tukey -r 0.001" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg1_sft1}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg2_sft1_no_overlap}-${Tsft}.sft"
+
+## Tukey window with parameter 0.5
+unittest Tukey_window_2 \
+    -O 4 -K DEV -R 1 \
+    -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
+    -N ${chan1} -F ${fmin} -B ${Band} -w tukey:0.5 -m 1 \
+    -A ${acctgtag} -U ${acctgusr} \
+    -g ${segs} -J ${MSFTpath}
+greptest Tukey_window_2 \
+    "-O 4 -K DEV -R 1" \
+    "-w tukey -r 0.5" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY2500-${seg1_sft1}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY2500-${seg2_sft1_no_overlap}-${Tsft}.sft"
+
+if test -f testMakeSFTDAG.tar.gz; then
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    echo "INFO: new reference result tarball has been generated: '${PWD}/testMakeSFTDAG.tar.gz'"
+    echo "INFO: copy to the source directory of 'testMakeSFTDAG.sh' to update the test"
+    echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+    echo
 fi
 
-rm MakeSFTs.sub datafind.sub test.dag
-rmdir logs cache
-
-done
-
-done
-
-rm segs
+exit ${status}

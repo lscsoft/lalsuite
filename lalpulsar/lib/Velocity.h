@@ -82,38 +82,38 @@ extern "C" {
  * Earth velocity at a given detector location.
  */
 typedef struct tagVelocityPar {
-  LALDetector    detector; 	/**< the detector */
-  EphemerisData  *edat;  	/**< ephemeris data pointer from XLALInitBarycenter() */
-  LIGOTimeGPS    startTime; 	/**< start of time interval */
-  REAL8          tBase; 	/**< duration of interval */
-  REAL8          vTol;  	/**< fractional accuracy required for velocity (redundant for average velocity calculation) */
+  LALDetector    detector;      /**< the detector */
+  EphemerisData  *edat;         /**< ephemeris data pointer from XLALInitBarycenter() */
+  LIGOTimeGPS    startTime;     /**< start of time interval */
+  REAL8          tBase;         /**< duration of interval */
+  REAL8          vTol;          /**< fractional accuracy required for velocity (redundant for average velocity calculation) */
 } VelocityPar;
 
 /* ***************************************************
  *  Functions Declarations (i.e., prototypes).
  */
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(OUTPUT_ARRAY_1D(REAL8, v[3], x[3]));
+SWIGLAL( OUTPUT_ARRAY_1D( REAL8, v[3], x[3] ) );
 #endif // SWIG
-void LALAvgDetectorVel(LALStatus    *status,
-		    REAL8        v[3], /* output vector representing average velocity */
-		    VelocityPar  *in); /* parameters required to calculate V */
+void LALAvgDetectorVel( LALStatus    *status,
+                        REAL8        v[3], /* output vector representing average velocity */
+                        VelocityPar  *in ); /* parameters required to calculate V */
 
-void LALAvgDetectorPos(LALStatus    *status,
-		    REAL8        x[3], /* output vector representing average position */
-		    VelocityPar  *in); /* parameters required to calculate position */
+void LALAvgDetectorPos( LALStatus    *status,
+                        REAL8        x[3], /* output vector representing average position */
+                        VelocityPar  *in ); /* parameters required to calculate position */
 
-void LALDetectorVel(LALStatus   *status,
-		 REAL8       v[3],  /* output velocity vector */
-		 LIGOTimeGPS *time0, /* time at which velocity is calculated */
-		 LALDetector  detector, /* detector */
-		 EphemerisData *edat);
+void LALDetectorVel( LALStatus   *status,
+                     REAL8       v[3],  /* output velocity vector */
+                     LIGOTimeGPS *time0, /* time at which velocity is calculated */
+                     LALDetector  detector, /* detector */
+                     EphemerisData *edat );
 
-void LALDetectorPos(LALStatus   *status,
-		 REAL8       x[3],  /* output position vector */
-		 LIGOTimeGPS *time0, /* time at which position is calculated */
-		 LALDetector  detector, /* detector*/
-		 EphemerisData *edat);
+void LALDetectorPos( LALStatus   *status,
+                     REAL8       x[3],  /* output position vector */
+                     LIGOTimeGPS *time0, /* time at which position is calculated */
+                     LALDetector  detector, /* detector*/
+                     EphemerisData *edat );
 
 /* ****************************************************** */
 

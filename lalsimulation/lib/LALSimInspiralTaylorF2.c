@@ -106,38 +106,42 @@ int XLALSimInspiralTaylorF2AlignedPhasingArray(
         REAL8Vector dquadmon2 /**< Self-spin deformation of body 2 */
         )
 {
-    UINT4 idx, jdx;
     UINT4 pnmaxnum = PN_PHASING_SERIES_MAX_ORDER + 1;
-    LALDict *a=NULL;
-    a=XLALCreateDict();
 
-    PNPhasingSeries *curr_phasing=NULL;
     *phasingvals = XLALCreateREAL8Vector(mass1.length * pnmaxnum * 3); 
     REAL8Vector* pv = *phasingvals;
 
-    for (idx=0; idx < mass1.length; idx++)
+    #pragma omp parallel
     {
-        XLALSimInspiralWaveformParamsInsertdQuadMon1(a, dquadmon1.data[idx]);
-        XLALSimInspiralWaveformParamsInsertdQuadMon2(a, dquadmon2.data[idx]);
-        XLALSimInspiralWaveformParamsInsertTidalLambda1(a, lambda1.data[idx]);
-        XLALSimInspiralWaveformParamsInsertTidalLambda2(a, lambda2.data[idx]);
-
-        XLALSimInspiralTaylorF2AlignedPhasing
-            (&curr_phasing, mass1.data[idx], mass2.data[idx], chi1.data[idx],
-             chi2.data[idx], a);
-        for (jdx=0; jdx < pnmaxnum; jdx++)
+        LALDict *a=NULL;
+        a=XLALCreateDict();
+        PNPhasingSeries *curr_phasing=NULL;
+	UINT4 idx, jdx;
+        #pragma omp for
+        for (idx=0; idx < mass1.length; idx++)
         {
-            pv->data[jdx*mass1.length + idx] = curr_phasing->v[jdx];
-            pv->data[mass1.length*pnmaxnum + jdx*mass1.length + idx] =
-                curr_phasing->vlogv[jdx];
-            pv->data[mass1.length*pnmaxnum*2 + idx + jdx*mass1.length] =
-                curr_phasing->vlogvsq[jdx];
-        }
-        LALFree(curr_phasing);
-        curr_phasing=NULL;
+            XLALSimInspiralWaveformParamsInsertdQuadMon1(a, dquadmon1.data[idx]);
+            XLALSimInspiralWaveformParamsInsertdQuadMon2(a, dquadmon2.data[idx]);
+            XLALSimInspiralWaveformParamsInsertTidalLambda1(a, lambda1.data[idx]);
+            XLALSimInspiralWaveformParamsInsertTidalLambda2(a, lambda2.data[idx]);
+
+            XLALSimInspiralTaylorF2AlignedPhasing
+                (&curr_phasing, mass1.data[idx], mass2.data[idx], chi1.data[idx],
+                 chi2.data[idx], a);
+            for (jdx=0; jdx < pnmaxnum; jdx++)
+            {
+                pv->data[jdx*mass1.length + idx] = curr_phasing->v[jdx];
+                pv->data[mass1.length*pnmaxnum + jdx*mass1.length + idx] =
+                    curr_phasing->vlogv[jdx];
+                pv->data[mass1.length*pnmaxnum*2 + idx + jdx*mass1.length] =
+                    curr_phasing->vlogvsq[jdx];
+            }
+            LALFree(curr_phasing);
+            curr_phasing=NULL;
+	}
+	XLALDestroyDict(a);
     }
 
-    XLALDestroyDict(a);
 
     return XLAL_SUCCESS;
 }

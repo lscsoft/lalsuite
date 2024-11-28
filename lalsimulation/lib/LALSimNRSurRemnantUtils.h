@@ -95,6 +95,7 @@ typedef struct tagAlignedSpinRemnantFitData {
 //************************* function declarations *************************/
 //*************************************************************************/
 
+#ifdef LAL_HDF5_ENABLED
 void NRSurRemnant_LoadH5File(
     LALH5File **file,
     const char* NRSurRemnant_DATAFILE
@@ -122,3 +123,4 @@ int AlignedSpinNRSurRemnant_Init(
     AlignedSpinRemnantFitData *sur_data,
     LALH5File *file
 );
+#endif

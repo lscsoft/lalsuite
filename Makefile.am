@@ -93,10 +93,10 @@ update-authors:
 
 .PHONY: pretty
 pretty:
-	$(AM_V_at)cd $(top_srcdir); \
-	for subdir in @subdirs@; do \
+	$(AM_V_at)for subdir in @subdirs@; do \
 		( cd $${subdir} && make pretty ) || exit 1; \
 	done; \
+	cd $(top_srcdir); \
 	if git diff --quiet -- $(PRETTY_PATTERN); then \
 		exit 0; \
 	fi; \

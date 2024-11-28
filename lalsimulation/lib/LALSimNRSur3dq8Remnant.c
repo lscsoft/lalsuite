@@ -71,8 +71,9 @@
 
 #include <lal/SeqFactories.h>
 #include <lal/FileIO.h>
+#if LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
-
+#endif
 #include <lal/XLALError.h>
 #include <lal/LALSimIMR.h>
 
@@ -126,6 +127,7 @@ static void NRSur3dq8Remnant_Init_LALDATA(void) {
 
     if (NRSur3dq8Remnant_IsSetup()) return;
 
+    #if LAL_HDF5_ENABLED
     LALH5File *file = NULL;
     NRSurRemnant_LoadH5File(&file, NRSur3dq8Remnant_DATAFILE);
 
@@ -137,6 +139,11 @@ static void NRSur3dq8Remnant_Init_LALDATA(void) {
         XLAL_ERROR_VOID(XLAL_FAILURE, "Failure loading data from %s\n",
                 NRSur3dq8Remnant_DATAFILE);
     }
+    #else
+    XLAL_ERROR_VOID(XLAL_FAILURE,  "Failure loading data from %s. HDF5 support is not enabled.\n", 
+        NRSur3dq8Remnant_DATAFILE);
+    #endif
+
 }
 
 /**

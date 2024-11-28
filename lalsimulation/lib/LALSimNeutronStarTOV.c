@@ -31,8 +31,6 @@
 #include <lal/LALConstants.h>
 #include <lal/LALSimNeutronStar.h>
 
-/** @cond */
-
 /* Implements Eq. (50) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).
  * See also Eq. (14) of Hinderer et al. Phys. Rev. D 81 123016 (2010). */
 static double tidal_Love_number_k2(double c, double y)
@@ -115,8 +113,6 @@ static int tov_ode(double h, const double *y, double *dy, void *params)
     derivs->b = db;
     return 0;
 }
-
-/** @endcond */
 
 /**
  * @brief Integrates the Tolman-Oppenheimer-Volkov stellar structure equations.
@@ -299,8 +295,6 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
     derivs->J2 = dJ2;
     return 0;
 }
-
-/** @endcond */
 
 /**
  * @brief Integrates the Tolman-Oppenheimer-Volkov stellar structure equations and the Virial Equations.

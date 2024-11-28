@@ -1,3 +1,4 @@
+##python
 import argparse
 import shutil
 import os
@@ -6,7 +7,7 @@ import subprocess
 import glob
 import lalinference
 
-from six.moves.configparser import SafeConfigParser
+from configparser import ConfigParser
 
 prefix=''
 try:
@@ -101,10 +102,13 @@ except KeyError:
     sys.exit()
 
 def init_ini_file(file=args.ini_file):
-    cp=SafeConfigParser()
+    cp=ConfigParser()
     fp=open(file)
     cp.optionxform = str
-    cp.readfp(fp)
+    try:
+        cp.read_file(fp)
+    except AttributeError:
+        cp.readfp(fp)
     fp.close()
 
     cp.set('condor','lalsuite-install',lalinf_prefix)

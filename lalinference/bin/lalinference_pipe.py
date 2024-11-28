@@ -1,9 +1,10 @@
+##python
 # DAG generation code for running LALInference pipeline
 # (C) 2012 John Veitch, Vivien Raymond
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 import numpy as np
-from six.moves import configparser
+import configparser
 from optparse import OptionParser
 import sys
 import os
@@ -214,7 +215,10 @@ inifile=args[0]
 cp=configparser.SafeConfigParser()
 fp=open(inifile)
 cp.optionxform = str
-cp.readfp(fp)
+try:
+    cp.read_file(fp)
+except AttributeError:
+    cp.readfp(fp)
 fp.close()
 
 # Set the base directory for the run

@@ -58,6 +58,10 @@ static inline REAL4 local_mulf ( REAL4 x, REAL4 y ) {
   return x * y;
 }
 
+static inline REAL4 local_fmaddf ( REAL4 x, REAL4 y, REAL4 z ) {
+  return x * y + z;
+}
+
 static inline REAL8 local_add ( REAL8 x, REAL8 y ) {
   return x + y;
 }
@@ -70,6 +74,10 @@ static inline REAL8 local_mul ( REAL8 x, REAL8 y ) {
   return x * y;
 }
 
+static inline REAL8 local_fmadd ( REAL8 x, REAL8 y, REAL8 z ) {
+  return x * y + z;
+}
+
 static inline COMPLEX8 local_cmulf ( COMPLEX8 x, COMPLEX8 y )
 {
   return x * y;
@@ -80,9 +88,11 @@ static inline COMPLEX8 local_caddf ( COMPLEX8 x, COMPLEX8 y )
   return x + y;
 }
 
-static inline REAL4 local_fmaxf ( REAL4 x, REAL4 y ) {
-  return (x > y) ? x : y;
+static inline COMPLEX8 local_cfmadd ( REAL4 x, COMPLEX8 y, COMPLEX8 z )
+{
+  return x * y + z;
 }
+
 
 // ========== internal generic functions ==========
 
@@ -93,6 +103,25 @@ XLALVectorMath_S2I_GEN ( INT4 *out, const REAL4 *in, const UINT4 len, INT4 (*op)
   for ( UINT4 i = 0; i < len; i ++ )
     {
       out[i] = (*op) ( in[i] );
+    }
+  return XLAL_SUCCESS;
+}
+
+// ---------- generic operator with 1 REAL4 vector input to 1 REAL4 scalar output (S2s) ----------
+static inline int
+XLALVectorMath_S2s_GEN ( REAL4 *out, const REAL4 *in, const UINT4 len, REAL4 (*op)(REAL4, REAL4) )
+{
+  if ( len == 1 )
+    {
+      *out = in[0];
+    }
+  else if ( len >= 2 )
+    {
+      *out = (*op) ( in[0], in[1] );
+      for ( UINT4 i = 2; i < len; i ++ )
+        {
+          *out = (*op) ( *out, in[i] );
+        }
     }
   return XLAL_SUCCESS;
 }
@@ -141,6 +170,36 @@ XLALVectorMath_sS2S_GEN ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4
   return XLAL_SUCCESS;
 }
 
+// ---------- generic operator with 1 REAL4 scalar and 2 REAL4 vector inputs to 1 REAL4 vector output (sSS2S) ----------
+static inline int
+XLALVectorMath_sSS2S_GEN ( REAL4 *out, REAL4 scalar, const REAL4 *in1, const REAL4 *in2, const UINT4 len, REAL4 (*op)(REAL4, REAL4, REAL4) )
+{
+  for ( UINT4 i = 0; i < len; i ++ )
+    {
+      out[i] = (*op) ( scalar, in1[i], in2[i] );
+    }
+  return XLAL_SUCCESS;
+}
+
+// ---------- generic operator with 1 REAL8 vector input to 1 REAL8 scalar output (D2d) ----------
+static inline int
+XLALVectorMath_D2d_GEN ( REAL8 *out, const REAL8 *in, const UINT4 len, REAL8 (*op)(REAL8, REAL8) )
+{
+  if ( len == 1 )
+    {
+      *out = in[0];
+    }
+  else if ( len >= 2 )
+    {
+      *out = (*op) ( in[0], in[1] );
+      for ( UINT4 i = 2; i < len; i ++ )
+        {
+          *out = (*op) ( *out, in[i] );
+        }
+    }
+  return XLAL_SUCCESS;
+}
+
 // ---------- generic operator with 1 REAL8 scalar and 1 REAL8 vector inputs to 1 REAL8 vector output (dD2D) ----------
 static inline int
 XLALVectorMath_dD2D_GEN ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4 len, REAL8 (*op)(REAL8, REAL8) )
@@ -148,6 +207,17 @@ XLALVectorMath_dD2D_GEN ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4
   for ( UINT4 i = 0; i < len; i ++ )
     {
       out[i] = (*op) ( scalar, in[i] );
+    }
+  return XLAL_SUCCESS;
+}
+
+// ---------- generic operator with 1 REAL8 scalar and 2 REAL8 vector inputs to 1 REAL8 vector output (dDD2D) ----------
+static inline int
+XLALVectorMath_dDD2D_GEN ( REAL8 *out, REAL8 scalar, const REAL8 *in1, const REAL8 *in2, const UINT4 len, REAL8 (*op)(REAL8, REAL8, REAL8) )
+{
+  for ( UINT4 i = 0; i < len; i ++ )
+    {
+      out[i] = (*op) ( scalar, in1[i], in2[i] );
     }
   return XLAL_SUCCESS;
 }
@@ -185,6 +255,17 @@ XLALVectorMath_cC2C_GEN ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, co
   return XLAL_SUCCESS;
 }
 
+// ---------- generic operator with 1 REAL4 scalar and 2 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (sCC2C) ----------
+static inline int
+XLALVectorMath_sCC2C_GEN ( COMPLEX8 *out, REAL4 scalar, const COMPLEX8 *in1, const COMPLEX8 *in2, const UINT4 len, COMPLEX8 (*op)(REAL4, COMPLEX8, COMPLEX8) )
+{
+  for ( UINT4 i = 0; i < len; i ++ )
+    {
+      out[i] = (*op) ( scalar, in1[i], in2[i] );
+    }
+  return XLAL_SUCCESS;
+}
+
 // ---------- generic operator with 1 REAL8 vector input to 1 REAL8 vector output (D2D) ----------
 static inline int
 XLALVectorMath_D2D_GEN ( REAL8 *out, const REAL8 *in, const UINT4 len, REAL8 (*op)(REAL8) )
@@ -199,10 +280,16 @@ XLALVectorMath_D2D_GEN ( REAL8 *out, const REAL8 *in, const UINT4 len, REAL8 (*o
 // ========== internal vector math functions ==========
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 INT4 vector output (S2I) ----------
-#define DEFINE_VECTORMATH_S2I(NAME, SSE_OP)                             \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2I_GEN, NAME ## REAL4, ( INT4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_OP ) )
+#define DEFINE_VECTORMATH_S2I(NAME, GEN_OP)                             \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2I_GEN, NAME ## REAL4, ( INT4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_S2I(INT4From, local_cast_to_INT4)
+
+// ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 scalar output (S2s) ----------
+#define DEFINE_VECTORMATH_S2s(NAME, GEN_OP)                             \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2s_GEN, NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, GEN_OP ) )
+
+DEFINE_VECTORMATH_S2s(ScalarMax, fmaxf)
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 #define DEFINE_VECTORMATH_S2S(NAME, GEN_OP)                             \
@@ -228,7 +315,7 @@ DEFINE_VECTORMATH_S2SS(SinCos2Pi, local_sincosf_2pi)
 DEFINE_VECTORMATH_SS2S(Add, local_addf)
 DEFINE_VECTORMATH_SS2S(Sub, local_subf)
 DEFINE_VECTORMATH_SS2S(Multiply, local_mulf)
-DEFINE_VECTORMATH_SS2S(Max, local_fmaxf)
+DEFINE_VECTORMATH_SS2S(Max, fmaxf)
 
 // ---------- define vector math functions with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
 #define DEFINE_VECTORMATH_sS2S(NAME, GEN_OP)                            \
@@ -237,12 +324,30 @@ DEFINE_VECTORMATH_SS2S(Max, local_fmaxf)
 DEFINE_VECTORMATH_sS2S(Shift, local_addf)
 DEFINE_VECTORMATH_sS2S(Scale, local_mulf)
 
+// ---------- define vector math functions with 1 REAL4 scalar and 2 REAL4 vector inputs to 1 REAL4 vector output (sSS2S) ----------
+#define DEFINE_VECTORMATH_sSS2S(NAME, GEN_OP)                           \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_sSS2S_GEN, NAME ## REAL4, ( REAL4 *out, REAL4 scalar, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, scalar, in1, in2, len, GEN_OP ) )
+
+DEFINE_VECTORMATH_sSS2S(ScaleAdd, local_fmaddf)
+
+// ---------- define vector math functions with 1 REAL8 vector input to 1 REAL8 scalar output (D2d) ----------
+#define DEFINE_VECTORMATH_D2d(NAME, GEN_OP)                             \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_D2d_GEN, NAME ## REAL8, ( REAL8 *out, const REAL8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, GEN_OP ) )
+
+DEFINE_VECTORMATH_D2d(ScalarMax, fmax)
+
 // ---------- define vector math functions with 1 REAL8 scalar and 1 REAL8 vector inputs to 1 REAL8 vector output (dD2D) ----------
 #define DEFINE_VECTORMATH_dD2D(NAME, GEN_OP)                            \
   DEFINE_VECTORMATH_ANY( XLALVectorMath_dD2D_GEN, NAME ## REAL8, ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_dD2D(Scale, local_mul)
 DEFINE_VECTORMATH_dD2D(Shift, local_add)
+
+// ---------- define vector math functions with 1 REAL8 scalar and 2 REAL8 vector inputs to 1 REAL8 vector output (dDD2D) ----------
+#define DEFINE_VECTORMATH_dDD2D(NAME, GEN_OP)                           \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_dDD2D_GEN, NAME ## REAL8, ( REAL8 *out, REAL8 scalar, const REAL8 *in1, const REAL8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, scalar, in1, in2, len, GEN_OP ) )
+
+DEFINE_VECTORMATH_dDD2D(ScaleAdd, local_fmadd)
 
 // ---------- define vector math functions with 2 REAL8 vector inputs to 1 REAL8 vector output (DD2D) ----------
 #define DEFINE_VECTORMATH_DD2D(NAME, GEN_OP)                            \
@@ -266,6 +371,12 @@ DEFINE_VECTORMATH_CC2C(Add, local_caddf)
 
 DEFINE_VECTORMATH_cC2C(Scale, local_cmulf)
 DEFINE_VECTORMATH_cC2C(Shift, local_caddf)
+
+// ---------- define vector math functions with 1 REAL4 scalar and 2 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (sCC2C) ----------
+#define DEFINE_VECTORMATH_sCC2C(NAME, GEN_OP)                           \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_sCC2C_GEN, NAME ## COMPLEX8, ( COMPLEX8 *out, REAL4 scalar, const COMPLEX8 *in1, const COMPLEX8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, scalar, in1, in2, len, GEN_OP ) )
+
+DEFINE_VECTORMATH_sCC2C(ScaleAdd, local_cfmadd)
 
 // ---------- define vector math functions with 1 REAL8 vector input to 1 REAL8 vector output (D2D) ----------
 #define DEFINE_VECTORMATH_D2D(NAME, GEN_OP)                             \

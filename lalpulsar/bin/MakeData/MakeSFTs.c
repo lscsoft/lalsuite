@@ -86,8 +86,7 @@ int main( int argc, char *argv[] )
     .sft_duration = 1800,
     .overlap_fraction = 0,
     .high_pass_freq = 0,
-    .window_type = XLALStringDuplicate( "tukey" ),
-    .window_param = 0.001,
+    .window_param = 0,
     .start_freq = 48,
     .band = 2000,
     .sft_write_path = default_sft_write_path,
@@ -142,8 +141,9 @@ int main( int argc, char *argv[] )
     "High pass filtering frequency in Hertz. "
   );
   XLALRegisterUvarMember(
-    window_type, STRING, 'w', OPTIONAL,
-    "Window to apply to SFTs. "
+    window_type, STRING, 'w', REQUIRED,
+    "Window to apply to SFTs. See https://dcc.ligo.org/T040164/public for supported options.\n\n"
+    "The standard window applied to LVK production SFTs is documented in `lalpulsar_MakeSFTDAG`. "
   );
   XLALRegisterUvarMember(
     window_param, REAL8, 'r', OPTIONAL,
@@ -163,23 +163,24 @@ int main( int argc, char *argv[] )
   lalUserVarHelpOptionSubsection = "SFT output";
   XLALRegisterUvarMember(
     sft_write_path, STRINGVector, 'p', OPTIONAL,
-    "Path to write SFTs to, same order as channel names. "
+    "Path(s) to write SFTs to, same order as channel name(s). "
   );
   XLALRegisterUvarMember(
     observing_run, UINT4, 'O', REQUIRED,
-    "For public SFTs, observing run SFTs are generated from. "
+    "For >=1, SFTs will be named following the 'public' scheme from T040164-v2, and this number should correspond to the observing run the data comes from (without the leading 'O').\n\n"
+    "If set to 0, 'private' SFTs will be generated. "
   );
   XLALRegisterUvarMember(
     observing_kind, STRING, 'K', OPTIONAL,
-    "For public SFTs, kind of SFTs being generated: 'RUN', 'AUX', 'SIM', or 'DEV'. "
+    "For public SFTs (" UVAR_STR( observing_run ) ">=1) only, the kind of SFTs being generated: 'RUN', 'AUX', 'SIM', or 'DEV'. "
   );
   XLALRegisterUvarMember(
     observing_revision, UINT4, 'R', OPTIONAL,
-    "For public SFTs, revision number of the SFT production. "
+    "For public SFTs (" UVAR_STR( observing_run ) ">=1) only, the revision number of the SFT production. "
   );
   XLALRegisterUvarMember(
     misc_desc, STRING, 'X', OPTIONAL,
-    "For private SFTs, miscellaneous description field. "
+    "For private SFTs only, a miscellaneous description field that will be included in the filenames. "
   );
   XLALRegisterUvarMember(
     comment_field, STRING, 'c', OPTIONAL,
@@ -271,7 +272,7 @@ int main( int argc, char *argv[] )
   } else if ( strcmp( uvar->window_type, "3" ) == 0 ) {
     XLALUserVarCheck( &should_exit, 0,
                       UVAR_STR( window_type ) "=3 is deprecated; use " UVAR_STR( window_type ) "=hann" );
-  } else if ( XLALUserVarWasSet( &uvar->window_type ) ) {
+  } else {
     XLALUserVarCheck( &should_exit,
                       XLALCheckNamedWindow( uvar->window_type, XLALUserVarWasSet( &uvar->window_param ) ) == XLAL_SUCCESS,
                       "Invalid/inconsistent " UVAR_STR( window_type ) " and/or " UVAR_STR( window_param ) );
@@ -290,21 +291,36 @@ int main( int argc, char *argv[] )
   //
   XLALUserVarCheck( &should_exit,
                     uvar->observing_run == 0
-                    || strcmp( uvar->observing_kind, "RUN" ) == 0
-                    || strcmp( uvar->observing_kind, "AUX" ) == 0
-                    || strcmp( uvar->observing_kind, "SIM" ) == 0
-                    || strcmp( uvar->observing_kind, "DEV" ) == 0,
+                    || ( XLALUserVarWasSet( &uvar->observing_kind )
+                         && XLALUserVarWasSet( &uvar->observing_revision ) ),
+                    "Must set " UVAR_STR( observing_kind ) " and " UVAR_STR( observing_revision ) " when using " UVAR_STR( observing_run ) ">0" );
+  XLALUserVarCheck( &should_exit,
+                    uvar->observing_run == 0
+                    || ( XLALUserVarWasSet( &uvar->observing_kind )
+                         && ( strcmp( uvar->observing_kind, "RUN" ) == 0
+                              || strcmp( uvar->observing_kind, "AUX" ) == 0
+                              || strcmp( uvar->observing_kind, "SIM" ) == 0
+                              || strcmp( uvar->observing_kind, "DEV" ) == 0 ) ),
                     UVAR_STR( observing_kind ) " must be one of 'RUN', 'AUX', 'SIM', or 'DEV'" );
   XLALUserVarCheck( &should_exit,
                     uvar->observing_run == 0 || uvar->observing_revision > 0,
                     UVAR_STR( observing_revision ) " must be strictly positive" );
   XLALUserVarCheck( &should_exit,
                     uvar->observing_run == 0 || !XLALUserVarWasSet( &uvar->misc_desc ),
-                    UVAR_STR( observing_revision ) "=0 is mutually exclusive with " UVAR_STR( misc_desc ) );
+                    UVAR_STR( observing_run ) "=0 is mutually exclusive with " UVAR_STR( misc_desc ) );
+  XLALUserVarCheck( &should_exit,
+                    uvar->observing_run > 0
+                    || !( XLALUserVarWasSet( &uvar->observing_kind )
+                          || XLALUserVarWasSet( &uvar->observing_revision ) ),
+                    "Setting " UVAR_STR( observing_kind ) " or " UVAR_STR( observing_revision ) " is not allowed with " UVAR_STR( observing_run ) "=0" );
   XLALUserVarCheck( &should_exit,
                     uvar->channel_name->length == uvar->sft_write_path->length
                     || uvar->sft_write_path->length == 1,
                     "Number of channels in " UVAR_STR( channel_name ) " must be the same as the number of output paths in " UVAR_STR( sft_write_path ) "or a single path" );
+  XLALUserVarCheck( &should_exit,
+                    uvar->observing_run > 0
+                    || uvar->channel_name->length == 1,
+                    "For private SFTs (" UVAR_STR( observing_run ) "=0), can only provide one channel at a time" );
 
   // Exit if required
   if ( should_exit ) {
@@ -383,7 +399,6 @@ int main( int argc, char *argv[] )
   ////////// Generate SFTs //////////
 
   // SFT time series window, allocated once first time series data is read
-  const REAL8 window_param = XLALUserVarWasSet( &uvar->window_param ) ? uvar->window_param : 0;
   REAL8Window *SFT_window = NULL;
 
   // SFT FFT data vector and plan, allocated once first time series data is read
@@ -421,8 +436,8 @@ int main( int argc, char *argv[] )
           XLAL_ERROR_MAIN( errnum );
         }
 
-        // Shift the frame stream by SFT length minus one nanosecond so that we don't hit the end of the framestream
-        XLAL_CHECK_MAIN( XLALFrStreamSeekO( framestream, uvar->sft_duration - 1e-9, SEEK_CUR ) == 0, XLAL_EFUNC );
+        // Shift the frame stream by SFT length minus one microsecond so that we don't hit the end of the framestream
+        XLAL_CHECK_MAIN( XLALFrStreamSeekO( framestream, uvar->sft_duration - 1e-6, SEEK_CUR ) == 0, XLAL_EFUNC );
 
         // Now check the end
         XLAL_TRY( laltype = XLALFrStreamGetTimeSeriesType( uvar->channel_name->data[n], framestream ), errnum );
@@ -453,7 +468,7 @@ int main( int argc, char *argv[] )
         SFT_window = NULL;
       }
       if ( SFT_window == NULL ) {
-        SFT_window = XLALCreateNamedREAL8Window( uvar->window_type, window_param, SFT_time_series->data->length );
+        SFT_window = XLALCreateNamedREAL8Window( uvar->window_type, uvar->window_param, SFT_time_series->data->length );
         XLAL_CHECK_MAIN( SFT_window != NULL, XLAL_EFUNC,
                          "Failed to allocate SFT time series window of %u elements at GPS time %" LAL_INT4_FORMAT, SFT_time_series->data->length, SFT_epoch_sec );
       }
@@ -537,7 +552,7 @@ int main( int argc, char *argv[] )
       } else {
         XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path->data[0], "sft_TO_BE_VALIDATED", NULL, uvar->window_type, uvar->misc_desc, uvar->observing_kind, uvar->channel_name->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
-      spec.window_param = window_param;
+      spec.window_param = uvar->window_param;
       spec.pubObsRun = uvar->observing_run;
       spec.pubRevision = uvar->observing_revision;
 

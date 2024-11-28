@@ -9,12 +9,16 @@ set -ex
 mkdir -pv _build
 cd _build
 
+# path to ephemeris files in `solar_system_ephemerides` package
+SSE='./python*/site-packages/solar_system_ephemerides/ephemerides'
+
 # configure
 ${SRC_DIR}/configure \
   ${CONFIGURE_ARGS} \
   --disable-python \
   --disable-swig-python \
   --enable-swig-iface \
+  --with-fallback-data-path="\$(pkgdatadir):${SSE}/earth:${SSE}/sun" \
 ;
 
 # build

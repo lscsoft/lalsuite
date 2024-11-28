@@ -25,6 +25,7 @@
 # @jolien-creighton    = Jolien Creighton
 # @karl-wette          = Karl Wette
 # @kipp.cannon         = Kipp Cannon
+# @leo-singer          = Leo Singer
 # @marco-drago         = Marco Drago
 # @matthew-pitkin      = Matthew Pitkin
 # @patricia-schmidt    = Patricia Schmidt
@@ -81,3 +82,4 @@ include/                        @adam-mercer @duncanmmacleod @karl-wette
 swig/                           @adam-mercer @duncanmmacleod @karl-wette
 test_python_imports.py.in       @adam-mercer @duncanmmacleod @karl-wette
 test_python_scripts.py.in       @adam-mercer @duncanmmacleod @karl-wette
+wheel/                          @adam-mercer @duncanmmacleod @karl-wette @leo-singer

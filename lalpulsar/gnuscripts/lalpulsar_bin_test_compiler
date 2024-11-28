@@ -81,23 +81,25 @@ if [ "X${skip_longtest}" != X ]; then
     exit 77
 fi
 
-# Create directory for test
+# Create directory for test; removes old directory unless NONEWTESTDIR is set
 testdir="${LAL_TEST_BUILDDIR}/${script_name}.testdir"
-rm -rf "${testdir}"
-if [ -d "${testdir}" ]; then
-  echo "Could not remove test directory '${testdir}'"
-  exit 1
+if [ "X${NONEWTESTDIR}" = X ]; then
+    rm -rf "${testdir}"
+    if [ -d "${testdir}" ]; then
+        echo "Could not remove test directory '${testdir}'"
+        exit 1
+    fi
 fi
 mkdir -p "${testdir}"
 
-# Extract any reference results, and check validity
+# Extract any reference results, and check validity (unless NONEWTESTDIR is set)
 reftarball="${LAL_TEST_SRCDIR}/${script_name}.tar.gz"
 if [ -f ${reftarball} ]; then
     echo "Extracting reference tarball ${reftarball}"
     cd "${testdir}"
     tar xf ${reftarball}
     for file in $(find . -type f); do
-        (
+        [ "X${NONEWTESTDIR}" = X ] && (
             case "${file}" in
                 *.txt)
                     grep UNCLEAN "${file}"

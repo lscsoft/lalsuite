@@ -32,7 +32,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepening: true
   error_overlinking: true
   number: 9999
   script_env:
@@ -57,7 +56,6 @@ outputs:
   - name: liblalframe
     script: install-lib.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       run_exports:
         - {{ pin_subpackage("liblalframe", max_pin="x") }}
@@ -101,10 +99,8 @@ outputs:
   - name: python-lalframe
     script: build-python.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
-        - numpy
         - python
       script_env:
         - CI_COMMIT_TAG
@@ -130,7 +126,7 @@ outputs:
         - python-lal >={{ lal_version }}
       run:
         - {{ pin_subpackage('liblalframe', exact=True) }}
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-lal >={{ lal_version }}
     test:
@@ -159,7 +155,6 @@ outputs:
   - name: lalframe
     script: install-bin.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - python

@@ -26,10 +26,7 @@ lalpulsar_crosscorr_v2_SOURCES = \
 
 if HAVE_PYTHON
 
-pybin_scripts = \
-	lalpulsar_combine_crosscorr_toplists \
-	lalpulsar_run_crosscorr_v2 \
-	$(END_OF_LINE)
+pybin_scripts = $(END_OF_LINE)
 
 endif
 

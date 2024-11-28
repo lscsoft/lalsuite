@@ -73,3 +73,10 @@ def public_sft_directory(filename):
         SFT_subdirectory = f"GPS{G_million}M"
 
     return os.path.join(SFT_base_directory, SFT_subdirectory)
+
+
+def public_sft_directory_readme_md():
+    # return README.md describing the SFT file/directory naming scheme
+    path = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(path, "public_sft_directory_README.md")) as f:
+        return f.read()

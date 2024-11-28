@@ -298,8 +298,7 @@ void test_gaussian_output( LALInferenceRunState *runState )
 }
 
 
-typedef struct
-  tagul_params {
+typedef struct tagul_params {
   double mu;
   double sigma;
   double min;

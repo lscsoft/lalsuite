@@ -268,7 +268,7 @@ int main( int argc, char *argv[] )
   }
 
   int ephemstart = 630720013; /* GPS time of Jan 1, 2000, 00:00:00 UTC */
-  int ephemend = 1261872015;  /* GPS time of Jan 1, 2020, 00:00:00 UTC */
+  int ephemend = 1893024018;  /* GPS time of Jan 1, 2040, 00:00:00 UTC */
 
   if ( gpstime < ephemstart || gpstime > ephemend ) {
     fprintf( stderr, "Time (GPS %.9lf) is outside the ephemeris file ranges!\n", gpstime );

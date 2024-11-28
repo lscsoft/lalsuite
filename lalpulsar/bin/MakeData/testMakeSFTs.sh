@@ -26,11 +26,13 @@ done
 mkdir -p MFDv5/
 MFDv5_cmdline_base="lalpulsar_Makefakedata_v5 --IFOs H1 --sqrtSX 1e-24 --Tsft ${Tsft} --fmin 0 --Band ${Band} --injectionSources '{Alpha=0.1; Delta=0.4; Freq=50; f1dot=1e-10; h0=1e-24; cosi=0.7; refTime=${tstart1}}' --outSingleSFT false"
 cmdline="${MFDv5_cmdline_base} --outFrameDir MFDv5/ --outSFTdir MFDv5/ --startTime ${tstart1} --duration ${duration1}"
+echo $cmdline
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 cmdline="${MFDv5_cmdline_base} --outFrameDir MFDv5/ --outSFTdir MFDv5/ --startTime ${tstart2} --duration ${duration2}"
+echo $cmdline
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -63,11 +65,13 @@ pubRevision=1
 MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:mfdv5 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment'"
 MSFTs_cmdline_public="${MSFTs_cmdline_base} --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-revision ${pubRevision}"
 cmdline="${MSFTs_cmdline_public} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type rectangular"
+echo $cmdline
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 cmdline="${MSFTs_cmdline_public} --sft-write-path MSFTs/ --gps-start-time ${tstart2} --gps-end-time ${tend2} --window-type rectangular"
+echo $cmdline
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -88,6 +92,7 @@ for ts in ${timestamps}; do
     MSFTsft="./MSFTs/H-1_H1_${Tsft}SFT_${pubField}-${ts}-${Tsft}.sft"
     cmdline="lalpulsar_compareSFTs -V -e $tol -1 $MFDv5sft -2 $MSFTsft"
     echo "Comparing SFTs produced by MFDv5 and MakeSFTs, allowed tolerance=$tol:"
+    echo $cmdline
     if ! eval "$cmdline"; then
         echo "ERROR: something failed when running '$cmdline'"
         exit 1
@@ -98,6 +103,7 @@ done
 mkdir -p MSFTs-overlapped/
 MSFTs_cmdline_private="${MSFTs_cmdline_base} --observing-run 0 --misc-desc private"
 cmdline="${MSFTs_cmdline_private} --sft-write-path MSFTs-overlapped/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type rectangular --overlap-fraction 0.5"
+echo $cmdline
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -118,6 +124,7 @@ pubRevision=1
 MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:inval --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment'"
 MSFTs_cmdline_public="${MSFTs_cmdline_base} --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-revision ${pubRevision}"
 cmdline="${MSFTs_cmdline_public} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type rectangular"
+echo $cmdline
 if eval "$cmdline"; then
     echo "ERROR: something should have gone wrong but didn't when running '$cmdline'"
     exit 1
@@ -127,11 +134,32 @@ fi
 MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:inval --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment' --allow-skipping TRUE"
 MSFTs_cmdline_public="${MSFTs_cmdline_base} --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-revision ${pubRevision}"
 cmdline="${MSFTs_cmdline_public} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type rectangular"
+echo $cmdline
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 if ! test -f "./MSFTs/nosfts"; then
     echo "ERROR: could not find file './MSFTs/nosfts'"
+    exit 1
+fi
+
+## test edge case of SFTs ending right on a frames boundary
+tend3=$(echo "${tend1} + ${duration1}" | bc)
+cmdline="${MFDv5_cmdline_base} --outFrameDir MFDv5/ --outSFTdir MFDv5/ --startTime ${tend1} --duration ${duration1}"
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+framecache2="./framecache2"
+echo "H H1_mfdv5 ${tstart1} ${duration1} file://localhost$PWD/MFDv5/H-H1_mfdv5-${tstart1}-${duration1}.gwf"  > $framecache2
+echo "H H1_mfdv5 ${tend1} ${duration1} file://localhost$PWD/MFDv5/H-H1_mfdv5-${tend1}-${duration1}.gwf" >> $framecache2
+MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache2 --channel-name H1:mfdv5 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment'"
+MSFTs_cmdline_public="${MSFTs_cmdline_base} --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-revision ${pubRevision}"
+cmdline="${MSFTs_cmdline_public} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend3} --window-type rectangular"
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi

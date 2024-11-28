@@ -60,8 +60,8 @@ extern "C" {
  * Enumeration of allowed amplitude-prior types
  */
 typedef enum tagAmpPriorType_t {
-  AMP_PRIOR_TYPE_PHYSICAL = 0,	/**< 'physical' priors: isotropic pdf{cosi,psi,phi0} AND flat pdf(h0) */
-  AMP_PRIOR_TYPE_CANONICAL,	/**< 'canonical' priors: uniform in A^mu up to h_max */
+  AMP_PRIOR_TYPE_PHYSICAL = 0,  /**< 'physical' priors: isotropic pdf{cosi,psi,phi0} AND flat pdf(h0) */
+  AMP_PRIOR_TYPE_CANONICAL,     /**< 'canonical' priors: uniform in A^mu up to h_max */
   AMP_PRIOR_TYPE_LAST
 } AmpPriorType_t;
 
@@ -69,68 +69,67 @@ typedef enum tagAmpPriorType_t {
  * Signal (amplitude) parameter ranges
  */
 typedef struct tagAmplitudePrior_t {
-  pdf1D_t *pdf_h0Nat;	/**< pdf for h0/sqrt{Sn} */
-  REAL8 fixedSNR;	/**< alternative 1: adjust h0 to fix the optimal SNR of the signal */
-  BOOLEAN fixRhohMax;	/**< alternative 2: draw h0 with fixed rhohMax = h0Max * (detM)^(1/8) <==> canonical Fstat prior */
+  pdf1D_t *pdf_h0Nat;   /**< pdf for h0/sqrt{Sn} */
+  REAL8 fixedSNR;       /**< alternative 1: adjust h0 to fix the optimal SNR of the signal */
+  BOOLEAN fixRhohMax;   /**< alternative 2: draw h0 with fixed rhohMax = h0Max * (detM)^(1/8) <==> canonical Fstat prior */
 
-  pdf1D_t *pdf_cosi;	/**< pdf(cosi) */
-  pdf1D_t *pdf_psi;	/**< pdf(psi) */
-  pdf1D_t *pdf_phi0;	/**< pdf(phi0) */
+  pdf1D_t *pdf_cosi;    /**< pdf(cosi) */
+  pdf1D_t *pdf_psi;     /**< pdf(psi) */
+  pdf1D_t *pdf_phi0;    /**< pdf(phi0) */
 } AmplitudePrior_t;
 
 /**
  * struct for buffering of AM-coeffs, if signal for same sky-position is injected
  */
 typedef struct tagmultiAMBuffer_t {
-  SkyPosition skypos;		/**< sky-position for which we have AM-coeffs computed already */
-  MultiAMCoeffs *multiAM;;	/**< pre-computed AM-coeffs for skypos */
+  SkyPosition skypos;           /**< sky-position for which we have AM-coeffs computed already */
+  MultiAMCoeffs *multiAM;;      /**< pre-computed AM-coeffs for skypos */
 } multiAMBuffer_t;
 
 /**
  * Hold all (generally) randomly drawn injection parameters: skypos, amplitude-params, M_mu_nu, transient-window, SNR
  */
-typedef struct tagInjParams_t
-{
+typedef struct tagInjParams_t {
   SkyPosition skypos;
   PulsarAmplitudeParams ampParams;
   PulsarAmplitudeVect ampVect;
   MultiAMCoeffs multiAM;
   transientWindow_t transientWindow;
   REAL8 SNR;
-  REAL8 detM1o8;	// (detMp)^(1/8): rescale param between h0, and rhoh = h0 * (detMp)^(1/8)
+  REAL8 detM1o8;        // (detMp)^(1/8): rescale param between h0, and rhoh = h0 * (detMp)^(1/8)
 } InjParams_t;
 
 
 /*---------- Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
-int XLALDrawCorrelatedNoise ( PulsarAmplitudeVect n_mu, const gsl_matrix *L, gsl_rng * rng );
+int XLALDrawCorrelatedNoise( PulsarAmplitudeVect n_mu, const gsl_matrix *L, gsl_rng *rng );
 
 // ----- API to synthesize F-stat atoms for transient CW searches
-FstatAtomVector* XLALGenerateFstatAtomVector ( const DetectorStateSeries *detStates, const AMCoeffs *amcoeffs );
-MultiFstatAtomVector*XLALGenerateMultiFstatAtomVector ( const MultiDetectorStateSeries *multiDetStates, const MultiAMCoeffs *multiAM );
+FstatAtomVector *XLALGenerateFstatAtomVector( const DetectorStateSeries *detStates, const AMCoeffs *amcoeffs );
+MultiFstatAtomVector *XLALGenerateMultiFstatAtomVector( const MultiDetectorStateSeries *multiDetStates, const MultiAMCoeffs *multiAM );
 
-int XLALAddNoiseToFstatAtomVector ( FstatAtomVector *atoms, gsl_rng * rng );
-int XLALAddNoiseToMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms, gsl_rng * rng );
+int XLALAddNoiseToFstatAtomVector( FstatAtomVector *atoms, gsl_rng *rng );
+int XLALAddNoiseToMultiFstatAtomVector( MultiFstatAtomVector *multiAtoms, gsl_rng *rng );
 
-REAL8 XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
-REAL8 XLALAddSignalToMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow, INT4 lineX );
+REAL8 XLALAddSignalToFstatAtomVector( FstatAtomVector *atoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow );
+REAL8 XLALAddSignalToMultiFstatAtomVector( MultiFstatAtomVector *multiAtoms, AntennaPatternMatrix *M_mu_nu, const PulsarAmplitudeVect A_Mu, transientWindow_t transientWindow, INT4 lineX );
 
-int XLALRescaleMultiFstatAtomVector ( MultiFstatAtomVector* multiAtoms,	REAL8 rescale );
-int write_InjParams_to_fp ( FILE * fp, const InjParams_t *par, const UINT4 dataStartGPS, const BOOLEAN outputMmunuX, const UINT4 numDetectors );
+int XLALRescaleMultiFstatAtomVector( MultiFstatAtomVector *multiAtoms, REAL8 rescale );
+int write_InjParams_to_fp( FILE *fp, const InjParams_t *par, const UINT4 dataStartGPS, const BOOLEAN outputMmunuX, const UINT4 numDetectors );
 
 MultiFstatAtomVector *
-XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,
-                               SkyPosition skypos,
-                               AmplitudePrior_t AmpPrior,
-                               transientWindowRange_t transientInjectRange,
-                               const MultiDetectorStateSeries *multiDetStates,
-                               BOOLEAN SignalOnly,
-                               multiAMBuffer_t *multiAMBuffer,
-                               gsl_rng *rng,
-                               INT4 lineX,
-                               const MultiNoiseWeights *multiNoiseWeights
-                               );
+XLALSynthesizeTransientAtoms( InjParams_t *injParamsOut,
+                              SkyPosition skypos,
+                              AmplitudePrior_t AmpPrior,
+                              transientWindowRange_t transientInjectRange,
+                              const MultiDetectorStateSeries *multiDetStates,
+                              BOOLEAN SignalOnly,
+                              multiAMBuffer_t *multiAMBuffer,
+                              gsl_rng *rng,
+                              INT4 lineX,
+                              const MultiNoiseWeights *multiNoiseWeights
+                            );
 
 /** @} */
 

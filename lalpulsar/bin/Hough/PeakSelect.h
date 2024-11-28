@@ -110,22 +110,22 @@ extern "C" {
  * 10. Structure, enum, union, etc., typdefs.
  */
 
-/** Explicit peakgram structure -- 1 if power in bin is above threshold and 0 if below */  
-typedef struct tagUCHARPeakGram{ 
+/** Explicit peakgram structure -- 1 if power in bin is above threshold and 0 if below */
+typedef struct tagUCHARPeakGram {
   LIGOTimeGPS  epoch; /**< epoch of first series sample */
   REAL8        timeBase; /**< coherent time baseline used to construct peakgram */
   INT4         fminBinIndex; /**< first frequency bin of peakgram */
   INT4         length; /**< number of elements in data */
   INT4         nPeaks; /**< number of peaks selected in data */
   UCHAR       *data;  /**< pointer to the data {0,1}*/
-}UCHARPeakGram; 
-  
+} UCHARPeakGram;
+
 /** structure containing psd and periodogram of a sft -- obsolete -- use LAL functions */
-typedef struct tagREAL8PeriodoPSD{ 
+typedef struct tagREAL8PeriodoPSD {
   REAL8Periodogram1    psd;
   REAL8Periodogram1    periodogram;
-}REAL8PeriodoPSD; 
-  
+} REAL8PeriodoPSD;
+
 /*
  * 11. Extern Global variables. (discouraged)
  */
@@ -136,42 +136,42 @@ typedef struct tagREAL8PeriodoPSD{
  */
 
 /** to compute mean power from a periodogram -- obsolete -- use LAL functions in NormalizeSFTRngMed.c */
-void LALComputeMeanPower (LALStatus  *status,		/**< pointer to LALStatus structure */
-			  REAL8                *mean, /**< mean power */
-			  REAL8Periodogram1    *peri /**< periodogram */);
+void LALComputeMeanPower( LALStatus  *status,           /**< pointer to LALStatus structure */
+                          REAL8                *mean, /**< mean power */
+                          REAL8Periodogram1    *peri /**< periodogram */ );
 
 /** select peakgram in white noise -- obsolete -- use LAL functions in NormalizeSFTRngMed.c */
-void LALSelectPeakWhiteNoise(LALStatus  *status,
-			     UCHARPeakGram        *pg,
-			     REAL8                *thr, /*absolute threshold */
-			     REAL8Periodogram1    *peri);
+void LALSelectPeakWhiteNoise( LALStatus  *status,
+                              UCHARPeakGram        *pg,
+                              REAL8                *thr, /*absolute threshold */
+                              REAL8Periodogram1    *peri );
 
-/** Compress explicit peak gram */	     
-void LALUCHAR2HOUGHPeak(LALStatus  *status,		/**< pointer to LALStatus structure */
-			HOUGHPeakGram        *pgOut, /**< compressed peakgram */
-			UCHARPeakGram        *pgIn /**< explicit peakgram -- collection of 1s and 0s*/ 
-			);
+/** Compress explicit peak gram */
+void LALUCHAR2HOUGHPeak( LALStatus  *status,            /**< pointer to LALStatus structure */
+                         HOUGHPeakGram        *pgOut, /**< compressed peakgram */
+                         UCHARPeakGram        *pgIn /**< explicit peakgram -- collection of 1s and 0s*/
+                       );
 
 /** Wrapper for LALRunningMedian code -- obsolete -- use LAL functions in NormalizeSFTRngMed.c */
-void LALPeriodo2PSDrng (LALStatus  *status,		/**< pointer to LALStatus structure */
-			REAL8Periodogram1    *psd, /**< output psd */
-			REAL8Periodogram1    *peri, /**< input periodogram */
-			INT4                *blocksRNG /**< running median block size */
-			);
+void LALPeriodo2PSDrng( LALStatus  *status,             /**< pointer to LALStatus structure */
+                        REAL8Periodogram1    *psd, /**< output psd */
+                        REAL8Periodogram1    *peri, /**< input periodogram */
+                        INT4                *blocksRNG /**< running median block size */
+                      );
 
 /** Function for selecting peaks in colored noise -- obsolete -- use LAL functions in NormalizeSFTRngMed.c */
-void LALSelectPeakColorNoise(LALStatus  *status,		/**< pointer to LALStatus structure */
-			     UCHARPeakGram        *pg,  /**< output peakgram */
-			     REAL8                *thr, /**< threshold reltive to psd */
-			     REAL8PeriodoPSD      *in /**< input psd and periodogram */
-			     );
+void LALSelectPeakColorNoise( LALStatus  *status,               /**< pointer to LALStatus structure */
+                              UCHARPeakGram        *pg,  /**< output peakgram */
+                              REAL8                *thr, /**< threshold reltive to psd */
+                              REAL8PeriodoPSD      *in /**< input psd and periodogram */
+                            );
 
 /** Constructs peakgram from a normalized SFT -- uses standard pulsar data types */
-void SFTtoUCHARPeakGram(LALStatus        *status,		/**< pointer to LALStatus structure */
-			UCHARPeakGram    *pg, /**< output peakgram */
-			const SFTtype    *sft, /**< standard pulsar sft type */  
-			REAL8            thr /**< sft power threshold for peak selection */
-			);
+void SFTtoUCHARPeakGram( LALStatus        *status,              /**< pointer to LALStatus structure */
+                         UCHARPeakGram    *pg, /**< output peakgram */
+                         const SFTtype    *sft, /**< standard pulsar sft type */
+                         REAL8            thr /**< sft power threshold for peak selection */
+                       );
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

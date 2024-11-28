@@ -101,7 +101,6 @@ model = het.model(parupdate, usephase=True, updateSSB=True)
 from __future__ import division, print_function
 
 import numpy as np
-from six import string_types
 
 try:
     import lal
@@ -297,7 +296,7 @@ class HeterodynedCWSimulator(object):
             # value is already a lal.Detector
             self.__detector = det
         else:
-            if not isinstance(det, string_types):
+            if not isinstance(det, str):
                 raise TypeError("Detector name must be a string")
             else:
                 try:
@@ -489,7 +488,7 @@ class HeterodynedCWSimulator(object):
         if isinstance(par, PulsarParametersPy):
             return par
 
-        if isinstance(par, string_types):
+        if isinstance(par, str):
             try:
                 return PulsarParametersPy(par)
             except IOError:

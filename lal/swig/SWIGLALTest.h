@@ -68,317 +68,317 @@ extern COMPLEX8 swig_lal_test_COMPLEX8_vector[3];
 extern COMPLEX8 swig_lal_test_COMPLEX8_matrix[2][3];
 
 // Test fixed and dynamic arrays typemaps.
-void swig_lal_test_copyin_array1(REAL8 INPUT[3], REAL8 scale, REAL8 OUTPUT[3]);
-void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]);
-void swig_lal_test_copyin_array3(LIGOTimeGPS INPUT[2], REAL8 scale, LIGOTimeGPS OUTPUT[2]);
+void swig_lal_test_copyin_array1( REAL8 INPUT[3], REAL8 scale, REAL8 OUTPUT[3] );
+void swig_lal_test_copyin_array2( INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2] );
+void swig_lal_test_copyin_array3( LIGOTimeGPS INPUT[2], REAL8 scale, LIGOTimeGPS OUTPUT[2] );
 
 // Test input views of string array structs.
-BOOLEAN swig_lal_test_viewin_LALStringVector(LALStringVector* copyout, const LALStringVector* viewin);
+BOOLEAN swig_lal_test_viewin_LALStringVector( LALStringVector *copyout, const LALStringVector *viewin );
 #ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(LALStringVector, copyinout));
+SWIGLAL( COPYINOUT_ARRAYS( LALStringVector, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_copyinout_LALStringVector(LALStringVector* copyinout);
+BOOLEAN swig_lal_test_copyinout_LALStringVector( LALStringVector *copyinout );
 #ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(LALStringVector, copyinout));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( LALStringVector, copyinout ) );
 #endif // SWIG
 
 // Test input views of numeric array structs.
-BOOLEAN swig_lal_test_viewin_REAL4Vector(REAL4Vector* copyout, const REAL4Vector* viewin);
+BOOLEAN swig_lal_test_viewin_REAL4Vector( REAL4Vector *copyout, const REAL4Vector *viewin );
 #ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(REAL4Vector, viewin, viewout));
+SWIGLAL( VIEWIN_ARRAYS( REAL4Vector, viewin, viewout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewinout_REAL4Vector(REAL4Vector* viewout, REAL4Vector* viewin);
+BOOLEAN swig_lal_test_viewinout_REAL4Vector( REAL4Vector *viewout, REAL4Vector *viewin );
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(REAL4Vector, viewin, viewout));
-#endif // SWIG
-#ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(REAL4Vector, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_copyinout_REAL4Vector(REAL4Vector* copyinout);
-#ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(REAL4Vector, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewin_REAL8Vector(REAL8Vector* copyout, const REAL8Vector* viewin);
-#ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(REAL8Vector, viewin, viewout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewinout_REAL8Vector(REAL8Vector* viewout, REAL8Vector* viewin);
-#ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(REAL8Vector, viewin, viewout));
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( REAL4Vector, viewin, viewout ) );
 #endif // SWIG
 #ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(REAL8Vector, copyinout));
+SWIGLAL( COPYINOUT_ARRAYS( REAL4Vector, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_copyinout_REAL8Vector(REAL8Vector* copyinout);
+BOOLEAN swig_lal_test_copyinout_REAL4Vector( REAL4Vector *copyinout );
 #ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(REAL8Vector, copyinout));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( REAL4Vector, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewin_COMPLEX8Vector(COMPLEX8Vector* copyout, const COMPLEX8Vector* viewin);
+BOOLEAN swig_lal_test_viewin_REAL8Vector( REAL8Vector *copyout, const REAL8Vector *viewin );
 #ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(COMPLEX8Vector, viewin, viewout));
+SWIGLAL( VIEWIN_ARRAYS( REAL8Vector, viewin, viewout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewinout_COMPLEX8Vector(COMPLEX8Vector* viewout, COMPLEX8Vector* viewin);
+BOOLEAN swig_lal_test_viewinout_REAL8Vector( REAL8Vector *viewout, REAL8Vector *viewin );
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(COMPLEX8Vector, viewin, viewout));
-#endif // SWIG
-#ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(COMPLEX8Vector, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_copyinout_COMPLEX8Vector(COMPLEX8Vector* copyinout);
-#ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(COMPLEX8Vector, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewin_COMPLEX16Vector(COMPLEX16Vector* copyout, const COMPLEX16Vector* viewin);
-#ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(COMPLEX16Vector, viewin, viewout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewinout_COMPLEX16Vector(COMPLEX16Vector* viewout, COMPLEX16Vector* viewin);
-#ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(COMPLEX16Vector, viewin, viewout));
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( REAL8Vector, viewin, viewout ) );
 #endif // SWIG
 #ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(COMPLEX16Vector, copyinout));
+SWIGLAL( COPYINOUT_ARRAYS( REAL8Vector, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_copyinout_COMPLEX16Vector(COMPLEX16Vector* copyinout);
+BOOLEAN swig_lal_test_copyinout_REAL8Vector( REAL8Vector *copyinout );
 #ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(COMPLEX16Vector, copyinout));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( REAL8Vector, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewin_REAL4VectorSequence(REAL4VectorSequence* copyout, const REAL4VectorSequence* viewin);
+BOOLEAN swig_lal_test_viewin_COMPLEX8Vector( COMPLEX8Vector *copyout, const COMPLEX8Vector *viewin );
 #ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(REAL4VectorSequence, viewin, viewout));
+SWIGLAL( VIEWIN_ARRAYS( COMPLEX8Vector, viewin, viewout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewinout_REAL4VectorSequence(REAL4VectorSequence* viewout, REAL4VectorSequence* viewin);
+BOOLEAN swig_lal_test_viewinout_COMPLEX8Vector( COMPLEX8Vector *viewout, COMPLEX8Vector *viewin );
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(REAL4VectorSequence, viewin, viewout));
-#endif // SWIG
-#ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(REAL4VectorSequence, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_copyinout_REAL4VectorSequence(REAL4VectorSequence* copyinout);
-#ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(REAL4VectorSequence, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewin_REAL8VectorSequence(REAL8VectorSequence* copyout, const REAL8VectorSequence* viewin);
-#ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(REAL8VectorSequence, viewin, viewout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewinout_REAL8VectorSequence(REAL8VectorSequence* viewout, REAL8VectorSequence* viewin);
-#ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(REAL8VectorSequence, viewin, viewout));
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( COMPLEX8Vector, viewin, viewout ) );
 #endif // SWIG
 #ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(REAL8VectorSequence, copyinout));
+SWIGLAL( COPYINOUT_ARRAYS( COMPLEX8Vector, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_copyinout_REAL8VectorSequence(REAL8VectorSequence* copyinout);
+BOOLEAN swig_lal_test_copyinout_COMPLEX8Vector( COMPLEX8Vector *copyinout );
 #ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(REAL8VectorSequence, copyinout));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( COMPLEX8Vector, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewin_COMPLEX8VectorSequence(COMPLEX8VectorSequence* copyout, const COMPLEX8VectorSequence* viewin);
+BOOLEAN swig_lal_test_viewin_COMPLEX16Vector( COMPLEX16Vector *copyout, const COMPLEX16Vector *viewin );
 #ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(COMPLEX8VectorSequence, viewin, viewout));
+SWIGLAL( VIEWIN_ARRAYS( COMPLEX16Vector, viewin, viewout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewinout_COMPLEX8VectorSequence(COMPLEX8VectorSequence* viewout, COMPLEX8VectorSequence* viewin);
+BOOLEAN swig_lal_test_viewinout_COMPLEX16Vector( COMPLEX16Vector *viewout, COMPLEX16Vector *viewin );
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(COMPLEX8VectorSequence, viewin, viewout));
-#endif // SWIG
-#ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(COMPLEX8VectorSequence, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_copyinout_COMPLEX8VectorSequence(COMPLEX8VectorSequence* copyinout);
-#ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(COMPLEX8VectorSequence, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewin_COMPLEX16VectorSequence(COMPLEX16VectorSequence* copyout, const COMPLEX16VectorSequence* viewin);
-#ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(COMPLEX16VectorSequence, viewin, viewout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewinout_COMPLEX16VectorSequence(COMPLEX16VectorSequence* viewout, COMPLEX16VectorSequence* viewin);
-#ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(COMPLEX16VectorSequence, viewin, viewout));
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( COMPLEX16Vector, viewin, viewout ) );
 #endif // SWIG
 #ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(COMPLEX16VectorSequence, copyinout));
+SWIGLAL( COPYINOUT_ARRAYS( COMPLEX16Vector, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_copyinout_COMPLEX16VectorSequence(COMPLEX16VectorSequence* copyinout);
+BOOLEAN swig_lal_test_copyinout_COMPLEX16Vector( COMPLEX16Vector *copyinout );
 #ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(COMPLEX16VectorSequence, copyinout));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( COMPLEX16Vector, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewin_REAL4VectorSequence( REAL4VectorSequence *copyout, const REAL4VectorSequence *viewin );
+#ifdef SWIG
+SWIGLAL( VIEWIN_ARRAYS( REAL4VectorSequence, viewin, viewout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewinout_REAL4VectorSequence( REAL4VectorSequence *viewout, REAL4VectorSequence *viewin );
+#ifdef SWIG
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( REAL4VectorSequence, viewin, viewout ) );
+#endif // SWIG
+#ifdef SWIG
+SWIGLAL( COPYINOUT_ARRAYS( REAL4VectorSequence, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_copyinout_REAL4VectorSequence( REAL4VectorSequence *copyinout );
+#ifdef SWIG
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( REAL4VectorSequence, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewin_REAL8VectorSequence( REAL8VectorSequence *copyout, const REAL8VectorSequence *viewin );
+#ifdef SWIG
+SWIGLAL( VIEWIN_ARRAYS( REAL8VectorSequence, viewin, viewout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewinout_REAL8VectorSequence( REAL8VectorSequence *viewout, REAL8VectorSequence *viewin );
+#ifdef SWIG
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( REAL8VectorSequence, viewin, viewout ) );
+#endif // SWIG
+#ifdef SWIG
+SWIGLAL( COPYINOUT_ARRAYS( REAL8VectorSequence, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_copyinout_REAL8VectorSequence( REAL8VectorSequence *copyinout );
+#ifdef SWIG
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( REAL8VectorSequence, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewin_COMPLEX8VectorSequence( COMPLEX8VectorSequence *copyout, const COMPLEX8VectorSequence *viewin );
+#ifdef SWIG
+SWIGLAL( VIEWIN_ARRAYS( COMPLEX8VectorSequence, viewin, viewout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewinout_COMPLEX8VectorSequence( COMPLEX8VectorSequence *viewout, COMPLEX8VectorSequence *viewin );
+#ifdef SWIG
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( COMPLEX8VectorSequence, viewin, viewout ) );
+#endif // SWIG
+#ifdef SWIG
+SWIGLAL( COPYINOUT_ARRAYS( COMPLEX8VectorSequence, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_copyinout_COMPLEX8VectorSequence( COMPLEX8VectorSequence *copyinout );
+#ifdef SWIG
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( COMPLEX8VectorSequence, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewin_COMPLEX16VectorSequence( COMPLEX16VectorSequence *copyout, const COMPLEX16VectorSequence *viewin );
+#ifdef SWIG
+SWIGLAL( VIEWIN_ARRAYS( COMPLEX16VectorSequence, viewin, viewout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewinout_COMPLEX16VectorSequence( COMPLEX16VectorSequence *viewout, COMPLEX16VectorSequence *viewin );
+#ifdef SWIG
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( COMPLEX16VectorSequence, viewin, viewout ) );
+#endif // SWIG
+#ifdef SWIG
+SWIGLAL( COPYINOUT_ARRAYS( COMPLEX16VectorSequence, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_copyinout_COMPLEX16VectorSequence( COMPLEX16VectorSequence *copyinout );
+#ifdef SWIG
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( COMPLEX16VectorSequence, copyinout ) );
 #endif // SWIG
 #ifdef SWIGLAL_HAVE_LIBGSL
-BOOLEAN swig_lal_test_viewin_gsl_vector_float(gsl_vector_float* copyout, const gsl_vector_float* viewin);
+BOOLEAN swig_lal_test_viewin_gsl_vector_float( gsl_vector_float *copyout, const gsl_vector_float *viewin );
 #ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(gsl_vector_float, viewin, viewout));
+SWIGLAL( VIEWIN_ARRAYS( gsl_vector_float, viewin, viewout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewinout_gsl_vector_float(gsl_vector_float* viewout, gsl_vector_float* viewin);
+BOOLEAN swig_lal_test_viewinout_gsl_vector_float( gsl_vector_float *viewout, gsl_vector_float *viewin );
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_vector_float, viewin, viewout));
-#endif // SWIG
-#ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(gsl_vector_float, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_copyinout_gsl_vector_float(gsl_vector_float* copyinout);
-#ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_vector_float, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewin_gsl_vector(gsl_vector* copyout, const gsl_vector* viewin);
-#ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(gsl_vector, viewin, viewout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewinout_gsl_vector(gsl_vector* viewout, gsl_vector* viewin);
-#ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_vector, viewin, viewout));
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( gsl_vector_float, viewin, viewout ) );
 #endif // SWIG
 #ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(gsl_vector, copyinout));
+SWIGLAL( COPYINOUT_ARRAYS( gsl_vector_float, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_copyinout_gsl_vector(gsl_vector* copyinout);
+BOOLEAN swig_lal_test_copyinout_gsl_vector_float( gsl_vector_float *copyinout );
 #ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_vector, copyinout));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_vector_float, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewin_gsl_vector_complex_float(gsl_vector_complex_float* copyout, const gsl_vector_complex_float* viewin);
+BOOLEAN swig_lal_test_viewin_gsl_vector( gsl_vector *copyout, const gsl_vector *viewin );
 #ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(gsl_vector_complex_float, viewin, viewout));
+SWIGLAL( VIEWIN_ARRAYS( gsl_vector, viewin, viewout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewinout_gsl_vector_complex_float(gsl_vector_complex_float* viewout, gsl_vector_complex_float* viewin);
+BOOLEAN swig_lal_test_viewinout_gsl_vector( gsl_vector *viewout, gsl_vector *viewin );
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_vector_complex_float, viewin, viewout));
-#endif // SWIG
-#ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(gsl_vector_complex_float, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_copyinout_gsl_vector_complex_float(gsl_vector_complex_float* copyinout);
-#ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_vector_complex_float, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewin_gsl_vector_complex(gsl_vector_complex* copyout, const gsl_vector_complex* viewin);
-#ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(gsl_vector_complex, viewin, viewout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewinout_gsl_vector_complex(gsl_vector_complex* viewout, gsl_vector_complex* viewin);
-#ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_vector_complex, viewin, viewout));
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( gsl_vector, viewin, viewout ) );
 #endif // SWIG
 #ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(gsl_vector_complex, copyinout));
+SWIGLAL( COPYINOUT_ARRAYS( gsl_vector, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_copyinout_gsl_vector_complex(gsl_vector_complex* copyinout);
+BOOLEAN swig_lal_test_copyinout_gsl_vector( gsl_vector *copyinout );
 #ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_vector_complex, copyinout));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_vector, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewin_gsl_matrix_float(gsl_matrix_float* copyout, const gsl_matrix_float* viewin);
+BOOLEAN swig_lal_test_viewin_gsl_vector_complex_float( gsl_vector_complex_float *copyout, const gsl_vector_complex_float *viewin );
 #ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(gsl_matrix_float, viewin, viewout));
+SWIGLAL( VIEWIN_ARRAYS( gsl_vector_complex_float, viewin, viewout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewinout_gsl_matrix_float(gsl_matrix_float* viewout, gsl_matrix_float* viewin);
+BOOLEAN swig_lal_test_viewinout_gsl_vector_complex_float( gsl_vector_complex_float *viewout, gsl_vector_complex_float *viewin );
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_matrix_float, viewin, viewout));
-#endif // SWIG
-#ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix_float, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_copyinout_gsl_matrix_float(gsl_matrix_float* copyinout);
-#ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix_float, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewin_gsl_matrix(gsl_matrix* copyout, const gsl_matrix* viewin);
-#ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(gsl_matrix, viewin, viewout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewinout_gsl_matrix(gsl_matrix* viewout, gsl_matrix* viewin);
-#ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_matrix, viewin, viewout));
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( gsl_vector_complex_float, viewin, viewout ) );
 #endif // SWIG
 #ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix, copyinout));
+SWIGLAL( COPYINOUT_ARRAYS( gsl_vector_complex_float, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_copyinout_gsl_matrix(gsl_matrix* copyinout);
+BOOLEAN swig_lal_test_copyinout_gsl_vector_complex_float( gsl_vector_complex_float *copyinout );
 #ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix, copyinout));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_vector_complex_float, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewin_gsl_matrix_complex_float(gsl_matrix_complex_float* copyout, const gsl_matrix_complex_float* viewin);
+BOOLEAN swig_lal_test_viewin_gsl_vector_complex( gsl_vector_complex *copyout, const gsl_vector_complex *viewin );
 #ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(gsl_matrix_complex_float, viewin, viewout));
+SWIGLAL( VIEWIN_ARRAYS( gsl_vector_complex, viewin, viewout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_viewinout_gsl_matrix_complex_float(gsl_matrix_complex_float* viewout, gsl_matrix_complex_float* viewin);
+BOOLEAN swig_lal_test_viewinout_gsl_vector_complex( gsl_vector_complex *viewout, gsl_vector_complex *viewin );
 #ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_matrix_complex_float, viewin, viewout));
-#endif // SWIG
-#ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix_complex_float, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_copyinout_gsl_matrix_complex_float(gsl_matrix_complex_float* copyinout);
-#ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix_complex_float, copyinout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewin_gsl_matrix_complex(gsl_matrix_complex* copyout, const gsl_matrix_complex* viewin);
-#ifdef SWIG
-SWIGLAL(VIEWIN_ARRAYS(gsl_matrix_complex, viewin, viewout));
-#endif // SWIG
-BOOLEAN swig_lal_test_viewinout_gsl_matrix_complex(gsl_matrix_complex* viewout, gsl_matrix_complex* viewin);
-#ifdef SWIG
-SWIGLAL_CLEAR(VIEWIN_ARRAYS(gsl_matrix_complex, viewin, viewout));
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( gsl_vector_complex, viewin, viewout ) );
 #endif // SWIG
 #ifdef SWIG
-SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix_complex, copyinout));
+SWIGLAL( COPYINOUT_ARRAYS( gsl_vector_complex, copyinout ) );
 #endif // SWIG
-BOOLEAN swig_lal_test_copyinout_gsl_matrix_complex(gsl_matrix_complex* copyinout);
+BOOLEAN swig_lal_test_copyinout_gsl_vector_complex( gsl_vector_complex *copyinout );
 #ifdef SWIG
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix_complex, copyinout));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_vector_complex, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewin_gsl_matrix_float( gsl_matrix_float *copyout, const gsl_matrix_float *viewin );
+#ifdef SWIG
+SWIGLAL( VIEWIN_ARRAYS( gsl_matrix_float, viewin, viewout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewinout_gsl_matrix_float( gsl_matrix_float *viewout, gsl_matrix_float *viewin );
+#ifdef SWIG
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( gsl_matrix_float, viewin, viewout ) );
+#endif // SWIG
+#ifdef SWIG
+SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix_float, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_copyinout_gsl_matrix_float( gsl_matrix_float *copyinout );
+#ifdef SWIG
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix_float, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewin_gsl_matrix( gsl_matrix *copyout, const gsl_matrix *viewin );
+#ifdef SWIG
+SWIGLAL( VIEWIN_ARRAYS( gsl_matrix, viewin, viewout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewinout_gsl_matrix( gsl_matrix *viewout, gsl_matrix *viewin );
+#ifdef SWIG
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( gsl_matrix, viewin, viewout ) );
+#endif // SWIG
+#ifdef SWIG
+SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_copyinout_gsl_matrix( gsl_matrix *copyinout );
+#ifdef SWIG
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewin_gsl_matrix_complex_float( gsl_matrix_complex_float *copyout, const gsl_matrix_complex_float *viewin );
+#ifdef SWIG
+SWIGLAL( VIEWIN_ARRAYS( gsl_matrix_complex_float, viewin, viewout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewinout_gsl_matrix_complex_float( gsl_matrix_complex_float *viewout, gsl_matrix_complex_float *viewin );
+#ifdef SWIG
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( gsl_matrix_complex_float, viewin, viewout ) );
+#endif // SWIG
+#ifdef SWIG
+SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix_complex_float, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_copyinout_gsl_matrix_complex_float( gsl_matrix_complex_float *copyinout );
+#ifdef SWIG
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix_complex_float, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewin_gsl_matrix_complex( gsl_matrix_complex *copyout, const gsl_matrix_complex *viewin );
+#ifdef SWIG
+SWIGLAL( VIEWIN_ARRAYS( gsl_matrix_complex, viewin, viewout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_viewinout_gsl_matrix_complex( gsl_matrix_complex *viewout, gsl_matrix_complex *viewin );
+#ifdef SWIG
+SWIGLAL_CLEAR( VIEWIN_ARRAYS( gsl_matrix_complex, viewin, viewout ) );
+#endif // SWIG
+#ifdef SWIG
+SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix_complex, copyinout ) );
+#endif // SWIG
+BOOLEAN swig_lal_test_copyinout_gsl_matrix_complex( gsl_matrix_complex *copyinout );
+#ifdef SWIG
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix_complex, copyinout ) );
 #endif // SWIG
 #endif // SWIGLAL_HAVE_LIBGSL
 
 // Test dynamic array of pointer access.
 typedef struct tagswig_lal_test_arrayofdata {
 #ifdef SWIG
-  SWIGLAL(ARRAY_STRUCT_1D(swig_lal_test_arrayofdata, INT4, data, UINT4, length));
+  SWIGLAL( ARRAY_STRUCT_1D( swig_lal_test_arrayofdata, INT4, data, UINT4, length ) );
 #endif // SWIG
   UINT4 length;
   INT4 *data;
 } swig_lal_test_arrayofdata;
 typedef struct tagswig_lal_test_arrayofptrs {
 #ifdef SWIG
-  SWIGLAL(ARRAY_STRUCT_1D(swig_lal_test_arrayofptrs, swig_lal_test_arrayofdata*, data, UINT4, length));
+  SWIGLAL( ARRAY_STRUCT_1D( swig_lal_test_arrayofptrs, swig_lal_test_arrayofdata *, data, UINT4, length ) );
 #endif // SWIG
   UINT4 length;
   swig_lal_test_arrayofdata **data;
 } swig_lal_test_arrayofptrs;
-swig_lal_test_arrayofptrs* swig_lal_test_Create_arrayofptrs(UINT4 length);
-void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs* ap);
+swig_lal_test_arrayofptrs *swig_lal_test_Create_arrayofptrs( UINT4 length );
+void swig_lal_test_Destroy_arrayofptrs( swig_lal_test_arrayofptrs *ap );
 
 // Test typemaps for strings and double pointers
 #ifdef SWIG
-SWIGLAL(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
+SWIGLAL( INOUT_STRUCTS( swig_lal_test_struct **, ptr_ptr, ptr_null_ptr, null_ptr_ptr ) );
 #endif // SWIG
 int swig_lal_test_typemaps_string_ptrptr(
   const char *str, const char *empty_str, const char *null_str,
-  swig_lal_test_struct** ptr_ptr, swig_lal_test_struct** ptr_null_ptr, swig_lal_test_struct** null_ptr_ptr
-  );
+  swig_lal_test_struct **ptr_ptr, swig_lal_test_struct **ptr_null_ptr, swig_lal_test_struct **null_ptr_ptr
+);
 #ifdef SWIG
-SWIGLAL_CLEAR(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
+SWIGLAL_CLEAR( INOUT_STRUCTS( swig_lal_test_struct **, ptr_ptr, ptr_null_ptr, null_ptr_ptr ) );
 #endif // SWIG
 #ifdef SWIG
-SWIGLAL(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr));
+SWIGLAL( INOUT_STRUCTS( swig_lal_test_struct **, ptr_ptr ) );
 #endif // SWIG
 int swig_lal_test_typemaps_ptrptr(
-  swig_lal_test_struct** ptr_ptr
-  );
+  swig_lal_test_struct **ptr_ptr
+);
 #ifdef SWIG
-SWIGLAL_CLEAR(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr));
+SWIGLAL_CLEAR( INOUT_STRUCTS( swig_lal_test_struct **, ptr_ptr ) );
 #endif // SWIG
 
 // Test LIGOTimeGPS operations.
 typedef struct tagswig_lal_test_gps {
   LIGOTimeGPS t;
 } swig_lal_test_gps;
-REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps);
+REAL8 swig_lal_test_noptrgps( const LIGOTimeGPS gps );
 
 // Test Python dict to LALDict typemap
-int swig_lal_test_pydict_to_laldict(LALDict *laldict);
+int swig_lal_test_pydict_to_laldict( LALDict *laldict );
 
 // Test Python conversion of NumPy integer types
-INT8 swig_lal_test_numpy_int_types(int a, INT2 b, INT4 c, INT8 d);
-UINT8 swig_lal_test_numpy_uint_types(unsigned int a, UINT2 b, UINT4 c, UINT8 d);
-REAL8 swig_lal_test_numpy_flt_types(REAL4 a, REAL8 b, REAL4 c, REAL8 d);
-COMPLEX16 swig_lal_test_numpy_cpx_types(COMPLEX8 a, COMPLEX16 b, COMPLEX8 c, COMPLEX16 d);
+INT8 swig_lal_test_numpy_int_types( int a, INT2 b, INT4 c, INT8 d );
+UINT8 swig_lal_test_numpy_uint_types( unsigned int a, UINT2 b, UINT4 c, UINT8 d );
+REAL8 swig_lal_test_numpy_flt_types( REAL4 a, REAL8 b, REAL4 c, REAL8 d );
+COMPLEX16 swig_lal_test_numpy_cpx_types( COMPLEX8 a, COMPLEX16 b, COMPLEX8 c, COMPLEX16 d );
 
 #ifdef __cplusplus
 }

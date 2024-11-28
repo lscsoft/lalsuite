@@ -41,6 +41,7 @@ python/lalpulsar/__init__.py
 python/lalpulsar/_lalpulsar*
 python/lalpulsar/git_version.py
 python/lalpulsar/lalpulsar.py
+python/lalpulsar/public_sft_directory_README.dox
 lib/config.h
 lib/config.h.in
 lib/git_version
@@ -53,8 +54,6 @@ lib/LALPulsarVCSInfoHeader.h
 lib/stamp-h1
 lib/stamp-h2
 bin/*/*.testdir
-bin/CreateEphemeris/lalpulsar_create_solar_system_ephemeris
-bin/CreateEphemeris/lalpulsar_create_solar_system_ephemeris_python
 bin/CreateEphemeris/lalpulsar_create_time_correction_ephemeris
 bin/CrossCorr/lalpulsar_combine_crosscorr_toplists
 bin/CrossCorr/lalpulsar_crosscorr_v2
@@ -108,6 +107,8 @@ bin/MakeData/lalpulsar_MakeSFTs
 bin/MakeData/lalpulsar_Makefakedata_v4
 bin/MakeData/lalpulsar_Makefakedata_v5
 bin/MakeData/makeMultiChFrame
+bin/PiecewiseSearch/lalpulsar_PiecewiseSearch
+bin/PiecewiseSearch/lalpulsar_PiecewiseSearchTemplateBank
 bin/SFTTools/SFTwrite
 bin/SFTTools/lalpulsar_ComputePSD
 bin/SFTTools/lalpulsar_SFTclean

@@ -28,6 +28,7 @@ BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: help2man >= 1.37
+BuildRequires: less
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
 BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
@@ -45,10 +46,12 @@ BuildRequires: epel-rpm-macros
 BuildRequires: python%{python3_pkgversion}
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-astropy
+BuildRequires: python%{python3_pkgversion}-h5py
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
+BuildRequires: python%{python3_pkgversion}-lscsoft-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
 
@@ -85,6 +88,7 @@ rountines that use the LAL Pulsar Library.
 # liblalpulsar
 %package -n lib%{name}
 Summary: LVK Algorithm Simulation Library - library package
+Requires: less
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalframe >= @MIN_LALFRAME_VERSION@
 Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
@@ -120,11 +124,14 @@ Summary: Python %{python3_version} bindings for LALPulsar
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-astropy
+Requires: python%{python3_pkgversion}-h5py
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
+Requires: python%{python3_pkgversion}-lscsoft-glue >= @MIN_GLUE_VERSION@
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
+# BuildRequires: python3-sympy - not yet available
 Obsoletes: python2-%{name} < 3.1.0-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
@@ -213,6 +220,15 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Nov 04 2024 Adam Mercer <adam.mercer@ligo.org> 7.0.1-1
+- Update for 7.0.1
+
+* Mon Aug 05 2024 Adam Mercer <adam.mercer@ligo.org> 7.0.0-1
+- Update for 7.0.0
+
+* Mon Mar 11 2024 Duncan Macleod <duncan.macleod@ligo.org> 6.1.0-1
+- Update for 6.1.0
+
 * Fri Oct 20 2023 Adam Mercer <adam.mercer@ligo.org> 6.0.6-1
 - Update for 6.0.6
 

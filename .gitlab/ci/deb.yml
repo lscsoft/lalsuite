@@ -1,0 +1,184 @@
+# ----------------------------------------------------------------------
+# LALSuite: Debian package-level build
+# ----------------------------------------------------------------------
+
+# -- templates
+
+.debuild:
+  extends:
+    - .debian:deb
+    - .build-from-tarball
+  image: igwn/base:bookworm
+  variables:
+    # tell debhelper to parallelise the build
+    DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
+  # before_script: comes from .debian:deb
+  script:
+    - !reference [.build-init]
+    - PACKAGE=${CI_JOB_NAME%%:*}
+    # install extra build requirements
+    - apt-get install -y -q -q
+          lintian
+    # setup local apt repository to house upstream packages
+    - if test -n "$(find . -maxdepth 1 -name '*.deb' -print -quit)"; then
+          apt-get -y -q -q install local-apt-repository;
+          mkdir -pv /srv/local-apt-repository;
+          mv -v *.deb /srv/local-apt-repository;
+          /usr/lib/local-apt-repository/rebuild;
+          apt-get -y -q update;
+      fi
+    # create orig tarball
+    - cd ${PACKAGE}/
+    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
+    - SUFFIX=$(basename $TARBALL | sed 's/.*\.\(tar\..*\)/\1/')
+    - VERSION=$(basename $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
+    - cd ${CI_PROJECT_DIR}/
+    - cp ${TARBALL} ${PACKAGE}_${VERSION}.orig.${SUFFIX}
+    # unpack tarball
+    - export DEBFULLNAME="GitLab"
+    - export DEBEMAIL="gitlab@git.ligo.org"
+    - tar -xf ${TARBALL}
+    - cd ${PACKAGE}-*/
+    # update changelog
+    - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
+    # install build dependencies
+    - mk-build-deps
+          --tool "apt-get -y -q -o Debug::pkgProblemResolver=yes --no-install-recommends"
+          --install
+          --remove
+    - rm -rfv *-build-deps_*
+    # build packages
+    - debuild
+         --prepend-path=/usr/lib/ccache --set-envvar=CCACHE_DIR=${CCACHE_DIR}
+         -us -uc -r
+         --lintian-opts --color=always --allow-root
+    # print package info
+    - set +x
+    - cd ${CI_PROJECT_DIR}
+    - for debf in *.deb; do
+          echo "===== ${debf}";
+          dpkg --info "${debf}";
+          dpkg --contents "${debf}";
+      done
+  artifacts:
+    expire_in: 18h
+    paths:
+      # build packages
+      - "${CI_JOB_NAME%%:*}*.changes"
+      - "${CI_JOB_NAME%%:*}*.deb"
+      - "lib${CI_JOB_NAME%%:*}*.deb"
+      - "python*-${CI_JOB_NAME%%:*}*.deb"
+      - "${CI_JOB_NAME%%:*}*.dsc"
+      # log files
+      - "${CI_JOB_NAME%%:*}*/**/config.log"
+      - "${CI_JOB_NAME%%:*}*/**/test-suite.log"
+      # generated sources
+      - "${CI_JOB_NAME%%:*}*/**/swiglal_lal*_python.c"
+      # the orig tarball
+      - "${CI_JOB_NAME%%:*}*.orig.*"
+    reports:
+      junit: "${CI_JOB_NAME%%:*}-*/**/*junit*.xml"
+    when: always
+  rules:
+    - !reference [.ci-debian, rules]
+    - !reference [.ci-merge-build, rules]
+    - !reference [.ci-nightly-deploy, rules]
+    - !reference [.ci-lalsuite-tag-build, rules]
+    - !reference [.ci-docker, rules]
+
+# -- builds
+
+lal:deb:
+  extends:
+    - .debuild
+    - .lal
+  needs:
+    - !reference [.lal, needs]
+
+lalframe:deb:
+  extends:
+    - .debuild
+    - .lalframe
+  needs:
+    - !reference [.lalframe, needs]
+    - lal:deb
+
+lalmetaio:deb:
+  extends:
+    - .debuild
+    - .lalmetaio
+  needs:
+    - !reference [.lalmetaio, needs]
+    - lal:deb
+
+lalsimulation:deb:
+  extends:
+    - .debuild
+    - .lalsimulation
+  needs:
+    - !reference [.lalsimulation, needs]
+    - lal:deb
+
+lalburst:deb:
+  extends:
+    - .debuild
+    - .lalburst
+  needs:
+    - !reference [.lalburst, needs]
+    - lal:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+
+lalinspiral:deb:
+  extends:
+    - .debuild
+    - .lalinspiral
+  needs:
+    - !reference [.lalinspiral, needs]
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+
+lalinference:deb:
+  extends:
+    - .debuild
+    - .lalinference
+  needs:
+    - !reference [.lalinference, needs]
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalinspiral:deb
+
+lalpulsar:deb:
+  extends:
+    - .debuild
+    - .lalpulsar
+  needs:
+    - !reference [.lalpulsar, needs]
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalinspiral:deb
+    - lalinference:deb
+
+lalapps:deb:
+  extends:
+    - .debuild
+    - .lalapps
+  needs:
+    - !reference [.lalapps, needs]
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalinspiral:deb
+    - lalinference:deb
+    - lalpulsar:deb

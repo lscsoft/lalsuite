@@ -20,6 +20,9 @@
 
 static int EnforcePrimaryMassIsm1(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8 *lambda2);
 
+static int EnforcePrimaryMassIsm1_v3(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8 *lambda2, REAL8 *chi1, REAL8 *chi2);
+
+
 static double SimNRTunedTidesFDTidalPhase(
     const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
     const REAL8 Xa, /**< Mass of companion 1 divided by total mass */
@@ -42,4 +45,20 @@ static double SimNRTunedTidesFDTidalPhase_v2(
     const REAL8 Xb, /**< Mass of companion 2 divided by total mass */
     const REAL8 mtot, /**< total mass (Msun) */
     const REAL8 kappa2T /**< tidal coupling constant. Eq. 2 in arXiv:1706.02969 */
+    );
+
+static double SimNRTunedTidesFDTidalPhase_v3(
+    const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
+    const REAL8 mtot, /**< total mass (Msun) */
+    const REAL8 NRTidalv3_coeffs[20], /**< NRTidalv3 coefficients*/
+    const REAL8 PN_coeffs[10] /**< 7.5 PN coefficients to be used as constraints*/
+    );
+
+static double SimNRTunedTidesFDTidalPhase_PN(
+    const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
+    const REAL8 Xa, /**< Mass of companion 1 divided by total mass */
+    const REAL8 mtot, /**< total mass (Msun) */
+    const REAL8 lambda1, /**< dimensionless tidal deformability of companion 1*/
+    const REAL8 lambda2, /**< dimensionless tidal deformability of companion 2*/
+    const REAL8 PN_coeffs[10] /**< 7.5 PN coefficients*/
     );

@@ -206,6 +206,8 @@ STYPE *STREAMREADSERIES(LALFrStream * stream, const char *chname,
     STYPE *series;
     size_t length;
 
+    XLAL_CHECK_NULL(duration >= 0.0, XLAL_EINVAL, "duration must be non-negative (%g given)", duration);
+
     /* seek to the relevant point in the stream */
    if (XLALFrStreamSeek(stream, start))
         XLAL_ERROR_NULL(XLAL_EFUNC);

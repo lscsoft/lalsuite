@@ -6,6 +6,11 @@
 
 {% set name = "lal" %}
 
+# default FFT implementation
+{% if fft_impl is not defined %}
+{% set fft_impl = "fftw" %}
+{% endif %}
+
 # set version based on nightly
 # (we rebuild the nightly version ourselves because the tarball might have
 #  been generated on a different day)
@@ -16,6 +21,10 @@
 {% else %}
 {% set version = base_version %}
 {% endif %}
+
+# avoid circular imports that would break migrations
+{% set migrating = False %}
+{% set migrating = True %}  # [python_impl!='cpython' or py>=312]
 
 # dependencies
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
@@ -29,7 +38,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepending: true
   error_overlinking: true
   number: 9999
   script_env:
@@ -107,11 +115,9 @@ outputs:
   - name: python-lal
     script: build-python.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - libzlib
-        - numpy
         - python
         # things we declare to help the solver, but don't actually need
         - mkl
@@ -137,14 +143,13 @@ outputs:
         - numpy
         - pytest  # [build_platform == target_platform]
         - python
-        - six
         - zlib
         # provided to assist the solver, but not actually used
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
       run:
         - {{ pin_subpackage('liblal', exact=True) }}
         - ligo-segments
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-dateutil
         - scipy
@@ -153,18 +158,16 @@ outputs:
         - freezegun
         - lscsoft-glue
         - pytest >=4.0.0a0
+        {% if not migrating %}
         - python-ligo-lw
+        {% endif %}
       source_files:
         - test/python
       commands:
-        - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python
-      imports:
-        - lal
-        - lal.antenna
-        - lal.gpstime
-        - lal.rate
-        - lal.series
-        - lal.utils
+        - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python {% if migrating -%}
+              --ignore test/python/test_rate.py
+              -k 'not lal.rate and not lal.series'
+        {%- endif %}
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
@@ -180,11 +183,9 @@ outputs:
   - name: lal
     script: install-bin.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - libzlib
-        - numpy
         - python
       string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:

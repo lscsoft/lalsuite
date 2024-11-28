@@ -74,22 +74,22 @@ typedef struct {
 } PorbEllipticalBoundInfo;
 
 static double PorbEllipticalBound(
-  const void* data,
+  const void *data,
   const size_t dim UNUSED,
   const gsl_matrix *cache UNUSED,
-  const gsl_vector* point
-  )
+  const gsl_vector *point
+)
 {
 
   // Get bounds info
-  const PorbEllipticalBoundInfo* info = (const PorbEllipticalBoundInfo*)data;
+  const PorbEllipticalBoundInfo *info = ( const PorbEllipticalBoundInfo * )data;
 
   // Get current value of Tasc
-  const double Tasc = gsl_vector_get(point, info->tasc_dim);
+  const double Tasc = gsl_vector_get( point, info->tasc_dim );
 
   double Tscaled = ( Tasc - info->T0p ) / info->sigTp;
-  double Pscaled = info->pmsigT * RE_SQRT( info->ksq - SQR(Tscaled) ) / info->sigTp;
-  if (!(info->sheared)) {
+  double Pscaled = info->pmsigT * RE_SQRT( info->ksq - SQR( Tscaled ) ) / info->sigTp;
+  if ( !( info->sheared ) ) {
     Pscaled += info->norb * info->sigP * Tscaled / info->sigTp;
   }
   // fprintf(stdout,"n=%d\n",info->norb);
@@ -101,9 +101,9 @@ static double PorbEllipticalBound(
   // fprintf(stdout,"Tasc = %.0f + %g\n",info->T0p,(Tasc-info->T0p));
   // fprintf(stdout,"+/-sigT=%g\n", info->pmsigT);
   // fprintf(stdout,"n*sigP*Tscaled/sigTp=%g\n",
-  //	  info->norb * info->sigP * Tscaled / info->sigTp);
+  //      info->norb * info->sigP * Tscaled / info->sigTp);
   // fprintf(stdout,"+/-sigT*sqrt(disc)/sigTp=%g\n",
-  //	  info->pmsigT * RE_SQRT( info->ksq - SQR(Tscaled) ) / info->sigTp);
+  //      info->pmsigT * RE_SQRT( info->ksq - SQR(Tscaled) ) / info->sigTp);
   // fprintf(stdout,"n*sigP/sigTp=%g\n",info->norb * info->sigP / info->sigTp);
   // fprintf(stdout,"+/-sigT/sigTp=%g\n",info->pmsigT / info->sigTp);
   // fprintf(stdout,"Porb bound = %g + %g\n",info->P0,info->sigP*Pscaled);
@@ -114,7 +114,7 @@ static double PorbEllipticalBound(
 }
 
 int XLALSetLatticeTilingPorbEllipticalBound(
-  LatticeTiling* tiling,
+  LatticeTiling *tiling,
   const size_t tasc_dimension,
   const size_t porb_dimension,
   const double P0,
@@ -124,16 +124,16 @@ int XLALSetLatticeTilingPorbEllipticalBound(
   const int norb,
   const double nsigma,
   const BOOLEAN useShearedPeriod
-  )
+)
 {
   // Check input
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tasc_dimension < porb_dimension, XLAL_EINVAL);
-  XLAL_CHECK(nsigma >= 0.0, XLAL_EINVAL);
-  XLAL_CHECK(P0 > 0.0, XLAL_EINVAL);
-  XLAL_CHECK(sigP >= 0.0, XLAL_EINVAL);
-  XLAL_CHECK(T0 > 0.0, XLAL_EINVAL);
-  XLAL_CHECK(sigT >= 0.0, XLAL_EINVAL);
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tasc_dimension < porb_dimension, XLAL_EINVAL );
+  XLAL_CHECK( nsigma >= 0.0, XLAL_EINVAL );
+  XLAL_CHECK( P0 > 0.0, XLAL_EINVAL );
+  XLAL_CHECK( sigP >= 0.0, XLAL_EINVAL );
+  XLAL_CHECK( T0 > 0.0, XLAL_EINVAL );
+  XLAL_CHECK( sigT >= 0.0, XLAL_EINVAL );
 
   // Set the parameter-space bound
   PorbEllipticalBoundInfo XLAL_INIT_DECL( info_lower );
@@ -142,14 +142,14 @@ int XLALSetLatticeTilingPorbEllipticalBound(
   info_lower.norb = info_upper.norb = norb;
   info_lower.T0p = info_upper.T0p = T0 + norb * P0;
   info_lower.P0 = info_upper.P0 = P0;
-  info_lower.sigTp = info_upper.sigTp = sqrt( SQR(sigT) + SQR(norb) * SQR(sigP) );
+  info_lower.sigTp = info_upper.sigTp = sqrt( SQR( sigT ) + SQR( norb ) * SQR( sigP ) );
   info_lower.pmsigT = -sigT;
   info_upper.pmsigT = sigT;
   info_lower.sigP = info_upper.sigP = sigP;
-  info_lower.ksq = info_upper.ksq = SQR(nsigma);
+  info_lower.ksq = info_upper.ksq = SQR( nsigma );
   info_lower.sheared = info_upper.sheared = useShearedPeriod;
 
-  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, porb_dimension, PorbEllipticalBound, sizeof( info_lower ), &info_lower, &info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, porb_dimension, PorbEllipticalBound, sizeof( info_lower ), &info_lower, &info_upper ) == XLAL_SUCCESS, XLAL_EFAILED );
 
   return XLAL_SUCCESS;
 

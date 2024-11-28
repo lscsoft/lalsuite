@@ -19,9 +19,10 @@ dependencies:
   - freezegun
   - c-compiler
   - gsl
+  - gwpy
   - h5py
   - hdf5
-  - healpy
+  - healpy >=1.17.3
   - help2man >=1.37
   - ldas-tools-framecpp <3.0.0a0
   - libframel <9.0.0a0
@@ -40,7 +41,7 @@ dependencies:
   - python
   #- python-ligo-lw  <-- depends upon python-lal
   - scipy >=0.9.0
-  - six
   - swig >=3.0.10
+  - sympy
   - tqdm
   - zlib

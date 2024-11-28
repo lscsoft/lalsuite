@@ -65,7 +65,7 @@ static REAL4 AntennaPatternIllCondDeterminant = INFINITY;
 /*---------- internal types ----------*/
 
 /*---------- internal prototypes ----------*/
-static inline REAL4 estimateAntennaPatternConditionNumber ( REAL4 A, REAL4 B, REAL4 C, REAL4 E );
+static inline REAL4 estimateAntennaPatternConditionNumber( REAL4 A, REAL4 B, REAL4 C, REAL4 E );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -76,46 +76,46 @@ static inline REAL4 estimateAntennaPatternConditionNumber ( REAL4 A, REAL4 B, RE
  *
  */
 int
-XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern function a(t) */
-				  REAL8 *bi,			/**< [out] antenna-pattern function b(t) */
-				  const SkyPosition *skypos,	/**< [in] skyposition {alpha, delta} */
-				  const LIGOTimeGPS *tGPS,	/**< [in] GPS time t */
-				  const LALDetector *site,	/**< [in] detector */
-				  const EphemerisData *edat	/**< [in] ephemeris-data */
-				  )
+XLALComputeAntennaPatternCoeffs( REAL8 *ai,                     /**< [out] antenna-pattern function a(t) */
+                                 REAL8 *bi,                    /**< [out] antenna-pattern function b(t) */
+                                 const SkyPosition *skypos,    /**< [in] skyposition {alpha, delta} */
+                                 const LIGOTimeGPS *tGPS,      /**< [in] GPS time t */
+                                 const LALDetector *site,      /**< [in] detector */
+                                 const EphemerisData *edat     /**< [in] ephemeris-data */
+                               )
 {
-  LALStatus XLAL_INIT_DECL(status);
-  EarthState XLAL_INIT_DECL(earth);
+  LALStatus XLAL_INIT_DECL( status );
+  EarthState XLAL_INIT_DECL( earth );
 
-  if ( !ai || !bi || !skypos || !tGPS || !site || !edat) {
+  if ( !ai || !bi || !skypos || !tGPS || !site || !edat ) {
     XLAL_ERROR( XLAL_EINVAL );
   }
 
-  XLAL_CHECK( XLALBarycenterEarth (&earth, tGPS, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALBarycenterEarth( &earth, tGPS, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- compute the detector tensor ---------- */
   REAL8 sinG, cosG, sinGcosG, sinGsinG, cosGcosG;
   SymmTensor3d detT;
 
-  sinG = sin ( earth.gmstRad );
-  cosG = cos ( earth.gmstRad );
+  sinG = sin( earth.gmstRad );
+  cosG = cos( earth.gmstRad );
 
   sinGsinG = sinG * sinG;
   sinGcosG = sinG * cosG;
   cosGcosG = cosG * cosG;
 
   detT.d11 = site->response[0][0] * cosGcosG
-        - 2 * site->response[0][1] * sinGcosG
-            + site->response[1][1] * sinGsinG;
+             - 2 * site->response[0][1] * sinGcosG
+             + site->response[1][1] * sinGsinG;
   detT.d22 = site->response[0][0] * sinGsinG
-        + 2 * site->response[0][1] * sinGcosG
-            + site->response[1][1] * cosGcosG;
-  detT.d12 = (site->response[0][0] - site->response[1][1]) * sinGcosG
-        + site->response[0][1] * (cosGcosG - sinGsinG);
+             + 2 * site->response[0][1] * sinGcosG
+             + site->response[1][1] * cosGcosG;
+  detT.d12 = ( site->response[0][0] - site->response[1][1] ) * sinGcosG
+             + site->response[0][1] * ( cosGcosG - sinGsinG );
   detT.d13 = site->response[0][2] * cosG
-            - site->response[1][2] * sinG;
+             - site->response[1][2] * sinG;
   detT.d23 = site->response[0][2] * sinG
-            + site->response[1][2] * cosG;
+             + site->response[1][2] * cosG;
   detT.d33 = site->response[2][2];
 
 
@@ -131,11 +131,11 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
   alpha = skypos->longitude;
   delta = skypos->latitude;
 
-  sin1delta = sin(delta);
-  cos1delta = cos(delta);
+  sin1delta = sin( delta );
+  cos1delta = cos( delta );
 
-  sin1alpha = sin(alpha);
-  cos1alpha = cos(alpha);
+  sin1alpha = sin( alpha );
+  cos1alpha = cos( alpha );
 
   xi1 = - sin1alpha;
   xi2 =  cos1alpha;
@@ -144,18 +144,18 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
   eta3 = - cos1delta;
 
   /*---------- Compute the a(t_i) and b(t_i) ---------- */
-  (*ai) = detT.d11 * ( xi1 * xi1 - eta1 * eta1 )
-    + 2 * detT.d12 * ( xi1*xi2 - eta1*eta2 )
-    - 2 * detT.d13 *             eta1 * eta3
-    +     detT.d22 * ( xi2*xi2 - eta2*eta2 )
-    - 2 * detT.d23 *             eta2 * eta3
-    -     detT.d33 *             eta3*eta3;
+  ( *ai ) = detT.d11 * ( xi1 * xi1 - eta1 * eta1 )
+            + 2 * detT.d12 * ( xi1 * xi2 - eta1 * eta2 )
+            - 2 * detT.d13 *             eta1 * eta3
+            +     detT.d22 * ( xi2 * xi2 - eta2 * eta2 )
+            - 2 * detT.d23 *             eta2 * eta3
+            -     detT.d33 *             eta3 * eta3;
 
-  (*bi) = detT.d11 * 2 * xi1 * eta1
-    + 2 * detT.d12 *   ( xi1 * eta2 + xi2 * eta1 )
-    + 2 * detT.d13 *     xi1 * eta3
-    +     detT.d22 * 2 * xi2 * eta2
-    + 2 * detT.d23 *     xi2 * eta3;
+  ( *bi ) = detT.d11 * 2 * xi1 * eta1
+            + 2 * detT.d12 * ( xi1 * eta2 + xi2 * eta1 )
+            + 2 * detT.d13 *     xi1 * eta3
+            +     detT.d22 * 2 * xi2 * eta2
+            + 2 * detT.d23 *     xi2 * eta3;
 
 
   return XLAL_SUCCESS;
@@ -185,89 +185,84 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
  * \note *) if multiWeights = NULL, we assume unit-weights.
  */
 int
-XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
+XLALWeightMultiAMCoeffs( MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
 {
 
   /* ----- input sanity checks ----- */
   if ( !multiAMcoef ) {
-    XLALPrintError ("%s: illegal NULL input received in 'multiAMcoefs'.\n", __func__ );
+    XLALPrintError( "%s: illegal NULL input received in 'multiAMcoefs'.\n", __func__ );
     XLAL_ERROR( XLAL_EINVAL );
   }
   UINT4 numDetectors = multiAMcoef->length;
   /* make sure identical number of detectors in amCoefs and weights */
-  if ( multiWeights && (multiWeights->length != numDetectors) ) {
-    XLALPrintError("%s: multiWeights must be NULL or have the same number of detectors (numDet=%d) as mulitAMcoef (numDet=%d)!\n", __func__, multiWeights->length, numDetectors );
+  if ( multiWeights && ( multiWeights->length != numDetectors ) ) {
+    XLALPrintError( "%s: multiWeights must be NULL or have the same number of detectors (numDet=%d) as mulitAMcoef (numDet=%d)!\n", __func__, multiWeights->length, numDetectors );
     XLAL_ERROR( XLAL_EINVAL );
   }
   /* make sure identical number of timesteps in a_X, b_X and (if given) weights w_X, respectively */
   UINT4 X;
-  for ( X = 0; X < numDetectors; X ++ )
-    {
-      UINT4 numStepsX = multiAMcoef->data[X]->a->length;
-      if ( numStepsX != multiAMcoef->data[X]->b->length ) {
-        XLALPrintError ("%s: per-SFT antenna-pattern series have different length: a_alpha (len=%d), b_alpha (len=%d)\n", __func__, numStepsX, multiAMcoef->data[X]->b->length );
-        XLAL_ERROR ( XLAL_EINVAL );
-      }
-      if ( multiWeights && (multiWeights->data[X]->length != numStepsX )) {
-        XLALPrintError("%s: multiWeights[X=%d] must be NULL or have the same length (len=%d) as mulitAMcoef[X] (len=%d)!\n", __func__, X, multiWeights->data[X]->length, numStepsX );
-        XLAL_ERROR( XLAL_EINVAL );
-      }
-    } // for X < numDetectors
+  for ( X = 0; X < numDetectors; X ++ ) {
+    UINT4 numStepsX = multiAMcoef->data[X]->a->length;
+    if ( numStepsX != multiAMcoef->data[X]->b->length ) {
+      XLALPrintError( "%s: per-SFT antenna-pattern series have different length: a_alpha (len=%d), b_alpha (len=%d)\n", __func__, numStepsX, multiAMcoef->data[X]->b->length );
+      XLAL_ERROR( XLAL_EINVAL );
+    }
+    if ( multiWeights && ( multiWeights->data[X]->length != numStepsX ) ) {
+      XLALPrintError( "%s: multiWeights[X=%d] must be NULL or have the same length (len=%d) as mulitAMcoef[X] (len=%d)!\n", __func__, X, multiWeights->data[X]->length, numStepsX );
+      XLAL_ERROR( XLAL_EINVAL );
+    }
+  } // for X < numDetectors
 
-  REAL4 Ad = 0, Bd = 0, Cd = 0, Ed = 0;	// multi-IFO values
+  REAL4 Ad = 0, Bd = 0, Cd = 0, Ed = 0; // multi-IFO values
   /* ---------- main loop over detectors X ---------- */
-  for ( X=0; X < numDetectors; X ++)
-    {
-      AMCoeffs *amcoeX = multiAMcoef->data[X];
-      UINT4 numStepsX = amcoeX->a->length;
+  for ( X = 0; X < numDetectors; X ++ ) {
+    AMCoeffs *amcoeX = multiAMcoef->data[X];
+    UINT4 numStepsX = amcoeX->a->length;
 
-      /* ----- if given, apply noise-weights to all Antenna-pattern coefficients from detector X ----- */
-      if ( multiWeights )
-        {
-          REAL8Vector *weightsX = multiWeights->data[X];
-          UINT4 alpha;	// SFT-index
-          REAL8 ooSinv_Tsft = 1.0 / multiWeights->Sinv_Tsft;
-          for(alpha = 0; alpha < numStepsX; alpha++)
-            {
-              REAL8 weight =  multiWeights->isNotNormalized ? weightsX->data[alpha]*ooSinv_Tsft : weightsX->data[alpha];
-              REAL8 Sqwi = sqrt ( weight );
-              /* apply noise-weights, *replace* original a, b by noise-weighed version! */
-	      amcoeX->a->data[alpha] *= Sqwi;
-	      amcoeX->b->data[alpha] *= Sqwi;
-            } // for alpha < numSteps
-        } // if weights
+    /* ----- if given, apply noise-weights to all Antenna-pattern coefficients from detector X ----- */
+    if ( multiWeights ) {
+      REAL8Vector *weightsX = multiWeights->data[X];
+      UINT4 alpha;  // SFT-index
+      REAL8 ooSinv_Tsft = 1.0 / multiWeights->Sinv_Tsft;
+      for ( alpha = 0; alpha < numStepsX; alpha++ ) {
+        REAL8 weight =  multiWeights->isNotNormalized ? weightsX->data[alpha] * ooSinv_Tsft : weightsX->data[alpha];
+        REAL8 Sqwi = sqrt( weight );
+        /* apply noise-weights, *replace* original a, b by noise-weighed version! */
+        amcoeX->a->data[alpha] *= Sqwi;
+        amcoeX->b->data[alpha] *= Sqwi;
+      } // for alpha < numSteps
+    } // if weights
 
-      UINT4 alpha;	// SFT-index
-      REAL4 AdX = 0, BdX = 0, CdX = 0, EdX = 0;	// single-IFO values
-      /* compute single-IFO antenna-pattern coefficients AX,BX,CX, by summing over time-steps 'alpha' */
-      for(alpha = 0; alpha < numStepsX; alpha++)
-        {
-          REAL4 ahat = amcoeX->a->data[alpha];
-          REAL4 bhat = amcoeX->b->data[alpha];
+    UINT4 alpha;      // SFT-index
+    REAL4 AdX = 0, BdX = 0, CdX = 0, EdX = 0; // single-IFO values
+    /* compute single-IFO antenna-pattern coefficients AX,BX,CX, by summing over time-steps 'alpha' */
+    for ( alpha = 0; alpha < numStepsX; alpha++ ) {
+      REAL4 ahat = amcoeX->a->data[alpha];
+      REAL4 bhat = amcoeX->b->data[alpha];
 
-          AdX += ahat * ahat;
-          BdX += bhat * bhat;
-          CdX += ahat * bhat;
-          // EdX = 0; // trivial for real-values a,b
-        } /* for alpha < numStepsX */
+      AdX += ahat * ahat;
+      BdX += bhat * bhat;
+      CdX += ahat * bhat;
+      // EdX = 0; // trivial for real-values a,b
+    } /* for alpha < numStepsX */
 
-      /* store those */
-      amcoeX->A = AdX;
-      amcoeX->B = BdX;
-      amcoeX->C = CdX;
-      amcoeX->D = XLALComputeAntennaPatternSqrtDeterminant ( AdX, BdX, CdX, EdX );
+    /* store those */
+    amcoeX->A = AdX;
+    amcoeX->B = BdX;
+    amcoeX->C = CdX;
+    amcoeX->D = XLALComputeAntennaPatternSqrtDeterminant( AdX, BdX, CdX, EdX );
 
-      /* compute multi-IFO antenna-pattern coefficients A,B,C,E by summing over IFOs X */
-      Ad += AdX;
-      Bd += BdX;
-      Cd += CdX;
-      // Ed = 0; // trivial for real-valued a,b
-    } /* for X < numDetectors */
+    /* compute multi-IFO antenna-pattern coefficients A,B,C,E by summing over IFOs X */
+    Ad += AdX;
+    Bd += BdX;
+    Cd += CdX;
+    // Ed = 0; // trivial for real-valued a,b
+  } /* for X < numDetectors */
 
   multiAMcoef->Mmunu.Ad = Ad;
   multiAMcoef->Mmunu.Bd = Bd;
   multiAMcoef->Mmunu.Cd = Cd;
-  multiAMcoef->Mmunu.Dd = XLALComputeAntennaPatternSqrtDeterminant ( Ad, Bd, Cd, Ed );
+  multiAMcoef->Mmunu.Dd = XLALComputeAntennaPatternSqrtDeterminant( Ad, Bd, Cd, Ed );
 
   if ( multiWeights ) {
     multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
@@ -299,20 +294,20 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
  *
  */
 AMCoeffs *
-XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
-                      SkyPosition skypos				/**< {alpha,delta} of the source */
-                      )
+XLALComputeAMCoeffs( const DetectorStateSeries *DetectorStates,         /**< timeseries of detector states */
+                     SkyPosition skypos                                /**< {alpha,delta} of the source */
+                   )
 {
   /* ---------- check input consistency ---------- */
   if ( !DetectorStates ) {
-    XLALPrintError ("%s: invalid NULL input 'DetectorStates'\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
+    XLALPrintError( "%s: invalid NULL input 'DetectorStates'\n", __func__ );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   /* currently requires sky-pos to be in equatorial coordinates (FIXME) */
   if ( skypos.system != COORDINATESYSTEM_EQUATORIAL ) {
-    XLALPrintError ("%s: only equatorial coordinates currently supported in 'skypos'\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
+    XLALPrintError( "%s: only equatorial coordinates currently supported in 'skypos'\n", __func__ );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   /*---------- We write components of xi and eta vectors in SSB-fixed coords */
@@ -321,8 +316,8 @@ XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries
 
   REAL4 sin1delta, cos1delta;
   REAL4 sin1alpha, cos1alpha;
-  XLAL_CHECK_NULL( XLALSinCosLUT (&sin1delta, &cos1delta, delta ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_NULL( XLALSinCosLUT (&sin1alpha, &cos1alpha, alpha ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL( XLALSinCosLUT( &sin1delta, &cos1delta, delta ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL( XLALSinCosLUT( &sin1alpha, &cos1alpha, alpha ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   REAL4 xi1 = - sin1alpha;
   REAL4 xi2 =  cos1alpha;
@@ -333,36 +328,35 @@ XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries
   /* prepare output vector */
   UINT4 numSteps = DetectorStates->length;
   AMCoeffs *coeffs;
-  if ( ( coeffs = XLALCreateAMCoeffs ( numSteps ) ) == NULL ) {
-    XLALPrintError ("%s: XLALCreateAMCoeffs(%d) failed\n", __func__, numSteps );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  if ( ( coeffs = XLALCreateAMCoeffs( numSteps ) ) == NULL ) {
+    XLALPrintError( "%s: XLALCreateAMCoeffs(%d) failed\n", __func__, numSteps );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
   /*---------- Compute the a(t_i) and b(t_i) ---------- */
   UINT4 i;
-  for ( i=0; i < numSteps; i++ )
-    {
-      REAL4 ai, bi;
+  for ( i = 0; i < numSteps; i++ ) {
+    REAL4 ai, bi;
 
-      SymmTensor3 *d = &(DetectorStates->data[i].detT);
+    SymmTensor3 *d = &( DetectorStates->data[i].detT );
 
-      ai =    d->d11 * ( xi1 * xi1 - eta1 * eta1 )
-	+ 2 * d->d12 * ( xi1*xi2 - eta1*eta2 )
-	- 2 * d->d13 *             eta1 * eta3
-	+     d->d22 * ( xi2*xi2 - eta2*eta2 )
-	- 2 * d->d23 *             eta2 * eta3
-	-     d->d33 *             eta3*eta3;
+    ai =    d->d11 * ( xi1 * xi1 - eta1 * eta1 )
+            + 2 * d->d12 * ( xi1 * xi2 - eta1 * eta2 )
+            - 2 * d->d13 *             eta1 * eta3
+            +     d->d22 * ( xi2 * xi2 - eta2 * eta2 )
+            - 2 * d->d23 *             eta2 * eta3
+            -     d->d33 *             eta3 * eta3;
 
-      bi =    d->d11 * 2 * xi1 * eta1
-	+ 2 * d->d12 *   ( xi1 * eta2 + xi2 * eta1 )
-	+ 2 * d->d13 *     xi1 * eta3
-	+     d->d22 * 2 * xi2 * eta2
-	+ 2 * d->d23 *     xi2 * eta3;
+    bi =    d->d11 * 2 * xi1 * eta1
+            + 2 * d->d12 * ( xi1 * eta2 + xi2 * eta1 )
+            + 2 * d->d13 *     xi1 * eta3
+            +     d->d22 * 2 * xi2 * eta2
+            + 2 * d->d23 *     xi2 * eta3;
 
-      coeffs->a->data[i] = ai;
-      coeffs->b->data[i] = bi;
+    coeffs->a->data[i] = ai;
+    coeffs->b->data[i] = bi;
 
-    } /* for i < numSteps */
+  } /* for i < numSteps */
 
   /* return the result */
   return coeffs;
@@ -382,50 +376,49 @@ XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries
  * \note *) an input of multiWeights = NULL corresponds to unit-weights
  */
 MultiAMCoeffs *
-XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, 	/**< [in] detector-states at timestamps t_i */
-                           const MultiNoiseWeights *multiWeights,		/**< [in] noise-weigths at timestamps t_i (can be NULL) */
-                           SkyPosition skypos					/**< source sky-position [in equatorial coords!] */
-                           )
+XLALComputeMultiAMCoeffs( const MultiDetectorStateSeries *multiDetStates,       /**< [in] detector-states at timestamps t_i */
+                          const MultiNoiseWeights *multiWeights,               /**< [in] noise-weigths at timestamps t_i (can be NULL) */
+                          SkyPosition skypos                                   /**< source sky-position [in equatorial coords!] */
+                        )
 {
   /* check input consistency */
   if ( !multiDetStates ) {
-    XLALPrintError ("%s: invalid NULL input argument 'multiDetStates'\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
+    XLALPrintError( "%s: invalid NULL input argument 'multiDetStates'\n", __func__ );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   UINT4 numDetectors = multiDetStates->length;
 
   /* prepare output vector */
   MultiAMCoeffs *ret;
-  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc( 1, %zu)\n", __func__, sizeof( *ret ) );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc( 1, %zu)\n", __func__, sizeof( *ret ) );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   ret->length = numDetectors;
-  if ( ( ret->data = XLALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(%d, %zu)\n", __func__, numDetectors, sizeof ( *ret->data ) );
-    XLALFree ( ret );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+  if ( ( ret->data = XLALCalloc( numDetectors, sizeof( *ret->data ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc(%d, %zu)\n", __func__, numDetectors, sizeof( *ret->data ) );
+    XLALFree( ret );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   /* loop over detectors and generate AMCoeffs for each one */
   UINT4 X;
-  for ( X=0; X < numDetectors; X ++ )
-    {
-      if ( (ret->data[X] = XLALComputeAMCoeffs ( multiDetStates->data[X], skypos )) == NULL ) {
-        XLALPrintError ("%s: call to XLALComputeAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
-        XLALDestroyMultiAMCoeffs ( ret );
-        XLAL_ERROR_NULL ( XLAL_EFUNC );
-      }
+  for ( X = 0; X < numDetectors; X ++ ) {
+    if ( ( ret->data[X] = XLALComputeAMCoeffs( multiDetStates->data[X], skypos ) ) == NULL ) {
+      XLALPrintError( "%s: call to XLALComputeAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
+      XLALDestroyMultiAMCoeffs( ret );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
+    }
 
-    } /* for X < numDetectors */
+  } /* for X < numDetectors */
 
   /* apply noise-weights and compute antenna-pattern matrix {A,B,C} */
-  if ( XLALWeightMultiAMCoeffs (  ret, multiWeights ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: call to XLALWeightMultiAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
-    XLALDestroyMultiAMCoeffs ( ret );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  if ( XLALWeightMultiAMCoeffs( ret, multiWeights ) != XLAL_SUCCESS ) {
+    XLALPrintError( "%s: call to XLALWeightMultiAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
+    XLALDestroyMultiAMCoeffs( ret );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
   /* return result */
@@ -439,25 +432,25 @@ XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, 	/**<
  * Create an AMCeoffs vector for given number of timesteps
  */
 AMCoeffs *
-XLALCreateAMCoeffs ( UINT4 numSteps )
+XLALCreateAMCoeffs( UINT4 numSteps )
 {
   AMCoeffs *ret;
 
-  if ( ( ret = XLALCalloc ( 1, sizeof (*ret) ) ) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %zu )\n", __func__, sizeof (*ret) );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc ( 1, %zu )\n", __func__, sizeof( *ret ) );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
-  if ( ( ret->a = XLALCreateREAL4Vector ( numSteps )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numSteps );
-    XLALDestroyAMCoeffs ( ret );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  if ( ( ret->a = XLALCreateREAL4Vector( numSteps ) ) == NULL ) {
+    XLALPrintError( "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numSteps );
+    XLALDestroyAMCoeffs( ret );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
-  if ( ( ret->b = XLALCreateREAL4Vector ( numSteps )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numSteps );
-    XLALDestroyAMCoeffs ( ret );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  if ( ( ret->b = XLALCreateREAL4Vector( numSteps ) ) == NULL ) {
+    XLALPrintError( "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numSteps );
+    XLALDestroyAMCoeffs( ret );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
   return ret;
@@ -473,22 +466,21 @@ XLALCreateAMCoeffs ( UINT4 numSteps )
  * for failure-cleanup even on incomplete structs
  */
 void
-XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
+XLALDestroyMultiAMCoeffs( MultiAMCoeffs *multiAMcoef )
 {
   UINT4 X;
 
-  if ( ! multiAMcoef )
+  if ( ! multiAMcoef ) {
     return;
+  }
 
-  if ( multiAMcoef->data )
-    {
-      for ( X=0; X < multiAMcoef->length; X ++ )
-	{
-	  XLALDestroyAMCoeffs ( multiAMcoef->data[X] );
-	} /* for X < numDetectors */
-      LALFree ( multiAMcoef->data );
-    }
-  LALFree ( multiAMcoef );
+  if ( multiAMcoef->data ) {
+    for ( X = 0; X < multiAMcoef->length; X ++ ) {
+      XLALDestroyAMCoeffs( multiAMcoef->data[X] );
+    } /* for X < numDetectors */
+    LALFree( multiAMcoef->data );
+  }
+  LALFree( multiAMcoef );
 
   return;
 
@@ -502,17 +494,20 @@ XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef )
  * for failure-cleanup even on incomplete structs
  */
 void
-XLALDestroyAMCoeffs ( AMCoeffs *amcoef )
+XLALDestroyAMCoeffs( AMCoeffs *amcoef )
 {
-  if ( ! amcoef )
+  if ( ! amcoef ) {
     return;
+  }
 
-  if ( amcoef->a )
-    XLALDestroyREAL4Vector ( amcoef->a );
-  if ( amcoef->b )
-    XLALDestroyREAL4Vector ( amcoef->b );
+  if ( amcoef->a ) {
+    XLALDestroyREAL4Vector( amcoef->a );
+  }
+  if ( amcoef->b ) {
+    XLALDestroyREAL4Vector( amcoef->b );
+  }
 
-  LALFree ( amcoef );
+  LALFree( amcoef );
 
   return;
 
@@ -520,15 +515,15 @@ XLALDestroyAMCoeffs ( AMCoeffs *amcoef )
 
 /// estimate condition number for given antenna-pattern matrix
 static inline REAL4
-estimateAntennaPatternConditionNumber ( REAL4 A, REAL4 B, REAL4 C, REAL4 E )
+estimateAntennaPatternConditionNumber( REAL4 A, REAL4 B, REAL4 C, REAL4 E )
 {
   REAL4 sumAB  = A + B;
   REAL4 diffAB = A - B;
-  REAL4 disc   = sqrt ( SQ(diffAB) + 4.0 * ( SQ(C) + SQ(E) ) );
+  REAL4 disc   = sqrt( SQ( diffAB ) + 4.0 * ( SQ( C ) + SQ( E ) ) );
 
   REAL4 denom = sumAB - disc;
 
-  REAL4 cond = (denom > 0) ? ((sumAB + disc) / denom) : INFINITY;
+  REAL4 cond = ( denom > 0 ) ? ( ( sumAB + disc ) / denom ) : INFINITY;
   return cond;
 }
 
@@ -546,23 +541,20 @@ estimateAntennaPatternConditionNumber ( REAL4 A, REAL4 B, REAL4 C, REAL4 E )
 /// Use XLALSetAntennaPatternMaxCond() to change the acceptable tolerance value.
 ///
 REAL4
-XLALComputeAntennaPatternSqrtDeterminant ( REAL4 A, REAL4 B, REAL4 C, REAL4 E )
+XLALComputeAntennaPatternSqrtDeterminant( REAL4 A, REAL4 B, REAL4 C, REAL4 E )
 {
-  XLAL_CHECK_REAL4 ( (A >= 0) && (B>=0), XLAL_EINVAL );
+  XLAL_CHECK_REAL4( ( A >= 0 ) && ( B >= 0 ), XLAL_EINVAL );
 
-  REAL4 cond = estimateAntennaPatternConditionNumber ( A, B, C, E );
+  REAL4 cond = estimateAntennaPatternConditionNumber( A, B, C, E );
   REAL4 det;
-  if ( cond >  AntennaPatternMaxCond )
-    {
-      XLALPrintWarning ( "WARNING: Antenna-pattern matrix condition number exceeds maximum allowed value:\n" );
-      XLALPrintWarning ( "cond{A=%.16g, B=%.16g, C=%.16g, E=%.16g} = %.2e > %.2e ==> setting derminant = %.16g\n",
-                         A, B, C, E, cond, AntennaPatternMaxCond, AntennaPatternIllCondDeterminant );
-      det = AntennaPatternIllCondDeterminant;
-    }
-  else
-    {
-      det = A * B - SQ(C) - SQ(E);
-    }
+  if ( cond >  AntennaPatternMaxCond ) {
+    XLALPrintWarning( "WARNING: Antenna-pattern matrix condition number exceeds maximum allowed value:\n" );
+    XLALPrintWarning( "cond{A=%.16g, B=%.16g, C=%.16g, E=%.16g} = %.2e > %.2e ==> setting derminant = %.16g\n",
+                      A, B, C, E, cond, AntennaPatternMaxCond, AntennaPatternIllCondDeterminant );
+    det = AntennaPatternIllCondDeterminant;
+  } else {
+    det = A * B - SQ( C ) - SQ( E );
+  }
 
   return det;
 }
@@ -570,7 +562,7 @@ XLALComputeAntennaPatternSqrtDeterminant ( REAL4 A, REAL4 B, REAL4 C, REAL4 E )
 /// Set a new module-local maximal acceptable condition number of computing
 /// antenna-pattern matrix determinant
 void
-XLALSetAntennaPatternMaxCond ( REAL4 max_cond )
+XLALSetAntennaPatternMaxCond( REAL4 max_cond )
 {
   AntennaPatternMaxCond = max_cond;
 }
@@ -580,7 +572,7 @@ XLALSetAntennaPatternMaxCond ( REAL4 max_cond )
 /// 'turning off' the 2F value, or 'NAN' to force an error-condition to terminate
 /// the code.
 void
-XLALSetAntennaPatternIllCondDeterminant ( REAL4 illCondDeterminant )
+XLALSetAntennaPatternIllCondDeterminant( REAL4 illCondDeterminant )
 {
   AntennaPatternIllCondDeterminant = illCondDeterminant;
 }

@@ -68,10 +68,10 @@
 
 #include <lal/LUT.h>
 
-void LALHOUGHCalcParamPLUT (LALStatus    *status,
-                   HOUGHParamPLUT    *out, /* parameters needed build LUT*/
-                   HOUGHSizePar      *size,
-                   HOUGHDemodPar     *par)  /* demodulation parameters */
+void LALHOUGHCalcParamPLUT( LALStatus    *status,
+                            HOUGHParamPLUT    *out, /* parameters needed build LUT*/
+                            HOUGHSizePar      *size,
+                            HOUGHDemodPar     *par ) /* demodulation parameters */
 {
 
   /* --------------------------------------------- */
@@ -82,7 +82,7 @@ void LALHOUGHCalcParamPLUT (LALStatus    *status,
   REAL8   delta;
   REAL8   vFactor, xFactor;
   REAL8   xiX, xiY, xiZ;
-  REAL8   modXi,invModXi;
+  REAL8   modXi, invModXi;
   REAL8UnitPolarCoor   xiInit;
   UINT4   spinOrder, i;
   REAL8   *spinF;
@@ -90,17 +90,17 @@ void LALHOUGHCalcParamPLUT (LALStatus    *status,
   REAL8   timeDiffProd;
   /* --------------------------------------------- */
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (par, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (size, status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT( out, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( par, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( size, status, LUTH_ENULL, LUTH_MSGENULL );
 
   /*   Make sure f0Bin  is not zero: */
   f0Bin = size->f0Bin;
-  ASSERT (f0Bin, status, LUTH_EFREQ, LUTH_MSGEFREQ);
+  ASSERT( f0Bin, status, LUTH_EFREQ, LUTH_MSGEFREQ );
 
   out->f0Bin = f0Bin;
   deltaF = out->deltaF = size->deltaF;
@@ -120,36 +120,36 @@ void LALHOUGHCalcParamPLUT (LALStatus    *status,
 
   spinOrder = par->spin.length;
 
-  if(spinOrder){
-    ASSERT (par->spin.data , status, LUTH_ENULL, LUTH_MSGENULL);
+  if ( spinOrder ) {
+    ASSERT( par->spin.data, status, LUTH_ENULL, LUTH_MSGENULL );
     timeDiff = par->timeDiff;
     timeDiffProd = 1.0;
     spinF = par->spin.data;
 
-    for (i=0; i<spinOrder; ++i ){
-      xFactor += spinF[i] * timeDiffProd * (i+1.0);
+    for ( i = 0; i < spinOrder; ++i ) {
+      xFactor += spinF[i] * timeDiffProd * ( i + 1.0 );
       timeDiffProd *= timeDiff;
       vFactor += spinF[i] * timeDiffProd;
     }
   }
 
-  xiX = vFactor * (par->veloC.x) + xFactor * (par->positC.x);
-  xiY = vFactor * (par->veloC.y) + xFactor * (par->positC.y);
-  xiZ = vFactor * (par->veloC.z) + xFactor * (par->positC.z);
+  xiX = vFactor * ( par->veloC.x ) + xFactor * ( par->positC.x );
+  xiY = vFactor * ( par->veloC.y ) + xFactor * ( par->positC.y );
+  xiZ = vFactor * ( par->veloC.z ) + xFactor * ( par->positC.z );
 
   /* -------------------------------------------   */
   /* ***** convert xi into Polar coordinates ***** */
 
-  modXi = sqrt(xiX*xiX + xiY*xiY + xiZ*xiZ);
+  modXi = sqrt( xiX * xiX + xiY * xiY + xiZ * xiZ );
   /* for testing we used:  modXi = F0* 1.06e-4; */
-  invModXi = 1./modXi;
+  invModXi = 1. / modXi;
 
-  xiInit.delta = asin( xiZ*invModXi);
+  xiInit.delta = asin( xiZ * invModXi );
   /* the arc sine is in the interval [-pi/2,pi/2] */
 
-  if( xiX || xiY ){
-    xiInit.alpha = atan2(xiY, xiX);
-  }else{
+  if ( xiX || xiY ) {
+    xiInit.alpha = atan2( xiY, xiX );
+  } else {
     xiInit.alpha = 0.0;
   }
 
@@ -162,23 +162,23 @@ void LALHOUGHCalcParamPLUT (LALStatus    *status,
   /* **** the south pole {x,y,z} = {0,0,-1}  ***** */
   /*  Calculate xi in the new coordinate system.   */
 
-  TRY(LALRotatePolarU(status->statusPtr,
-		      &(*out).xi ,&xiInit, &(*par).skyPatch), status);
+  TRY( LALRotatePolarU( status->statusPtr,
+                        &( *out ).xi, &xiInit, &( *par ).skyPatch ), status );
 
   /* -------------------------------------------   */
   delta = out->xi.delta;
 
-  out->cosDelta = deltaF*invModXi;
-  out->cosPhiMax0 = deltaF*0.5*invModXi -sin(delta);
-  out->cosPhiMin0 = (out->cosPhiMax0) -(out->cosDelta);
+  out->cosDelta = deltaF * invModXi;
+  out->cosPhiMax0 = deltaF * 0.5 * invModXi - sin( delta );
+  out->cosPhiMin0 = ( out->cosPhiMax0 ) - ( out->cosDelta );
   out->offset = 0;
 
   /* -------------------------------------------   */
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
 
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 

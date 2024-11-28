@@ -195,9 +195,11 @@ class SwigSymbols(object):
         """Parse a swiglal macro
         """
         cdecl_name = get_swig_attr(cdecl, 'name')
-        cdecl_value = get_swig_attr(cdecl, 'value')
+        cdecl_value = get_swig_attr(cdecl, 'stringval')
         if not cdecl_value:
-            raise ValueError("cdecl '{}' has no value".format(cdecl_name))
+            cdecl_value = get_swig_attr(cdecl, 'value')
+            if not cdecl_value:
+                raise ValueError("cdecl '{}' has no value".format(cdecl_name))
         macro = re.sub(r'\s', '', cdecl_value)
         if cdecl_name == '__swiglal__':
             if macro in clear_macros:

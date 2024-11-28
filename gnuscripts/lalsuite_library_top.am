@@ -24,6 +24,9 @@ pretty-c:
 		if test -h "$${file}"; then \
 			continue; \
 		fi; \
+		if test -f "$(srcdir)/.pretty.exclude" && $(GREP) -qF "$${file}" "$(srcdir)/.pretty.exclude"; then \
+			continue; \
+		fi; \
 		dirpart=`expr "X$${file}" : "^X\(.*\)/[^/]*"`; \
 		basepart=`expr "X$${file}" : "^X.*/\([^/]*\)"`; \
 		namepart=`expr "X$${basepart}" : "^X\([^.]*\)"`; \
@@ -41,6 +44,7 @@ pretty-c:
 
 # Pretty format Python code
 pretty: pretty-python
+if HAVE_PYTHON
 pretty-python:
 	$(AM_V_at)if test "X$(PYTHON_BLACK)" = Xfalse; then \
 		echo "ERROR: $(PYTHON) -m black is not available"; \
@@ -50,6 +54,9 @@ pretty-python:
 	files=; \
 	for file in `cd $(srcdir) && $(GIT) ls-files -- $(PRETTY_PY_PATTERN)`; do \
 		if test -h "$${file}"; then \
+			continue; \
+		fi; \
+		if test -f "$(srcdir)/.pretty.exclude" && $(GREP) -qF "$${file}" "$(srcdir)/.pretty.exclude"; then \
 			continue; \
 		fi; \
 		dirpart=`expr "X$${file}" : "^X\(.*\)/[^/]*"`; \
@@ -69,5 +76,6 @@ pretty-python:
 	if test "X$${files}" != X; then \
 		$(PYTHON_BLACK) --quiet $${files} || exit 1; \
 	fi
+endif
 
 endif # HAVE_GIT_REPO

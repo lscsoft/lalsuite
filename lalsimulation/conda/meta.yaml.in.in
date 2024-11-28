@@ -30,7 +30,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepening: true
   error_overlinking: true
   number: 9999
   script_env:
@@ -43,6 +42,8 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - help2man >=1.37
+    - libgomp  # [linux]
     - llvm-openmp  # [osx]
     - make
     - pkg-config >=0.18.0
@@ -52,22 +53,16 @@ requirements:
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
     - numpy                               # [build_platform != target_platform]
     - python                              # [build_platform != target_platform]
-    # extras for help2man / make check
-    - astropy  # [build_platform != target_platform]
-    - gwpy  # [build_platform != target_platform]
   host:
     - gsl
     - liblal >={{ lal_version }}
-    - libgomp  # [linux]
-    - llvm-openmp  # [osx]
     - numpy
     - pytest
     - python
     - python-lal >={{ lal_version }}
     # extras for help2man / make check
-    - astropy
-    - gwpy
-
+    - astropy  # [py != 39]
+    - gwpy  # [py != 39]
 
 outputs:
   - name: lalsimulation-data
@@ -155,7 +150,6 @@ outputs:
     build:
       ignore_run_exports:
         - liblalsimulation
-        - numpy
         - python
     requirements:
       build:
@@ -174,7 +168,7 @@ outputs:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - mpmath >=1.0.0
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-lal >={{ lal_version }}
         - scipy

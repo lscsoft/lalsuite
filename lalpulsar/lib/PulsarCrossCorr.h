@@ -80,146 +80,146 @@ extern "C" {
  *  Structure, enum, union, etc., typdefs.
  */
 
-  typedef enum tagDetChoice
-  { SAME,
-    DIFFERENT,
-    ALL
-  } DetChoice;
+typedef enum tagDetChoice {
+  SAME,
+  DIFFERENT,
+  ALL
+} DetChoice;
 
 
-  /** struct holding info about skypoints */
-  typedef struct tagSkyPatchesInfo{
-    UINT4 numSkyPatches;
-    REAL8 *alpha;
-    REAL8 *delta;
-    REAL8 *alphaSize;
-    REAL8 *deltaSize;
-  } SkyPatchesInfo;
+/** struct holding info about skypoints */
+typedef struct tagSkyPatchesInfo {
+  UINT4 numSkyPatches;
+  REAL8 *alpha;
+  REAL8 *delta;
+  REAL8 *alphaSize;
+  REAL8 *deltaSize;
+} SkyPatchesInfo;
 
-  typedef struct tagSFTDetectorInfo{
-    COMPLEX8FrequencySeries *sft;
-    REAL8 vDetector[3];
-    REAL8 rDetector[3];
-    REAL8 a;
-    REAL8 b;
-  } SFTDetectorInfo;
+typedef struct tagSFTDetectorInfo {
+  COMPLEX8FrequencySeries *sft;
+  REAL8 vDetector[3];
+  REAL8 rDetector[3];
+  REAL8 a;
+  REAL8 b;
+} SFTDetectorInfo;
 
-  /* define structs to hold combinations of F's and A's */
-  typedef struct tagCrossCorrAmps {
-    REAL8 Aplussq;
-    REAL8 Acrosssq;
-    REAL8 AplusAcross;
-  } CrossCorrAmps;
+/* define structs to hold combinations of F's and A's */
+typedef struct tagCrossCorrAmps {
+  REAL8 Aplussq;
+  REAL8 Acrosssq;
+  REAL8 AplusAcross;
+} CrossCorrAmps;
 
-  typedef struct tagCrossCorrBeamFn{
-    REAL8 a;
-    REAL8 b;
-  } CrossCorrBeamFn;
+typedef struct tagCrossCorrBeamFn {
+  REAL8 a;
+  REAL8 b;
+} CrossCorrBeamFn;
 
-  typedef struct tagSFTListElement {
-    SFTtype sft;
-    struct tagSFTListElement *nextSFT;
-  } SFTListElement;
+typedef struct tagSFTListElement {
+  SFTtype sft;
+  struct tagSFTListElement *nextSFT;
+} SFTListElement;
 
-  typedef struct tagPSDListElement {
-    REAL8FrequencySeries psd;
-    struct tagPSDListElement *nextPSD;
-  } PSDListElement;
+typedef struct tagPSDListElement {
+  REAL8FrequencySeries psd;
+  struct tagPSDListElement *nextPSD;
+} PSDListElement;
 
-  typedef struct tagREAL8ListElement {
-    REAL8 val;
-    struct tagREAL8ListElement *nextVal;
-  } REAL8ListElement;
+typedef struct tagREAL8ListElement {
+  REAL8 val;
+  struct tagREAL8ListElement *nextVal;
+} REAL8ListElement;
 
-  typedef struct tagCrossCorrBeamFnListElement {
-    CrossCorrBeamFn beamfn;
-    struct tagCrossCorrBeamFnListElement *nextBeamfn;
-  } CrossCorrBeamFnListElement;
+typedef struct tagCrossCorrBeamFnListElement {
+  CrossCorrBeamFn beamfn;
+  struct tagCrossCorrBeamFnListElement *nextBeamfn;
+} CrossCorrBeamFnListElement;
 /*
  *  Functions Declarations (i.e., prototypes).
  */
 
-void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
-					     INT4VectorSequence **out,
-					     SFTListElement     *in,
-					     REAL8	        lag,
-					     INT4		listLength,
-					     DetChoice 		detChoice,
-					     BOOLEAN	        autoCorrelate);
+void LALCreateSFTPairsIndicesFrom2SFTvectors( LALStatus          *status,
+    INT4VectorSequence **out,
+    SFTListElement     *in,
+    REAL8              lag,
+    INT4               listLength,
+    DetChoice          detChoice,
+    BOOLEAN            autoCorrelate );
 
-void LALCorrelateSingleSFTPair(LALStatus                *status,
-			       COMPLEX16                *out,
-			       COMPLEX8FrequencySeries  *sft1,
-			       COMPLEX8FrequencySeries  *sft2,
-			       REAL8FrequencySeries     *psd1,
-			       REAL8FrequencySeries     *psd2,
-			       UINT4                    bin1,
-			       UINT4                    bin2);
+void LALCorrelateSingleSFTPair( LALStatus                *status,
+                                COMPLEX16                *out,
+                                COMPLEX8FrequencySeries  *sft1,
+                                COMPLEX8FrequencySeries  *sft2,
+                                REAL8FrequencySeries     *psd1,
+                                REAL8FrequencySeries     *psd2,
+                                UINT4                    bin1,
+                                UINT4                    bin2 );
 
-void LALGetSignalFrequencyInSFT(LALStatus                *status,
-				REAL8                    *out,
-				LIGOTimeGPS		 *epoch,
-				PulsarDopplerParams      *dopp,
-				REAL8Vector              *vel);
+void LALGetSignalFrequencyInSFT( LALStatus                *status,
+                                 REAL8                    *out,
+                                 LIGOTimeGPS              *epoch,
+                                 PulsarDopplerParams      *dopp,
+                                 REAL8Vector              *vel );
 
-void LALGetSignalPhaseInSFT(LALStatus               *status,
-			    REAL8                   *out,
-			    LIGOTimeGPS		    *epoch,
-			    PulsarDopplerParams     *dopp,
-			    REAL8Vector             *pos);
+void LALGetSignalPhaseInSFT( LALStatus               *status,
+                             REAL8                   *out,
+                             LIGOTimeGPS             *epoch,
+                             PulsarDopplerParams     *dopp,
+                             REAL8Vector             *pos );
 
-void LALCalculateSigmaAlphaSq(LALStatus            *status,
-			      REAL8                *out,
-			      UINT4                bin1,
-			      UINT4                bin2,
-			      REAL8FrequencySeries *psd1,
-			      REAL8FrequencySeries *psd2);
+void LALCalculateSigmaAlphaSq( LALStatus            *status,
+                               REAL8                *out,
+                               UINT4                bin1,
+                               UINT4                bin2,
+                               REAL8FrequencySeries *psd1,
+                               REAL8FrequencySeries *psd2 );
 
-void LALCalculateAveUalpha(LALStatus *status,
-			COMPLEX16 *out,
-			REAL8     phiI,
-			REAL8     phiJ,
-			REAL8 	  freqI,
-			REAL8 	  freqJ,
-			REAL8 	  deltaF,
-			CrossCorrBeamFn beamfnsI,
-			CrossCorrBeamFn beamfnsJ,
-			REAL8     sigmasq);
+void LALCalculateAveUalpha( LALStatus *status,
+                            COMPLEX16 *out,
+                            REAL8     phiI,
+                            REAL8     phiJ,
+                            REAL8     freqI,
+                            REAL8     freqJ,
+                            REAL8     deltaF,
+                            CrossCorrBeamFn beamfnsI,
+                            CrossCorrBeamFn beamfnsJ,
+                            REAL8     sigmasq );
 
-void LALCalculateUalpha(LALStatus *status,
-			COMPLEX16 *out,
-			CrossCorrAmps amplitudes,
-			REAL8     phiI,
-			REAL8     phiJ,
-			REAL8 	  freqI,
-			REAL8 	  freqJ,
-			REAL8 	  deltaF,
-			CrossCorrBeamFn beamfnsI,
-			CrossCorrBeamFn beamfnsJ,
-			REAL8     sigmasq,
-			REAL8     *psi,
-			COMPLEX16 *gplus,
-			COMPLEX16 *gcross);
+void LALCalculateUalpha( LALStatus *status,
+                         COMPLEX16 *out,
+                         CrossCorrAmps amplitudes,
+                         REAL8     phiI,
+                         REAL8     phiJ,
+                         REAL8     freqI,
+                         REAL8     freqJ,
+                         REAL8     deltaF,
+                         CrossCorrBeamFn beamfnsI,
+                         CrossCorrBeamFn beamfnsJ,
+                         REAL8     sigmasq,
+                         REAL8     *psi,
+                         COMPLEX16 *gplus,
+                         COMPLEX16 *gcross );
 
-void LALCalculateCrossCorrPower(LALStatus       *status,
-				REAL8	        *out,
-				COMPLEX16Vector *yalpha,
-				COMPLEX16Vector *ualpha);
+void LALCalculateCrossCorrPower( LALStatus       *status,
+                                 REAL8           *out,
+                                 COMPLEX16Vector *yalpha,
+                                 COMPLEX16Vector *ualpha );
 
-void LALNormaliseCrossCorrPower(LALStatus        *status,
-				REAL8		 *out,
-				COMPLEX16Vector  *ualpha,
-				REAL8Vector      *sigmaAlphasq);
+void LALNormaliseCrossCorrPower( LALStatus        *status,
+                                 REAL8            *out,
+                                 COMPLEX16Vector  *ualpha,
+                                 REAL8Vector      *sigmaAlphasq );
 
-void LALCalculateEstimators(LALStatus    *status,
-				REAL8 *aplussq1,
-				REAL8   *aplussq2,
-				REAL8   *acrossq1,
-				REAL8 *acrossq2,
-				COMPLEX16Vector  *yalpha,
-				COMPLEX16Vector  *gplus,
-				COMPLEX16Vector  *gcross,
-				REAL8Vector      *sigmaAlphasq);
+void LALCalculateEstimators( LALStatus    *status,
+                             REAL8 *aplussq1,
+                             REAL8   *aplussq2,
+                             REAL8   *acrossq1,
+                             REAL8 *acrossq2,
+                             COMPLEX16Vector  *yalpha,
+                             COMPLEX16Vector  *gplus,
+                             COMPLEX16Vector  *gcross,
+                             REAL8Vector      *sigmaAlphasq );
 
 /** @} */
 

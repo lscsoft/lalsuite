@@ -125,6 +125,7 @@ static void NRHybSur3dq8_Init_LALDATA(void) {
     char *file_path = XLALMalloc(size);
     snprintf(file_path, size, "%s/%s", dir, NRHybSur3dq8_DATAFILE);
 
+    #if LAL_HDF5_ENABLED
     LALH5File *file = XLALH5FileOpen(file_path, "r");
     if (file==NULL) {
         XLAL_ERROR_VOID(XLAL_EIO,
@@ -138,6 +139,9 @@ static void NRHybSur3dq8_Init_LALDATA(void) {
         XLAL_ERROR_VOID(XLAL_FAILURE, "Failure loading data from %s\n",
                 file_path);
     }
+    #else
+    XLAL_ERROR_VOID(XLAL_FAILURE,  "Failure loading data from %s\n. HDF5 support is not enabled.\n", file_path);
+    #endif
 
     XLALFree(path);
     XLALFree(file_path);

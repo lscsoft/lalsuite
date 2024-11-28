@@ -1,4 +1,4 @@
 EXTRA_DIST = \
-	hdf51121.yaml \
-	python311.yaml \
+	numpy2.yaml \
+	python312.yaml \
 	$(END_OF_LIST)

@@ -114,9 +114,7 @@ typedef struct tagPulsarParameters {
     The structure does not have to be used for a binary pulsar, but can just contain the parameters for
    an isolated pulsar. All parameters are in the same units as given by TEMPO.
  */
-typedef struct
-tagBinaryPulsarParams
-{
+typedef struct tagBinaryPulsarParams {
   CHAR *name;   /**< pulsar name */
   CHAR *jname;  /**< pulsar J name */
   CHAR *bname;  /**< pulsar B name */
@@ -250,7 +248,7 @@ tagBinaryPulsarParams
   /* pinned superfluid gw parameters*/
   REAL8 I21;    /**< parameter for pinsf model.**/
   REAL8 I31;    /**< parameter for pinsf model.**/
-  REAL8 lambda; /**< this is a longitude like angle between pinning axis and line of sight */
+  REAL8 lambdapin; /**< this is a longitude like angle between pinning axis and line of sight */
   REAL8 costheta;  /**< cosine of angle between rotation axis and pinning axis */
   REAL8 theta;
 
@@ -339,7 +337,7 @@ tagBinaryPulsarParams
   REAL8 AcrossErr;
   REAL8 I21Err;
   REAL8 I31Err;
-  REAL8 lambdaErr;
+  REAL8 lambdapinErr;
   REAL8 costhetaErr;
   REAL8 thetaErr;
   REAL8 C22Err;
@@ -365,7 +363,7 @@ tagBinaryPulsarParams
 
   REAL8 cgw; /**< The speed of gravitational waves as a fraction of the speed of light <tt>LAL_C_SI</tt> */
   REAL8 cgwErr;
-}BinaryPulsarParams;
+} BinaryPulsarParams;
 
 
 /* DEFINE FUNCTIONS */
@@ -441,7 +439,7 @@ UINT4 PulsarGetUINT4Param( const PulsarParameters *pars, const CHAR *name );
 UINT4 PulsarGetUINT4ParamOrZero( const PulsarParameters *pars, const CHAR *name );
 
 #ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_ARG(const CHAR*, value));
+SWIGLAL( OWNS_THIS_ARG( const CHAR *, value ) );
 #endif
 
 /** \brief Return a string parameter
@@ -454,14 +452,14 @@ SWIGLAL(OWNS_THIS_ARG(const CHAR*, value));
 const CHAR *PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name );
 
 /** \brief Add a string parameter to the \c PulsarParameters structure */
-void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR *value);
+void PulsarAddStringParam( PulsarParameters *pars, const CHAR *name, const CHAR *value );
 
 #ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_ARG(const CHAR*, value));
+SWIGLAL_CLEAR( OWNS_THIS_ARG( const CHAR *, value ) );
 #endif
 
 #ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_ARG(const REAL8Vector*, value));
+SWIGLAL( OWNS_THIS_ARG( const REAL8Vector *, value ) );
 #endif
 
 /** \brief Return a \c REAL8Vector parameter
@@ -471,10 +469,10 @@ SWIGLAL(OWNS_THIS_ARG(const REAL8Vector*, value));
 const REAL8Vector *PulsarGetREAL8VectorParam( const PulsarParameters *pars, const CHAR *name );
 
 /** \brief Add a \c REAL8Vector parameter to the \c PulsarParameters structure */
-void PulsarAddREAL8VectorParam(PulsarParameters *pars, const CHAR * name, const REAL8Vector *value);
+void PulsarAddREAL8VectorParam( PulsarParameters *pars, const CHAR *name, const REAL8Vector *value );
 
 #ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_ARG(const REAL8Vector*, value));
+SWIGLAL_CLEAR( OWNS_THIS_ARG( const REAL8Vector *, value ) );
 #endif
 
 /** \brief Return an individual \c REAL8 value from a \c REAL8Vector parameter
@@ -493,10 +491,10 @@ REAL8 PulsarGetREAL8VectorParamIndividual( const PulsarParameters *pars, const C
 void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, PulsarParamType type );
 
 /** \brief Add a \c REAL8 parameter to the \c PulsarParameters structure */
-void PulsarAddREAL8Param(PulsarParameters *pars, const CHAR * name, REAL8 value);
+void PulsarAddREAL8Param( PulsarParameters *pars, const CHAR *name, REAL8 value );
 
 /** \brief Add a \c UINT4 parameter to the \c PulsarParameters structure */
-void PulsarAddUINT4Param(PulsarParameters *pars, const CHAR * name, UINT4 value);
+void PulsarAddUINT4Param( PulsarParameters *pars, const CHAR *name, UINT4 value );
 
 /** \brief Free all the parameters from a \c PulsarParameters structure */
 void PulsarClearParams( PulsarParameters *pars );
@@ -509,7 +507,7 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name );
  * Set the value of the parameter given by \c name in the \c PulsarParameters structure. The parameter must already
  * exist in the structure, otherwise it should be added using \c PulsarAddParam().
  */
-void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value );
+void PulsarSetParam( PulsarParameters *pars, const CHAR *name, const void *value );
 
 /** \brief Set the value of the error of a parameter in the \c PulsarParameters structure
  *
@@ -519,13 +517,13 @@ void PulsarSetParam( PulsarParameters* pars, const CHAR *name, const void *value
  * TEMPO(2) fitting procedure) then that must be input as the fit flag (this can be a vector for e.g. FB
  * values with multiple parameters, in which case \c nfits will be the number of values in that vector).
  */
-void PulsarSetParamErr( PulsarParameters* pars, const CHAR *name, void *value, const UINT4 *fitFlag, UINT4 len );
+void PulsarSetParamErr( PulsarParameters *pars, const CHAR *name, void *value, const UINT4 *fitFlag, UINT4 len );
 
 /** \brief Set the error value for a \c REAL8 parameter */
-void PulsarSetREAL8ParamErr( PulsarParameters* pars, const CHAR *name, REAL8 value, UINT4 fitFlag );
+void PulsarSetREAL8ParamErr( PulsarParameters *pars, const CHAR *name, REAL8 value, UINT4 fitFlag );
 
 /** \brief Set the error values for a \c REAL8Vector parameter */
-void PulsarSetREAL8VectorParamErr( PulsarParameters* pars, const CHAR *name, const REAL8Vector *value, const UINT4 *fitFlag );
+void PulsarSetREAL8VectorParamErr( PulsarParameters *pars, const CHAR *name, const REAL8Vector *value, const UINT4 *fitFlag );
 
 /** \brief Check for the existence of the parameter \c name in the \c PulsarParameters structure */
 int PulsarCheckParam( const PulsarParameters *pars, const CHAR *name );
@@ -634,13 +632,13 @@ void PrintPulsarParameters( BinaryPulsarParams params );
  */
 /** @{ */
 REAL8
-XLALTTMJDtoGPS(REAL8 MJD);
+XLALTTMJDtoGPS( REAL8 MJD );
 
 REAL8
-XLALTDBMJDtoGPS(REAL8 MJD);
+XLALTDBMJDtoGPS( REAL8 MJD );
 
 REAL8
-XLALTCBMJDtoGPS(REAL8 MJD);
+XLALTCBMJDtoGPS( REAL8 MJD );
 /** @} */
 
 #ifdef __cplusplus

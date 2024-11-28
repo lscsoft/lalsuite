@@ -1,3 +1,4 @@
+##python
 # End-to-end LALInference test pipeline
 # (C) 2014 John Veitch
 
@@ -8,7 +9,7 @@ import sys
 import uuid
 from optparse import OptionParser
 
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 
 from glue import pipeline
 
@@ -41,11 +42,17 @@ inifile=args[0]
 
 prior_cp=ConfigParser()
 prior_cp.optionxform = str
-prior_cp.readfp(open(inifile))
+try:
+  prior_cp.read_file(open(inifile))
+except AttributeError:
+  prior_cp.readfp(open(inifile))
 
 main_cp=ConfigParser()
 main_cp.optionxform = str
-main_cp.readfp(open(inifile))
+try:
+  main_cp.read_file(open(inifile))
+except AttributeError:
+  main_cp.readfp(open(inifile))
 
 
 rundir=os.path.abspath(opts.run_path)

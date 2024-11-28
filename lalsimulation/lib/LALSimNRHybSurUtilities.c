@@ -43,7 +43,10 @@
 #include <gsl/gsl_complex_math.h>
 
 #include <lal/SeqFactories.h>
+
+#ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
+#endif
 
 #include <lal/XLALError.h>
 #include <lal/LALConstants.h>
@@ -59,7 +62,7 @@
 
 
 
-
+#ifdef LAL_HDF5_ENABLED
 //********************* H5 wrapper functions ************************/
 
 /**
@@ -85,7 +88,6 @@ int ReadHDF5DoubleDataset(
     return XLAL_SUCCESS;
 }
 
-
 /**
  * Reads an INT8 value from a H5 file/group.
  */
@@ -108,9 +110,6 @@ int ReadHDF5IntDataset(
 
     return XLAL_SUCCESS;
 }
-
-
-
 
 
 //********************* Surrogate loading functions ************************/
@@ -138,8 +137,11 @@ static int NRHybSur_LoadDataPiece(
     sub = XLALH5GroupOpen(file, sub_grp_name);
     *data_piece = XLALMalloc(sizeof(DataPiece));
 
+
     gsl_matrix *ei_basis = NULL;
+
     int ret = ReadHDF5RealMatrixDataset(sub, "ei_basis", &ei_basis);
+
     if (ret != XLAL_SUCCESS) {
         XLAL_ERROR(XLAL_EFUNC, "Failed to load ei_basis.");
     }
@@ -204,7 +206,6 @@ static int NRHybSur_LoadDataPiece(
             XLALFree(node_name);
             XLAL_ERROR(XLAL_EFUNC, "Failed to load lin_intercept.");
         }
-
 
         // Load arrays needed for fit
         hyperparams->length_scale = NULL;
@@ -347,7 +348,6 @@ static int NRHybSur_LoadSingleModeData(
     return ret;
 }
 
-
 /**
  * Initialize a NRHybSurData structure from an open H5 file.
  * This will typically only be called once.
@@ -489,10 +489,10 @@ int NRHybSur_Init(
     if (ret == XLAL_SUCCESS){
         NR_hybsur_data->setup = 1;
     }
-
+    
     return ret;
 }
-
+#endif
 
 
 

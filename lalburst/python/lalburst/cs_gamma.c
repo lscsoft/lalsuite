@@ -38,6 +38,7 @@
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -395,30 +396,17 @@ static PyMethodDef cs_gammaMethods[] = {
 };
 
 //Then Python module initialization function.
-#if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC initcs_gamma(void);	/* silence -Wmissing-prototypes */
-PyMODINIT_FUNC initcs_gamma(void)
-#else
 PyMODINIT_FUNC PyInit_cs_gamma(void);	/* silence -Wmissing-prototypes */
 PyMODINIT_FUNC PyInit_cs_gamma(void)
-#endif
 {
-#if PY_MAJOR_VERSION < 3
-  PyObject *module = Py_InitModule3("cs_gamma", cs_gammaMethods, NULL);
-#else
   static PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "cs_gamma", NULL, -1, cs_gammaMethods,
     NULL, NULL, NULL, NULL
   };
   PyObject *module = PyModule_Create(&moduledef);
-#endif
 
   import_array();
 
-#if PY_MAJOR_VERSION < 3
-  return;
-#else
   return module;
-#endif
 }

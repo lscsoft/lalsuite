@@ -628,20 +628,26 @@ extern "C" {
  * @name Cosmological parameters
  * The following cosmological parameters are derived from measurements of
  * the Hubble expansion rate and of the cosmic microwave background radiation.
- * In what follows, the normalized Hubble constant \f$h_0\f$ is equal to the
+ * In what follows, the dimensionless Hubble constant \f$h_0\f$ is equal to the
  * actual Hubble constant \f$H_0\f$ divided by
  * \f$\langle H \rangle=100\,\mathrm{km}\,\mathrm{s}^{-1}\mathrm{Mpc}^{-1}\f$.
  * Thus the Hubble constant can be written as:
- * \f$H_0 = \langle H \rangle * h_0\f$.  Similarly, the critical energy density
+ * \f$H_0 = \langle H \rangle h_0\f$.  Similarly, the critical energy density
  * \f$\rho_c\f$ required for spatial flatness is given by:
  * \f$\rho_c = \langle\rho\rangle h_0^2\f$.
- * Current estimates give \f$h_0\f$ a value of around 0.69 
+ *
+ * The current default cosmology is the 2015 Planck TT+lowP+lensing+ext
+ * Flat LambdaCDM cosmology with Hubble constant
+ * \f$H_0 = 67.90\,\mathrm{km}\,\mathrm{s}^{-1}\mathrm{Mpc}^{-1}\f$
+ * and matter density parameter
+ * \f$\Omega_{\mathrm{m}} = 0.3065\f$
  * which is what is assumed below.
  * All values are in the SI units shown.
- * @see http://arxiv.org/abs/1303.5062
- * @see http://dx.doi.org/10.1088/0067-0049/208/2/20
+ * @see Table 4, column TT+lowP+lensing+ext of http://doi.org/10.1051/0004-6361/201525830
  */
 /** @{ */
+#define LAL_H0_DIMENSIONLESS 0.679 /**< Default dimensionless Hubble constant, dimensionless */
+#define LAL_OMEGA_M 0.3065 /**< Default dimensionless Hubble constant, dimensionless */
 
 /**
  * @brief Hubble constant prefactor, s^-1
@@ -651,15 +657,11 @@ extern "C" {
 #define LAL_H0FAC_SI 3.240779289444365023237687716352957261e-18
 
 /**
- * @brief Approximate Hubble constant, s^-1
+ * @brief Default Hubble constant, s^-1
  * @details
- * LAL_H0_SI = h0 * LAL_H0FAC_SI
- *
- * where h0 is approximately 0.69 (the value adopted here).
- * @see http://arxiv.org/abs/1303.5062
- * @see http://dx.doi.org/10.1088/0067-0049/208/2/20
+ * LAL_H0_SI = LAL_H0_DIMENSIONLESS * LAL_H0FAC_SI
  */
-#define LAL_H0_SI (0.69 * LAL_H0FAC_SI)
+#define LAL_H0_SI (LAL_H0_DIMENSIONLESS * LAL_H0FAC_SI)
 
 /**
  * @brief Critical energy density prefactor, J m^-3
@@ -671,13 +673,9 @@ extern "C" {
 /**
  * @brief Approximate critical energy density, J m^-3
  * @details
- * LAL_RHOC_SI = h0^2 * LAL_RHOCFAC_SI
- *
- * where h0 is approximately 0.69 (the value adopted here).
- * @see http://arxiv.org/abs/1303.5062
- * @see http://dx.doi.org/10.1088/0067-0049/208/2/20
+ * LAL_RHOC_SI = LAL_H0_DIMENSIONLESS^2 * LAL_RHOCFAC_SI
  */
-#define LAL_RHOC_SI (0.69 * 0.69 * LAL_RHOCFAC_SI)
+#define LAL_RHOC_SI (LAL_H0_DIMENSIONLESS * LAL_H0_DIMENSIONLESS * LAL_RHOCFAC_SI)
 
 /**
  * @brief Cosmic microwave background radiation temperature, K

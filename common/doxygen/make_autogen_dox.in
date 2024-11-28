@@ -6,12 +6,12 @@ use strict;
 my $package = "@PACKAGE@";
 my $packagename = "@PACKAGE_NAME@";
 my $markdown2html = "@MARKDOWN2HTML@";
+my $doxyblock = "@MARKDOWN2HTML_DOXYBLOCK@";
 my $srcdir = "@srcdir@";
 
 sub markdown_to_html {
   my ($file) = @_;
   die "$0: $file does not exist" unless -f $file;
-  my $doxyblock = ($markdown2html eq "cat") ? "verbatim" : "htmlonly";
   print "\\${doxyblock}\n";
   system("$markdown2html $file") == 0 or die "$0: $markdown2html $file failed";
   print "\\end${doxyblock}\n";

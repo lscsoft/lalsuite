@@ -446,7 +446,11 @@ typedef enum tagApproximant {
    IMRPhenomXO4a,    /**< Frequency domain, precessing with subdominant modes phenomenological IMR waveform model with NR-tuned precession angles. */
    ExternalPython, /** External Python model **/
    SEOBNRv5HM_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv5HM
-		    * @remarks Implemented in lalsimulation (frequency domain). */      
+		    * @remarks Implemented in lalsimulation (frequency domain). */     
+   IMRPhenomXAS_NRTidalv3,         /**< Tidal extension of IMRPhenomXAS based on NRTidalv3. */
+   IMRPhenomXP_NRTidalv3,         /**< Tidal extension of IMRPhenomXP based on NRTidalv3. */
+   SEOBNRv5_ROM_NRTidalv3, /**< based on NRTidalv3 (arXiv:2311.07456); 
+                             * @remarks Implemented in lalsimulation (time domain and frequency domain). */ 
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -981,7 +985,9 @@ extern const LALSimInspiralGenerator lalIMRPhenomXPHMGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXO4aGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXPGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXAS_NRTidalv2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXAS_NRTidalv3GeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXP_NRTidalv2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXP_NRTidalv3GeneratorTemplate;
 extern const LALSimInspiralGenerator lalLackey_Tidal_2013_SEOBNRv2_ROMGeneratorTemplate;
 extern const LALSimInspiralGenerator lalNRHybSur3dq8GeneratorTemplate;
 extern const LALSimInspiralGenerator lalNRSur4d2sGeneratorTemplate;
@@ -1019,6 +1025,7 @@ extern const LALSimInspiralGenerator lalSEOBNRv4HM_PAGeneratorTemplate;
 extern const LALSimInspiralGenerator lalpSEOBNRv4HM_PAGeneratorTemplate;
 extern const LALSimInspiralGenerator lalSEOBNRv5_ROMGeneratorTemplate;
 extern const LALSimInspiralGenerator lalSEOBNRv5HM_ROMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv5_ROM_NRTidalv3GeneratorTemplate;
 extern const LALSimInspiralGenerator lalSpinDominatedWfGeneratorTemplate;
 extern const LALSimInspiralGenerator lalSpinTaylorF2GeneratorTemplate;
 extern const LALSimInspiralGenerator lalSpinTaylorT1GeneratorTemplate;

@@ -21,14 +21,13 @@ import json
 import subprocess as sp
 import shutil
 import uuid
-from six.moves.configparser import RawConfigParser
-import six.moves.urllib.parse as urlparse
+from configparser import RawConfigParser
+import urllib.parse as urlparse
 from copy import deepcopy
 import numpy as np
 import pickle
 from scipy import optimize
 from collections import OrderedDict
-from six import string_types
 from lalpulsar import pulsarpputils as pppu
 
 # set some specific error codes and messages
@@ -3153,7 +3152,7 @@ class knopeDAG(pipeline.CondorDAG):
                 self.error_code = KNOPE_ERROR_GENERAL
                 return
             else:
-                if isinstance(self.coarse_heterodyne_channels[ifo], string_types):
+                if isinstance(self.coarse_heterodyne_channels[ifo], str):
                     # convert to list
                     self.coarse_heterodyne_channels[ifo] = [
                         self.coarse_heterodyne_channels[ifo]
@@ -4578,7 +4577,7 @@ class knopeDAG(pipeline.CondorDAG):
                 self.error_code = KNOPE_ERROR_GENERAL
                 return
             else:
-                if isinstance(frtypes[ifo], string_types):
+                if isinstance(frtypes[ifo], str):
                     for i in range(self.ndatasets[ifo]):
                         frtypelist.append(frtypes[ifo])
                 elif isinstance(frtypes[ifo], list):
@@ -4765,7 +4764,7 @@ class knopeDAG(pipeline.CondorDAG):
         for st, et in zip(sts, ets):
             # check whether there are different segment types for the different times
             if isinstance(segmenttypes[ifo], list):
-                if not isinstance(segmenttypes[ifo][sidx], string_types):
+                if not isinstance(segmenttypes[ifo][sidx], str):
                     print("Error... segment types must be a string")
                     self.error_code = KNOPE_ERROR_GENERAL
                     return
@@ -4778,7 +4777,7 @@ class knopeDAG(pipeline.CondorDAG):
                 else:
                     segmenttype = segmenttypes[ifo][sidx]
             else:
-                if not isinstance(segmenttypes[ifo], string_types):
+                if not isinstance(segmenttypes[ifo], str):
                     print("Error... segment types must be a string")
                     self.error_code = KNOPE_ERROR_GENERAL
                     return
@@ -4801,7 +4800,7 @@ class knopeDAG(pipeline.CondorDAG):
                     # check whether there are different exclusion types for the different times
                     if ifo in excludesegs:
                         if isinstance(excludesegs[ifo], list):
-                            if not isinstance(excludesegs[ifo][sidx], string_types):
+                            if not isinstance(excludesegs[ifo][sidx], str):
                                 print("Error... exclude types must be a string")
                                 self.error_code = KNOPE_ERROR_GENERAL
                                 return
@@ -4814,7 +4813,7 @@ class knopeDAG(pipeline.CondorDAG):
                             else:
                                 excludetype = excludesegs[ifo][sidx]
                         else:
-                            if not isinstance(excludesegs[ifo], string_types):
+                            if not isinstance(excludesegs[ifo], str):
                                 print("Error... exclude types must be a string")
                                 self.error_code = KNOPE_ERROR_GENERAL
                                 return

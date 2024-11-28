@@ -246,12 +246,12 @@ int SEOBNRv4ROM_NRTidal_Core(
   phi_tidal = XLALCreateREAL8Sequence(freqs->length);
   planck_taper = XLALCreateREAL8Sequence(freqs->length);
   if (NRTidal_version == NRTidalv2_V) {
-    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, NRTidalv2NoAmpCorr_V);
+    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, chi1, chi2, NRTidalv2NoAmpCorr_V);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
     XLALSimInspiralGetHOSpinTerms(&SS_3p5PN, &SSS_3p5PN, X_A, X_B, chi1, chi2, quad_mon1+1., quad_mon2+1.);
   }
   else {
-    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, NRTidal_version);
+    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, chi1, chi2, NRTidal_version);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
   }
 

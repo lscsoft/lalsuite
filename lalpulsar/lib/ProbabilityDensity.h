@@ -62,12 +62,11 @@ extern "C" {
  * if it's not initialized yet.
  *
  */
-struct tagpdf1D_t
-{
-  REAL8Vector *xTics;		/**< N+1-dim vector of ordered x 'tics', i.e. bin-boundaries {x[0], x[1], x[2], ... x[N]} */
-  REAL8Vector *probDens;	/**< N-dim vector of binned probability densities probDens[i] = prob( x in [ x[i],x[i+i] )/xBin[i]  */
-  BOOLEAN isNormalized;		/**< true if the prob is normalized, ie 1 = int P(x) dx ~ sum_i probDens[i] xBin[i] */
-  gsl_ran_discrete_t *sampling;	/**< internal: buffer preprocessed sampling distribution for drawing samples using gsl_ran_discrete() */
+struct tagpdf1D_t {
+  REAL8Vector *xTics;           /**< N+1-dim vector of ordered x 'tics', i.e. bin-boundaries {x[0], x[1], x[2], ... x[N]} */
+  REAL8Vector *probDens;        /**< N-dim vector of binned probability densities probDens[i] = prob( x in [ x[i],x[i+i] )/xBin[i]  */
+  BOOLEAN isNormalized;         /**< true if the prob is normalized, ie 1 = int P(x) dx ~ sum_i probDens[i] xBin[i] */
+  gsl_ran_discrete_t *sampling; /**< internal: buffer preprocessed sampling distribution for drawing samples using gsl_ran_discrete() */
 };
 
 
@@ -84,20 +83,20 @@ typedef struct tagpdf1D_t pdf1D_t;
 
 
 /* ---------- exported API prototypes ---------- */
-pdf1D_t *XLALCreateSingularPDF1D ( REAL8 x0 );
-pdf1D_t *XLALCreateUniformPDF1D ( REAL8 xMin, REAL8 xMax );
-pdf1D_t *XLALCreateDiscretePDF1D ( REAL8 xMin, REAL8 xMax, UINT4 numBins );
+pdf1D_t *XLALCreateSingularPDF1D( REAL8 x0 );
+pdf1D_t *XLALCreateUniformPDF1D( REAL8 xMin, REAL8 xMax );
+pdf1D_t *XLALCreateDiscretePDF1D( REAL8 xMin, REAL8 xMax, UINT4 numBins );
 
-REAL8 XLALDrawFromPDF1D ( pdf1D_t *pdf, const gsl_rng *rng );
-int XLALCheckValidPDF1D ( const pdf1D_t *pdf );
-int XLALNormalizePDF1D ( pdf1D_t *pdf );
+REAL8 XLALDrawFromPDF1D( pdf1D_t *pdf, const gsl_rng *rng );
+int XLALCheckValidPDF1D( const pdf1D_t *pdf );
+int XLALNormalizePDF1D( pdf1D_t *pdf );
 
-REAL8 XLALFindModeOfPDF1D ( const pdf1D_t *pdf );
+REAL8 XLALFindModeOfPDF1D( const pdf1D_t *pdf );
 
-int XLALOutputPDF1D_to_fp ( FILE* fp, const pdf1D_t *pdf, const char *name );
+int XLALOutputPDF1D_to_fp( FILE *fp, const pdf1D_t *pdf, const char *name );
 
 
-void XLALDestroyPDF1D ( pdf1D_t *pdf );
+void XLALDestroyPDF1D( pdf1D_t *pdf );
 
 
 #ifdef  __cplusplus

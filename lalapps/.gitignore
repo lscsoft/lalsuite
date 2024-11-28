@@ -94,7 +94,6 @@ src/inspiral/lalapps_inspiral_online_pipe
 src/inspiral/lalapps_inspiral_online_pipe_inject
 src/inspiral/lalapps_inspiral_ssipe
 src/inspiral/lalapps_link_old_ihope
-src/inspiral/lalapps_make_nr_hdf_catalog
 src/inspiral/lalapps_mdc_ninja
 src/inspiral/lalapps_multi_hipe
 src/inspiral/lalapps_ninja

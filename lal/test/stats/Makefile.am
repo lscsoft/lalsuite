@@ -1,6 +1,10 @@
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
+EXTRA_DIST += \
+	LALMarcumQTest.py \
+	$(END_OF_LIST)
+
 # Add compiled test programs to this variable
 test_programs += XLALChisqTest
 

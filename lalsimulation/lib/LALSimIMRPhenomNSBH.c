@@ -216,7 +216,7 @@ int IMRPhenomNSBH_Core(
     REAL8Sequence *planck_taper = XLALCreateREAL8Sequence(n_full);
     status = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
         phi_tidal, amp_tidal, planck_taper, freqs,
-        mBH_SI, mNS_SI, 0.0, lambda_NS, NRTidalv2_V);
+        mBH_SI, mNS_SI, 0.0, lambda_NS, 0, 0, NRTidalv2_V);
     XLAL_CHECK(XLAL_SUCCESS == status, status, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
 
     const REAL8 amp0 = XLALSimPhenomUtilsFDamp0(M, distance);

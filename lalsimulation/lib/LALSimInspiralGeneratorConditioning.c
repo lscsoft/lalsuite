@@ -82,7 +82,7 @@ static int generate_conditioned_td_waveform_from_td(REAL8TimeSeries **hplus, REA
     FIX_REFERENCE_FREQUENCY(f_ref, f_min, approx);
     
     /* This option recovers the behaviour of SimInspiralTD in the old interface */
-    if (XLALDictLookupINT4Value(params, "condition") == 2)
+    if (XLALDictContains(params, "condition") && XLALDictLookupINT4Value(params, "condition") == 2)
     {
       /* apply redshift correction to dimensionful source-frame quantities */
       REAL8 z=XLALSimInspiralWaveformParamsLookupRedshift(params);
@@ -188,7 +188,7 @@ static int generate_conditioned_td_waveform_from_fd(REAL8TimeSeries **hplus, REA
     FIX_REFERENCE_FREQUENCY(f_ref, f_min, approx);
     
     /* This option recovers the behaviour of SimInspiralTD in the old interface */
-    if (XLALDictLookupINT4Value(params, "condition") == 2)
+    if (XLALDictContains(params, "condition") && XLALDictLookupINT4Value(params, "condition") == 2)
     {
       /* apply redshift correction to dimensionful source-frame quantities */
       REAL8 z=XLALSimInspiralWaveformParamsLookupRedshift(params);
@@ -340,7 +340,7 @@ static int generate_conditioned_fd_waveform_from_fd(COMPLEX16FrequencySeries **h
     FIX_REFERENCE_FREQUENCY(f_ref, f_min, approx);
 
     /* This option recovers the behaviour of SimInspiralFD in the old interface */
-    if (XLALDictLookupINT4Value(params, "condition") == 2)
+    if (XLALDictContains(params, "condition") && XLALDictLookupINT4Value(params, "condition") == 2)
     {
       /* apply redshift correction to dimensionful source-frame quantities */
       REAL8 z=XLALSimInspiralWaveformParamsLookupRedshift(params);
@@ -508,7 +508,7 @@ static int generate_conditioned_fd_waveform_from_td(COMPLEX16FrequencySeries **h
     FIX_REFERENCE_FREQUENCY(f_ref, f_min, approx);
     
     /* This option recovers the behaviour of SimInspiralFD in the old interface */
-    if (XLALDictLookupINT4Value(params, "condition") == 2)
+    if (XLALDictContains(params, "condition") && XLALDictLookupINT4Value(params, "condition") == 2)
     {
       /* apply redshift correction to dimensionful source-frame quantities */
       REAL8 z=XLALSimInspiralWaveformParamsLookupRedshift(params);

@@ -19,12 +19,19 @@
 #ifndef LALCOSMOLOGYCALCULATOR_H
 #define LALCOSMOLOGYCALCULATOR_H
 
-#include <stdio.h>
-#include <stdlib.h> 
-#include <string.h>
-#include <math.h>
-#include <gsl/gsl_const_mksa.h>
-#include <gsl/gsl_integration.h>
+#include <lal/LALConstants.h>
+
+/**
+ * @name Default cosmological pararameters
+ *
+ * To use the default cosmology in astropy with SWIG-Python LAL:
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.py}
+ * from lal import H0_SI, OMEGA_M
+ * from astropy.cosmology import FlatLambdaCDM
+ * from astropy.units import Hz
+ * cosmo = FlatLambdaCDM(H0=H0_SI*Hz, Om0=OMEGA_M)
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ */
 
 typedef struct tagLALCosmologicalParameters
 {
@@ -102,6 +109,7 @@ double XLALIntegrateComovingVolume(LALCosmologicalParameters *omega, double z);
 double XLALIntegrateComovingVolumeDensity(LALCosmologicalParameters *omega, double z);
             
 LALCosmologicalParameters *XLALCreateCosmologicalParameters(double h, double om, double ol, double w0, double w1, double w2);
+LALCosmologicalParameters *XLALCreateDefaultCosmologicalParameters(void);
 
 void XLALDestroyCosmologicalParameters(LALCosmologicalParameters *omega);
 

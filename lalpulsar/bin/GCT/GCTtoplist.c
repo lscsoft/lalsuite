@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -52,7 +53,7 @@ extern int _doserrno;
 
 /* finite */
 #include <float.h>
-#define finite _finite
+#define finite isfinite
 
 #else /* WIN32 */
 
@@ -242,7 +243,7 @@ static int gctFstat_final_qsort( const void *a, const void *b )
 
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
-int create_gctFstat_toplist( toplist_t **tl, UINT8 length, UINT4 whatToSortBy )
+int create_gctFstat_toplist( toplist_t **tl, UINT8 length, SortBy_t whatToSortBy )
 {
 #ifdef DEBUG_SORTING
   if ( !debugfp ) {

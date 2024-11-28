@@ -163,7 +163,7 @@ extern "C" {
  * \f]
  * is usually not an integer.
  *
- * Note that the factor \f$ e^{\pm 2\pi i k} \f$ in the numerators of the equation for \f$ \tilde{h}_k \f$ 
+ * Note that the factor \f$ e^{\pm 2\pi i k} \f$ in the numerators of the equation for \f$ \tilde{h}_k \f$
  * equals 1.  Furthermore, for \f$ 0 < \kappa < N/2 \f$ and \f$ |\kappa - k| << N \f$ the first term
  * dominates and can be Taylor expanded to give:
  * \f[
@@ -233,43 +233,43 @@ extern "C" {
 
 /** \name Error codes */
 /** @{ */
-#define GENERATEPULSARSIGNALH_ENULL 		1	/**< Arguments contained an unexpected null pointer */
-#define GENERATEPULSARSIGNALH_ENONULL		2	/**< Output pointer is not NULL */
-#define GENERATEPULSARSIGNALH_EMEM		3	/**< Out of memory */
-#define GENERATEPULSARSIGNALH_ESAMPLING		4	/**< Waveform sampling interval too large. */
-#define GENERATEPULSARSIGNALH_ESSBCONVERT	5	/**< SSB-\>GPS iterative conversion failed */
-#define GENERATEPULSARSIGNALH_ESYS		6	/**< System error, probably while File I/O */
-#define GENERATEPULSARSIGNALH_ETIMEBOUND	7	/**< Timestamp outside of allowed time-interval */
-#define GENERATEPULSARSIGNALH_ENUMSFTS		8	/**< Inconsistent number of SFTs in timestamps and noise-SFTs */
-#define GENERATEPULSARSIGNALH_EINCONSBAND	9	/**< Inconsistent values of sampling-rate and Tsft */
-#define GENERATEPULSARSIGNALH_ENOISEDELTAF	10	/**< Frequency resolution of noise-SFTs inconsistent with signal */
-#define GENERATEPULSARSIGNALH_ENOISEBAND	11	/**< Frequency band of noise-SFTs inconsistent with signal */
-#define GENERATEPULSARSIGNALH_ENOISEBINS	12	/**< Frequency bins of noise-SFTs inconsistent with signal */
-#define GENERATEPULSARSIGNALH_EBADCOORDS	13	/**< Current code requires sky position in equatorial coordinates */
-#define GENERATEPULSARSIGNALH_ELUTS		14	/**< Lookup tables (LUTs) for trig functions must be defined on domain -2pi to 2pi inclusive */
-#define GENERATEPULSARSIGNALH_EDTERMS		15	/**< Dterms must be greater than zero and less than or equal to half the number of SFT bins */
-#define GENERATEPULSARSIGNALH_EINPUT		16	/**< Invalid input-arguments to function */
-#define GENERATEPULSARSIGNALH_EDETECTOR		17	/**< Unknown detector-name */
+#define GENERATEPULSARSIGNALH_ENULL             1       /**< Arguments contained an unexpected null pointer */
+#define GENERATEPULSARSIGNALH_ENONULL           2       /**< Output pointer is not NULL */
+#define GENERATEPULSARSIGNALH_EMEM              3       /**< Out of memory */
+#define GENERATEPULSARSIGNALH_ESAMPLING         4       /**< Waveform sampling interval too large. */
+#define GENERATEPULSARSIGNALH_ESSBCONVERT       5       /**< SSB-\>GPS iterative conversion failed */
+#define GENERATEPULSARSIGNALH_ESYS              6       /**< System error, probably while File I/O */
+#define GENERATEPULSARSIGNALH_ETIMEBOUND        7       /**< Timestamp outside of allowed time-interval */
+#define GENERATEPULSARSIGNALH_ENUMSFTS          8       /**< Inconsistent number of SFTs in timestamps and noise-SFTs */
+#define GENERATEPULSARSIGNALH_EINCONSBAND       9       /**< Inconsistent values of sampling-rate and Tsft */
+#define GENERATEPULSARSIGNALH_ENOISEDELTAF      10      /**< Frequency resolution of noise-SFTs inconsistent with signal */
+#define GENERATEPULSARSIGNALH_ENOISEBAND        11      /**< Frequency band of noise-SFTs inconsistent with signal */
+#define GENERATEPULSARSIGNALH_ENOISEBINS        12      /**< Frequency bins of noise-SFTs inconsistent with signal */
+#define GENERATEPULSARSIGNALH_EBADCOORDS        13      /**< Current code requires sky position in equatorial coordinates */
+#define GENERATEPULSARSIGNALH_ELUTS             14      /**< Lookup tables (LUTs) for trig functions must be defined on domain -2pi to 2pi inclusive */
+#define GENERATEPULSARSIGNALH_EDTERMS           15      /**< Dterms must be greater than zero and less than or equal to half the number of SFT bins */
+#define GENERATEPULSARSIGNALH_EINPUT            16      /**< Invalid input-arguments to function */
+#define GENERATEPULSARSIGNALH_EDETECTOR         17      /**< Unknown detector-name */
 /** @} */
 
 /** \cond DONT_DOXYGEN */
-#define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
-#define GENERATEPULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
-#define GENERATEPULSARSIGNALH_MSGEMEM		"Out of memory"
-#define GENERATEPULSARSIGNALH_MSGESAMPLING	"Waveform sampling interval too large."
-#define GENERATEPULSARSIGNALH_MSGESSBCONVERT	"SSB->GPS iterative conversion failed"
-#define GENERATEPULSARSIGNALH_MSGESYS		"System error, probably while File I/O"
-#define GENERATEPULSARSIGNALH_MSGETIMEBOUND	"Timestamp outside of allowed time-interval"
-#define GENERATEPULSARSIGNALH_MSGENUMSFTS	"Inconsistent number of SFTs in timestamps and noise-SFTs"
-#define GENERATEPULSARSIGNALH_MSGEINCONSBAND	"Inconsistent values of sampling-rate and Tsft"
-#define GENERATEPULSARSIGNALH_MSGENOISEDELTAF	"Frequency resolution of noise-SFTs inconsistent with signal"
-#define GENERATEPULSARSIGNALH_MSGENOISEBAND	"Frequency band of noise-SFTs inconsistent with signal"
-#define GENERATEPULSARSIGNALH_MSGENOISEBINS	"Frequency bins of noise-SFTs inconsistent with signal"
-#define GENERATEPULSARSIGNALH_MSGEBADCOORDS	"Current code requires sky position in equatorial coordinates"
-#define GENERATEPULSARSIGNALH_MSGELUTS		"Lookup tables (LUTs) for trig functions must be defined on domain -2pi to 2pi inclusive"
-#define GENERATEPULSARSIGNALH_MSGEDTERMS	"Dterms must be greater than zero and less than or equal to half the number of SFT bins"
-#define GENERATEPULSARSIGNALH_MSGEINPUT		"Invalid input-arguments to function"
-#define GENERATEPULSARSIGNALH_MSGEDETECTOR	"Unknown detector-name"
+#define GENERATEPULSARSIGNALH_MSGENULL          "Arguments contained an unexpected null pointer"
+#define GENERATEPULSARSIGNALH_MSGENONULL        "Output pointer is not NULL"
+#define GENERATEPULSARSIGNALH_MSGEMEM           "Out of memory"
+#define GENERATEPULSARSIGNALH_MSGESAMPLING      "Waveform sampling interval too large."
+#define GENERATEPULSARSIGNALH_MSGESSBCONVERT    "SSB->GPS iterative conversion failed"
+#define GENERATEPULSARSIGNALH_MSGESYS           "System error, probably while File I/O"
+#define GENERATEPULSARSIGNALH_MSGETIMEBOUND     "Timestamp outside of allowed time-interval"
+#define GENERATEPULSARSIGNALH_MSGENUMSFTS       "Inconsistent number of SFTs in timestamps and noise-SFTs"
+#define GENERATEPULSARSIGNALH_MSGEINCONSBAND    "Inconsistent values of sampling-rate and Tsft"
+#define GENERATEPULSARSIGNALH_MSGENOISEDELTAF   "Frequency resolution of noise-SFTs inconsistent with signal"
+#define GENERATEPULSARSIGNALH_MSGENOISEBAND     "Frequency band of noise-SFTs inconsistent with signal"
+#define GENERATEPULSARSIGNALH_MSGENOISEBINS     "Frequency bins of noise-SFTs inconsistent with signal"
+#define GENERATEPULSARSIGNALH_MSGEBADCOORDS     "Current code requires sky position in equatorial coordinates"
+#define GENERATEPULSARSIGNALH_MSGELUTS          "Lookup tables (LUTs) for trig functions must be defined on domain -2pi to 2pi inclusive"
+#define GENERATEPULSARSIGNALH_MSGEDTERMS        "Dterms must be greater than zero and less than or equal to half the number of SFT bins"
+#define GENERATEPULSARSIGNALH_MSGEINPUT         "Invalid input-arguments to function"
+#define GENERATEPULSARSIGNALH_MSGEDETECTOR      "Unknown detector-name"
 /** \endcond */
 
 /**
@@ -279,14 +279,14 @@ extern "C" {
 typedef struct tagPulsarSignalParams {
   /* source-parameters */
   struct {
-   LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
-   SkyPosition position; /**< source location (in radians) */
-   REAL4 psi;            /**< polarization angle (radians) at tRef */
-   REAL4 aPlus; 	/**< plus-polarization amplitude at tRef */
-   REAL4 aCross;  	/**< cross-polarization amplitude at tRef */
-   REAL8 phi0;           /**< initial phase (radians) at tRef */
-   REAL8 f0;             /**< WAVE-frequency(!) at tRef (in Hz) */
-   REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
+    LIGOTimeGPS refTime; /**< reference time of pulsar parameters (in SSB!) */
+    SkyPosition position; /**< source location (in radians) */
+    REAL4 psi;            /**< polarization angle (radians) at tRef */
+    REAL4 aPlus;         /**< plus-polarization amplitude at tRef */
+    REAL4 aCross;        /**< cross-polarization amplitude at tRef */
+    REAL8 phi0;           /**< initial phase (radians) at tRef */
+    REAL8 f0;             /**< WAVE-frequency(!) at tRef (in Hz) */
+    REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
   } pulsar;
   struct {
     LIGOTimeGPS tp;         /**< time of observed periapsis passage (in SSB) */
@@ -299,16 +299,16 @@ typedef struct tagPulsarSignalParams {
 
   /* characterize the detector */
   const COMPLEX8FrequencySeries *transfer;/**< detector transfer function (NULL if not used) */
-  const LALDetector *site;		/**< detector location and orientation */
-  const EphemerisData *ephemerides;	/**< Earth and Sun ephemerides */
+  const LALDetector *site;              /**< detector location and orientation */
+  const EphemerisData *ephemerides;     /**< Earth and Sun ephemerides */
 
   /* characterize the output time-series */
   LIGOTimeGPS startTimeGPS;     /**< start time of output time series */
-  UINT4 duration;           	/**< length of time series in seconds */
-  REAL8 samplingRate;		/**< sampling rate of time-series (= 2 * frequency-Band) */
-  REAL8 fHeterodyne;		/**< heterodyning frequency for output time-series */
-  UINT4 dtDelayBy2; 		/**< half-interval for the Doppler delay look-up table for LALPulsarSimulateCoherentGW() */
-  UINT4 dtPolBy2; 		/**< half-interval for the polarisation response look-up table for LALPulsarSimulateCoherentGW() */
+  UINT4 duration;               /**< length of time series in seconds */
+  REAL8 samplingRate;           /**< sampling rate of time-series (= 2 * frequency-Band) */
+  REAL8 fHeterodyne;            /**< heterodyning frequency for output time-series */
+  UINT4 dtDelayBy2;             /**< half-interval for the Doppler delay look-up table for LALPulsarSimulateCoherentGW() */
+  UINT4 dtPolBy2;               /**< half-interval for the polarisation response look-up table for LALPulsarSimulateCoherentGW() */
 } PulsarSignalParams;
 #endif   /* SWIG */
 
@@ -316,13 +316,13 @@ typedef struct tagPulsarSignalParams {
  * Parameters defining the SFTs to be returned from LALSignalToSFTs().
  */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagSFTParams, timestamps, noiseSFTs, window));
+SWIGLAL( IMMUTABLE_MEMBERS( tagSFTParams, timestamps, noiseSFTs, window ) );
 #endif /* SWIG */
 typedef struct tagSFTParams {
-  REAL8 Tsft;			 /**< length of each SFT in seconds */
+  REAL8 Tsft;                    /**< length of each SFT in seconds */
   const LIGOTimeGPSVector *timestamps; /**< timestamps to produce SFTs for (can be NULL) */
-  const SFTVector *noiseSFTs;	 /**< noise SFTs to be added (can be NULL) */
-  const REAL4Window *window;	 /**< window function for the time series (can be NULL, which is equivalent to a rectangular window) */
+  const SFTVector *noiseSFTs;    /**< noise SFTs to be added (can be NULL) */
+  const REAL4Window *window;     /**< window function for the time series (can be NULL, which is equivalent to a rectangular window) */
 } SFTParams;
 
 /**
@@ -331,14 +331,14 @@ typedef struct tagSFTParams {
  * \c cosVal on the domain \f$ [-2\pi, 2\pi] \f$ inclusive.  See GeneratePulsarSignalTest.c for an example.
  */
 typedef struct tagSFTandSignalParams {
-   PulsarSignalParams *pSigParams;
-   SFTParams *pSFTParams;
-   INT4  nSamples;  /**< nsample from noise SFT header; 2x this equals effective number of time samples  */
-   INT4  Dterms;    /**< use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
-   INT4  resTrig;   /**< length sinVal, cosVal; domain: -2pi to 2pi; resolution = 4pi/resTrig */
-   REAL8 *trigArg;  /**< array of arguments to hold lookup table (LUT) values for doing trig calls */
-   REAL8 *sinVal;   /**< sinVal holds lookup table (LUT) values for doing trig sin calls */
-   REAL8 *cosVal;   /**< cosVal holds lookup table (LUT) values for doing trig cos calls */
+  PulsarSignalParams *pSigParams;
+  SFTParams *pSFTParams;
+  INT4  nSamples;  /**< nsample from noise SFT header; 2x this equals effective number of time samples  */
+  INT4  Dterms;    /**< use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
+  INT4  resTrig;   /**< length sinVal, cosVal; domain: -2pi to 2pi; resolution = 4pi/resTrig */
+  REAL8 *trigArg;  /**< array of arguments to hold lookup table (LUT) values for doing trig calls */
+  REAL8 *sinVal;   /**< sinVal holds lookup table (LUT) values for doing trig sin calls */
+  REAL8 *cosVal;   /**< cosVal holds lookup table (LUT) values for doing trig cos calls */
 } SFTandSignalParams;
 
 
@@ -347,30 +347,30 @@ typedef struct tagSFTandSignalParams {
  * These are output from LALComputeSkyAndZeroPsiAMResponse().
  */
 typedef struct tagSkyConstAndZeroPsiAMResponse {
-      REAL8  *skyConst;      /**< vector of A and B sky constants */
-      REAL4  *fPlusZeroPsi;  /**< vector of Fplus values for psi = 0 at midpoint of each SFT */
-      REAL4  *fCrossZeroPsi; /**< vector of Fcross values for psi = 0 at midpoint of each SFT */
+  REAL8  *skyConst;      /**< vector of A and B sky constants */
+  REAL4  *fPlusZeroPsi;  /**< vector of Fplus values for psi = 0 at midpoint of each SFT */
+  REAL4  *fCrossZeroPsi; /**< vector of Fcross values for psi = 0 at midpoint of each SFT */
 } SkyConstAndZeroPsiAMResponse;
 
 /*---------- Global variables ----------*/
 
 /* ---------- Function prototypes ---------- */
-REAL4TimeSeries *XLALGeneratePulsarSignal ( const PulsarSignalParams *params );
-REAL4TimeSeries *XLALGenerateLineFeature ( const PulsarSignalParams *params );
-SFTVector *XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, const SFTParams *params );
-int XLALConvertGPS2SSB ( LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params );
-int XLALConvertSSB2GPS ( LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params );
-int XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed );
+REAL4TimeSeries *XLALGeneratePulsarSignal( const PulsarSignalParams *params );
+REAL4TimeSeries *XLALGenerateLineFeature( const PulsarSignalParams *params );
+SFTVector *XLALSignalToSFTs( const REAL4TimeSeries *signalvec, const SFTParams *params );
+int XLALConvertGPS2SSB( LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params );
+int XLALConvertSSB2GPS( LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params );
+int XLALAddGaussianNoise( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed );
 
-void XLALDestroyMultiREAL4TimeSeries ( MultiREAL4TimeSeries *multiTS );
-void XLALDestroyMultiREAL8TimeSeries ( MultiREAL8TimeSeries *multiTS );
-  
+void XLALDestroyMultiREAL4TimeSeries( MultiREAL4TimeSeries *multiTS );
+void XLALDestroyMultiREAL8TimeSeries( MultiREAL8TimeSeries *multiTS );
+
 // ----- obsolete and deprecated LAL interface
-void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signalvec, const PulsarSignalParams *params);
-void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signalvec, const SFTParams *params);
+void LALGeneratePulsarSignal( LALStatus *, REAL4TimeSeries **signalvec, const PulsarSignalParams *params );
+void LALSignalToSFTs( LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signalvec, const SFTParams *params );
 
-void LALComputeSkyAndZeroPsiAMResponse (LALStatus *, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
-void LALFastGeneratePulsarSFTs (LALStatus *, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
+void LALComputeSkyAndZeroPsiAMResponse( LALStatus *, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params );
+void LALFastGeneratePulsarSFTs( LALStatus *, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params );
 
 /** @} */
 

@@ -94,10 +94,10 @@
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-void LALRotatePolarU(LALStatus            *status,
-		     REAL8UnitPolarCoor   *out,
-		     REAL8UnitPolarCoor   *in,
-		     REAL8UnitPolarCoor   *par)
+void LALRotatePolarU( LALStatus            *status,
+                      REAL8UnitPolarCoor   *out,
+                      REAL8UnitPolarCoor   *in,
+                      REAL8UnitPolarCoor   *par )
 {
 
   REAL8 Xx, Xy, Xz;
@@ -110,13 +110,13 @@ void LALRotatePolarU(LALStatus            *status,
   REAL8 Vx, Vy, Vz;
 
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (par, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT( out, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( par, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( in,  status, LUTH_ENULL, LUTH_MSGENULL );
   /* -------------------------------------------   */
 
   alphaN = par->alpha;
@@ -127,46 +127,46 @@ void LALRotatePolarU(LALStatus            *status,
 
   /* -------------------------------------------   */
   /* Initial vector */
-  VIx = cos(deltaIn) * cos(alphaIn) ;
-  VIy = cos(deltaIn) * sin(alphaIn);
-  VIz = sin(deltaIn);
+  VIx = cos( deltaIn ) * cos( alphaIn ) ;
+  VIy = cos( deltaIn ) * sin( alphaIn );
+  VIz = sin( deltaIn );
 
   /* -------------------------------------------   */
   /* Rotation matrix */
-  Xx =  -sin(deltaN) * cos(alphaN) ;
-  Xy =  -sin(deltaN) * sin(alphaN);
-  Xz =   cos(deltaN);
-  Yx =  -sin(alphaN);
-  Yy =   cos(alphaN);
+  Xx =  -sin( deltaN ) * cos( alphaN ) ;
+  Xy =  -sin( deltaN ) * sin( alphaN );
+  Xz =   cos( deltaN );
+  Yx =  -sin( alphaN );
+  Yy =   cos( alphaN );
   Yz =    0.0;
-  Zx =  -cos(deltaN) * cos(alphaN);
-  Zy =  -cos(deltaN) * sin(alphaN);
-  Zz =  -sin(deltaN);
+  Zx =  -cos( deltaN ) * cos( alphaN );
+  Zy =  -cos( deltaN ) * sin( alphaN );
+  Zz =  -sin( deltaN );
 
   /* -------------------------------------------   */
   /* Final vector */
 
-  Vx = Xx*VIx + Xy*VIy + Xz*VIz ;
-  Vy = Yx*VIx + Yy*VIy + Yz*VIz ;
-  Vz = Zx*VIx + Zy*VIy + Zz*VIz ;
+  Vx = Xx * VIx + Xy * VIy + Xz * VIz ;
+  Vy = Yx * VIx + Yy * VIy + Yz * VIz ;
+  Vz = Zx * VIx + Zy * VIy + Zz * VIz ;
 
   /* -------------------------------------------   */
 
   /* output */
 
-  if( Vx || Vy ){
-    out->alpha = atan2(Vy,Vx);
+  if ( Vx || Vy ) {
+    out->alpha = atan2( Vy, Vx );
   } else {
-    out->alpha =0.0;
+    out->alpha = 0.0;
   }
-  out->delta = asin(Vz);
+  out->delta = asin( Vz );
 
   /* -------------------------------------------   */
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
 
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -174,10 +174,10 @@ void LALRotatePolarU(LALStatus            *status,
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-void LALInvRotatePolarU(LALStatus            *status,
-		     REAL8UnitPolarCoor   *out,
-		     REAL8UnitPolarCoor   *in,
-		     REAL8UnitPolarCoor   *par)
+void LALInvRotatePolarU( LALStatus            *status,
+                         REAL8UnitPolarCoor   *out,
+                         REAL8UnitPolarCoor   *in,
+                         REAL8UnitPolarCoor   *par )
 {
 
   REAL8 Xx, Xy, Xz;
@@ -190,13 +190,13 @@ void LALInvRotatePolarU(LALStatus            *status,
   REAL8 Vx, Vy, Vz;
 
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (par, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT( out, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( par, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( in,  status, LUTH_ENULL, LUTH_MSGENULL );
   /* -------------------------------------------   */
 
   alphaN = par->alpha;
@@ -207,46 +207,46 @@ void LALInvRotatePolarU(LALStatus            *status,
 
   /* -------------------------------------------   */
   /* Initial vector */
-  VIx = cos(deltaIn) * cos(alphaIn) ;
-  VIy = cos(deltaIn) * sin(alphaIn);
-  VIz = sin(deltaIn);
+  VIx = cos( deltaIn ) * cos( alphaIn ) ;
+  VIy = cos( deltaIn ) * sin( alphaIn );
+  VIz = sin( deltaIn );
 
   /* -------------------------------------------   */
   /* Inverse Rotation matrix */
-  Xx =  - cos(alphaN) * sin(deltaN) ;
-  Xy =  - sin(alphaN);
-  Xz =  - cos(alphaN) * cos(deltaN);
-  Yx =  - sin(alphaN) * sin(deltaN);
-  Yy =    cos(alphaN);
-  Yz =  - sin(alphaN) * cos(deltaN) ;
-  Zx =     cos(deltaN);
+  Xx =  - cos( alphaN ) * sin( deltaN ) ;
+  Xy =  - sin( alphaN );
+  Xz =  - cos( alphaN ) * cos( deltaN );
+  Yx =  - sin( alphaN ) * sin( deltaN );
+  Yy =    cos( alphaN );
+  Yz =  - sin( alphaN ) * cos( deltaN ) ;
+  Zx =     cos( deltaN );
   Zy =     0.0;
-  Zz =    -sin(deltaN);
+  Zz =    -sin( deltaN );
 
   /* -------------------------------------------   */
   /* Final vector */
 
-  Vx = Xx*VIx + Xy*VIy + Xz*VIz ;
-  Vy = Yx*VIx + Yy*VIy + Yz*VIz ;
-  Vz = Zx*VIx + Zy*VIy + Zz*VIz ;
+  Vx = Xx * VIx + Xy * VIy + Xz * VIz ;
+  Vy = Yx * VIx + Yy * VIy + Yz * VIz ;
+  Vz = Zx * VIx + Zy * VIy + Zz * VIz ;
 
   /* -------------------------------------------   */
 
   /* output */
 
-  if( Vx || Vy ){
-    out->alpha = atan2(Vy,Vx);
+  if ( Vx || Vy ) {
+    out->alpha = atan2( Vy, Vx );
   } else {
-    out->alpha =0.0;
+    out->alpha = 0.0;
   }
-  out->delta = asin(Vz);
+  out->delta = asin( Vz );
 
   /* -------------------------------------------   */
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
 
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 /* -------------------------------------------   */
@@ -254,32 +254,32 @@ void LALInvRotatePolarU(LALStatus            *status,
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-void LALStereoProjectPolar(LALStatus           *status,
-			   REAL8Polar2Coor     *out,
-			   REAL8UnitPolarCoor  *in)
+void LALStereoProjectPolar( LALStatus           *status,
+                            REAL8Polar2Coor     *out,
+                            REAL8UnitPolarCoor  *in )
 {
 
   REAL8   mygamma;
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT( out, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( in,  status, LUTH_ENULL, LUTH_MSGENULL );
   /*   Make sure delta is not pi/2: */
-  ASSERT (in->delta - LAL_PI_2 , status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT( in->delta - LAL_PI_2, status, LUTH_EVAL, LUTH_MSGEVAL );
   /* -------------------------------------------   */
 
   out->alpha = in->alpha;
-  mygamma = LAL_PI_4 + 0.5*(in->delta);
-  out->radius = 2.0 * tan(mygamma); /* positive or negative ! */
+  mygamma = LAL_PI_4 + 0.5 * ( in->delta );
+  out->radius = 2.0 * tan( mygamma ); /* positive or negative ! */
   /* -------------------------------------------   */
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
 
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -287,95 +287,95 @@ void LALStereoProjectPolar(LALStatus           *status,
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-void LALStereoProjectCart(LALStatus           *status,
-			  REAL8Cart2Coor      *out,
-			  REAL8UnitPolarCoor  *in )
+void LALStereoProjectCart( LALStatus           *status,
+                           REAL8Cart2Coor      *out,
+                           REAL8UnitPolarCoor  *in )
 {
 
   REAL8   mygamma;
   REAL8   alpha, radius;
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT( out, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( in,  status, LUTH_ENULL, LUTH_MSGENULL );
   /*   Make sure delta is not  pi/2: */
-  ASSERT (in->delta - LAL_PI_2 , status, LUTH_EVAL, LUTH_MSGEVAL);
+  ASSERT( in->delta - LAL_PI_2, status, LUTH_EVAL, LUTH_MSGEVAL );
   /* -------------------------------------------   */
 
   alpha = in->alpha;
-  mygamma = LAL_PI_4 + 0.5*(in->delta);
-  radius = 2.0 * tan(mygamma); /* positive or negative */
+  mygamma = LAL_PI_4 + 0.5 * ( in->delta );
+  radius = 2.0 * tan( mygamma ); /* positive or negative */
 
-  out->x = radius * cos(alpha);
-  out->y = radius * sin(alpha);
+  out->x = radius * cos( alpha );
+  out->y = radius * sin( alpha );
   /* -------------------------------------------   */
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
 
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-void LALStereoInvProjectPolar(LALStatus        *status,
-			   REAL8UnitPolarCoor  *out,
-			   REAL8Polar2Coor     *in)
+void LALStereoInvProjectPolar( LALStatus        *status,
+                               REAL8UnitPolarCoor  *out,
+                               REAL8Polar2Coor     *in )
 {
 
 
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT( out, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( in,  status, LUTH_ENULL, LUTH_MSGENULL );
   /* -------------------------------------------   */
 
   out->alpha = in->alpha;
-  out->delta = 2.0* atan(0.5*(in->radius) ) - LAL_PI_2;
+  out->delta = 2.0 * atan( 0.5 * ( in->radius ) ) - LAL_PI_2;
 
   /*  Note: since I have not ask for a positive radius input, */
   /*  delta in principle is not cofined to (-pi/2, pi/2)      */
   /* -------------------------------------------   */
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
 
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-void LALStereoInvProjectCart(LALStatus           *status,
-			     REAL8UnitPolarCoor  *out,
-			     REAL8Cart2Coor      *in)
+void LALStereoInvProjectCart( LALStatus           *status,
+                              REAL8UnitPolarCoor  *out,
+                              REAL8Cart2Coor      *in )
 {
 
-  REAL8 x,y,radius;
+  REAL8 x, y, radius;
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (in,  status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT( out, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( in,  status, LUTH_ENULL, LUTH_MSGENULL );
   /* -------------------------------------------   */
 
   x = in->x;
   y = in->y;
-  if ( x || y ){
-    radius = sqrt(x*x + y*y);
+  if ( x || y ) {
+    radius = sqrt( x * x + y * y );
 
-    out->alpha = atan2(y,x);
-    out->delta = 2.0* atan(0.5*(radius) ) - LAL_PI_2;
+    out->alpha = atan2( y, x );
+    out->delta = 2.0 * atan( 0.5 * ( radius ) ) - LAL_PI_2;
     /*  Note: since I have not ask for a positive radius input, */
     /*  delta in principle is not cofined to (-pi/2, pi/2)      */
 
@@ -386,10 +386,10 @@ void LALStereoInvProjectCart(LALStatus           *status,
 
   /* -------------------------------------------   */
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
 
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 

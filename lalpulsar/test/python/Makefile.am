@@ -11,6 +11,7 @@ test_scripts += \
 	test_ReadSFDB.py \
 	test_simulateCW.py \
 	test_public_sft_directory.py \
+	test_metric_utils.py \
 	$(END_OF_LIST)
 
 # Add any helper programs required by tests to this variable

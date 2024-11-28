@@ -14,7 +14,7 @@ from . import quaternion_utils
 from .nrfits import NRFits
 
 class NRSur7dq4Remnant(NRFits):
-    """
+    r"""
     Class for NRSur7dq4Remnant model for the mass, spin and kick of the final BH
     of generically precessing binary black holes.
 

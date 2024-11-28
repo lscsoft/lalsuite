@@ -38,17 +38,16 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepending: true
   error_overlinking: true
   ignore_run_exports:
-    - numpy
     - python
   number: 9999
   script_env:
     - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
     - GITLAB_CI
-  skip: true  # [win]
+  # python-lalburst is py>=39
+  skip: true  # [win or py==39]
 
 requirements:
   build:
@@ -154,7 +153,6 @@ test:
     - lalapps_inspfrinj --help
     - lalapps_inspinj --f-lower 30 --waveform IMRPhenomD --gps-start-time 1000000000 --gps-end-time 1000000010 --d-distr volume --l-distr random --m-distr log --i-distr gaussian --incl-std 2 --min-distance 100000 --max-distance 120000 --min-mass1 10 --max-mass1 20 --min-mass2 10 --max-mass2 20 --disable-spin --time-step
       2
-    - lalapps_make_nr_hdf_catalog --help
     - lalapps_power --help
     - lalapps_power_likelihood_pipe --help
     - lalapps_power_pipe --help
@@ -178,8 +176,6 @@ test:
     - ( set +e; lalapps_ComputePSD --help; test $? -ne 127 )
     - ( set +e; lalapps_Makefakedata_v5 --help; test $? -ne 127 )
     - ( set +e; lalapps_Weave --help; test $? -ne 127 )
-    - ( set +e; lalapps_create_solar_system_ephemeris --help; test $? -ne 127 )
-    - ( set +e; lalapps_create_solar_system_ephemeris_python --help; test $? -ne 127 )
     - ( set +e; lalapps_create_time_correction_ephemeris --help; test $? -ne 127 )
     - ( set +e; lalapps_fits_header_getval --help; test $? -ne 127 )
     - ( set +e; lalapps_fits_header_list --help; test $? -ne 127 )

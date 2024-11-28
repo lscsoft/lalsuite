@@ -12,7 +12,7 @@ import lal
 from .nrfits import NRFits
 
 class NRSur3dq8Remnant(NRFits):
-    """
+    r"""
     Class for NRSur3dq8Remnant model for the remnant mass, spin and kick
     velocity for nonprecessing BBH systems. This model was called surfinBH3dq8
     in the paper.

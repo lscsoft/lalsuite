@@ -146,7 +146,6 @@ Requires: python%{python3_pkgversion}-lscsoft-glue >= @MIN_GLUE_VERSION@
 Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Requires: python%{python3_pkgversion}-scipy >= 0.8
-Requires: python%{python3_pkgversion}-six
 Obsoletes: python2-%{name} < 3.1.0-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
@@ -239,6 +238,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Jul 29 2024 Adam Mercer <adam.mercer@ligo.org> 4.1.7-1
+- Update for 4.1.7
+
+* Mon Mar 11 2024 Duncan Macleod <duncan.macleod@ligo.org> 4.1.6-1
+- Update for 4.1.6
+
 * Fri Oct 20 2023 Adam Mercer <adam.mercer@ligo.org> 4.1.5-1
 - Update for 4.1.5
 

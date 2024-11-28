@@ -1,3 +1,4 @@
+##python
 # -*- coding: utf-8 -*-
 #
 #       cbcBayesBurstPostProc.py
@@ -32,9 +33,7 @@
 #standard library imports
 import sys
 import os
-
-from six.moves import cPickle as pickle
-
+import pickle
 from time import strftime
 
 #related third party imports

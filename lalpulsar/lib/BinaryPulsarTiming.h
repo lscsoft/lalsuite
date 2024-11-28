@@ -78,9 +78,7 @@ not be in the binary timing routine"
 
 
 /** structure containing the Kopeikin terms */
-typedef struct
-tagKopeikinTerms
-{
+typedef struct tagKopeikinTerms {
   REAL8 DK011;
   REAL8 DK012;
   REAL8 DK013;
@@ -100,24 +98,20 @@ tagKopeikinTerms
   REAL8 DK042;
   REAL8 DK043;
   REAL8 DK044;
-}KopeikinTerms;
+} KopeikinTerms;
 
 /** structure containing the input parameters for the binary delay function */
-typedef struct
-tagBinaryPulsarInput
-{
+typedef struct tagBinaryPulsarInput {
   REAL8 tb;    /**< Time of arrival (TOA) at the SSB */
 
   EarthState earth; /**< The current Earth state (for e.g. calculating
                          Kopeikin terms) */
-}BinaryPulsarInput;
+} BinaryPulsarInput;
 
 /** structure containing the output parameters for the binary delay function */
-typedef struct
-tagBinaryPulsarOutput
-{
+typedef struct tagBinaryPulsarOutput {
   REAL8 deltaT; /**< deltaT to add to TDB in order to account for binary */
-}BinaryPulsarOutput;
+} BinaryPulsarOutput;
 
 /**** DEFINE FUNCTIONS ****/
 /**
@@ -129,7 +123,7 @@ tagBinaryPulsarOutput
  * TEMPO2 code T2model.C
  */
 void
-XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u);
+XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u );
 
 /**
  * \brief This function will compute the effect of binary parameters on the

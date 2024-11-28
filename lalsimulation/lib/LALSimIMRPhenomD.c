@@ -112,7 +112,7 @@ int XLALSimIMRPhenomDGenerateFD(
     const REAL8 chi1,                  /**< Aligned-spin parameter of companion 1 */
     const REAL8 chi2,                  /**< Aligned-spin parameter of companion 2 */
     const REAL8 f_min,                 /**< Starting GW frequency (Hz) */
-    const REAL8 f_max,                 /**< End frequency; 0 defaults to Mf = \ref f_CUT */
+    const REAL8 f_max,                 /**< End frequency; 0 defaults to Mf = f_CUT */
     const REAL8 distance,               /**< Distance of source (m) */
     LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
     NRTidal_version_type NRTidal_version /**< Version of NRTides; can be one of NRTidal versions or NoNRT_V for the BBH baseline */
@@ -426,7 +426,7 @@ static int IMRPhenomDGenerateFD(
   int ret = XLAL_SUCCESS;
   /* Now generate the waveform */
   if (NRTidal_version == NRTidalv2_V) {
-    /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for IMRPhenomD_NRTidalv2 */
+    /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for IMRPhenomD_NRTidalv2*/
     amp_tidal = XLALCreateREAL8Sequence(freqs->length);
     ret = XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(amp_tidal, freqs, m1, m2, lambda1, lambda2);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate tidal amplitude series to construct IMRPhenomD_NRTidalv2 waveform.");

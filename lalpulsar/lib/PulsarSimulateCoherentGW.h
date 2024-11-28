@@ -58,7 +58,7 @@ extern "C" {
  * and \f$ t \f$ is the time measured by a synchronized clock at \f$ \mathbf{x} \f$ .  We
  * adopt the standard meaning of the instantaneous strain amplitudes
  * \f$ h_{+,\times} \f$ : in some reference transverse \f$ x \f$ - \f$ y \f$ coordinate system
- * oriented such that \f$ \mathbf{\hat{x}}\times\mathbf{\hat{y}}=-\mathbf{\hat{n}} \f$ 
+ * oriented such that \f$ \mathbf{\hat{x}}\times\mathbf{\hat{y}}=-\mathbf{\hat{n}} \f$
  * points in the direction of propagation, two free observers originally
  * separated by a displacement \f$ (x,y) \f$ will experience an additional
  * tidal displacement \f$ \delta x=(xh_+ + yh_\times)/2 \f$ , \f$ \delta
@@ -108,7 +108,7 @@ extern "C" {
  * \f}
  * The physical meaning of these functions is shown in \ref cw_inject_phase_diagram "this figure".
  *
- * There is a close relationship between the polarization shift \f$ \Phi \f$ 
+ * There is a close relationship between the polarization shift \f$ \Phi \f$
  * and the orientation of the \f$ x \f$ - \f$ y \f$ coordinates used to define our
  * polarization basis: if we rotate the \f$ x \f$ and \f$ y \f$ axes by an angle
  * \f$ \Delta\psi \f$ , we change \f$ \Phi \f$ by an amount \f$ -2\Delta\psi \f$ .  (The
@@ -136,7 +136,7 @@ extern "C" {
  * fixed-axis rotating source: If \f$ \mathbf{\hat{z}} \f$ points in the direction
  * of wave propagation (away from the source), and \f$ \mathbf{\hat{l}} \f$ points
  * in the (constant) direction of the source's angular momentum vector,
- * then the \f$ x \f$ - \f$ y \f$ coordinates used to define the + and \f$ \times \f$ 
+ * then the \f$ x \f$ - \f$ y \f$ coordinates used to define the + and \f$ \times \f$
  * polarizations are given by \f$ \mathbf{\hat{x}}=|\csc
  * i|\mathbf{\hat{z}}\times\mathbf{\hat{l}} \f$ and
  * \f$ \mathbf{\hat{y}}=\mathbf{\hat{z}}\times\mathbf{\hat{x}} \f$ , where
@@ -195,7 +195,7 @@ extern "C" {
  * instrumental response (in units of "counts" from an
  * analog \f$ \rightarrow \f$ digital converter) to gravitational waves of unit
  * amplitued at the frequency \f$ f \f$ .  Specifically, if the strain exerted
- * on the antenna is given by \f$ h(t)=\mathrm{Re}[{\cal H}e^{2\pi ift}] \f$ 
+ * on the antenna is given by \f$ h(t)=\mathrm{Re}[{\cal H}e^{2\pi ift}] \f$
  * (where the complex amplitude \f$ \cal H \f$ includes the phase of the wave),
  * then the ADC output of the instrument is given by:
  * \f[
@@ -300,18 +300,19 @@ typedef struct tagPulsarDetectorResponse {
 
 /* Function prototypes. */
 
-int XLALPulsarSimulateCoherentGW ( REAL4TimeSeries  *output, PulsarCoherentGW *CWsignal, PulsarDetectorResponse *detector );
+int XLALPulsarSimulateCoherentGW( REAL4TimeSeries  *output, PulsarCoherentGW *CWsignal, PulsarDetectorResponse *detector );
 
 void
 LALPulsarSimulateCoherentGW( LALStatus        *status,
-                       REAL4TimeSeries  *output,
-                       PulsarCoherentGW       *input,
-                       PulsarDetectorResponse *detector );
+                             REAL4TimeSeries  *output,
+                             PulsarCoherentGW       *input,
+                             PulsarDetectorResponse *detector );
 
 /** @} */
 
 #if 0
-{ /* so that editors will match succeeding brace */
+{
+  /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
 }
 #endif

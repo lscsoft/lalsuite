@@ -123,7 +123,7 @@ int IMRPhenomD_NRTidal_Core(
       /**< tidal coupling constant.*/
       const double kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
       /* Prepare tapering of amplitude beyond merger frequency */
-      const double fHz_mrg = XLALSimNRTunedTidesMergerFrequency( (m1_SI+m2_SI)/LAL_MSUN_SI , kappa2T, m1_SI/m2_SI);
+      const double fHz_mrg = XLALSimNRTunedTidesMergerFrequency( (m1_SI+m2_SI)/LAL_MSUN_SI, kappa2T, m1_SI/m2_SI);
       const double NRTIDAL_FMAX = 1.3*fHz_mrg;
 
       if ( ( fHigh > NRTIDAL_FMAX ) || ( fHigh == 0.0 ) )
@@ -210,12 +210,12 @@ int IMRPhenomD_NRTidal_Core(
   phi_tidal = XLALCreateREAL8Sequence(freqs->length);
   planck_taper = XLALCreateREAL8Sequence(freqs->length);
   if (NRTidal_version == NRTidalv2_V) { 
-    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, NRTidalv2NoAmpCorr_V);
+    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, 0.0, 0.0, NRTidalv2NoAmpCorr_V);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
     XLALSimInspiralGetHOSpinTerms(&SS_3p5PN, &SSS_3p5PN, X_A, X_B, chi1, chi2, dquadmon1+1., dquadmon2+1.);
   }
   else {
-    XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, NRTidal_version);
+    XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, 0.0, 0.0, NRTidal_version);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
   }
 

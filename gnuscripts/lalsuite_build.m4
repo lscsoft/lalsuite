@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 179
+# serial 183
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -519,15 +519,26 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
     ])
   ])
   AS_IF([test "x${python}" != xfalse || test "x${lalsuite_require_pyvers}" != x],[
-    AM_PATH_PYTHON([${lalsuite_pyvers}],[
-      AC_SUBST([python_prefix], [`${PYTHON} -c 'import sys; print(sys.prefix)' 2>/dev/null`])
-      AC_SUBST([python_exec_prefix], [`${PYTHON} -c 'import sys; print(sys.exec_prefix)' 2>/dev/null`])
-    ],[
+    AM_PATH_PYTHON([${lalsuite_pyvers}],[],[
       AS_IF([test "x${python}" = xtrue || test "x${lalsuite_require_pyvers}" != x],[
         AC_MSG_ERROR([Python version ${lalsuite_pyvers} or later is required])
       ],[
         python=false
       ])
+    ])
+    # Always install Python files into the same prefix as the rest of LALSuite
+    # - These variables may be set by AM_PATH_PYTHON
+    AC_SUBST([PYTHON_PREFIX], ['${prefix}'])
+    AC_SUBST([PYTHON_EXEC_PREFIX], ['${exec_prefix}'])
+    # Prefix where Python executable is installed
+    AC_SUBST([LALSUITE_PYTHON_SYS_PREFIX],[`${PYTHON} -c 'import sys; print(sys.prefix)'`])
+    AS_IF([test "x${LALSUITE_PYTHON_SYS_PREFIX}" = x],[
+      AC_MSG_ERROR([could not determine ${PYTHON} sys.prefix])
+    ])
+    # Path to Python executable
+    AC_SUBST([LALSUITE_PYTHON_SYS_EXECUTABLE],[`${PYTHON} -c 'import sys; print(sys.executable)'`])
+    AS_IF([test "x${LALSUITE_PYTHON_SYS_EXECUTABLE}" = x],[
+      AC_MSG_ERROR([could not determine ${PYTHON} sys.executable])
     ])
   ])
   AS_IF([test "x${python}" = xfalse && test "x${lalsuite_require_pyvers}" = x],[
@@ -1169,6 +1180,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
   AC_REQUIRE([LALSUITE_CHECK_GIT_REPO])
 
   # add configuration option for MathJax installation
+  AC_SUBST([DOXYGEN_MATHJAXDIR])
   AC_ARG_WITH(
     [mathjax],
     AS_HELP_STRING(
@@ -1177,7 +1189,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
     ),[
       DOXYGEN_MATHJAXDIR="${withval}"
     ],[
-      DOXYGEN_MATHJAXDIR=
+      DOXYGEN_MATHJAXDIR='https://cdn.mathjax.org/mathjax/latest'
     ]
   )
 
@@ -1264,37 +1276,16 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
       DOXYGEN_NAVIGATION_TABS="${LALSUITE_PACKAGES}"
     ])
 
-    # configure MathJax
-    AC_SUBST([DOXYGEN_MATHJAXDIR])
-    AS_IF([test "x${DOXYGEN_MATHJAXDIR}" != x],[
-      AS_IF([test ! -f "${DOXYGEN_MATHJAXDIR}/MathJax.js"],[
-        AC_MSG_ERROR([no MathJax installation found in ${DOXYGEN_MATHJAXDIR}])
-      ])
-    ],[
-      for dir in /usr/share/javascript/mathjax; do
-        AC_MSG_CHECKING([for MathJax installation in ${dir}])
-        AS_IF([test -f "${dir}/MathJax.js"],[
-          AC_MSG_RESULT([yes])
-          DOXYGEN_MATHJAXDIR="${dir}"
-          break
-        ],[
-          AC_MSG_RESULT([no])
-        ])
-      done
-      AS_IF([test "x${DOXYGEN_MATHJAXDIR}" = x],[
-        DOXYGEN_MATHJAXDIR='https://cdn.mathjax.org/mathjax/latest'
-        AC_MSG_NOTICE([using MathJax CDN at ${DOXYGEN_MATHJAXDIR}])
-      ])
-    ])
-
     # check for a program to convert Markdown to HTML
     # - assumed usage: ${MARKDOWN2HTML} in.md > out.html
     AC_MSG_NOTICE([checking for a program to convert Markdown to HTML])
     AC_CHECK_PROGS([MARKDOWN2HTML],[pandoc markdown],[cat])
     AS_IF([test "X${MARKDOWN2HTML}" = Xcat],[
       AC_MSG_WARN([no Markdown to HTML converter found; Markdown in Doxygen will be rendered verbatim])
+      AC_SUBST([MARKDOWN2HTML_DOXYBLOCK],[verbatim])
     ],[
       AC_MSG_NOTICE([Markdown in Doxygen will be converted to HTML using ${MARKDOWN2HTML}])
+      AC_SUBST([MARKDOWN2HTML_DOXYBLOCK],[htmlonly])
     ])
 
   ])

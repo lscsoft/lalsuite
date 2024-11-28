@@ -33,7 +33,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepending: true
   error_overlinking: true
   number: 9999
   script_env:
@@ -93,7 +92,6 @@ outputs:
   - name: liblalpulsar
     script: install-lib.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       run_exports:
         - {{ pin_subpackage("liblalpulsar", max_pin="x") }}
@@ -151,17 +149,18 @@ outputs:
   - name: python-lalpulsar
     script: build-python.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - cfitsio
-        - numpy
         - python
       script_env:
         - CI_COMMIT_TAG
         - CI_PIPELINE_SOURCE
         - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
         - GITLAB_CI
+      # no python-lalinference on Python 3.9
+      # (astropy (for python-lalsimulation) is incompatible with numpy 2)
+      skip: true  # [py<310]
     requirements:
       build:
         - {{ compiler('c') }}
@@ -187,24 +186,34 @@ outputs:
         - cfitsio
       run:
         - astropy
+        - h5py
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
-        - {{ pin_compatible('numpy') }}
+        - numpy
+        - lscsoft-glue >=1.54.1
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - six
+        - sympy
     test:
       requires:
         - mock  # [py<33]
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
+        - solar_system_ephemerides
+        - tqdm
       source_files:
         - test/python
         - lib/*.dat.gz
       commands:
         - LAL_TEST_PKGDATADIR="./lib" python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python
+        - |
+          env LAL_DEBUG_LEVEL=info python3 - <<EOF
+          import lalpulsar
+          # not in lalpulsar-data, only in solar_system_ephemerides
+          lalpulsar.InitBarycenter("earth00-40-DE440.dat.gz", "sun00-40-DE440.dat.gz")
+          EOF
       imports:
         - lalpulsar
         - lalpulsar.NstarTools
@@ -230,7 +239,9 @@ outputs:
     build:
       ignore_run_exports:
         - python
-        - numpy
+      # no python-lalinference on Python 3.9
+      # (astropy (for python-lalsimulation) is incompatible with numpy 2)
+      skip: true  # [py<310]
     requirements:
       build:
         - {{ compiler('c') }}
@@ -240,6 +251,7 @@ outputs:
         - bc  # [build_platform == target_platform]
         - astropy  # [build_platform == target_platform]
         - cfitsio
+        - fftw
         - gsl
         - jplephem  # [build_platform == target_platform]
         - h5py  # [build_platform == target_platform]
@@ -259,11 +271,14 @@ outputs:
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - scipy   # [build_platform == target_platform]
+        - sympy   # [build_platform == target_platform]
       run:
         - astropy
         - cfitsio
+        - fftw
         - gsl
         - gwdatafind
+        - h5py
         - jplephem
         - lalinference >={{ lalinference_version }}
         - liblal >={{ lal_version }}
@@ -272,18 +287,17 @@ outputs:
         - liblalsimulation >={{ lalsimulation_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - libsistr  # [unix]
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - {{ pin_subpackage('python-lalpulsar', exact=True) }}
+        - sympy
     test:
       commands:
         - lalpulsar_version --verbose
-        - lalpulsar_create_solar_system_ephemeris --help
-        - lalpulsar_create_solar_system_ephemeris_python --help
         - lalpulsar_create_time_correction_ephemeris --help
         - lalpulsar_fits_header_getval --help
         - lalpulsar_fits_header_list --help

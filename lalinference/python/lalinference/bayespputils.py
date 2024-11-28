@@ -63,7 +63,6 @@ import socket
 from itertools import combinations
 from .lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
 import re
-import six
 
 try:
     import lalsimulation as lalsim
@@ -744,7 +743,7 @@ class PosteriorOneDPDF(object):
 
     @property
     def stacc(self):
-        """
+        r"""
         Return the 'standard accuracy statistic' (stacc) of the marginal
         posterior of the parameter.
 
@@ -1868,7 +1867,7 @@ class Posterior(object):
             pmu=np.mean(ellipse_samples[:,prior_index])
             pstd=np.std(ellipse_samples[:,prior_index])
             if pstd/pmu > 1.0:
-                print('WARNING: prior variation greater than 100\% over elliptical volume.')
+                print('WARNING: prior variation greater than 100\\% over elliptical volume.')
             approx_prior_integral=ellipse_volume*pmu
         except KeyError:
             # Maybe prior = 1?
@@ -2150,7 +2149,7 @@ class Posterior(object):
         """
         if inj.longitude>2*pi_constant or inj.longitude<0.0:
             maplong=2*pi_constant*(((float(inj.longitude))/(2*pi_constant)) - floor(((float(inj.longitude))/(2*pi_constant))))
-            print("Warning: Injected longitude/ra (%s) is not within [0,2\pi)! Angles are assumed to be in radians so this will be mapped to [0,2\pi). Mapped value is: %s."%(str(inj.longitude),str(maplong)))
+            print("Warning: Injected longitude/ra (%s) is not within [0,2\\pi)! Angles are assumed to be in radians so this will be mapped to [0,2\\pi). Mapped value is: %s."%(str(inj.longitude),str(maplong)))
             return maplong
         else:
             return inj.longitude
@@ -2337,7 +2336,7 @@ class BurstPosterior(Posterior):
         """
         if inj.ra>2*pi_constant or inj.ra<0.0:
             maplong=2*pi_constant*(((float(inj.ra)/(2*pi_constant)) - floor(((float(inj.ra))/(2*pi_constant)))))
-            print("Warning: Injected longitude/ra (%s) is not within [0,2\pi)! Angles are assumed to be in radians so this will be mapped to [0,2\pi). Mapped value is: %s."%(str(inj.ra),str(maplong)))
+            print("Warning: Injected longitude/ra (%s) is not within [0,2\\pi)! Angles are assumed to be in radians so this will be mapped to [0,2\\pi). Mapped value is: %s."%(str(inj.ra),str(maplong)))
             return maplong
         else:
             return inj.ra
@@ -4354,9 +4353,9 @@ def getRAString(radians,accuracy='auto'):
     if mins>=59.5:
         mins=mins-60
         hours=hours+1
-    if accuracy=='hour': return six.u(r'%ih'%(hours))
-    if accuracy=='min': return six.u(r'%ih%im'%(hours,mins))
-    if accuracy=='sec': return six.u(r'%ih%im%2.0fs'%(hours,mins,secs))
+    if accuracy=='hour': return r'%ih'%(hours)
+    if accuracy=='min': return r'%ih%im'%(hours,mins)
+    if accuracy=='sec': return r'%ih%im%2.0fs'%(hours,mins,secs)
     else:
         if abs(fmod(secs,60.0))>=0.5: return(getRAString(radians,accuracy='sec'))
         if abs(fmod(mins,60.0))>=0.5: return(getRAString(radians,accuracy='min'))
@@ -4365,13 +4364,13 @@ def getRAString(radians,accuracy='auto'):
 def getDecString(radians,accuracy='auto'):
     # LaTeX doesn't like unicode degree symbols etc
     if matplotlib.rcParams['text.usetex']:
-        degsymb='$^\circ$'
+        degsymb='$^\\circ$'
         minsymb="'"
         secsymb="''"
     else:
-        degsymb=six.unichr(0x0B0)
-        minsymb=six.unichr(0x027)
-        secsymb=six.unichr(0x2033)
+        degsymb=chr(0x0B0)
+        minsymb=chr(0x027)
+        secsymb=chr(0x2033)
     if(radians<0):
         radians=-radians
         sign=-1

@@ -173,6 +173,7 @@ pkginclude_HEADERS = \
 	LALSimIMRPhenomUtils.h \
 	LALSimIMRPhenomXUtilities.h \
 	LALSimInspiral.h \
+	LALSimInspiralInjection.h \
 	LALSimInspiralPrecess.h \
 	LALSimInspiralTestGRParams.h \
 	LALSimInspiralTestingGRCorrections.h \
@@ -195,6 +196,7 @@ pkginclude_HEADERS = \
 	LALSimInspiralFDPrecAngles.h
 
 noinst_HEADERS = \
+	gsl_bspline_basis.h \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
 	LALSimIMRSpinPrecEOBEulerAngles.c \
 	LALSimIMRSpinPrecEOBWfGen.c \
@@ -281,6 +283,7 @@ noinst_HEADERS = \
 	LALSimIMRPhenomInternalUtils.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
+	LALSimIMRSEOBNRv5ROM_NRTidal.h \
 	LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.h \
 	LALSimBHNSRemnantFits.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
@@ -359,6 +362,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv4HMROM.c \
 	LALSimIMRSEOBNRv5HMROM.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.c \
+	LALSimIMRSEOBNRv5ROM_NRTidal.c \
 	LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.c \
 	LALSimBHNSRemnantFits.c \
 	LALSimIMRSEOBNRv4TSurrogate.c \
@@ -391,6 +395,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralWaveformParams.c \
 	LALSimInspiralPrecess.c \
 	LALSimInspiral.c \
+	LALSimInspiralInjection.c \
 	LALSimInspiralPNMode.c \
 	LALSimInspiralSpinTaylor.c \
 	LALSimInspiralSpinTaylorF2.c \

@@ -30,8 +30,6 @@ old_exec_name_stubs = \
 	lalapps_combine_crosscorr_toplists \
 	lalapps_compareFstats \
 	lalapps_compareSFTs \
-	lalapps_create_solar_system_ephemeris \
-	lalapps_create_solar_system_ephemeris_python \
 	lalapps_create_time_correction_ephemeris \
 	lalapps_dumpSFT \
 	lalapps_fits_header_getval \
@@ -68,8 +66,6 @@ new_exec_name_regex = ' \
 EXTRA_DIST = old_exec_name_stubs.dox
 
 CLEANFILES = \
-	CreateEphemeris/lalapps_create_solar_system_ephemeris \
-	CreateEphemeris/lalapps_create_solar_system_ephemeris_python \
 	CreateEphemeris/lalapps_create_time_correction_ephemeris \
 	CrossCorr/lalapps_combine_crosscorr_toplists \
 	CrossCorr/lalapps_pulsar_crosscorr \

@@ -115,7 +115,7 @@ static int PhenomPCoreOneFrequency(
   PNPhasingSeries *PNparams,              /**< PN inspiral phase coefficients */
   COMPLEX16 *hPhenom,                     /**< Output: IMRPhenom waveform (before precession) */
   REAL8 *phasing,                         /**< Output: overall phasing */
-  const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD, NRTidal uses IMRPhenomPv2 with the NRTidal framework */
+  IMRPhenomP_version_type IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD, NRTidal uses IMRPhenomPv2 with the NRTidal framework */
   AmpInsPrefactors *amp_prefactors,       /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
   PhiInsPrefactors *phi_prefactors        /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
 );

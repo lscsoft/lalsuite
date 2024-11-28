@@ -685,7 +685,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         IFOdata[i].fLow=fLows?atof(fLows[i]):defaultFLow;
         if(fHighs) IFOdata[i].fHigh=fHighs[i]?atof(fHighs[i]):(SampleRate/2.0-(1.0/SegmentLength));
         else IFOdata[i].fHigh=(SampleRate/2.0-(1.0/SegmentLength));
-        strncpy(IFOdata[i].name, IFOnames[i], DETNAMELEN);
+        strncpy(IFOdata[i].name, IFOnames[i], DETNAMELEN-1);
+        IFOdata[i].name[DETNAMELEN-1] = 0;
 
         dof=4.0 / M_PI * nSegs; /* Degrees of freedom parameter */
         sprintf(df_argument_name,"--dof-%s",IFOdata[i].name);

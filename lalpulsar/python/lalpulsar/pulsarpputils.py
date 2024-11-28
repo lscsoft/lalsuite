@@ -37,15 +37,18 @@ import struct
 import re
 import h5py
 
-from scipy.integrate import cumtrapz
+try:
+    from scipy.integrate import trapezoid, cumulative_trapezoid
+except ImportError:
+    # FIXME: Remove this once we require scipy >=1.6.0.
+    from scipy.integrate import trapz as trapezoid, cumtrapz as cumulative_trapezoid
+
 from scipy.interpolate import interp1d
 
 try:
     from scipy.special import logsumexp
 except ImportError:  # scipy < 0.19.0
     from scipy.misc import logsumexp
-
-from six import string_types
 
 # some common constants taken from psr_constants.py in PRESTO
 ARCSECTORAD = float("4.8481368110953599358991410235794797595635330237270e-6")
@@ -319,7 +322,7 @@ float_keys = [
     "EPS1DOT",
     "EPS2DOT",
     "TASC",
-    "LAMBDA",
+    "LAMBDAPIN",
     "BETA",
     "RA_RAD",
     "DEC_RAD",
@@ -899,7 +902,7 @@ def plot_posterior_hist(
 
         # if upper limit is needed then integrate posterior using trapezium rule
         if upperlimit != 0:
-            ct = cumtrapz(n, bins)
+            ct = cumulative_trapezoid(n, bins)
 
             # prepend a zero to ct
             ct = np.insert(ct, 0, 0)
@@ -940,7 +943,7 @@ def upper_limit(
 
     # if upper limit is needed then integrate posterior using trapezium rule
     if upperlimit != 0:
-        ct = cumtrapz(n, bins)
+        ct = cumulative_trapezoid(n, bins)
 
         # prepend a zero to ct
         ct = np.insert(ct, 0, 0)
@@ -1232,18 +1235,18 @@ def plot_2Dhist_from_file(
         # marginalise over y-axes and produce plots
         xmarg = []
         for i in range(len(xbins)):
-            xmarg.append(np.trapz(histarr[:][i], x=ybins))
+            xmarg.append(trapezoid(histarr[:][i], x=ybins))
 
         # normalise
-        xarea = np.trapz(xmarg, x=xbins)
+        xarea = trapezoid(xmarg, x=xbins)
         xmarg = map(lambda x: x / xarea, xmarg)
 
         ymarg = []
         for i in range(len(ybins)):
-            ymarg.append(np.trapz(np.transpose(histarr)[:][i], x=xbins))
+            ymarg.append(trapezoid(np.transpose(histarr)[:][i], x=xbins))
 
         # normalise
-        yarea = np.trapz(ymarg, x=ybins)
+        yarea = trapezoid(ymarg, x=ybins)
         ymarg = map(lambda x: x / yarea, ymarg)
 
         # plot x histogram
@@ -1287,15 +1290,15 @@ def h0ul_from_prior_file(priorfile, ulval=0.95):
     # marginalise over cos(iota)
     h0marg = []
     for i in range(len(h0bins)):
-        h0marg.append(np.trapz(histarr[:][i], x=cibins))
+        h0marg.append(trapezoid(histarr[:][i], x=cibins))
 
     # normalise h0 posterior
     h0bins = h0bins - (h0bins[1] - h0bins[0]) / 2
-    h0area = np.trapz(h0marg, x=h0bins)
+    h0area = trapezoid(h0marg, x=h0bins)
     h0margnorm = map(lambda x: x / h0area, h0marg)
 
     # get cumulative probability
-    ct = cumtrapz(h0margnorm, h0bins)
+    ct = cumulative_trapezoid(h0margnorm, h0bins)
 
     # prepend a zero to ct
     ct = np.insert(ct, 0, 0)
@@ -1516,7 +1519,7 @@ def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
         n = np.append(n, nbound)
 
     # now calculate area and normalise
-    area = np.trapz(n, x=bincentres)
+    area = trapezoid(n, x=bincentres)
 
     ns = np.array([])
     for i in range(0, len(bincentres)):
@@ -2195,9 +2198,9 @@ def convert_model_parameters(pardict):
     theta = np.arccos(costheta)
     sintheta = math.sin(theta)
     sin2theta = math.sin(2.0 * theta)
-    sinlambda = math.sin(pardict["lambda"])
-    coslambda = math.cos(pardict["lambda"])
-    sin2lambda = math.sin(2.0 * pardict["lambda"])
+    sinlambda = math.sin(pardict["lambdapin"])
+    coslambda = math.cos(pardict["lambdapin"])
+    sin2lambda = math.sin(2.0 * pardict["lambdapin"])
 
     phi0 = pardict["phi0"]
 
@@ -2235,9 +2238,9 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
     siniota = math.sin(iota)
     sintheta = math.sin(theta)
     sin2theta = math.sin(2.0 * theta)
-    sinlambda = math.sin(pardict["lambda"])
-    coslambda = math.cos(pardict["lambda"])
-    sin2lambda = math.sin(2.0 * pardict["lambda"])
+    sinlambda = math.sin(pardict["lambdapin"])
+    coslambda = math.cos(pardict["lambdapin"])
+    sin2lambda = math.sin(2.0 * pardict["lambdapin"])
 
     ePhi = cmath.exp(0.5 * pardict["phi0"] * 1j)
     e2Phi = cmath.exp(pardict["phi0"] * 1j)
@@ -2342,7 +2345,7 @@ def antenna_response(gpsTime, ra, dec, psi, det):
 
     # check if ra and dec are floats or strings (if strings in hh/dd:mm:ss.s format then convert to rads)
     if not isinstance(ra, float):
-        if isinstance(ra, string_types):
+        if isinstance(ra, str):
             try:
                 ra = ra_to_rad(ra)
             except:
@@ -2355,7 +2358,7 @@ def antenna_response(gpsTime, ra, dec, psi, det):
             )
 
     if not isinstance(dec, float):
-        if isinstance(dec, string_types):
+        if isinstance(dec, str):
             try:
                 dec = dec_to_rad(dec)
             except:
@@ -2417,7 +2420,7 @@ def inject_pulsar_signal(
     snrscale=None,
 ):
     # if detectors is just a string (i.e. one detector) then make it a list
-    if isinstance(detectors, string_types):
+    if isinstance(detectors, str):
         detectors = [detectors]
 
     # if not noise sigma's are given then generate a noise level from the given
@@ -3308,7 +3311,7 @@ def pulsar_posterior_grid(
 
     # if dets is just a single string
     if not isinstance(dets, list):
-        if isinstance(dets, string_types):
+        if isinstance(dets, str):
             dets = [dets]  # make into list
         else:
             print("Detector not, or incorrectly, set", file=sys.stderr)
@@ -3566,7 +3569,7 @@ def get_atnf_info(psr):
 
     import requests
 
-    psrname = re.sub("\+", "%2B", psr)  # switch '+' for unicode character
+    psrname = re.sub(r"\+", "%2B", psr)  # switch '+' for unicode character
 
     atnfurl = (
         "http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version="

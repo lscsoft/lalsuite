@@ -1,3 +1,4 @@
+##python
 import sys
 import argparse
 from lalinference.wrapper import LALInferenceCBCWrapper

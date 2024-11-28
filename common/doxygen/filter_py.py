@@ -92,10 +92,10 @@ class Doxypy(object):
 	def __init__(self):
 		string_prefixes = "[uU]?[rR]?"
 
-		self.start_single_comment_re = re.compile("^\s*%s(''')" % string_prefixes)
+		self.start_single_comment_re = re.compile("^\s*(%s''')" % string_prefixes)
 		self.end_single_comment_re = re.compile("(''')\s*$")
 
-		self.start_double_comment_re = re.compile("^\s*%s(\"\"\")" % string_prefixes)
+		self.start_double_comment_re = re.compile("^\s*(%s\"\"\")" % string_prefixes)
 		self.end_double_comment_re = re.compile("(\"\"\")\s*$")
 
 		self.single_comment_re = re.compile("^\s*%s(''').*(''')\s*$" % string_prefixes)

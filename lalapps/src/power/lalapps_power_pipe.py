@@ -1,3 +1,4 @@
+##python
 #
 # Copyright (C) 2005--2010,2013,2015,2016,2019  Kipp Cannon
 # Copyright (C) 2004--2006  Saikat Ray-Majumder

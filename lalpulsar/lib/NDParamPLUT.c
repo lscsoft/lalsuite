@@ -69,10 +69,10 @@
 
 #include <lal/LUT.h>
 
-void LALNDHOUGHParamPLUT (LALStatus  *status,
-                   HOUGHParamPLUT  *out,  /* parameters needed build LUT*/
-                   HOUGHSizePar    *size,
-                   HOUGHDemodPar   *par)  /* demodulation parameters */
+void LALNDHOUGHParamPLUT( LALStatus  *status,
+                          HOUGHParamPLUT  *out,  /* parameters needed build LUT*/
+                          HOUGHSizePar    *size,
+                          HOUGHDemodPar   *par ) /* demodulation parameters */
 {
 
   /* --------------------------------------------- */
@@ -83,7 +83,7 @@ void LALNDHOUGHParamPLUT (LALStatus  *status,
   REAL8   delta;
   REAL8   vFactor;
   REAL8   xiX, xiY, xiZ;
-  REAL8   modXi,invModXi;
+  REAL8   modXi, invModXi;
   REAL8UnitPolarCoor   xiInit;
   UINT4   spinOrder, i;
   REAL8   *spinF;
@@ -93,17 +93,17 @@ void LALNDHOUGHParamPLUT (LALStatus  *status,
   INT4    offset;
   /* --------------------------------------------- */
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (out, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (par, status, LUTH_ENULL, LUTH_MSGENULL);
-  ASSERT (size, status, LUTH_ENULL, LUTH_MSGENULL);
+  ASSERT( out, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( par, status, LUTH_ENULL, LUTH_MSGENULL );
+  ASSERT( size, status, LUTH_ENULL, LUTH_MSGENULL );
 
   /*   Make sure f0Bin  is not zero: */
   f0Bin = size->f0Bin;
-  ASSERT (f0Bin, status, LUTH_EFREQ, LUTH_MSGEFREQ);
+  ASSERT( f0Bin, status, LUTH_EFREQ, LUTH_MSGEFREQ );
 
   out->f0Bin = f0Bin;
   deltaF = out->deltaF = size->deltaF;
@@ -122,35 +122,35 @@ void LALNDHOUGHParamPLUT (LALStatus  *status,
 
   spinOrder = par->spin.length;
 
-  if(spinOrder){
-    ASSERT (par->spin.data , status, LUTH_ENULL, LUTH_MSGENULL);
+  if ( spinOrder ) {
+    ASSERT( par->spin.data, status, LUTH_ENULL, LUTH_MSGENULL );
     timeDiff = par->timeDiff;
     timeDiffProd = 1.0;
     spinF = par->spin.data;
 
-    for (i=0; i<spinOrder; ++i ){
+    for ( i = 0; i < spinOrder; ++i ) {
       timeDiffProd *= timeDiff;
       vFactor += spinF[i] * timeDiffProd;
     }
   }
 
-  xiX = vFactor * (par->veloC.x);
-  xiY = vFactor * (par->veloC.y);
-  xiZ = vFactor * (par->veloC.z);
+  xiX = vFactor * ( par->veloC.x );
+  xiY = vFactor * ( par->veloC.y );
+  xiZ = vFactor * ( par->veloC.z );
 
   /* -------------------------------------------   */
   /* ***** convert xi into Polar coordinates ***** */
 
-  modXi = sqrt(xiX*xiX + xiY*xiY + xiZ*xiZ);
+  modXi = sqrt( xiX * xiX + xiY * xiY + xiZ * xiZ );
   /* for testing we used:  modXi = F0* 1.06e-4; */
-  invModXi = 1./modXi;
+  invModXi = 1. / modXi;
 
-  xiInit.delta = asin( xiZ*invModXi);
+  xiInit.delta = asin( xiZ * invModXi );
   /* the arc sine is in the interval [-pi/2,pi/2] */
 
-  if( xiX || xiY ){
-    xiInit.alpha = atan2(xiY, xiX);
-  }else{
+  if ( xiX || xiY ) {
+    xiInit.alpha = atan2( xiY, xiX );
+  } else {
     xiInit.alpha = 0.0;
   }
 
@@ -163,26 +163,26 @@ void LALNDHOUGHParamPLUT (LALStatus  *status,
   /* **** the south pole {x,y,z} = {0,0,-1}  ***** */
   /*  Calculate xi in the new coordinate system.   */
 
-  TRY(LALRotatePolarU(status->statusPtr,
-		      &(*out).xi ,&xiInit, &(*par).skyPatch), status);
+  TRY( LALRotatePolarU( status->statusPtr,
+                        &( *out ).xi, &xiInit, &( *par ).skyPatch ), status );
 
   /* -------------------------------------------   */
   delta = out->xi.delta;
-  out->cosDelta = deltaF*invModXi;
+  out->cosDelta = deltaF * invModXi;
 
 
-  freqOffset = -modXi * sin(delta);
-  offset = out->offset = floor( 0.5 + freqOffset/deltaF );
-  out->cosPhiMax0 = invModXi * (offset + 0.5) * deltaF;
-  out->cosPhiMin0 = invModXi * (offset - 0.5) * deltaF;
+  freqOffset = -modXi * sin( delta );
+  offset = out->offset = floor( 0.5 + freqOffset / deltaF );
+  out->cosPhiMax0 = invModXi * ( offset + 0.5 ) * deltaF;
+  out->cosPhiMin0 = invModXi * ( offset - 0.5 ) * deltaF;
 
 
   /* -------------------------------------------   */
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
 
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 

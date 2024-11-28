@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[7.4.1.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[7.6.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALConfig.h])
 AC_CONFIG_SRCDIR([lib/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -19,9 +19,9 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[23])
-AC_SUBST([LIBREVISION],[2])
-AC_SUBST([LIBAGE],[3])
+AC_SUBST([LIBCURRENT],[24])
+AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBAGE],[4])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
   [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR],[${LIBCURRENT}])],
@@ -42,9 +42,9 @@ AS_CASE([${host_os}],
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[16])
+AC_SUBST([LIBCURRENT_SUPPORT],[17])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
-AC_SUBST([LIBAGE_SUPPORT],[2])
+AC_SUBST([LIBAGE_SUPPORT],[3])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
 AS_CASE([${host_os}],
   [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR_SUPPORT],[${LIBCURRENT_SUPPORT}])],
@@ -244,12 +244,7 @@ if test "${intelfft}" = "false" ; then
   AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_ERROR([could not find the fftw3 library])],[-lm])
 else
   AC_MSG_WARN([Using Intel FFT routines])
-  if test "x${qthread}" = "xtrue" ; then
-    LAL_INTEL_MKL_QTHREAD_WARNING
-  else
-    AC_CHECK_LIB([pthread],[pthread_create],,[AC_MSG_ERROR([could not find the pthread library])])
-  fi
-  # AC_CHECK_LIB([guide],[__kmp_abort],,[AC_MSG_ERROR([could not find the guide library included with Intel MKL])])
+  AC_CHECK_LIB([pthread],[pthread_create],,[AC_MSG_ERROR([could not find the pthread library])])
   AC_CHECK_HEADERS([pthread.h],,[AC_MSG_ERROR([could not find the pthread.h header])])
   if test "${enable_static}" = "yes"; then
     if test "${enable_shared}" = "yes" ; then
@@ -330,7 +325,6 @@ m4_popdef([includes])
 
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
-AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG

@@ -4,7 +4,7 @@ Compare two ini files and print out their differences
 
 import sys
 from optparse import *
-from six.moves import configparser
+import configparser
 
 usage = """usage: %prog [options]
 """

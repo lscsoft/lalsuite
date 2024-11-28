@@ -90,9 +90,9 @@ extern "C" {
 
 /** \name Error Codes */
 /** @{ */
-#define GENERATETAYLORCWH_ENUL 1	/**< Unexpected null pointer in arguments */
-#define GENERATETAYLORCWH_EOUT 2	/**< Output field a, f, phi, or shift already exists */
-#define GENERATETAYLORCWH_EMEM 3	/**< Out of memory */
+#define GENERATETAYLORCWH_ENUL 1        /**< Unexpected null pointer in arguments */
+#define GENERATETAYLORCWH_EOUT 2        /**< Output field a, f, phi, or shift already exists */
+#define GENERATETAYLORCWH_EMEM 3        /**< Out of memory */
 /** @} */
 
 /** \cond DONT_DOXYGEN */
@@ -137,14 +137,15 @@ typedef struct tagTaylorCWParamStruc {
 
 /* ---------- Function prototypes. ---------- */
 void
-LALGenerateTaylorCW( LALStatus          *,
-		     PulsarCoherentGW         *output,
-		     TaylorCWParamStruc *params );
+LALGenerateTaylorCW( LALStatus *,
+                     PulsarCoherentGW         *output,
+                     TaylorCWParamStruc *params );
 
 /** @} */
 
 #if 0
-{ /* so that editors will match succeeding brace */
+{
+  /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
 }
 #endif

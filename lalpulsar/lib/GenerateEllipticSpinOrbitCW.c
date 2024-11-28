@@ -29,15 +29,16 @@
 #include <gsl/gsl_roots.h>
 
 
-static REAL8 gsl_E_solver(REAL8 e, void *p);
+static REAL8 gsl_E_solver( REAL8 e, void *p );
 
 struct E_solver_params {
-   REAL8 a, b, x;
+  REAL8 a, b, x;
 };
 
-static REAL8 gsl_E_solver(REAL8 e, void *p) {
-   struct E_solver_params *params = (struct E_solver_params*)p;
-   return e + params->a*sin(e) + params->b*(cos(e) - 1.0) - params->x;
+static REAL8 gsl_E_solver( REAL8 e, void *p )
+{
+  struct E_solver_params *params = ( struct E_solver_params * )p;
+  return e + params->a * sin( e ) + params->b * ( cos( e ) - 1.0 ) - params->x;
 }
 
 /**
@@ -53,9 +54,9 @@ static REAL8 gsl_E_solver(REAL8 e, void *p) {
  * In the <tt>*params</tt> structure, the routine uses all the "input"
  * fields specified in \ref GenerateSpinOrbitCW_h, and sets all of the
  * "output" fields.  If <tt>params-\>f</tt>=\c NULL, no spindown
- * modulation is performed.  If <tt>params-\>oneMinusEcc</tt> \f$ \notin(0,1] \f$ 
+ * modulation is performed.  If <tt>params-\>oneMinusEcc</tt> \f$ \notin(0,1] \f$
  * (an open orbit), or if
- * <tt>params-\>rPeriNorm</tt> \f$ \times \f$ <tt>params-\>angularSpeed</tt> \f$ \geq1 \f$ 
+ * <tt>params-\>rPeriNorm</tt> \f$ \times \f$ <tt>params-\>angularSpeed</tt> \f$ \geq1 \f$
  * (faster-than-light speed at periapsis), an error is returned.
  *
  * In the <tt>*output</tt> structure, the field <tt>output-\>h</tt> is
@@ -67,7 +68,7 @@ static REAL8 gsl_E_solver(REAL8 e, void *p) {
  * ### Algorithm ###
  *
  * For elliptical orbits, we combine \eqref{eq_spinorbit-tr},
- * \eqref{eq_spinorbit-t}, and \eqref{eq_spinorbit-upsilon} to get \f$ t_r \f$ 
+ * \eqref{eq_spinorbit-t}, and \eqref{eq_spinorbit-upsilon} to get \f$ t_r \f$
  * directly as a function of the eccentric anomaly \f$ E \f$ :
  * \f{eqnarray}{
  * \label{eq_tr-e1}
@@ -145,7 +146,7 @@ static REAL8 gsl_E_solver(REAL8 e, void *p) {
  * deal with other gravitational effects such as Shapiro delay.  To a
  * very rough approximation, the amount of phase error induced by
  * gravitational redshift goes something like \f$ \Delta\phi\sim
- * fT(v/c)^2\Delta(r_p/r) \f$ , where \f$ f \f$ is the typical wave frequency, \f$ T \f$ 
+ * fT(v/c)^2\Delta(r_p/r) \f$ , where \f$ f \f$ is the typical wave frequency, \f$ T \f$
  * is either the length of data or the orbital period (whichever is
  * \e smaller), \f$ v \f$ is the \e true (unprojected) speed at
  * periapsis, and \f$ \Delta(r_p/r) \f$ is the total range swept out by the
@@ -166,8 +167,8 @@ static REAL8 gsl_E_solver(REAL8 e, void *p) {
  */
 void
 LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
-				PulsarCoherentGW            *output,
-				SpinOrbitCWParamStruc *params )
+                                PulsarCoherentGW            *output,
+                                SpinOrbitCWParamStruc *params )
 {
   UINT4 n, i;              /* number of and index over samples */
   UINT4 nSpin = 0, j;      /* number of and index over spindown terms */
@@ -194,29 +195,29 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
   REAL4 *fData;                  /* pointer to frequency data */
   REAL8 *phiData;                /* pointer to phase data */
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter and output structures exist. */
   ASSERT( params, stat, GENERATESPINORBITCWH_ENUL,
-	  GENERATESPINORBITCWH_MSGENUL );
+          GENERATESPINORBITCWH_MSGENUL );
   ASSERT( output, stat, GENERATESPINORBITCWH_ENUL,
-	  GENERATESPINORBITCWH_MSGENUL );
+          GENERATESPINORBITCWH_MSGENUL );
 
   /* Make sure output fields don't exist. */
   ASSERT( !( output->a ), stat, GENERATESPINORBITCWH_EOUT,
-	  GENERATESPINORBITCWH_MSGEOUT );
+          GENERATESPINORBITCWH_MSGEOUT );
   ASSERT( !( output->f ), stat, GENERATESPINORBITCWH_EOUT,
-	  GENERATESPINORBITCWH_MSGEOUT );
+          GENERATESPINORBITCWH_MSGEOUT );
   ASSERT( !( output->phi ), stat, GENERATESPINORBITCWH_EOUT,
-	  GENERATESPINORBITCWH_MSGEOUT );
+          GENERATESPINORBITCWH_MSGEOUT );
   ASSERT( !( output->shift ), stat, GENERATESPINORBITCWH_EOUT,
-	  GENERATESPINORBITCWH_MSGEOUT );
+          GENERATESPINORBITCWH_MSGEOUT );
 
   /* If Taylor coeficients are specified, make sure they exist. */
   if ( params->f ) {
     ASSERT( params->f->data, stat, GENERATESPINORBITCWH_ENUL,
-	    GENERATESPINORBITCWH_MSGENUL );
+            GENERATESPINORBITCWH_MSGENUL );
     nSpin = params->f->length;
     fSpin = params->f->data;
   }
@@ -228,91 +229,96 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
   onePlusEcc = 1.0 + ecc;
   if ( ecc < 0.0 || oneMinusEcc <= 0.0 ) {
     ABORT( stat, GENERATESPINORBITCWH_EECC,
-	   GENERATESPINORBITCWH_MSGEECC );
+           GENERATESPINORBITCWH_MSGEECC );
   }
-  vp = params->rPeriNorm*params->angularSpeed;
+  vp = params->rPeriNorm * params->angularSpeed;
   n = params->length;
   dt = params->deltaT;
   f0 = fPrev = params->f0;
   vDotAvg = params->angularSpeed
-    *sqrt( oneMinusEcc*oneMinusEcc*oneMinusEcc/onePlusEcc );
+            * sqrt( oneMinusEcc * oneMinusEcc * oneMinusEcc / onePlusEcc );
   if ( vp >= 1.0 ) {
     ABORT( stat, GENERATESPINORBITCWH_EFTL,
-	   GENERATESPINORBITCWH_MSGEFTL );
+           GENERATESPINORBITCWH_MSGEFTL );
   }
   if ( vp <= 0.0 || dt <= 0.0 || f0 <= 0.0 || vDotAvg <= 0.0 ||
        n == 0 ) {
     ABORT( stat, GENERATESPINORBITCWH_ESGN,
-	   GENERATESPINORBITCWH_MSGESGN );
+           GENERATESPINORBITCWH_MSGESGN );
   }
 
   /* Set up some other constants. */
-  twopif0 = f0*LAL_TWOPI;
+  twopif0 = f0 * LAL_TWOPI;
   phi0 = params->phi0;
   argument = params->omega;
-  p = LAL_TWOPI/vDotAvg;
-  a = vp*oneMinusEcc*cos( argument ) + oneMinusEcc - 1.0;
-  b = vp*sqrt( oneMinusEcc/( onePlusEcc ) )*sin( argument );
-  eCosOmega = ecc*cos( argument );
-  if ( n*dt > p )
-    dxMax = 0.01/( f0*n*dt );
-  else
-    dxMax = 0.01/( f0*p );
+  p = LAL_TWOPI / vDotAvg;
+  a = vp * oneMinusEcc * cos( argument ) + oneMinusEcc - 1.0;
+  b = vp * sqrt( oneMinusEcc / ( onePlusEcc ) ) * sin( argument );
+  eCosOmega = ecc * cos( argument );
+  if ( n * dt > p ) {
+    dxMax = 0.01 / ( f0 * n * dt );
+  } else {
+    dxMax = 0.01 / ( f0 * p );
+  }
   if ( dxMax < 1.0e-15 ) {
     dxMax = 1.0e-15;
     LALWarning( stat, "REAL8 arithmetic may not have sufficient"
-		" precision for this orbit" );
+                " precision for this orbit" );
   }
   if ( lalDebugLevel & LALWARNING ) {
-    REAL8 tau = n*dt;
-    if ( tau > p )
+    REAL8 tau = n * dt;
+    if ( tau > p ) {
       tau = p;
-    if ( f0*tau*vp*vp*ecc/onePlusEcc > 0.25 )
+    }
+    if ( f0 * tau * vp * vp * ecc / onePlusEcc > 0.25 )
       LALWarning( stat, "Orbit may have significant relativistic"
-		  " effects that are not included" );
+                  " effects that are not included" );
   }
 
   /* Compute offset between time series epoch and observed periapsis,
      and betweem true periapsis and spindown reference epoch. */
-  tPeriObs = (REAL8)( params->orbitEpoch.gpsSeconds -
-		      params->epoch.gpsSeconds );
-  tPeriObs += 1.0e-9 * (REAL8)( params->orbitEpoch.gpsNanoSeconds -
-				params->epoch.gpsNanoSeconds );
-  tPeriObs += params->rPeriNorm*sin( params->omega );
-  spinOff = (REAL8)( params->orbitEpoch.gpsSeconds -
-		     params->spinEpoch.gpsSeconds );
-  spinOff += 1.0e-9 * (REAL8)( params->orbitEpoch.gpsNanoSeconds -
-			       params->spinEpoch.gpsNanoSeconds );
+  tPeriObs = ( REAL8 )( params->orbitEpoch.gpsSeconds -
+                        params->epoch.gpsSeconds );
+  tPeriObs += 1.0e-9 * ( REAL8 )( params->orbitEpoch.gpsNanoSeconds -
+                                  params->epoch.gpsNanoSeconds );
+  tPeriObs += params->rPeriNorm * sin( params->omega );
+  spinOff = ( REAL8 )( params->orbitEpoch.gpsSeconds -
+                       params->spinEpoch.gpsSeconds );
+  spinOff += 1.0e-9 * ( REAL8 )( params->orbitEpoch.gpsNanoSeconds -
+                                 params->spinEpoch.gpsNanoSeconds );
 
   /* Allocate output structures. */
-  if ( ( output->a = (REAL4TimeVectorSeries *)
-	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
+  if ( ( output->a = ( REAL4TimeVectorSeries * )
+                     LALMalloc( sizeof( REAL4TimeVectorSeries ) ) ) == NULL ) {
     ABORT( stat, GENERATESPINORBITCWH_EMEM,
-	   GENERATESPINORBITCWH_MSGEMEM );
+           GENERATESPINORBITCWH_MSGEMEM );
   }
-  memset( output->a, 0, sizeof(REAL4TimeVectorSeries) );
-  if ( ( output->f = (REAL4TimeSeries *)
-	 LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
-    LALFree( output->a ); output->a = NULL;
+  memset( output->a, 0, sizeof( REAL4TimeVectorSeries ) );
+  if ( ( output->f = ( REAL4TimeSeries * )
+                     LALMalloc( sizeof( REAL4TimeSeries ) ) ) == NULL ) {
+    LALFree( output->a );
+    output->a = NULL;
     ABORT( stat, GENERATESPINORBITCWH_EMEM,
-	   GENERATESPINORBITCWH_MSGEMEM );
+           GENERATESPINORBITCWH_MSGEMEM );
   }
-  memset( output->f, 0, sizeof(REAL4TimeSeries) );
-  if ( ( output->phi = (REAL8TimeSeries *)
-	 LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
-    LALFree( output->a ); output->a = NULL;
-    LALFree( output->f ); output->f = NULL;
+  memset( output->f, 0, sizeof( REAL4TimeSeries ) );
+  if ( ( output->phi = ( REAL8TimeSeries * )
+                       LALMalloc( sizeof( REAL8TimeSeries ) ) ) == NULL ) {
+    LALFree( output->a );
+    output->a = NULL;
+    LALFree( output->f );
+    output->f = NULL;
     ABORT( stat, GENERATESPINORBITCWH_EMEM,
-	   GENERATESPINORBITCWH_MSGEMEM );
+           GENERATESPINORBITCWH_MSGEMEM );
   }
-  memset( output->phi, 0, sizeof(REAL8TimeSeries) );
+  memset( output->phi, 0, sizeof( REAL8TimeSeries ) );
 
   /* Set output structure metadata fields. */
   output->position = params->position;
   output->psi = params->psi;
   output->a->epoch = output->f->epoch = output->phi->epoch
-    = params->epoch;
-  output->a->deltaT = n*params->deltaT;
+                                        = params->epoch;
+  output->a->deltaT = n * params->deltaT;
   output->f->deltaT = output->phi->deltaT = params->deltaT;
   output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
@@ -324,34 +330,46 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
   /* Allocate phase and frequency arrays. */
   LALSCreateVector( stat->statusPtr, &( output->f->data ), n );
   BEGINFAIL( stat ) {
-    LALFree( output->a );   output->a = NULL;
-    LALFree( output->f );   output->f = NULL;
-    LALFree( output->phi ); output->phi = NULL;
-  } ENDFAIL( stat );
+    LALFree( output->a );
+    output->a = NULL;
+    LALFree( output->f );
+    output->f = NULL;
+    LALFree( output->phi );
+    output->phi = NULL;
+  }
+  ENDFAIL( stat );
   LALDCreateVector( stat->statusPtr, &( output->phi->data ), n );
   BEGINFAIL( stat ) {
     TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
-	 stat );
-    LALFree( output->a );   output->a = NULL;
-    LALFree( output->f );   output->f = NULL;
-    LALFree( output->phi ); output->phi = NULL;
-  } ENDFAIL( stat );
+         stat );
+    LALFree( output->a );
+    output->a = NULL;
+    LALFree( output->f );
+    output->f = NULL;
+    LALFree( output->phi );
+    output->phi = NULL;
+  }
+  ENDFAIL( stat );
 
   /* Allocate and fill amplitude array. */
   {
     CreateVectorSequenceIn in; /* input to create output->a */
     in.length = 2;
     in.vectorLength = 2;
-    LALSCreateVectorSequence( stat->statusPtr, &(output->a->data), &in );
+    LALSCreateVectorSequence( stat->statusPtr, &( output->a->data ), &in );
     BEGINFAIL( stat ) {
       TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
-	   stat );
+           stat );
       TRY( LALDDestroyVector( stat->statusPtr, &( output->phi->data ) ),
-	   stat );
-      LALFree( output->a );   output->a = NULL;
-      LALFree( output->f );   output->f = NULL;
-      LALFree( output->phi ); output->phi = NULL;
-    } ENDFAIL( stat );
+           stat );
+      LALFree( output->a );
+      output->a = NULL;
+      LALFree( output->f );
+      output->f = NULL;
+      LALFree( output->phi );
+      output->phi = NULL;
+    }
+    ENDFAIL( stat );
     output->a->data->data[0] = output->a->data->data[2] = params->aPlus;
     output->a->data->data[1] = output->a->data->data[3] = params->aCross;
   }
@@ -363,103 +381,119 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
     INT4 nOrb; /* number of orbits since the specified orbit epoch */
 
     /* First, find x in the range [0,2*pi]. */
-    x = vDotAvg*( i*dt - tPeriObs );
-    nOrb = (INT4)( x/LAL_TWOPI );
-    if ( x < 0.0 )
+    x = vDotAvg * ( i * dt - tPeriObs );
+    nOrb = ( INT4 )( x / LAL_TWOPI );
+    if ( x < 0.0 ) {
       nOrb -= 1;
-    x -= LAL_TWOPI*nOrb;
+    }
+    x -= LAL_TWOPI * nOrb;
 
     /* Newton-Raphson iteration to find E(x). Maximum of 100 iterations. */
     INT4 maxiter = 100, iter = 0;
-    while ( iter<maxiter && fabs( dx = e + a*sine + b*cose - x ) > dxMax ) {
+    while ( iter < maxiter && fabs( dx = e + a * sine + b * cose - x ) > dxMax ) {
       iter++;
       //Make a check on the step-size so we don't step too far
-      de = dx/( 1.0 + a*cose + a - b*sine );
-      if ( de > LAL_PI )
+      de = dx / ( 1.0 + a * cose + a - b * sine );
+      if ( de > LAL_PI ) {
         de = LAL_PI;
-      else if ( de < -LAL_PI )
+      } else if ( de < -LAL_PI ) {
         de = -LAL_PI;
+      }
       e -= de;
 
-      if ( e < 0.0 )
+      if ( e < 0.0 ) {
         e = 0.0;
-      else if ( e > LAL_TWOPI )
+      } else if ( e > LAL_TWOPI ) {
         e = LAL_TWOPI;
+      }
       sine = sin( e );
       cose = cos( e ) - 1.0;
     }
     /* Bisection algorithm from GSL if Newton's method (above) fails to converge. */
-    if (iter==maxiter && fabs( dx = e + a*sine + b*cose - x ) > dxMax ) {
-       //Initialize solver
-       const gsl_root_fsolver_type *T = gsl_root_fsolver_bisection;
-       gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
-       REAL8 e_lo = 0.0, e_hi = LAL_TWOPI;
-       gsl_function F;
-       struct E_solver_params pars = {a, b, x};
-       F.function = &gsl_E_solver;
-       F.params = &pars;
+    if ( iter == maxiter && fabs( dx = e + a * sine + b * cose - x ) > dxMax ) {
+      //Initialize solver
+      const gsl_root_fsolver_type *T = gsl_root_fsolver_bisection;
+      gsl_root_fsolver *s = gsl_root_fsolver_alloc( T );
+      REAL8 e_lo = 0.0, e_hi = LAL_TWOPI;
+      gsl_function F;
+      struct E_solver_params pars = {a, b, x};
+      F.function = &gsl_E_solver;
+      F.params = &pars;
 
-       if (gsl_root_fsolver_set(s, &F, e_lo, e_hi) != 0) {
-          LALFree( output->a );   output->a = NULL;
-          LALFree( output->f );   output->f = NULL;
-          LALFree( output->phi ); output->phi = NULL;
-          ABORT( stat, -1, "GSL failed to set initial points" );
-       }
+      if ( gsl_root_fsolver_set( s, &F, e_lo, e_hi ) != 0 ) {
+        LALFree( output->a );
+        output->a = NULL;
+        LALFree( output->f );
+        output->f = NULL;
+        LALFree( output->phi );
+        output->phi = NULL;
+        ABORT( stat, -1, "GSL failed to set initial points" );
+      }
 
-       INT4 keepgoing = 1;
-       INT4 success = 0;
-       INT4 root_status = keepgoing;
-       e = 0.0;
-       iter = 0;
-       while (root_status==keepgoing && iter<maxiter) {
-          iter++;
-          root_status = gsl_root_fsolver_iterate(s);
-          if (root_status!=keepgoing && root_status!=success) {
-             LALFree( output->a );   output->a = NULL;
-             LALFree( output->f );   output->f = NULL;
-             LALFree( output->phi ); output->phi = NULL;
-             ABORT( stat, -1, "gsl_root_fsolver_iterate() failed" );
-          }
-          e = gsl_root_fsolver_root(s);
-          sine = sin(e);
-          cose = cos(e) - 1.0;
-          if (fabs( dx = e + a*sine + b*cose - x ) > dxMax) root_status = keepgoing;
-          else root_status = success;
-       }
+      INT4 keepgoing = 1;
+      INT4 success = 0;
+      INT4 root_status = keepgoing;
+      e = 0.0;
+      iter = 0;
+      while ( root_status == keepgoing && iter < maxiter ) {
+        iter++;
+        root_status = gsl_root_fsolver_iterate( s );
+        if ( root_status != keepgoing && root_status != success ) {
+          LALFree( output->a );
+          output->a = NULL;
+          LALFree( output->f );
+          output->f = NULL;
+          LALFree( output->phi );
+          output->phi = NULL;
+          ABORT( stat, -1, "gsl_root_fsolver_iterate() failed" );
+        }
+        e = gsl_root_fsolver_root( s );
+        sine = sin( e );
+        cose = cos( e ) - 1.0;
+        if ( fabs( dx = e + a * sine + b * cose - x ) > dxMax ) {
+          root_status = keepgoing;
+        } else {
+          root_status = success;
+        }
+      }
 
-       if (root_status!=success) {
-          LALFree( output->a );   output->a = NULL;
-          LALFree( output->f );   output->f = NULL;
-          LALFree( output->phi ); output->phi = NULL;
-          gsl_root_fsolver_free(s);
-          ABORT( stat, -1, "Could not converge using bisection algorithm" );
-       }
+      if ( root_status != success ) {
+        LALFree( output->a );
+        output->a = NULL;
+        LALFree( output->f );
+        output->f = NULL;
+        LALFree( output->phi );
+        output->phi = NULL;
+        gsl_root_fsolver_free( s );
+        ABORT( stat, -1, "Could not converge using bisection algorithm" );
+      }
 
-       gsl_root_fsolver_free(s);
+      gsl_root_fsolver_free( s );
     }
 
     /* Compute source emission time, phase, and frequency. */
     phi = t = tPow =
-      ( e + LAL_TWOPI*nOrb - ecc*sine )/vDotAvg + spinOff;
+                ( e + LAL_TWOPI * nOrb - ecc * sine ) / vDotAvg + spinOff;
     f = 1.0;
     for ( j = 0; j < nSpin; j++ ) {
-      f += fSpin[j]*tPow;
-      phi += fSpin[j]*( tPow*=t )/( j + 2.0 );
+      f += fSpin[j] * tPow;
+      phi += fSpin[j] * ( tPow *= t ) / ( j + 2.0 );
     }
 
     /* Appy frequency Doppler shift. */
-    upsilon = 2.0 * atan2 ( sqrt(onePlusEcc/oneMinusEcc) * sin(0.5*e), cos(0.5*e) );
-    f *= f0 / ( 1.0 + vp*( cos( argument + upsilon ) + eCosOmega ) /onePlusEcc );
+    upsilon = 2.0 * atan2( sqrt( onePlusEcc / oneMinusEcc ) * sin( 0.5 * e ), cos( 0.5 * e ) );
+    f *= f0 / ( 1.0 + vp * ( cos( argument + upsilon ) + eCosOmega ) / onePlusEcc );
     phi *= twopif0;
-    if ( (i > 0) && (fabs( f - fPrev ) > df) )
+    if ( ( i > 0 ) && ( fabs( f - fPrev ) > df ) ) {
       df = fabs( f - fPrev );
-    *(fData++) = fPrev = f;
-    *(phiData++) = phi + phi0;
+    }
+    *( fData++ ) = fPrev = f;
+    *( phiData++ ) = phi + phi0;
 
   } /* for i < n */
 
   /* Set output field and return. */
-  params->dfdt = df*dt;
+  params->dfdt = df * dt;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }

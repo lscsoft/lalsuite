@@ -7,6 +7,11 @@
 {% set name = "lalinference" %}
 {% set build = 9999 %}
 
+# default MPI implementation
+{% if mpi is not defined %}
+{% set mpi = "nompi" %}
+{% endif %}
+
 # set version based on nightly
 # (we rebuild the nightly version ourselves because the tarball might have
 #  been generate on a different day)
@@ -37,7 +42,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepending: true
   error_overlinking: true
   number: {{ build }}
   script_env:
@@ -91,7 +95,6 @@ outputs:
   - name: liblalinference
     script: install-lib.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       run_exports:
         - {{ pin_subpackage("liblalinference", max_pin="x") }}
@@ -147,16 +150,17 @@ outputs:
   - name: python-lalinference
     script: build-python.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
-        - numpy
         - python
       script_env:
         - CI_COMMIT_TAG
         - CI_PIPELINE_SOURCE
         - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
         - GITLAB_CI
+      # no python-lalburst on Python 3.9
+      # (astropy (for python-lalsimulation) is incompatible with numpy 2)
+      skip: true  # [py<310]
     requirements:
       build:
         - {{ compiler('c') }}
@@ -180,13 +184,13 @@ outputs:
         - numpy
       run:
         - astropy >=1.1.1
-        - healpy >=1.9.1
+        - healpy >=1.17.3
         - h5py
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - ligo-segments
         - lscsoft-glue >=1.54.1
         - matplotlib-base >=1.2.0
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
@@ -242,6 +246,9 @@ outputs:
       # Prioritise nompi via build number
       number: {{ (build + 100) if (mpi or "nompi") == "nompi" else build }}
       string: {{ "nompi" if (mpi or "nompi") == "nompi" else ("mpi_" + mpi) }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+      # no python-lalburst on Python 3.9
+      # (astropy (for python-lalsimulation) is incompatible with numpy 2)
+      skip: true  # [py<310]
     requirements:
       build:
         - {{ compiler('c') }}
@@ -274,7 +281,6 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
         - python-ligo-lw  # [build_platform == target_platform]
         - scipy >=0.9.0  # [build_platform == target_platform]
-        - six  # [build_platform == target_platform]
       run:
         - astropy >=1.1.1
         - gsl  # [mpi != 'nompi']
@@ -293,7 +299,6 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
-        - six
     test:
       requires:
         - cpnest

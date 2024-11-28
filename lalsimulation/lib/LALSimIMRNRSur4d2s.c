@@ -55,19 +55,23 @@
 #include <lal/LALSimIMR.h>
 
 #include "LALSimIMRSEOBNRROMUtilities.c"
+#include "gsl_bspline_basis.h"
 
 #include <lal/LALConfig.h>
 #ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>
 #endif
 
+#ifdef LAL_HDF5_ENABLED
+#include <lal/H5FileIO.h>
+#endif
 
 /******* Surrogate model parameter space ********/
-static const double Q_MIN = 1.;
-static const double Q_MAX = 2.;
-static const double CHI1_MAG_MAX = 0.8;
-static const double CHI2_MIN = -0.8;
-static const double CHI2_MAX = 0.8;
+UNUSED static const double Q_MIN = 1.;
+UNUSED static const double Q_MAX = 2.;
+UNUSED static const double CHI1_MAG_MAX = 0.8;
+UNUSED static const double CHI2_MIN = -0.8;
+UNUSED static const double CHI2_MAX = 0.8;
 
 static const char NRSUR4D2S_DATAFILE[] = "NRSur4d2s_FDROM.hdf5";
 
@@ -128,7 +132,7 @@ static NRSurrogateData __lalsim_NRSurrogate_data;
 
 /**************** Internal functions **********************/
 
-static void err_handler(const char *reason, const char *file, int line, int gsl_errno);
+UNUSED static void err_handler(const char *reason, const char *file, int line, int gsl_errno);
 static void NRSurrogate_Init_LALDATA(void);
 static int NRSurrogate_Init(const char dir[]);
 static bool NRSurrogate_IsSetup(void);
@@ -152,6 +156,7 @@ static int TP_Spline_interpolation_5d(
   gsl_vector *nodes_im      // Output: interpolated imag empirical nodes
 );
 
+#ifdef LAL_HDF5_ENABLED
 static int NRSurrogateData_Init_submodel(
   NRSurrogateData_submodel **submodel,
   LALH5File *file,
@@ -160,6 +165,7 @@ static int NRSurrogateData_Init_submodel(
   int n_freqs,
   int *nc
 );
+#endif
 
 static void NRSurrogateData_Cleanup_submodel(NRSurrogateData_submodel *submodel);
 
@@ -225,6 +231,7 @@ static void SplineData5d_Init(
   double *x5
 );
 
+#ifdef LAL_HDF5_ENABLED
 static int load_data_sub(
   const int i_mode,
   LALH5File *file,
@@ -233,6 +240,7 @@ static int load_data_sub(
   gsl_matrix *EI_re,
   gsl_matrix *EI_im
 );
+#endif
 
 // Function which sums over all contributing basis splines
 static REAL8 Interpolate_Coefficent_Tensor_5d(
@@ -324,14 +332,16 @@ static bool NRSurrogate_IsSetup(void) {
     return false;
 }
 
+
+#ifdef LAL_HDF5_ENABLED
 // Read binary ROM data for basis functions and coefficients for submodel 1
 static int load_data_sub(
   const int i_mode,
-  LALH5File *file,
-  gsl_vector *cvec_re,
-  gsl_vector *cvec_im,
-  gsl_matrix *EI_re,
-  gsl_matrix *EI_im
+  UNUSED LALH5File *file,
+  UNUSED gsl_vector *cvec_re,
+  UNUSED gsl_vector *cvec_im,
+  UNUSED gsl_matrix *EI_re,
+  UNUSED gsl_matrix *EI_im
 ) {
   // Load H5 data sets for spline coefficients and empirical interpolation matrix
 
@@ -355,6 +365,7 @@ static int load_data_sub(
   free(dataset_name);
   return(ret);
 }
+#endif
 
 // Setup B-spline basis functions for given points
 static void SplineData5d_Init(
@@ -459,17 +470,16 @@ static int TP_Spline_interpolation_5d(
   gsl_vector *B4 = gsl_vector_calloc(4);
 
   size_t is0, is1, is2, is3, is4; // First non-zero basis spline
-  size_t ie0, ie1, ie2, ie3, ie4; // Last non-zero basis spline
 
   // Evaluate all potentially nonzero cubic B-spline basis functions and store them in the B vectors.
   // Since the B-splines are of compact support we only need to store a small
   // number of basis functions to avoid computing terms that would be zero anyway.
   // https://www.gnu.org/software/gsl/manual/html_node/Overview-of-B_002dsplines.html#Overview-of-B_002dsplines
-  gsl_bspline_eval_nonzero(x0,  B0, &is0, &ie0, splinedata->bw_x0);
-  gsl_bspline_eval_nonzero(x1,  B1, &is1, &ie1, splinedata->bw_x1);
-  gsl_bspline_eval_nonzero(x2,  B2, &is2, &ie2, splinedata->bw_x2);
-  gsl_bspline_eval_nonzero(x3,  B3, &is3, &ie3, splinedata->bw_x3);
-  gsl_bspline_eval_nonzero(x4,  B4, &is4, &ie4, splinedata->bw_x4);
+  gsl_bspline_basis(x0,  B0, &is0, splinedata->bw_x0);
+  gsl_bspline_basis(x1,  B1, &is1, splinedata->bw_x1);
+  gsl_bspline_basis(x2,  B2, &is2, splinedata->bw_x2);
+  gsl_bspline_basis(x3,  B3, &is3, splinedata->bw_x3);
+  gsl_bspline_basis(x4,  B4, &is4, splinedata->bw_x4);
 
   int N = nc[0]*nc[1]*nc[2]*nc[3]*nc[4];  // Size of the data matrix for one empirical node
 
@@ -499,6 +509,7 @@ static int TP_Spline_interpolation_5d(
   return(0);
 }
 
+#ifdef LAL_HDF5_ENABLED
 /* Set up a new ROM submodel, using data contained in the NRSur4d2s.h5 h5 file */
 static int NRSurrogateData_Init_submodel(
   NRSurrogateData_submodel **submodel,
@@ -539,6 +550,7 @@ static int NRSurrogateData_Init_submodel(
 
   return ret;
 }
+#endif 
 
 /* Deallocate contents of the given NRSurrogateData_submodel structure */
 static void NRSurrogateData_Cleanup_submodel(NRSurrogateData_submodel *submodel) {
@@ -563,6 +575,8 @@ int NRSurrogateData_Init(NRSurrogateData *data, const char dir[]) {
   char *filename = XLALMalloc(size);
   snprintf(filename, size, "%s/%s", dir, NRSUR4D2S_DATAFILE);
 
+
+#ifdef LAL_HDF5_ENABLED
   LALH5File *file = XLALH5FileOpen(filename, "r");
   LALH5Dataset *dset;
 
@@ -676,7 +690,7 @@ int NRSurrogateData_Init(NRSurrogateData *data, const char dir[]) {
   ret |= ReadHDF5RealVectorDataset(file, "freqs", &(data->fEI));
 
   XLALH5FileClose(file);
-
+#endif
   /* setup splinedata */
   SplineData5d *splinedata=NULL;
   SplineData5d_Init(&splinedata, data->nc, data->qvec, data->chi1vec, data->chi1thetavec, data->chi1phivec, data->chi2vec);

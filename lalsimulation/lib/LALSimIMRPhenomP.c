@@ -952,14 +952,14 @@ static int PhenomPCore(
     if (NRTidal_version == NRTidal_V) {
       phi_tidal = XLALCreateREAL8Sequence(L_fCut);
       planck_taper = XLALCreateREAL8Sequence(L_fCut);
-      ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, NRTidal_V);
+      ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, 0,0, NRTidal_V);
       XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
     }
     else if (NRTidal_version == NRTidalv2_V) {
       phi_tidal = XLALCreateREAL8Sequence(L_fCut);
       amp_tidal = XLALCreateREAL8Sequence(L_fCut);
       planck_taper = XLALCreateREAL8Sequence(L_fCut);
-      ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, NRTidalv2_V);
+      ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, 0,0, NRTidalv2_V);
       XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
       /* Get the PN SS-tail and SSS terms */
       XLALSimInspiralGetHOSpinTerms(&SS_3p5PN, &SSS_3p5PN, X_A, X_B, chi1_l, chi2_l, quadparam1, quadparam2);
@@ -1088,7 +1088,7 @@ static int PhenomPCore(
     amp_tidal_fixed = XLALCreateREAL8Sequence(n_fixed);
     planck_taper_fixed = XLALCreateREAL8Sequence(n_fixed);
     ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal_fixed, amp_tidal_fixed, planck_taper_fixed,
-                                                         freqs_fixed, m1_SI, m2_SI, lambda1, lambda2, NRTidal_version);
+                                                         freqs_fixed, m1_SI, m2_SI, lambda1, lambda2, 0,0, NRTidal_version);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
     if (NRTidal_version == NRTidalv2_V)
       XLALSimInspiralGetHOSpinTerms(&SS_3p5PN_n, &SSS_3p5PN_n, X_A, X_B, chi1_l, chi2_l, quadparam1, quadparam2);

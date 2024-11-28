@@ -89,9 +89,9 @@
  * Looks into the input file containing list of lines, does some checks on the
  * file format, and calculates the number of harmonic sets in this file.
  */
-void LALFindNumberHarmonics (LALStatus    *status,	/**< pointer to LALStatus structure */
-			     LineHarmonicsInfo   *harmonicInfo, /**< list of harmonics */
-			     CHAR         *fname /**< input filename */)
+void LALFindNumberHarmonics( LALStatus    *status,      /**< pointer to LALStatus structure */
+                             LineHarmonicsInfo   *harmonicInfo, /**< list of harmonics */
+                             CHAR         *fname /**< input filename */ )
 {
 
   FILE *fp = NULL;
@@ -100,41 +100,43 @@ void LALFindNumberHarmonics (LALStatus    *status,	/**< pointer to LALStatus str
   REAL8 temp1, temp2, temp3, temp4;
 
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /* make sure arguments are not null */
-  ASSERT (harmonicInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
   /* ASSERT (harmonicInfo->nHarmonicSets > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
   ASSERT (harmonicInfo->startFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
   ASSERT (harmonicInfo->gapFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
   ASSERT (harmonicInfo->numHarmonics, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
   ASSERT (harmonicInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
   ASSERT (harmonicInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); */ /* 09/09/05 gam */
-  ASSERT (fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
 
   /* open harmonics file for reading */
-  fp = fopen( fname, "r");
+  fp = fopen( fname, "r" );
   /* ASSERT (fname, status, SFTCLEANH_EFILE, SFTCLEANH_MSGEFILE); */ /* 09/09/05 gam */
-  ASSERT (fp, status, SFTCLEANH_EFILE, SFTCLEANH_MSGEFILE);
+  ASSERT( fp, status, SFTCLEANH_EFILE, SFTCLEANH_MSGEFILE );
 
   harmonicCount = 0;
 
   do {
-    r=fscanf(fp,"%lf%lf%d%lf%lf%s\n", &temp1, &temp2,
-	     &tempint, &temp3, &temp4, dump);
+    r = fscanf( fp, "%lf%lf%d%lf%lf%s\n", &temp1, &temp2,
+                &tempint, &temp3, &temp4, dump );
     /* make sure the line has the right number of entries or is EOF */
-    ASSERT( (r==6)||(r==EOF), status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL);
-    if (r==6) harmonicCount++;
-  } while ( r != EOF);
+    ASSERT( ( r == 6 ) || ( r == EOF ), status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL );
+    if ( r == 6 ) {
+      harmonicCount++;
+    }
+  } while ( r != EOF );
 
   harmonicInfo->nHarmonicSets = harmonicCount;
 
-  fclose(fp);
+  fclose( fp );
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -144,37 +146,37 @@ void LALFindNumberHarmonics (LALStatus    *status,	/**< pointer to LALStatus str
  * this structure before this function is called.
  */
 
-void  LALReadHarmonicsInfo (LALStatus          *status,		/**< pointer to LALStatus structure */
-			    LineHarmonicsInfo  *harmonicsInfo, /**< list of harmonics */
-			    CHAR               *fname /**< input file */)
+void  LALReadHarmonicsInfo( LALStatus          *status,         /**< pointer to LALStatus structure */
+                            LineHarmonicsInfo  *harmonicsInfo, /**< list of harmonics */
+                            CHAR               *fname /**< input file */ )
 {
   /* this reads the information about the lines: central frequency, left wing and
      right wing */
   FILE    *fp = NULL;
   INT4    r, count, nHarmonicSets;
-  REAL8   *startFreq=NULL;
-  REAL8   *gapFreq=NULL;
-  INT4    *numHarmonics=NULL;
-  REAL8   *leftWing=NULL;
-  REAL8   *rightWing=NULL;
+  REAL8   *startFreq = NULL;
+  REAL8   *gapFreq = NULL;
+  INT4    *numHarmonics = NULL;
+  REAL8   *leftWing = NULL;
+  REAL8   *rightWing = NULL;
   CHAR    dump[128];
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /* make sure arguments are not null */
-  ASSERT (harmonicsInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (harmonicsInfo->nHarmonicSets > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (harmonicsInfo->startFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (harmonicsInfo->gapFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (harmonicsInfo->numHarmonics, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (harmonicsInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (harmonicsInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT( harmonicsInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicsInfo->nHarmonicSets > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( harmonicsInfo->startFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicsInfo->gapFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicsInfo->numHarmonics, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicsInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicsInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
 
   /* open line noise file for reading */
-  fp = fopen( fname, "r");
-  ASSERT (fp, status, SFTCLEANH_EFILE,  SFTCLEANH_MSGEFILE);
+  fp = fopen( fname, "r" );
+  ASSERT( fp, status, SFTCLEANH_EFILE,  SFTCLEANH_MSGEFILE );
 
   nHarmonicSets = harmonicsInfo->nHarmonicSets;
   startFreq = harmonicsInfo->startFreq;
@@ -184,18 +186,19 @@ void  LALReadHarmonicsInfo (LALStatus          *status,		/**< pointer to LALStat
   rightWing = harmonicsInfo->rightWing;
 
   /* read line information from file */
-  for (count = 0; count < nHarmonicSets; count++){
-    r=fscanf(fp,"%lf%lf%d%lf%lf%s\n", startFreq+count, gapFreq+count, numHarmonics+count,
-	     leftWing+count, rightWing+count, dump);
-    if ( !(r==6 ) )
-      ABORT ( status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL);
+  for ( count = 0; count < nHarmonicSets; count++ ) {
+    r = fscanf( fp, "%lf%lf%d%lf%lf%s\n", startFreq + count, gapFreq + count, numHarmonics + count,
+                leftWing + count, rightWing + count, dump );
+    if ( !( r == 6 ) ) {
+      ABORT( status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL );
+    }
   }
 
-  fclose(fp);
+  fclose( fp );
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 
 }
 
@@ -204,9 +207,9 @@ void  LALReadHarmonicsInfo (LALStatus          *status,		/**< pointer to LALStat
  * lines.
  */
 
-void  LALHarmonics2Lines (LALStatus          *status,	/**< pointer to LALStatus structure */
-			  LineNoiseInfo      *lineInfo, /**< output list of explicit lines */
-			  LineHarmonicsInfo  *harmonicsInfo) /**< input list of harmonics */
+void  LALHarmonics2Lines( LALStatus          *status,   /**< pointer to LALStatus structure */
+                          LineNoiseInfo      *lineInfo, /**< output list of explicit lines */
+                          LineHarmonicsInfo  *harmonicsInfo ) /**< input list of harmonics */
 {
   /* this reads the information about the lines: central frequency, left wing and
      right wing */
@@ -220,23 +223,23 @@ void  LALHarmonics2Lines (LALStatus          *status,	/**< pointer to LALStatus 
   REAL8   f0, deltaf, leftDeltaf, rightDeltaf;
 
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /* make sure arguments are not null */
-  ASSERT (harmonicsInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (harmonicsInfo->nHarmonicSets > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (harmonicsInfo->startFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (harmonicsInfo->gapFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (harmonicsInfo->numHarmonics, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (harmonicsInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (harmonicsInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT( harmonicsInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicsInfo->nHarmonicSets > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( harmonicsInfo->startFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicsInfo->gapFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicsInfo->numHarmonics, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicsInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( harmonicsInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
 
-  ASSERT (lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->nLines > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT( lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->nLines > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
 
   nHarmonicSets = harmonicsInfo->nHarmonicSets;
   startFreq = harmonicsInfo->startFreq;
@@ -246,26 +249,24 @@ void  LALHarmonics2Lines (LALStatus          *status,	/**< pointer to LALStatus 
   rightWing = harmonicsInfo->rightWing;
 
   position = 0;
-  for (count1=0; count1 < nHarmonicSets; count1++)
-    {
-      maxCount = *(numHarmonics + count1);
-      f0 = *(startFreq + count1);
-      deltaf = *(gapFreq + count1);
-      leftDeltaf = *(leftWing + count1);
-      rightDeltaf = *(rightWing + count1);
-      for (count2 = 0; count2 < maxCount; count2++)
-	{
-	  *(lineInfo->lineFreq + count2 + position) = f0 + count2 * deltaf;
-	  *(lineInfo->leftWing + count2 + position) = leftDeltaf;
-	  *(lineInfo->rightWing + count2 + position) = rightDeltaf;
-	}
-      position += maxCount;
+  for ( count1 = 0; count1 < nHarmonicSets; count1++ ) {
+    maxCount = *( numHarmonics + count1 );
+    f0 = *( startFreq + count1 );
+    deltaf = *( gapFreq + count1 );
+    leftDeltaf = *( leftWing + count1 );
+    rightDeltaf = *( rightWing + count1 );
+    for ( count2 = 0; count2 < maxCount; count2++ ) {
+      *( lineInfo->lineFreq + count2 + position ) = f0 + count2 * deltaf;
+      *( lineInfo->leftWing + count2 + position ) = leftDeltaf;
+      *( lineInfo->rightWing + count2 + position ) = rightDeltaf;
     }
+    position += maxCount;
+  }
 
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 
 }
 
@@ -278,44 +279,46 @@ void  LALHarmonics2Lines (LALStatus          *status,	/**< pointer to LALStatus 
  * Use instead LALFindNumberHarmonics().
  */
 
-void LALFindNumberLines (LALStatus          *status,
-		      LineNoiseInfo      *lineInfo,
-		      CHAR               *fname)
+void LALFindNumberLines( LALStatus          *status,
+                         LineNoiseInfo      *lineInfo,
+                         CHAR               *fname )
 {
   /* this function counts the number of lines present in the file "fname" and
      checks that the format of the lines is correct */
 
   FILE *fp = NULL;
-  REAL8 temp1,temp2,temp3;
+  REAL8 temp1, temp2, temp3;
   INT4  lineCount, r;
   CHAR  dump[128];
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /* make sure arguments are not null */
-  ASSERT (lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT( lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
 
   /* open line noise file for reading */
-  fp = fopen( fname, "r");
-  ASSERT (fp, status, SFTCLEANH_EFILE,  SFTCLEANH_MSGEFILE);
+  fp = fopen( fname, "r" );
+  ASSERT( fp, status, SFTCLEANH_EFILE,  SFTCLEANH_MSGEFILE );
 
   lineCount = 0;
   do {
-    r=fscanf(fp,"%lf%lf%lf%s\n", &temp1, &temp2, &temp3, dump);
+    r = fscanf( fp, "%lf%lf%lf%s\n", &temp1, &temp2, &temp3, dump );
     /* make sure the line has the right number of entries or is EOF */
-    ASSERT( (r==4)||(r==EOF), status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL);
-    if (r==4) lineCount++;
-  } while ( r != EOF);
+    ASSERT( ( r == 4 ) || ( r == EOF ), status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL );
+    if ( r == 4 ) {
+      lineCount++;
+    }
+  } while ( r != EOF );
 
   lineInfo->nLines = lineCount;
 
-  fclose(fp);
+  fclose( fp );
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 /**
@@ -323,50 +326,51 @@ void LALFindNumberLines (LALStatus          *status,
  * Use instead LALReadHarmonicsInfo()
  */
 
-void  LALReadLineInfo (LALStatus     *status,
-		    LineNoiseInfo *lineInfo,
-		    CHAR          *fname)
+void  LALReadLineInfo( LALStatus     *status,
+                       LineNoiseInfo *lineInfo,
+                       CHAR          *fname )
 {
   /* this reads the information about the lines: central frequency, left wing and
      right wing */
   FILE    *fp = NULL;
   INT4    r, count, nLines;
-  REAL8   *lineFreq=NULL;
-  REAL8   *leftWing=NULL;
-  REAL8   *rightWing=NULL;
+  REAL8   *lineFreq = NULL;
+  REAL8   *leftWing = NULL;
+  REAL8   *rightWing = NULL;
   CHAR    dump[128];
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /* make sure arguments are not null */
-  ASSERT (lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->nLines > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT( lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->nLines > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
 
   /* open line noise file for reading */
-  fp = fopen( fname, "r");
-  ASSERT (fp, status, SFTCLEANH_EFILE,  SFTCLEANH_MSGEFILE);
+  fp = fopen( fname, "r" );
+  ASSERT( fp, status, SFTCLEANH_EFILE,  SFTCLEANH_MSGEFILE );
 
   nLines = lineInfo->nLines;
   lineFreq = lineInfo->lineFreq;
   leftWing = lineInfo->leftWing;
   rightWing = lineInfo->rightWing;
   /* read line information from file */
-  for (count = 0; count < nLines; count++){
-    r=fscanf(fp,"%lf%lf%lf%s\n", lineFreq+count, leftWing+count, rightWing+count, dump);
-    if ( !(r==4) )
-      ABORT ( status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL);
+  for ( count = 0; count < nLines; count++ ) {
+    r = fscanf( fp, "%lf%lf%lf%s\n", lineFreq + count, leftWing + count, rightWing + count, dump );
+    if ( !( r == 4 ) ) {
+      ABORT( status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL );
+    }
   }
 
-  fclose(fp);
+  fclose( fp );
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 
 }
 
@@ -379,79 +383,70 @@ void  LALReadLineInfo (LALStatus     *status,
  * for discarding unnecessary lines to save computational cost and memory.
  */
 
-void LALChooseLines (LALStatus        *status,	/**< pointer to LALStatus structure */
-		     LineNoiseInfo    *outLine,  /**< reduced list of lines */
-		     LineNoiseInfo    *inLine,   /**< input list of lines */
-		     REAL8            fMin,      /**< start of frequency band */
-		     REAL8            fMax       /**< end of frequency band */
-		  )
+void LALChooseLines( LALStatus        *status,  /**< pointer to LALStatus structure */
+                     LineNoiseInfo    *outLine,  /**< reduced list of lines */
+                     LineNoiseInfo    *inLine,   /**< input list of lines */
+                     REAL8            fMin,      /**< start of frequency band */
+                     REAL8            fMax       /**< end of frequency band */
+                   )
 {
 
   INT4 nLinesIn, nLinesOut, j;
   REAL8 lineFreq, leftWing, rightWing;
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /* some sanity checks */
-  ASSERT (outLine, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (inLine, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (inLine->nLines > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (outLine->nLines > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (inLine->nLines - outLine->nLines == 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (fMin > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (fMax > fMin, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT( outLine, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( inLine, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( inLine->nLines > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( outLine->nLines > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( inLine->nLines - outLine->nLines == 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( fMin > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( fMax > fMin, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
 
   nLinesIn = inLine->nLines;
   nLinesOut = 0;
   /* loop over lines in inLine structure and see if they are within bounds */
-  for(j=0; j<nLinesIn; j++)
-    {
-      lineFreq = inLine->lineFreq[j];
-      leftWing = inLine->leftWing[j];
-      rightWing = inLine->rightWing[j];
-      if ( (lineFreq >= fMin) && (lineFreq <= fMax))
-	{
-	  outLine->lineFreq[nLinesOut] = lineFreq;
-	  outLine->leftWing[nLinesOut] = leftWing;
-	  outLine->rightWing[nLinesOut] = rightWing;
-	  nLinesOut++;
-	}
-      else if ( (lineFreq < fMin) && (lineFreq + rightWing > fMin) )
-	{
-	  outLine->lineFreq[nLinesOut] = lineFreq;
-	  outLine->leftWing[nLinesOut] = leftWing;
-	  outLine->rightWing[nLinesOut] = rightWing;
-	  nLinesOut++;
-	}
-      else if ( (lineFreq > fMax) && (lineFreq - leftWing < fMax) )
-	{
-	  outLine->lineFreq[nLinesOut] = lineFreq;
-	  outLine->leftWing[nLinesOut] = leftWing;
-	  outLine->rightWing[nLinesOut] = rightWing;
-	  nLinesOut++;
-	}
+  for ( j = 0; j < nLinesIn; j++ ) {
+    lineFreq = inLine->lineFreq[j];
+    leftWing = inLine->leftWing[j];
+    rightWing = inLine->rightWing[j];
+    if ( ( lineFreq >= fMin ) && ( lineFreq <= fMax ) ) {
+      outLine->lineFreq[nLinesOut] = lineFreq;
+      outLine->leftWing[nLinesOut] = leftWing;
+      outLine->rightWing[nLinesOut] = rightWing;
+      nLinesOut++;
+    } else if ( ( lineFreq < fMin ) && ( lineFreq + rightWing > fMin ) ) {
+      outLine->lineFreq[nLinesOut] = lineFreq;
+      outLine->leftWing[nLinesOut] = leftWing;
+      outLine->rightWing[nLinesOut] = rightWing;
+      nLinesOut++;
+    } else if ( ( lineFreq > fMax ) && ( lineFreq - leftWing < fMax ) ) {
+      outLine->lineFreq[nLinesOut] = lineFreq;
+      outLine->leftWing[nLinesOut] = leftWing;
+      outLine->rightWing[nLinesOut] = rightWing;
+      nLinesOut++;
     }
+  }
 
   /* if there are no lines inband then free memory */
-  if (nLinesOut == 0)
-    {
-      outLine->nLines = nLinesOut; /* 09/09/05 gam; calling function needs to know this. */
-      LALFree(outLine->lineFreq);
-      LALFree(outLine->leftWing);
-      LALFree(outLine->rightWing);
-    }
-  else  /* else reallocate memory for outLine */
-    {
-      outLine->nLines = nLinesOut;
-      outLine->lineFreq = (REAL8 *)LALRealloc(outLine->lineFreq, nLinesOut*sizeof(REAL8));
-      outLine->leftWing = (REAL8 *)LALRealloc(outLine->leftWing, nLinesOut*sizeof(REAL8));
-      outLine->rightWing = (REAL8 *)LALRealloc(outLine->rightWing, nLinesOut*sizeof(REAL8));
-    }
+  if ( nLinesOut == 0 ) {
+    outLine->nLines = nLinesOut; /* 09/09/05 gam; calling function needs to know this. */
+    LALFree( outLine->lineFreq );
+    LALFree( outLine->leftWing );
+    LALFree( outLine->rightWing );
+  } else { /* else reallocate memory for outLine */
+    outLine->nLines = nLinesOut;
+    outLine->lineFreq = ( REAL8 * )LALRealloc( outLine->lineFreq, nLinesOut * sizeof( REAL8 ) );
+    outLine->leftWing = ( REAL8 * )LALRealloc( outLine->leftWing, nLinesOut * sizeof( REAL8 ) );
+    outLine->rightWing = ( REAL8 * )LALRealloc( outLine->rightWing, nLinesOut * sizeof( REAL8 ) );
+  }
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 #define TRUE (1==1)
@@ -466,43 +461,43 @@ void LALChooseLines (LALStatus        *status,	/**< pointer to LALStatus structu
  * frequency is affected or not.
  */
 
-void LALCheckLines ( LALStatus           *status, /**< pointer to LALStatus structure */
-		     INT4                *countL, /**< number of lines affecting frequency */
-		     LineNoiseInfo       *lines, /**< list of lines */
-		     REAL8               freq)   /**< frequency to be checked */
+void LALCheckLines( LALStatus           *status,  /**< pointer to LALStatus structure */
+                    INT4                *countL, /**< number of lines affecting frequency */
+                    LineNoiseInfo       *lines, /**< list of lines */
+                    REAL8               freq )  /**< frequency to be checked */
 {
 
   INT4 nLines, j;
   REAL8 lineFreq, leftWing, rightWing, doppler;
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /* sanity checks */
-  ASSERT (lines, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (countL, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lines->nLines > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT( lines, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( countL, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lines->nLines > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
 
   /* loop over lines and check if freq is affected by the lines */
   nLines = lines->nLines;
   *countL = 0;
-  for (j=0; j<nLines; j++)
-    {
-      lineFreq = lines->lineFreq[j];
-      leftWing = lines->leftWing[j];
-      rightWing = lines->rightWing[j];
-      /* add doppler band to wings */
-      doppler = VTOT * (lineFreq + rightWing);
-      leftWing += doppler;
-      rightWing += doppler;
-      /* now chech if freq lies in range */
-      if ( (freq <= lineFreq + rightWing) && (freq >= lineFreq - leftWing))
-	*countL += 1;
+  for ( j = 0; j < nLines; j++ ) {
+    lineFreq = lines->lineFreq[j];
+    leftWing = lines->leftWing[j];
+    rightWing = lines->rightWing[j];
+    /* add doppler band to wings */
+    doppler = VTOT * ( lineFreq + rightWing );
+    leftWing += doppler;
+    rightWing += doppler;
+    /* now chech if freq lies in range */
+    if ( ( freq <= lineFreq + rightWing ) && ( freq >= lineFreq - leftWing ) ) {
+      *countL += 1;
     }
+  }
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -584,12 +579,12 @@ void LALCheckLines ( LALStatus           *status, /**< pointer to LALStatus stru
  *
  */
 
-void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus structure */
-			  SFTtype            *sft,  /**< SFT to be cleaned */
-			  INT4               width, /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
-			  INT4               window,/**< window size for noise floor estimation in vicinity of a line */
-			  LineNoiseInfo      *lineInfo, /**< list of lines */
-			  RandomParams       *randPar /**< parameters for generating random noise */)
+void LALCleanCOMPLEX8SFT( LALStatus          *status,/**< pointer to LALStatus structure */
+                          SFTtype            *sft,  /**< SFT to be cleaned */
+                          INT4               width, /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
+                          INT4               window,/**< window size for noise floor estimation in vicinity of a line */
+                          LineNoiseInfo      *lineInfo, /**< list of lines */
+                          RandomParams       *randPar /**< parameters for generating random noise */ )
 {
   /* function to clean the SFT based on the line information read earlier */
 
@@ -597,36 +592,36 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
   INT4     leftWingBins, rightWingBins, length, sumBins;
   REAL8    deltaF, f0, tBase, bias;
   REAL8    stdPow, medianPow;
-  REAL8    *tempDataPow=NULL;
-  REAL8    *lineFreq=NULL;
-  REAL8    *leftWing=NULL;
-  REAL8    *rightWing=NULL;
+  REAL8    *tempDataPow = NULL;
+  REAL8    *lineFreq = NULL;
+  REAL8    *leftWing = NULL;
+  REAL8    *rightWing = NULL;
   COMPLEX8 *inData;
   /* FILE *fp=NULL;
   INT4 seed, ranCount;
   RandomParams *randPar=NULL; */ /* 09/09/05 gam; randPar now a function argument */
-  static REAL4Vector *ranVector=NULL;
+  static REAL4Vector *ranVector = NULL;
   REAL4 *randVal;
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (sft,   status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT( sft,   status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
   inData = sft->data->data;
-  ASSERT (inData, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->nLines, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (width >= 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT( inData, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->nLines, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( width >= 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
   length = sft->data->length;
-  ASSERT (length > 0, status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL);
+  ASSERT( length > 0, status, SFTCLEANH_EHEADER, SFTCLEANH_MSGEVAL );
 
   /* get the value of RngMedBias from the window size */
-  TRY( LALRngMedBias( status->statusPtr, &bias, 2*window ), status );
+  TRY( LALRngMedBias( status->statusPtr, &bias, 2 * window ), status );
 
   /* copy pointers from input */
   nLines = lineInfo->nLines;
@@ -635,13 +630,13 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
   rightWing = lineInfo->rightWing;
 
   deltaF = sft->deltaF;
-  tBase = 1.0/deltaF;
+  tBase = 1.0 / deltaF;
   f0 = sft->f0;
-  minBin = lround(f0/deltaF);
+  minBin = lround( f0 / deltaF );
   maxBin = minBin + length - 1;
 
   /* allocate memory for storing sft power */
-  tempDataPow = LALMalloc(2*window*sizeof(REAL8));
+  tempDataPow = LALMalloc( 2 * window * sizeof( REAL8 ) );
 
   /* 09/09/05 gam; randPar now a function argument */
   /* fp=fopen("/dev/urandom", "r");
@@ -654,119 +649,120 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 
   /* calculate total number of bins to see how many random numbers must be generated */
   sumBins = 0;
-  for (count = 0; count < nLines; count++)
+  for ( count = 0; count < nLines; count++ ) {
     {
-      {
-	INT4 tempSumBins;
-	tempSumBins = floor(tBase*leftWing[count]) + floor(tBase*rightWing[count]);
-	sumBins += tempSumBins < 2*width ? tempSumBins : 2*width;
-      }
+      INT4 tempSumBins;
+      tempSumBins = floor( tBase * leftWing[count] ) + floor( tBase * rightWing[count] );
+      sumBins += tempSumBins < 2 * width ? tempSumBins : 2 * width;
     }
+  }
 
   /* TRY ( LALCreateRandomParams (status->statusPtr, &randPar, seed), status); */ /* 09/09/05 gam; randPar now a function argument */
-  TRY ( LALCreateVector (status->statusPtr, &ranVector, 2*(sumBins + nLines)), status);
-  TRY ( LALNormalDeviates (status->statusPtr, ranVector, randPar), status);
+  TRY( LALCreateVector( status->statusPtr, &ranVector, 2 * ( sumBins + nLines ) ), status );
+  TRY( LALNormalDeviates( status->statusPtr, ranVector, randPar ), status );
   /* TRY ( LALDestroyRandomParams (status->statusPtr, &randPar), status);  */ /* 09/09/05 gam; randPar now a function argument */
 
   tempk = 0;
   /* loop over the lines */
-  for (count = 0; count < nLines; count++){
+  for ( count = 0; count < nLines; count++ ) {
 
     /* find frequency bins for line frequency and wings */
-    lineBin = lround(tBase * lineFreq[count]);
-    leftWingBins = floor(tBase * leftWing[count]);
-    rightWingBins = floor(tBase * rightWing[count]);
+    lineBin = lround( tBase * lineFreq[count] );
+    leftWingBins = floor( tBase * leftWing[count] );
+    rightWingBins = floor( tBase * rightWing[count] );
 
     /* check that central frequency of the line is within band of sft */
-    if ((lineBin >= minBin) && (lineBin <= maxBin)) {
+    if ( ( lineBin >= minBin ) && ( lineBin <= maxBin ) ) {
 
       /* cut wings if wider than width parameter */
-      if ( ( leftWingBins > width ) || ( rightWingBins > width) ) {
-        LogPrintf ( LOG_NORMAL, "%s: Cutting wings of line %d/%d from [-%d,+%d] to width=%d.\n", __func__, count, nLines, leftWingBins, rightWingBins, width );
+      if ( ( leftWingBins > width ) || ( rightWingBins > width ) ) {
+        LogPrintf( LOG_NORMAL, "%s: Cutting wings of line %d/%d from [-%d,+%d] to width=%d.\n", __func__, count, nLines, leftWingBins, rightWingBins, width );
       }
       leftWingBins = leftWingBins < width ? leftWingBins : width;
       rightWingBins = rightWingBins < width ? rightWingBins : width;
 
       /* estimate the sft power in "window" # of bins each side */
-      if ( 2*window > (maxBin - minBin) ) {
-        LogPrintf ( LOG_NORMAL, "%s: Window of +-%d bins around lineBin=%d does not fit within SFT range [%d,%d], noise floor estimation will be compromised.\n", __func__, window, lineBin, minBin, maxBin );
+      if ( 2 * window > ( maxBin - minBin ) ) {
+        LogPrintf( LOG_NORMAL, "%s: Window of +-%d bins around lineBin=%d does not fit within SFT range [%d,%d], noise floor estimation will be compromised.\n", __func__, window, lineBin, minBin, maxBin );
       }
-      if ( ( window < leftWingBins) || ( window <= rightWingBins) ) {
-        LogPrintf ( LOG_NORMAL, "%s: Window of +-%d bins around lineBin=%d does not extend further than line wings [-%d,+%d], noise floor estimation will be compromised by the very same line that is supposed to be cleaned.\n", __func__, window, lineBin, leftWingBins, rightWingBins );
+      if ( ( window < leftWingBins ) || ( window <= rightWingBins ) ) {
+        LogPrintf( LOG_NORMAL, "%s: Window of +-%d bins around lineBin=%d does not extend further than line wings [-%d,+%d], noise floor estimation will be compromised by the very same line that is supposed to be cleaned.\n", __func__, window, lineBin, leftWingBins, rightWingBins );
       }
-      for (k = 0; k < window ; k++){
-	if (maxBin - lineBin - rightWingBins - k > 0)
-	  inData = sft->data->data + lineBin - minBin + rightWingBins + k + 1;
-	else
-	  inData = sft->data->data + length - 1;
+      for ( k = 0; k < window ; k++ ) {
+        if ( maxBin - lineBin - rightWingBins - k > 0 ) {
+          inData = sft->data->data + lineBin - minBin + rightWingBins + k + 1;
+        } else {
+          inData = sft->data->data + length - 1;
+        }
 
-	tempDataPow[k] = (crealf(*inData))*(crealf(*inData)) + (cimagf(*inData))*(cimagf(*inData));
+        tempDataPow[k] = ( crealf( *inData ) ) * ( crealf( *inData ) ) + ( cimagf( *inData ) ) * ( cimagf( *inData ) );
 
-	if (lineBin - minBin -leftWingBins - k > 0)
-	  inData = sft->data->data + lineBin - minBin - leftWingBins - k - 1;
-	else
-	  inData = sft->data->data;
+        if ( lineBin - minBin - leftWingBins - k > 0 ) {
+          inData = sft->data->data + lineBin - minBin - leftWingBins - k - 1;
+        } else {
+          inData = sft->data->data;
+        }
 
-	tempDataPow[k+window] = (crealf(*inData))*(crealf(*inData)) + (cimagf(*inData))*(cimagf(*inData));
+        tempDataPow[k + window] = ( crealf( *inData ) ) * ( crealf( *inData ) ) + ( cimagf( *inData ) ) * ( cimagf( *inData ) );
       }
 
-      gsl_sort( tempDataPow, 1, 2*window);
-      medianPow = gsl_stats_median_from_sorted_data(tempDataPow, 1, 2*window);
-      stdPow = sqrt(medianPow/(2 * bias));
+      gsl_sort( tempDataPow, 1, 2 * window );
+      medianPow = gsl_stats_median_from_sorted_data( tempDataPow, 1, 2 * window );
+      stdPow = sqrt( medianPow / ( 2 * bias ) );
 
       /* set sft value at central frequency to noise */
       inData = sft->data->data + lineBin - minBin;
 
       randVal = ranVector->data + tempk;
-      *(inData) = crectf( stdPow * (*randVal), cimagf(*(inData)) );
+      *( inData ) = crectf( stdPow * ( *randVal ), cimagf( *( inData ) ) );
       tempk++;
 
       randVal = ranVector->data + tempk;
-      *(inData) = crectf( crealf(*(inData)), stdPow * (*randVal) );
+      *( inData ) = crectf( crealf( *( inData ) ), stdPow * ( *randVal ) );
       tempk++;
 
       /* now go left and set the left wing to noise */
       /* make sure that we are always within the sft band */
       /* and set bins to zero only if Wing width is smaller than "width" */
-	for (leftCount = 0; leftCount < leftWingBins; leftCount++){
-	  if ( (lineBin - minBin - leftCount > 0)){
-	    inData = sft->data->data + lineBin - minBin - leftCount - 1;
+      for ( leftCount = 0; leftCount < leftWingBins; leftCount++ ) {
+        if ( ( lineBin - minBin - leftCount > 0 ) ) {
+          inData = sft->data->data + lineBin - minBin - leftCount - 1;
 
-	    randVal = ranVector->data + tempk;
-	    *(inData) = crectf( stdPow * (*randVal), cimagf(*(inData)) );
-	    tempk++;
+          randVal = ranVector->data + tempk;
+          *( inData ) = crectf( stdPow * ( *randVal ), cimagf( *( inData ) ) );
+          tempk++;
 
-	    randVal = ranVector->data + tempk;
-	    *(inData) = crectf( crealf(*(inData)), stdPow * (*randVal) );
-	    tempk++;
-	  }
-	}
+          randVal = ranVector->data + tempk;
+          *( inData ) = crectf( crealf( *( inData ) ), stdPow * ( *randVal ) );
+          tempk++;
+        }
+      }
 
       /* now go right making sure again to stay within the sft band */
-	for (rightCount = 0; rightCount < rightWingBins; rightCount++){
-	  if ( (maxBin - lineBin - rightCount > 0)){
-	    inData = sft->data->data + lineBin - minBin + rightCount + 1;
+      for ( rightCount = 0; rightCount < rightWingBins; rightCount++ ) {
+        if ( ( maxBin - lineBin - rightCount > 0 ) ) {
+          inData = sft->data->data + lineBin - minBin + rightCount + 1;
 
-	    randVal = ranVector->data + tempk;
-	    *(inData) = crectf( stdPow * (*randVal), cimagf(*(inData)) );
-            tempk++;
+          randVal = ranVector->data + tempk;
+          *( inData ) = crectf( stdPow * ( *randVal ), cimagf( *( inData ) ) );
+          tempk++;
 
-	    randVal = ranVector->data + tempk;
-	    *(inData) = crectf( crealf(*(inData)), stdPow * (*randVal) );
-	    tempk++;
-	  }
-	}
+          randVal = ranVector->data + tempk;
+          *( inData ) = crectf( crealf( *( inData ) ), stdPow * ( *randVal ) );
+          tempk++;
+        }
+      }
 
     }
   } /* end loop over lines */
 
   /* free memory */
-  LALFree(tempDataPow);
-  TRY (LALDestroyVector (status->statusPtr, &ranVector), status);
+  LALFree( tempDataPow );
+  TRY( LALDestroyVector( status->statusPtr, &ranVector ), status );
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -776,38 +772,38 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
  * Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each
  * sft in vector
  */
-void LALCleanSFTVector (LALStatus       *status,   /**< pointer to LALStatus structure */
-			SFTVector       *sftVect,  /**< SFTVector to be cleaned */
-			INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
-			INT4            window,    /**< window size for noise floor estimation in vicinity of a line */
-			LineNoiseInfo   *lineInfo, /**< list of lines */
-			RandomParams    *randPar   /**< parameters for generating random noise */)
+void LALCleanSFTVector( LALStatus       *status,   /**< pointer to LALStatus structure */
+                        SFTVector       *sftVect,  /**< SFTVector to be cleaned */
+                        INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
+                        INT4            window,    /**< window size for noise floor estimation in vicinity of a line */
+                        LineNoiseInfo   *lineInfo, /**< list of lines */
+                        RandomParams    *randPar   /**< parameters for generating random noise */ )
 {
 
   UINT4 k;
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
-  ASSERT (sftVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (randPar, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (sftVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (sftVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->nLines, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (width >= 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT( sftVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( randPar, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( sftVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( sftVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->nLines, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( width >= 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
 
-  for ( k = 0; k < sftVect->length; k++) {
-    TRY (LALCleanCOMPLEX8SFT (status->statusPtr, sftVect->data + k, width, window, lineInfo, randPar), status);
+  for ( k = 0; k < sftVect->length; k++ ) {
+    TRY( LALCleanCOMPLEX8SFT( status->statusPtr, sftVect->data + k, width, window, lineInfo, randPar ), status );
   }
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -815,38 +811,38 @@ void LALCleanSFTVector (LALStatus       *status,   /**< pointer to LALStatus str
  * Function to clean a sft vector -- calls LALCleanCOMPLEX8SFT repeatedly for each
  * sft in vector
  */
-void LALCleanMultiSFTVect (LALStatus       *status,   /**< pointer to LALStatus structure */
-			   MultiSFTVector  *multVect, /**< SFTVector to be cleaned */
-			   INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
-			   INT4            window,    /**< window size for noise floor estimation in vicinity of a line */
-			   LineNoiseInfo   *lineInfo, /**< list of lines */
-			   RandomParams    *randPar   /**< parameters for generating random noise */)
+void LALCleanMultiSFTVect( LALStatus       *status,   /**< pointer to LALStatus structure */
+                           MultiSFTVector  *multVect, /**< SFTVector to be cleaned */
+                           INT4            width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
+                           INT4            window,    /**< window size for noise floor estimation in vicinity of a line */
+                           LineNoiseInfo   *lineInfo, /**< list of lines */
+                           RandomParams    *randPar   /**< parameters for generating random noise */ )
 {
 
   UINT4 k;
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
-  ASSERT (multVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (multVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (multVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->nLines, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (width >= 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT( multVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( multVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( multVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( lineInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->nLines, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( lineInfo->lineFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( lineInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( width >= 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
 
 
-  for ( k = 0; k < multVect->length; k++) {
-    TRY (LALCleanSFTVector (status->statusPtr, multVect->data[k], width, window, lineInfo, randPar), status);
+  for ( k = 0; k < multVect->length; k++ ) {
+    TRY( LALCleanSFTVector( status->statusPtr, multVect->data[k], width, window, lineInfo, randPar ), status );
   }
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -854,155 +850,151 @@ void LALCleanMultiSFTVect (LALStatus       *status,   /**< pointer to LALStatus 
  * function to remove lines from a sft vector given a file
  * containing list of lines
  */
-void LALRemoveKnownLinesInSFTVect (LALStatus   *status,   /**< pointer to LALStatus structure */
-				   SFTVector   *sftVect,  /**< SFTVector to be cleaned */
-				   INT4        width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
-				   INT4        window,    /**< window size for noise floor estimation in vicinity of a line */
-				   CHAR        *linefile, /**< file with list of lines */
-				   RandomParams *randPar) /**< for creating random numbers */
+void LALRemoveKnownLinesInSFTVect( LALStatus   *status,   /**< pointer to LALStatus structure */
+                                   SFTVector   *sftVect,  /**< SFTVector to be cleaned */
+                                   INT4        width,     /**< maximum width to be cleaned -- set sufficiently large if all bins in each line are to be cleaned*/
+                                   INT4        window,    /**< window size for noise floor estimation in vicinity of a line */
+                                   CHAR        *linefile, /**< file with list of lines */
+                                   RandomParams *randPar ) /**< for creating random numbers */
 {
 
 
   static LineNoiseInfo   lines, lines2;
   static LineHarmonicsInfo harmonics;
-  INT4 nLines=0, count1, nHarmonicSets;
+  INT4 nLines = 0, count1, nHarmonicSets;
 
   REAL8 f_min, f_max, deltaF;
   UINT4 numBins;
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
 
-  ASSERT (sftVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (sftVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (sftVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (linefile, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (width > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT( sftVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( sftVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( sftVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( linefile, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( width > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
 
   f_min = sftVect->data[0].f0;
   deltaF = sftVect->data->deltaF;
   numBins = sftVect->data->data->length;
   f_max = f_min + deltaF * numBins;
 
-  TRY( LALFindNumberHarmonics (status->statusPtr, &harmonics, linefile), status);
+  TRY( LALFindNumberHarmonics( status->statusPtr, &harmonics, linefile ), status );
   nHarmonicSets = harmonics.nHarmonicSets;
 
-  if (nHarmonicSets > 0) /* nothing to do otherwise */
-    {
-      harmonics.startFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.gapFreq = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.numHarmonics = (INT4 *)LALMalloc(harmonics.nHarmonicSets * sizeof(INT4));
-      harmonics.leftWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
-      harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
+  if ( nHarmonicSets > 0 ) { /* nothing to do otherwise */
+    harmonics.startFreq = ( REAL8 * )LALMalloc( harmonics.nHarmonicSets * sizeof( REAL8 ) );
+    harmonics.gapFreq = ( REAL8 * )LALMalloc( harmonics.nHarmonicSets * sizeof( REAL8 ) );
+    harmonics.numHarmonics = ( INT4 * )LALMalloc( harmonics.nHarmonicSets * sizeof( INT4 ) );
+    harmonics.leftWing = ( REAL8 * )LALMalloc( harmonics.nHarmonicSets * sizeof( REAL8 ) );
+    harmonics.rightWing = ( REAL8 * )LALMalloc( harmonics.nHarmonicSets * sizeof( REAL8 ) );
 
 
-      TRY( LALReadHarmonicsInfo( status->statusPtr, &harmonics, linefile ), status);
+    TRY( LALReadHarmonicsInfo( status->statusPtr, &harmonics, linefile ), status );
 
-      nLines = 0;
-      for (count1=0; count1 < nHarmonicSets; count1++)
-	{
-	  nLines += *(harmonics.numHarmonics + count1);
-	}
+    nLines = 0;
+    for ( count1 = 0; count1 < nHarmonicSets; count1++ ) {
+      nLines += *( harmonics.numHarmonics + count1 );
+    }
 
-      lines.nLines = nLines;
-      lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-      lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-      lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+    lines.nLines = nLines;
+    lines.lineFreq = ( REAL8 * )LALMalloc( nLines * sizeof( REAL8 ) );
+    lines.leftWing = ( REAL8 * )LALMalloc( nLines * sizeof( REAL8 ) );
+    lines.rightWing = ( REAL8 * )LALMalloc( nLines * sizeof( REAL8 ) );
 
-      TRY( LALHarmonics2Lines( status->statusPtr, &lines, &harmonics), status);
-
-
-      lines2.nLines = nLines;
-      lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-      lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-      lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
-
-      TRY( LALChooseLines( status->statusPtr, &lines2, &lines, f_min, f_max), status);
-      nLines = lines2.nLines;
-
-      /* clean the sft vector if there were any lines between f_min and f_max*/
-      if ( nLines > 0 ) {
-	TRY ( LALCleanSFTVector( status->statusPtr, sftVect, width, window, &lines2, randPar), status);
-
-	/* if nLines2 == 0 then it is freed inside LALChooseLines -- change this? */
-	LALFree(lines2.lineFreq);
-	LALFree(lines2.leftWing);
-	LALFree(lines2.rightWing);
-
-      }
-
-      /* free memory */
-      LALFree(lines.lineFreq);
-      LALFree(lines.leftWing);
-      LALFree(lines.rightWing);
-
-      LALFree(harmonics.startFreq);
-      LALFree(harmonics.gapFreq);
-      LALFree(harmonics.numHarmonics);
-      LALFree(harmonics.leftWing);
-      LALFree(harmonics.rightWing);
-
-    } /* if nHarmonicSets > 0 */
+    TRY( LALHarmonics2Lines( status->statusPtr, &lines, &harmonics ), status );
 
 
-  DETATCHSTATUSPTR (status);
+    lines2.nLines = nLines;
+    lines2.lineFreq = ( REAL8 * )LALMalloc( nLines * sizeof( REAL8 ) );
+    lines2.leftWing = ( REAL8 * )LALMalloc( nLines * sizeof( REAL8 ) );
+    lines2.rightWing = ( REAL8 * )LALMalloc( nLines * sizeof( REAL8 ) );
+
+    TRY( LALChooseLines( status->statusPtr, &lines2, &lines, f_min, f_max ), status );
+    nLines = lines2.nLines;
+
+    /* clean the sft vector if there were any lines between f_min and f_max*/
+    if ( nLines > 0 ) {
+      TRY( LALCleanSFTVector( status->statusPtr, sftVect, width, window, &lines2, randPar ), status );
+
+      /* if nLines2 == 0 then it is freed inside LALChooseLines -- change this? */
+      LALFree( lines2.lineFreq );
+      LALFree( lines2.leftWing );
+      LALFree( lines2.rightWing );
+
+    }
+
+    /* free memory */
+    LALFree( lines.lineFreq );
+    LALFree( lines.leftWing );
+    LALFree( lines.rightWing );
+
+    LALFree( harmonics.startFreq );
+    LALFree( harmonics.gapFreq );
+    LALFree( harmonics.numHarmonics );
+    LALFree( harmonics.leftWing );
+    LALFree( harmonics.rightWing );
+
+  } /* if nHarmonicSets > 0 */
+
+
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 /**
  * top level function to remove lines from a multi sft vector given a list of files
  * containing list of known spectral lines
  */
-void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< pointer to LALStatus structure */
-					  MultiSFTVector   *MultiSFTVect,  /**< SFTVector to be cleaned */
-					  INT4             width,          /**< maximum width to be cleaned */
-					  INT4             window,         /**< window size for noise floor estimation in vicinity of a line */
-					  LALStringVector *linefiles,      /**< list of per-detector files with list of lines (the basename of each file must start with a canonical IFO name) */
-					  RandomParams     *randPar)       /**< for creating random numbers */
+void LALRemoveKnownLinesInMultiSFTVector( LALStatus        *status,        /**< pointer to LALStatus structure */
+    MultiSFTVector   *MultiSFTVect,  /**< SFTVector to be cleaned */
+    INT4             width,          /**< maximum width to be cleaned */
+    INT4             window,         /**< window size for noise floor estimation in vicinity of a line */
+    LALStringVector *linefiles,      /**< list of per-detector files with list of lines (the basename of each file must start with a canonical IFO name) */
+    RandomParams     *randPar )      /**< for creating random numbers */
 {
 
   UINT4 k, j, numifos;
   CHAR *ifo;
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
 
-  ASSERT (MultiSFTVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (MultiSFTVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
-  ASSERT (MultiSFTVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (width > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT( MultiSFTVect, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( MultiSFTVect->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
+  ASSERT( MultiSFTVect->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( width > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+  ASSERT( window > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
 
   numifos = MultiSFTVect->length;
 
   if ( linefiles != NULL ) {
 
-  ASSERT (linefiles->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
-  ASSERT (linefiles->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+    ASSERT( linefiles->length > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL );
+    ASSERT( linefiles->data, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL );
 
-  /* loop over linefiles and clean the relevant SFTs */
-  for ( k = 0; k < linefiles->length; k++)
-    {
+    /* loop over linefiles and clean the relevant SFTs */
+    for ( k = 0; k < linefiles->length; k++ ) {
       ifo = NULL;
       /* try to get the ifo name from the linefile name */
-      if ( (ifo = XLALGetChannelPrefix ( basename(linefiles->data[k]))) == NULL) {
-        ABORT ( status, SFTCLEANH_ELINENAME, SFTCLEANH_MSGELINENAME);
+      if ( ( ifo = XLALGetChannelPrefix( basename( linefiles->data[k] ) ) ) == NULL ) {
+        ABORT( status, SFTCLEANH_ELINENAME, SFTCLEANH_MSGELINENAME );
       }
 
       /* loop over ifos and see if any matches */
-      for ( j = 0; j < numifos; j++)
-	{
-	  if ( strncmp( ifo, MultiSFTVect->data[j]->data->name, 3) == 0) {
-	    /* clean the sftvector which has matched */
-	    TRY ( LALRemoveKnownLinesInSFTVect ( status->statusPtr, MultiSFTVect->data[j],
-						 width, window, linefiles->data[k], randPar), status);
-	  }
+      for ( j = 0; j < numifos; j++ ) {
+        if ( strncmp( ifo, MultiSFTVect->data[j]->data->name, 3 ) == 0 ) {
+          /* clean the sftvector which has matched */
+          TRY( LALRemoveKnownLinesInSFTVect( status->statusPtr, MultiSFTVect->data[j],
+                                             width, window, linefiles->data[k], randPar ), status );
+        }
 
-	} /* loop over ifos */
+      } /* loop over ifos */
 
       LALFree( ifo );
 
@@ -1011,8 +1003,8 @@ void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< 
   } /* if linefiles != NULL */
 
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 

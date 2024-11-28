@@ -494,11 +494,11 @@ int XLALListAdd(LALList *list, const void *data, size_t size, LALTYPECODE type)
 
 	item = XLALListItemAlloc(size);
 	if (item == NULL)
-                XLAL_ERROR(XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 
 	if (XLALListItemSet(item, data, size, type) == NULL) {
 		LALFree(item);
-                XLAL_ERROR(XLAL_EFUNC);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	item->next = list->head;
@@ -557,16 +557,18 @@ static void XLALListAsStringAppendValueFunc(LALValue *value, void *thunk)
 	return;
 }
 
-char * XLALListAsStringAppend(char *s, LALList *list)
+char * XLALListAsStringAppend(char *s, const LALList *list)
 {
+	LALList *l = (LALList *)(uintptr_t)list; // discarding const qual is harmless
+
 	struct LALListAsStringAppendValueFuncParams p = {s, 1};
-        p.s = XLALStringAppend(p.s, "[");
-	XLALListForeach(list, XLALListAsStringAppendValueFunc, &p);
-        p.s = XLALStringAppend(p.s, "]");
+	p.s = XLALStringAppend(p.s, "[");
+	XLALListForeach(l, XLALListAsStringAppendValueFunc, &p);
+	p.s = XLALStringAppend(p.s, "]");
 	return p.s;
 }
 
-void XLALListPrint(LALList *list, int fd)
+void XLALListPrint(const LALList *list, int fd)
 {
 	char *s = NULL;
 	s = XLALListAsStringAppend(s, list);

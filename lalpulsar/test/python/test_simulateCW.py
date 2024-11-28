@@ -27,6 +27,13 @@ import lal
 import lalpulsar
 from lalpulsar import simulateCW as simCW
 
+try:
+    from tqdm import tqdm
+
+    prog_bar = tqdm
+except:
+    prog_bar = None
+
 # load Earth and Sun ephemerides
 earth_ephem_file = os.path.join(
     os.environ["LAL_TEST_PKGDATADIR"], "earth00-40-DE405.dat.gz"
@@ -146,7 +153,9 @@ def compute_Fstat_spindown_simulateCW():
 
     # write SFTs
     allpaths = []
-    for path, i, N in S.write_sft_files(fmax, Tsft, "simCWTestFstatSpindown"):
+    for path, i, N in S.write_sft_files(
+        fmax, Tsft, "simCWTestFstatSpindown", prog_bar=prog_bar
+    ):
         allpaths.append(path)
 
     # load SFTs from catalog

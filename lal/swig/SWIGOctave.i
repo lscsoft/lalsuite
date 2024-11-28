@@ -65,9 +65,11 @@ extern "C++" {
 #define swiglal_get_reference(v) (v)
 %}
 
-// Append an argument to the output argument list of an Octave SWIG-wrapped function, if the list is empty.
+// Remove the first argument (i.e. the XLAL error code) from the output argument list of an
+// Octave SWIG-wrapped function, if the list has more than one output argument.
 %header %{
-#define swiglal_append_output_if_empty(v) if (_outp->length() == 0) _outp = SWIG_Octave_AppendOutput(_outp, v)
+#define swiglal_maybe_return_int() \
+  if (_out.length() > 1) _out = _out.slice(1, _out.length() - 1)
 %}
 
 // Evaluates true if an octave_value represents a null pointer, false otherwise.

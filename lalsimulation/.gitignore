@@ -40,6 +40,8 @@ octave/
 python/lalsimulation/__init__.py
 python/lalsimulation/_lalsimulation*
 python/lalsimulation/git_version.py
+python/lalsimulation/gwsignal/docs/build/
+python/lalsimulation/gwsignal/docs/source/api/
 python/lalsimulation/lalsimulation.py
 lib/config.h
 lib/config.h.in

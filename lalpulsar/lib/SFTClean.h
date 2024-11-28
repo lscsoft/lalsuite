@@ -129,25 +129,25 @@ extern "C" {
 
 
 /** structure for storing list of spectral lines -- constructed by expanding list of harmonics*/
-  typedef struct tagLineNoiseInfo{
-    INT4         nLines;     /**< number of lines */
-    REAL8        *lineFreq;  /**< central frequency of the line in Hz */
-    REAL8        *leftWing;  /**< width to the left from central frequency in Hz */
-    REAL8        *rightWing; /**< width to the right in Hz */
-  } LineNoiseInfo;
+typedef struct tagLineNoiseInfo {
+  INT4         nLines;     /**< number of lines */
+  REAL8        *lineFreq;  /**< central frequency of the line in Hz */
+  REAL8        *leftWing;  /**< width to the left from central frequency in Hz */
+  REAL8        *rightWing; /**< width to the right in Hz */
+} LineNoiseInfo;
 
 /**
  * structure for storing the contents of the input list of known
  * spectral disturbances
  */
-  typedef struct tagLineHarmonicsInfo{
-    INT4         nHarmonicSets; /**< number of sets of harmonics */
-    REAL8        *startFreq;    /**< starting frequency of set in Hz */
-    REAL8        *gapFreq;      /**< frequency difference between adjacent harmonics in Hz */
-    INT4         *numHarmonics; /**< Number of harmonics */
-    REAL8        *leftWing;     /**< width to the left of each line in set in Hz */
-    REAL8        *rightWing;    /**< width to the right in Hz */
-  } LineHarmonicsInfo;
+typedef struct tagLineHarmonicsInfo {
+  INT4         nHarmonicSets; /**< number of sets of harmonics */
+  REAL8        *startFreq;    /**< starting frequency of set in Hz */
+  REAL8        *gapFreq;      /**< frequency difference between adjacent harmonics in Hz */
+  INT4         *numHarmonics; /**< Number of harmonics */
+  REAL8        *leftWing;     /**< width to the left of each line in set in Hz */
+  REAL8        *rightWing;    /**< width to the right in Hz */
+} LineHarmonicsInfo;
 
 /*
  * 11. Extern Global variables. (discouraged)
@@ -159,80 +159,80 @@ extern "C" {
  */
 
 
-void LALFindNumberHarmonics (LALStatus           *status,
-			  LineHarmonicsInfo   *harmonicInfo,
-			  CHAR                *fname
-			  );
+void LALFindNumberHarmonics( LALStatus           *status,
+                             LineHarmonicsInfo   *harmonicInfo,
+                             CHAR                *fname
+                           );
 
-void  LALReadHarmonicsInfo (LALStatus          *status,
-			 LineHarmonicsInfo  *lineInfo,
-			 CHAR               *fname
-			 );
+void  LALReadHarmonicsInfo( LALStatus          *status,
+                            LineHarmonicsInfo  *lineInfo,
+                            CHAR               *fname
+                          );
 
-void  LALHarmonics2Lines (LALStatus          *status,
-		       LineNoiseInfo      *lineInfo,
-		       LineHarmonicsInfo  *harmonicsInfo
-		       );
+void  LALHarmonics2Lines( LALStatus          *status,
+                          LineNoiseInfo      *lineInfo,
+                          LineHarmonicsInfo  *harmonicsInfo
+                        );
 
-void LALChooseLines (LALStatus        *status,
-		  LineNoiseInfo    *outLine,
-		  LineNoiseInfo    *inLine,
-		  REAL8            freqMin,
-		  REAL8            freqMax
-		  );
-
-
-void LALCheckLines ( LALStatus           *status,
-		  INT4                *flag,
-		  LineNoiseInfo       *lines,
-		  REAL8               freq);
+void LALChooseLines( LALStatus        *status,
+                     LineNoiseInfo    *outLine,
+                     LineNoiseInfo    *inLine,
+                     REAL8            freqMin,
+                     REAL8            freqMax
+                   );
 
 
-void LALFindNumberLines (LALStatus        *status,
-		      LineNoiseInfo    *lineInfo,
-		      CHAR             *fname
-		      );
-
-void LALReadLineInfo (LALStatus        *status,
-		   LineNoiseInfo  *lineInfo,
-		   CHAR           *fname
-		   );
-
-void LALCleanCOMPLEX8SFT (LALStatus          *status,
-		       SFTtype            *sft,
-		       INT4               width,
-		       INT4               window,
-		       LineNoiseInfo      *lineInfo,
-		       RandomParams       *randPar);
+void LALCheckLines( LALStatus           *status,
+                    INT4                *flag,
+                    LineNoiseInfo       *lines,
+                    REAL8               freq );
 
 
-void LALCleanSFTVector (LALStatus          *status,
-			SFTVector          *sftVect,
-			INT4               width,
-			INT4               window,
-			LineNoiseInfo      *lineInfo,
-			RandomParams       *randPar);
+void LALFindNumberLines( LALStatus        *status,
+                         LineNoiseInfo    *lineInfo,
+                         CHAR             *fname
+                       );
 
-void LALCleanMultiSFTVect (LALStatus          *status,
-			   MultiSFTVector     *multVect,
-			   INT4               width,
-			   INT4               window,
-			   LineNoiseInfo      *lineInfo,
-			   RandomParams       *randPar);
+void LALReadLineInfo( LALStatus        *status,
+                      LineNoiseInfo  *lineInfo,
+                      CHAR           *fname
+                    );
 
-void LALRemoveKnownLinesInSFTVect (LALStatus   *status,
-				   SFTVector   *sftVect,
-				   INT4        width,
-				   INT4        window,
-				   CHAR        *linefile,
-				   RandomParams *randPar);
+void LALCleanCOMPLEX8SFT( LALStatus          *status,
+                          SFTtype            *sft,
+                          INT4               width,
+                          INT4               window,
+                          LineNoiseInfo      *lineInfo,
+                          RandomParams       *randPar );
 
-void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,
-					  MultiSFTVector   *multiSFTVect,
-					  INT4             width,
-					  INT4             window,
-					  LALStringVector *linefiles,
-					  RandomParams     *randPar);
+
+void LALCleanSFTVector( LALStatus          *status,
+                        SFTVector          *sftVect,
+                        INT4               width,
+                        INT4               window,
+                        LineNoiseInfo      *lineInfo,
+                        RandomParams       *randPar );
+
+void LALCleanMultiSFTVect( LALStatus          *status,
+                           MultiSFTVector     *multVect,
+                           INT4               width,
+                           INT4               window,
+                           LineNoiseInfo      *lineInfo,
+                           RandomParams       *randPar );
+
+void LALRemoveKnownLinesInSFTVect( LALStatus   *status,
+                                   SFTVector   *sftVect,
+                                   INT4        width,
+                                   INT4        window,
+                                   CHAR        *linefile,
+                                   RandomParams *randPar );
+
+void LALRemoveKnownLinesInMultiSFTVector( LALStatus        *status,
+    MultiSFTVector   *multiSFTVect,
+    INT4             width,
+    INT4             window,
+    LALStringVector *linefiles,
+    RandomParams     *randPar );
 
 
 /** @} */

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALPulsar],[6.0.6.1],[lal-discuss@ligo.org])
+AC_INIT([LALPulsar],[7.0.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([lib/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -19,8 +19,8 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[29])
-AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBCURRENT],[30])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -44,6 +44,7 @@ AC_CONFIG_FILES([ \
   python/Makefile \
   python/lalpulsar/Makefile \
   python/lalpulsar/__init__.py \
+  python/lalpulsar/piecewise_model/Makefile \
   lib/LALPulsarVCSInfo.c \
   lib/LALPulsarVCSInfo.h \
   lib/Makefile \
@@ -60,6 +61,7 @@ AC_CONFIG_FILES([ \
   bin/longtests/Makefile \
   bin/MakeData/Makefile \
   bin/Makefile \
+  bin/PiecewiseSearch/Makefile \
   bin/SFTTools/Makefile \
   bin/SidebandSearch/Makefile \
   bin/Tools/Makefile \
@@ -85,10 +87,12 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.4.0"
+MIN_GLUE_VERSION="1.54.1"
+MIN_LAL_VERSION="7.6.0"
 MIN_LALFRAME_VERSION="3.0.0"
-MIN_LALSIMULATION_VERSION="5.3.0"
+MIN_LALSIMULATION_VERSION="6.0.0"
 MIN_LALINFERENCE_VERSION="4.1.0"
+AC_SUBST([MIN_GLUE_VERSION])
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
 AC_SUBST([MIN_LALSIMULATION_VERSION])
@@ -161,6 +165,9 @@ AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
 LALSUITE_CHECK_PYTHON([3.5])
+
+# check for pager programs
+LALSUITE_CHECK_PAGER
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK

@@ -38,18 +38,18 @@
  * as a reminder for future XLAL-ification at the same time.
  */
 int
-XLALGenerateSpinOrbitCW ( PulsarCoherentGW *sourceSignal,		///< [out] output signal
-                          SpinOrbitCWParamStruc *sourceParams	///< [in] input parameters
-                          )
+XLALGenerateSpinOrbitCW( PulsarCoherentGW *sourceSignal,                ///< [out] output signal
+                         SpinOrbitCWParamStruc *sourceParams   ///< [in] input parameters
+                       )
 {
-  XLAL_CHECK ( sourceSignal != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( sourceParams != NULL, XLAL_EINVAL );
+  XLAL_CHECK( sourceSignal != NULL, XLAL_EINVAL );
+  XLAL_CHECK( sourceParams != NULL, XLAL_EINVAL );
 
-  LALStatus XLAL_INIT_DECL(status);
+  LALStatus XLAL_INIT_DECL( status );
 
-  LALGenerateSpinOrbitCW ( &status, sourceSignal, sourceParams );
+  LALGenerateSpinOrbitCW( &status, sourceSignal, sourceParams );
 
-  XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALGenerateSpinOrbitCW() failed with code=%d, msg='%s'\n", status.statusCode, status.statusDescription );
+  XLAL_CHECK( status.statusCode == 0, XLAL_EFAILED, "LALGenerateSpinOrbitCW() failed with code=%d, msg='%s'\n", status.statusCode, status.statusDescription );
 
   return XLAL_SUCCESS;
 
@@ -70,7 +70,7 @@ choose( UINT4 a, UINT4 b )
     numer *= a - b + myindex;
     denom *= myindex;
   }
-  return numer/denom;
+  return numer / denom;
 }
 
 
@@ -129,24 +129,24 @@ choose( UINT4 a, UINT4 b )
  */
 void
 LALGenerateSpinOrbitCW( LALStatus             *stat,
-			PulsarCoherentGW            *output,
-			SpinOrbitCWParamStruc *params )
+                        PulsarCoherentGW            *output,
+                        SpinOrbitCWParamStruc *params )
 {
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structure exists (output structure will be
      tested by subroutine). */
   ASSERT( params, stat, GENERATESPINORBITCWH_ENUL,
-	  GENERATESPINORBITCWH_MSGENUL );
+          GENERATESPINORBITCWH_MSGENUL );
 
   /* If there is no orbital motion, use LALGenerateTaylorCW() to
      compute the waveform. */
   if ( params->rPeriNorm == 0.0 ) {
     TaylorCWParamStruc taylorParams; /* subroutine parameters */
     REAL8 t;                         /* time shift */
-    memset( &taylorParams, 0, sizeof(TaylorCWParamStruc) );
+    memset( &taylorParams, 0, sizeof( TaylorCWParamStruc ) );
     taylorParams.position = params->position;
     taylorParams.psi = params->psi;
     taylorParams.epoch = params->epoch;
@@ -156,10 +156,10 @@ LALGenerateSpinOrbitCW( LALStatus             *stat,
     taylorParams.aCross = params->aCross;
     taylorParams.phi0 = params->phi0;
     taylorParams.f0 = params->f0;
-    t = (REAL8)( params->epoch.gpsSeconds -
-		 params->spinEpoch.gpsSeconds );
-    t += ( 1.0e-9 )*(REAL8)( params->epoch.gpsNanoSeconds -
-			     params->spinEpoch.gpsNanoSeconds );
+    t = ( REAL8 )( params->epoch.gpsSeconds -
+                   params->spinEpoch.gpsSeconds );
+    t += ( 1.0e-9 ) * ( REAL8 )( params->epoch.gpsNanoSeconds -
+                                 params->spinEpoch.gpsNanoSeconds );
 
     /* Adjust epochs. */
     if ( params->f ) {
@@ -171,35 +171,39 @@ LALGenerateSpinOrbitCW( LALStatus             *stat,
       REAL8 *f1Data = params->f->data; /* pointer to coeficients */
       REAL8 *f2Data;    /* pointer to corrected coeficients */
 
-      TRY( LALDCreateVector( stat->statusPtr, &(taylorParams.f),
-			     length ), stat );
+      TRY( LALDCreateVector( stat->statusPtr, &( taylorParams.f ),
+                             length ), stat );
       f2Data = taylorParams.f->data;
-      memcpy( f2Data, f1Data, length*sizeof(REAL8) );
+      memcpy( f2Data, f1Data, length * sizeof( REAL8 ) );
       for ( i = 0; i < length; i++ ) {
         REAL8 tM = 1.0; /* t raised to various powers */
-        fFac += f1Data[i]*( tN *= t );
-        tFac += f1Data[i]*tN/( i + 2.0 );
-        for ( j = i + 1; j < length; j++ )
-          f2Data[i] += choose( j + 1, i + 1 )*f1Data[j]*( tM *= t );
+        fFac += f1Data[i] * ( tN *= t );
+        tFac += f1Data[i] * tN / ( i + 2.0 );
+        for ( j = i + 1; j < length; j++ ) {
+          f2Data[i] += choose( j + 1, i + 1 ) * f1Data[j] * ( tM *= t );
+        }
       }
-      taylorParams.phi0 += LAL_TWOPI*taylorParams.f0*t*tFac;
+      taylorParams.phi0 += LAL_TWOPI * taylorParams.f0 * t * tFac;
       taylorParams.f0 *= fFac;
-      for ( i = 0; i < length; i++ )
+      for ( i = 0; i < length; i++ ) {
         f2Data[i] /= fFac;
-    } else
-      taylorParams.phi0 += LAL_TWOPI*taylorParams.f0*t;
+      }
+    } else {
+      taylorParams.phi0 += LAL_TWOPI * taylorParams.f0 * t;
+    }
 
     /* Generate waveform. */
     LALGenerateTaylorCW( stat->statusPtr, output, &taylorParams );
     BEGINFAIL( stat ) {
       if ( taylorParams.f ) {
-	TRY( LALDDestroyVector( stat->statusPtr, &(taylorParams.f) ),
-	     stat );
+        TRY( LALDDestroyVector( stat->statusPtr, &( taylorParams.f ) ),
+             stat );
       }
-    } ENDFAIL( stat );
+    }
+    ENDFAIL( stat );
     if ( taylorParams.f ) {
-      TRY( LALDDestroyVector( stat->statusPtr, &(taylorParams.f) ),
-	   stat );
+      TRY( LALDDestroyVector( stat->statusPtr, &( taylorParams.f ) ),
+           stat );
     }
     params->dfdt = taylorParams.dfdt;
   }
@@ -209,25 +213,25 @@ LALGenerateSpinOrbitCW( LALStatus             *stat,
   /* e < 0 is out of range. */
   else if ( params->oneMinusEcc > 1.0 ) {
     ABORT( stat, GENERATESPINORBITCWH_EECC,
-	   GENERATESPINORBITCWH_MSGEECC );
+           GENERATESPINORBITCWH_MSGEECC );
   }
 
   /* 0 <= e < 1 is elliptic. */
   else if ( params->oneMinusEcc > 0.0 ) {
     TRY( LALGenerateEllipticSpinOrbitCW( stat->statusPtr, output,
-					 params ), stat );
+                                         params ), stat );
   }
 
   /* e = 1 is parabolic. */
   else if ( params->oneMinusEcc == 0.0 ) {
     TRY( LALGenerateParabolicSpinOrbitCW( stat->statusPtr, output,
-					  params ), stat );
+                                          params ), stat );
   }
 
   /* e > 1 is hyperbolic. */
   else {
     TRY( LALGenerateHyperbolicSpinOrbitCW( stat->statusPtr, output,
-					   params ), stat );
+                                           params ), stat );
   }
 
   /* That is all. */
