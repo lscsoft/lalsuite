@@ -274,7 +274,7 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
     double dr = -r * (r - 2.0 * m) / (m + 4.0 * LAL_PI * r * r * r * p);
     double dm = 4.0 * LAL_PI * r * r * e * dr;
     double dH = b * dr;
-    double db = -(C0 * H + C1 * b) * dr;
+    double db = -(C0 * H + C1 * b) * dr; // CUTER-dev exactly Eq.(12) in Hindered 2008 https://arxiv.org/pdf/0911.3535
 
     double alpha = 1.0 - 2.0 * m / r;
     double beta = (m + 4.0 * LAL_PI * r * r * r * p) / (r * r);
@@ -433,6 +433,54 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     return 0;
 }
 
+// CUTER-dev
+
+static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_virial_ode_vars *variables){
+
+    double dedp =
+        XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos); // Central energy density derivative
+    double dhdp = 1.0 / (eps + p);
+    double dedh = dedp / dhdp;
+    printf("Initiial of vars: %g %.6e %.6e \n", variables->m / LAL_MRSUN_SI, variables->r, variables->H);
+
+    double rval = sqrt(-3.0 * dh / (2.0 * LAL_PI * (eps + 3.0 * p)));
+    double mval = 4.0 * LAL_PI * rval * rval * rval * eps / 3.0;
+    double Hval = rval * rval;
+    double bval = 2.0 * rval;
+
+    /* series expansion for the initial core */
+
+    /* second factor of Eq. (7) of Lindblom (1992) */
+    rval *= 1.0 + 0.25 * dh * (eps - 3.0 * p  - 0.6 * dedh) / (eps + 3.0 * p);
+    /* second factor of Eq. (8) of Lindblom (1992) */
+    mval *= 1.0 + 0.6 * dh * dedh / eps;
+
+
+    /* Virial ODEs starting points */
+
+    double I1val = - 8.0 * LAL_PI * rval * rval * p * dh - dh * dh;
+    double I2val = - 16.0 * LAL_PI * LAL_PI * rval * rval * rval * rval * p * p * dh - 6.0 * LAL_PI * rval * rval * p * dh * dh;
+    double J1val = - 12.0 * LAL_PI * rval * rval * rval * p * dh - 3.0 * rval * dh * dh * dh;
+    double J2val = - 16.0 * LAL_PI * LAL_PI * rval * rval * rval * rval * rval * p * p * dh + 8.0 * LAL_PI * LAL_PI * rval * rval * rval * rval * rval * p * p * dh * dh;
+
+
+    /* perform integration */
+    variables->r = rval;
+    variables->m = mval;
+    variables->H = Hval;
+    variables->b = bval;
+    variables->I1 = I1val;
+    variables->I2 = I2val;
+    variables->J1 = J1val;
+    variables->J2 = J2val;
+
+    printf("Initiial of vars: %.6e %.6e %.6e \n", mval / LAL_MRSUN_SI, rval, Hval);
+
+
+    return 0;
+}
+
+
 
 /**
  * @brief Integrates the Tolman-Oppenheimer-Volkov stellar structure equations and the Virial Equations with phase transitions.
@@ -472,73 +520,79 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);
     gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_VIRIAL_ODE_VARS_DIM);
 
+    double npt_low = XLALSimNeutronStarEOSPhaseTransition(eos)[0];
+    double npt_up = XLALSimNeutronStarEOSPhaseTransition(eos)[1];
+    double ept_low = XLALSimNeutronStarEOSPhaseTransition(eos)[2];
+    double ept_up = XLALSimNeutronStarEOSPhaseTransition(eos)[3];
+    double ppt_low = XLALSimNeutronStarEOSPhaseTransition(eos)[4];
+    double ppt_up = XLALSimNeutronStarEOSPhaseTransition(eos)[5];
+    double hpt_low = XLALSimNeutronStarEOSPhaseTransition(eos)[6];
+    double hpt_up = XLALSimNeutronStarEOSPhaseTransition(eos)[7];
+
+    printf("In TOV info data hpt : %g %g \n", hpt_low, hpt_up);
+    printf("In TOV info data npt : %g %g \n", npt_low, npt_up);
+    printf("In TOV info data Ppt : %g %g \n", ppt_low, ppt_up);
+    printf("In TOV info data ept : %g %g \n", ept_low, ept_up);
+
     /* central values */
     /* note: will be updated with Lindblom's series expansion */
     /* geometrisized units for variables in length (m) */
-    double pc = central_pressure_si * LAL_G_C4_SI;
+    double pc = central_pressure_si * LAL_G_C4_SI; // Central pressure
     double ec =
-        XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos);
+        XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos); // Central energy density
     double hc =
-        XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos);
-    double dedp_c =
-        XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(pc, eos);
-    double dhdp_c = 1.0 / (ec + pc);
-    double dedh_c = dedp_c / dhdp_c;
+        XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos); // Central enthalpy
     double dh = -1e-12 * hc;
     double h0 = hc + dh;
     double h1 = 0.0 - dh;
-    double r0 = sqrt(-3.0 * dh / (2.0 * LAL_PI * (ec + 3.0 * pc)));
-    double m0 = 4.0 * LAL_PI * r0 * r0 * r0 * ec / 3.0;
-    double H0 = r0 * r0;
-    double b0 = 2.0 * r0;
 
     double yy;
     double c;
     double h;
     size_t i;
 
-    /* series expansion for the initial core */
-
-    /* second factor of Eq. (7) of Lindblom (1992) */
-    r0 *= 1.0 + 0.25 * dh * (ec - 3.0 * pc  - 0.6 * dedh_c) / (ec + 3.0 * pc);
-    /* second factor of Eq. (8) of Lindblom (1992) */
-    m0 *= 1.0 + 0.6 * dh * dedh_c / ec;
-
-    // double Gamma_c = (ec + pc)/(pc * dedp_c);
-    // double r1 = sqrt(3.0/(2.0 * LAL_PI * (ec + 3.0 * pc)));
-    // double r3 = - (r1 / (4.0 * (ec + 3.0 * pc))) * (ec - 3.0 * pc - 3.0 * (ec + pc) * (ec + pc) /  (5.0 * pc * Gamma_c));
-    // double m3 = 4.0 * LAL_PI * ec * r1 * r1 * r1 / 3.0;
-    // double m5 = 4.0 * LAL_PI * r1 * r1 * r1 * (r3 * ec / r1 - (ec + pc) * (ec + pc) / (5.0 * pc * Gamma_c));
-
-    // r0 = r1 * sqrt(fabs(dh)) + r3 * pow(sqrt(fabs(dh)), 3.0);
-    // m0 = m3 * pow(sqrt(fabs(dh)), 3.0) + m5 * pow(sqrt(fabs(dh)), 5.0);
-
-    /* Virial ODEs starting points */
-
-    double I1_0 = - 8.0 * LAL_PI * r0 * r0 * pc * dh - dh * dh;
-    double I2_0 = - 16.0 * LAL_PI * LAL_PI * r0 * r0 * r0 * r0 * pc * pc * dh - 6.0 * LAL_PI * r0 * r0 * pc * dh * dh;
-    double J1_0 = - 12.0 * LAL_PI * r0 * r0 * r0 * pc * dh - 3.0 * r0 * dh * dh * dh;
-    double J2_0 = - 16.0 * LAL_PI * LAL_PI * r0 * r0 * r0 * r0 * r0 * pc * pc * dh + 8.0 * LAL_PI * LAL_PI * r0 * r0 * r0 * r0 * r0 * pc * pc * dh * dh;
-
-
-    /* perform integration */
-    vars->r = r0;
-    vars->m = m0;
-    vars->H = H0;
-    vars->b = b0;
-    vars->I1 = I1_0;
-    vars->I2 = I2_0;
-    vars->J1 = J1_0;
-    vars->J2 = J2_0;
+    tov_initial_condition(ec, pc, dh, eos, vars);
 
     h = h0;
-    while (h > h1) {
-        int s =
-            gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
-        if (s != GSL_SUCCESS)
-            XLAL_ERROR(XLAL_EERR,
-                "Error encountered in GSL's ODE integrator\n");
+    if (npt_low!=0.0){
+        tov_initial_condition(ec, pc, dh, eos, vars);
+        while (h > hpt_up) {
+            printf("First int %.6e %g\n", h, vars->m  / LAL_MRSUN_SI);
+            int s =
+                gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hpt_up, &dh, y);
+            if (s != GSL_SUCCESS)
+                XLAL_ERROR(XLAL_EERR,
+                    "Error encountered in GSL's ODE integrator after PT \n");
+        }
+        // TODO add the jump to hpt_low: what makes the code die if we start from another enthalpy
+        while (h > h1) {
+            printf("Second int %.6e %g \n", h, vars->m  / LAL_MRSUN_SI);
+            int s =
+                gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+            if (s != GSL_SUCCESS)
+                XLAL_ERROR(XLAL_EERR,
+                    "Error encountered in GSL's ODE integrator before PT \n");
+        }
+
+
+        /* compute tidal Love number k2 */
+        c = vars->m / vars->r;      /* compactness */
+        yy = vars->r * vars->b / vars->H;
+    }else{
+        while (h > h1) {
+            printf("In TOV integration %g %g %g \n", h, h0, h1);
+            int s =
+                gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+            if (s != GSL_SUCCESS)
+                XLAL_ERROR(XLAL_EERR,
+                    "Error encountered in GSL's ODE integrator\n");
+        }
+        /* compute tidal Love number k2 */
+        c = vars->m / vars->r;      /* compactness */
+        yy = vars->r * vars->b / vars->H;
     }
+
+
 
     /*take one final Euler step to get to surface*/
     for (int w = 0 ; w < 1 ; ++w){
@@ -547,9 +601,7 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
             y[i] += dy[i] * (0.0 - h1);
     }
 
-    /* compute tidal Love number k2 */
-    c = vars->m / vars->r;      /* compactness */
-    yy = vars->r * vars->b / vars->H;
+
 
     *int3 = (1.0 - vars->m / vars->r) * pow((1.0 - 2.0 * vars->m / vars->r), (-0.5)) - 1.0;
     *int6 = vars->r * (*int3);
