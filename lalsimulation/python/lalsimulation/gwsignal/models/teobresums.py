@@ -135,8 +135,8 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
             .value
         )
 
-        hp = hp * distance_rescaling
-        hc = hc * distance_rescaling
+        hp = - hp * distance_rescaling
+        hc = - hc * distance_rescaling
 
         hp, hc = TimeSeries(hp, name="hplus"), TimeSeries(hc, name="hcross")
         return hp, hc
