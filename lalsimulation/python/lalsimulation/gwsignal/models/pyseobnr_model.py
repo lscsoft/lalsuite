@@ -66,6 +66,17 @@ class SEOBNRv5HM(CompactBinaryCoalescenceGenerator):
             "condition",
             "lmax_nyquist",
             "lmax",
+            "dA_dict",
+            "dw_dict",
+            "dTpeak",
+            "domega_dict",
+            "dtau_dict",
+            "da6",
+            "ddSO",
+            "tol_PA",
+            "rtol_ode",
+            "atol_ode",
+            "deltaT_sampling",
         ]
         for key in optional_params:
             val = parameters.pop(key, None)
@@ -199,7 +210,16 @@ class SEOBNRv5PHM(CompactBinaryCoalescenceGenerator):
             "postadiabatic_type",
             "condition",
             "lmax_nyquist",
-            "lmax"
+            "lmax",
+            "dA_dict",
+            "dw_dict",
+            "dTpeak",
+            "domega_dict",
+            "dtau_dict",
+            "da6",
+            "ddSO",
+            "deltaT_sampling",
+            "omega_prec_deviation",
         ]
         for key in optional_params:
             val = parameters.pop(key, None)
@@ -277,3 +297,4 @@ class SEOBNRv5PHM(CompactBinaryCoalescenceGenerator):
 
     def generate_td_modes(self, **parameters):
         return self._generate_modes(**parameters)
+
