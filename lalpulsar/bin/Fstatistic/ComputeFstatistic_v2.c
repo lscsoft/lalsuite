@@ -1828,8 +1828,8 @@ checkUserInputConsistency( const UserInput_t *uvar )
     if ( uvar->gridType == GRID_SPINDOWN_SQUARE || uvar->gridType == GRID_SPINDOWN_AGEBRK ) {
 
       /* Check that no grid spacings were given */
-      if ( uvar->df1dot != 0.0 || uvar->df2dot != 0.0 || uvar->df3dot != 0.0 ) {
-        XLALPrintError( "\nERROR: df{1,2,3}dot cannot be used with gridType={8,9}\n\n" );
+      if ( uvar->dFreq != 0.0 || uvar->df1dot != 0.0 || uvar->df2dot != 0.0 || uvar->df3dot != 0.0 ) {
+        XLALPrintError( "\nERROR: dFreq and df{1,2,3}dot cannot be used with gridType={8,9}\n\n" );
         XLAL_ERROR( XLAL_EINVAL );
       }
 
