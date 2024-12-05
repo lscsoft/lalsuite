@@ -833,6 +833,8 @@ XLALLoadFullGridFile( DopplerFullScanState *scan,
 
   XLALDestroyREAL8Vector( entry );
 
+  XLAL_CHECK( numTemplates > 0, XLAL_EIO, "Got empty grid from file %s", init->gridFile );
+
   /* ---------- update scan-state  ---------- */
 
   // ----- report back ranges actually spanned by grid-file
