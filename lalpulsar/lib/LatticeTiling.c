@@ -2145,6 +2145,24 @@ UINT8 XLALTotalLatticeTilingPoints(
 
 }
 
+UINT8 XLALLatticeTilingPointsAtDimension(
+  const LatticeTilingIterator *itr,
+  const size_t dim
+)
+{
+
+  // Check input
+  XLAL_CHECK_VAL( 0, itr != NULL, XLAL_EFAULT );
+
+  // Get lattice tiling statistics
+  const LatticeTilingStats *stats = XLALLatticeTilingStatistics( itr->tiling, dim );
+  XLAL_CHECK_VAL( 0, stats != NULL, XLAL_EFUNC );
+  XLAL_CHECK_VAL( 0, stats->total_points > 0, XLAL_EFUNC );
+
+  return stats->total_points;
+
+}
+
 UINT8 XLALCurrentLatticeTilingIndex(
   const LatticeTilingIterator *itr
 )
