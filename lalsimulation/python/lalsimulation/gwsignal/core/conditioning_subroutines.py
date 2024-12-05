@@ -4,6 +4,8 @@ import warnings
 import numpy as np
 from astropy import units as u
 from gwpy.timeseries import TimeSeries
+from lalsimulation import SimInspiralREAL8WaveTaper
+import lal
 import warnings
 from scipy.signal import butter, sosfiltfilt, find_peaks
 
@@ -205,12 +207,10 @@ def resize_gwpy_timeseries(hp, start_id, new_length):
 
     return hp_out
 
-
 def taper_gwpy_timeseries(h, taper_kind):
     """
-    Routine for tapering, following the XLALSimInspiralREAL8WaveTaper
-    routine from LALSuite. Tapering will not be performed if the waveform
-    is shorter than 3 points.
+    Wrapper of the XLALSimInspiralREAL8WaveTaper routine from LALSuite.
+    Tapering will not be performed if the waveform is shorter than 3 points.
 
     Parameters
     ----------
@@ -226,70 +226,15 @@ def taper_gwpy_timeseries(h, taper_kind):
         Tapered TimeSeries object
     """
 
-    safe = True                       # Flag to check if tapering is 'safe' (= long enough waveform)
-    LALSIMULATION_RINGING_EXTENT = 19 # Harcoded value from LALSuite
-
-    if taper_kind not in ['start', 'end', 'startend', 'none']:
-        raise ValueError("Taper kind not understood. Please choose from 'start', 'end', 'startend', 'none'")
-
-    if taper_kind == 'none':
-        warnings.warn("No taper specified; not tapering.")
-        return h
-
-    # look for first non-zero sample
-    start = -1
-    for idx, val in enumerate(h.value):
-        if val != 0:
-            start = idx
-            break
-    if start == -1:
-        warnings.warn("No signal found in the vector. Cannot taper.")
-        return h
-
-    # look for last non-zero sample
-    end = -1
-    for idx, val in enumerate(h.value[::-1]):
-        if val != 0:
-            end = len(h) - 1 - idx
-            break
-    # if waveform is less than 3 points, print warning & set safe = 0
-    if (end - start) <= 1:
-        warnings.warn("Data less than 3 points, cannot taper!")
-        safe = False
-
-    if safe:
-        mid = int((start+end) / 2)
-        if 'start' in taper_kind:
-            pks,_ = find_peaks(abs(h[start+1:mid]))
-
-            # remove peaks before LALSIMULATION_RINGING_EXTENT
-            pks = pks[pks>LALSIMULATION_RINGING_EXTENT]
-            # are there fewer than 2 peaks before the middle?
-            if len(pks) < 2: n = mid - start
-            else:            n = pks[1] + 1
-
-            # Taper to that point
-            h[start] = 0.0
-            realI = np.arange(1,n-1)
-            z     = (n - 1.0)/realI + (n - 1.0)/(realI - (n - 1.0))
-            sigma = 1.0/(np.exp(z) + 1.0)
-            h[start+1:start+n-1] *= sigma
-
-        if 'end' in taper_kind:
-            pks,_  = find_peaks(abs(h[mid:end]))
-
-            # remove peaks before LALSIMULATION_RINGING_EXTENT
-            pks = pks[end - mid - pks > LALSIMULATION_RINGING_EXTENT]
-            # are there fewer than 2 peaks before the middle?
-            if len(pks) < 2: n = end - mid
-            else:            n = end - mid - pks[-2]
-
-            # Taper to that point
-            h[end] = 0.0
-            realI  = np.arange(1,n-1)
-            z      = (n - 1.0)/realI + (n - 1.0)/(realI - (n - 1.0))
-            sigma  = 1.0/(np.exp(z) + 1.0)
-            sigma  = sigma[::-1]
-            h[end-n+2:end] *= sigma
-
+    string_to_taper = {
+                       'start'   : 1,
+                       'end'     : 2,
+                       'startend': 3,
+                       'none'    : 0
+                       }
+    # Create the LAL vector and apply the taper
+    h_real8      = lal.CreateREAL8Vector(len(h))
+    np.copyto(h_real8.data, h.data)
+    SimInspiralREAL8WaveTaper(h_real8, string_to_taper[taper_kind])
+    h.data = h_real8.data
     return h
