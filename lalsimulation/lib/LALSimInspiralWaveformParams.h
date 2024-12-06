@@ -643,7 +643,6 @@ int XLALSimInspiralWaveformParamsPhenomXPNRUseInputCoprecDeviationsIsDefault(LAL
 // Dev option for forcing 22 phase derivative inspiral values to align with XHM at a low ref frequency
 int XLALSimInspiralWaveformParamsPhenomXPNRForceXHMAlignmentIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsPhenomXPNRInterpToleranceIsDefault(LALDict *params);
-
 int XLALSimInspiralWaveformParamsPhenomXAntisymmetricWaveformIsDefault(LALDict *params);
 
 

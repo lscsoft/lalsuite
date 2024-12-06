@@ -355,7 +355,7 @@ def test_IMRPhenomXO4a():
 
     """
 
-    expected_result = np.array([1335.4548650055917,  327.35598432690784,  958.1145964826108,  327.67901031324624])
+    expected_result = np.array([1147.6076128830048, 202.16395516656954, 835.6550472580194, 322.56504443715437])
 
     new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXO4a, [[2,2],[2,1],[3,3],[4,4]]))
 
@@ -363,8 +363,7 @@ def test_IMRPhenomXO4a():
     np.testing.assert_allclose(new_result, expected_result, rtol=1e-5, err_msg="IMRPhenomXO4a no 32 mode test failed")
 
 
-    expected_result = np.array([ 48.56333067501462, 236.2424809925183,  21.61677264763599, 232.45649243965286 ])
-
+    expected_result = np.array([48.56332295620956, 236.22060412141988, 21.61676721381083, 232.43479133460966])
     new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXO4a, [[3,2]]))
 
     # rtol with 32 mode needs to be more lenient

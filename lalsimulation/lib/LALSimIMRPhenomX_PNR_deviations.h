@@ -42,44 +42,6 @@ extern "C" {
 
 /* Header file for IMRPhenomXCP's tuned parameters */
 
-// Header formatting for MU1 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_MU1_l2m2( double theta, double eta, double a1 );
-// Header formatting for MU2 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_MU2_l2m2( double theta, double eta, double a1 );
-// Header formatting for MU3 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_MU3_l2m2( double theta, double eta, double a1 );
-// Header formatting for NU4 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_NU4_l2m2( double theta, double eta, double a1 );
-// Header formatting for NU5 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_NU5_l2m2( double theta, double eta, double a1 );
-// Header formatting for NU6 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_NU6_l2m2( double theta, double eta, double a1 );
-// Header formatting for ZETA1 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_ZETA1_l2m2( double theta, double eta, double a1 );
-// Header formatting for ZETA2 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_ZETA2_l2m2( double theta, double eta, double a1 );
-// Header formatting for NU0 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_NU0_l2m2( double theta, double eta, double a1 );
-// Header formatting for MU1 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_MU1_l3m3( double theta, double eta, double a1 );
-// Header formatting for MU2 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_MU2_l3m3( double theta, double eta, double a1 );
-// Header formatting for MU3 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_MU3_l3m3( double theta, double eta, double a1 );
-// Header formatting for MU4 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_MU4_l3m3( double theta, double eta, double a1 );
-// Header formatting for NU4 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_NU4_l3m3( double theta, double eta, double a1 );
-// Header formatting for NU5 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_NU5_l3m3( double theta, double eta, double a1 );
-// Header formatting for NU6 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_NU6_l3m3( double theta, double eta, double a1 );
-// Header formatting for ZETA1 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_ZETA1_l3m3( double theta, double eta, double a1 );
-// Header formatting for ZETA2 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_ZETA2_l3m3( double theta, double eta, double a1 );
-// Header formatting for NU0 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_NU0_l3m3( double theta, double eta, double a1 );
 
 #ifdef __cplusplus
 }

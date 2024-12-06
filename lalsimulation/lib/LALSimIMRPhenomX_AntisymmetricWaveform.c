@@ -58,14 +58,12 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 #endif
 
   /**
-   * \author Shrobana Ghosh
-   */
-
-   /**
+   * @author Shrobana Ghosh
+   **
    *   EXTERNAL GENERATE antisymmetric waveform
    * This is an external wrapper to generate the (2,2) and (2,-2) antisymmetric waveform,
-   * given the standard inputs given to generate FD waveforms.
-   * Note that at present this is only compatible with the PNR angles (refer arxiv XXXX.YYYYY)
+   * with the standard inputs given to generate FD waveforms.
+   * @note At present this is only compatible with the PNR angles (refer arxiv 2310.16980)
    */
   int XLALSimIMRPhenomX_PNR_GenerateAntisymmetricWaveform(
       REAL8Sequence **antisymamp, /**< [out] Amplitude of antisymmetric (2,2) waveform */
@@ -395,7 +393,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
       REAL8 Amp0 = pWF->amp0 * pWF->ampNorm;
 
       antisymamp->data[idx] = Amp0 * powers_of_Mf.m_seven_sixths * amp_AS;
-      antisymphase->data[idx] = phi_AS;
+      antisymphase->data[idx] = pPrec->zeta_polarization + phi_AS;
     }
 
     /* Clean up memory allocation */

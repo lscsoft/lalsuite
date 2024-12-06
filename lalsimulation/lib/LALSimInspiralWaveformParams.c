@@ -390,7 +390,6 @@ DEFINE_INSERT_FUNC(PhenomXPNRForceXHMAlignment, INT4, "PNRForceXHMAlignment", 0)
 /* Toggle output of XAS phase for debugging purposes */
 DEFINE_INSERT_FUNC(PhenomXOnlyReturnPhase, INT4, "PhenomXOnlyReturnPhase", 0)
 DEFINE_INSERT_FUNC(PhenomXPNRInterpTolerance, REAL8, "PNRInterpTolerance", 0.01)
-
 /* IMRPhenomX_PNR_Asymmetry Parameters */
 DEFINE_INSERT_FUNC(PhenomXAntisymmetricWaveform, INT4, "AntisymmetricWaveform", 0)
 
@@ -1482,7 +1481,6 @@ DEFINE_LOOKUP_FUNC(PhenomXPNRForceXHMAlignment, INT4, "PNRForceXHMAlignment", 0)
 /* Toggle output of XAS phase for debugging purposes */
 DEFINE_LOOKUP_FUNC(PhenomXOnlyReturnPhase, INT4, "PhenomXOnlyReturnPhase", 0)
 DEFINE_LOOKUP_FUNC(PhenomXPNRInterpTolerance, REAL8, "PNRInterpTolerance", 0.01)
-
 /* IMRPhenomX_PNR_Asymmetry Parameters */
 DEFINE_LOOKUP_FUNC(PhenomXAntisymmetricWaveform, INT4, "AntisymmetricWaveform", 0)
 
@@ -1708,7 +1706,6 @@ DEFINE_ISDEFAULT_FUNC(PhenomXPNRForceXHMAlignment, INT4, "PNRForceXHMAlignment",
 /* Toggle output of XAS phase for debugging purposes */
 DEFINE_ISDEFAULT_FUNC(PhenomXOnlyReturnPhase, INT4, "PhenomXOnlyReturnPhase", 0)
 DEFINE_ISDEFAULT_FUNC(PhenomXPNRInterpTolerance, REAL8, "PNRInterpTolerance", 0.01)
-
 /* IMRPhenomX_PNR_Asymmetry Parameters */
 DEFINE_ISDEFAULT_FUNC(PhenomXAntisymmetricWaveform, INT4, "AntisymmetricWaveform", 0)
 
