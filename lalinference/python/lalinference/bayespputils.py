@@ -4536,7 +4536,7 @@ def plot_two_param_kde_greedy_levels(posteriors_by_name,plot2DkdeParams,levels,c
 
         # Do the actual plotting
         x,y = np.meshgrid(xax,yax)
-        grid_coords = np.row_stack( (x.flatten(),y.flatten()) )
+        grid_coords = np.vstack( (x.flatten(),y.flatten()) )
         z = kde(grid_coords)
         z = z.reshape(Nx,Ny)
         densort=np.sort(den)[::-1]
