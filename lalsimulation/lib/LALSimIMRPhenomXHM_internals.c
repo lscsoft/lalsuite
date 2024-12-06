@@ -185,40 +185,40 @@ void IMRPhenomXHM_SetHMWaveformVariables(
       << ------------------------------------------------------ */
       
       /* MU1 modifies pAmp->lambda */
-      wf->MU1     = IMRPhenomXCP_MU1_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      wf->MU1     = XLALSimIMRPhenomXCP_MU1_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
       
       // NOTE that the function for MU2 is not defined in the model 
       /* MU2 would modify pAmp->gamma2 */
       
       /* MU2 */
-      wf->MU2     = IMRPhenomXCP_MU2_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      wf->MU2     = XLALSimIMRPhenomXCP_MU2_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
       
       /* MU3 modifies pAmp->gamma3 */
-      wf->MU3     = IMRPhenomXCP_MU3_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      wf->MU3     = XLALSimIMRPhenomXCP_MU3_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
       
       /* MU4 modifies V2 or V3 for the intermediate amplitude
       for the DEFAULT value of IMRPhenomXIntermediateAmpVersion
       use in IMRPhenomXPHM */
-      wf->MU4     = IMRPhenomXCP_MU4_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      wf->MU4     = XLALSimIMRPhenomXCP_MU4_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
       
       // NOTE that we choose to disable time-shift tuning
       // /* NU0 modifies pPhase->c0 */ 
-      // wf->NU0     = IMRPhenomXCP_NU0_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      // wf->NU0     = XLALSimIMRPhenomXCP_NU0_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
       
       /* NU4 modifies pPhase->cL */
-      wf->NU4     = IMRPhenomXCP_NU4_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      wf->NU4     = XLALSimIMRPhenomXCP_NU4_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
       
       /* NU5 modifies wf->fRING [EXTRAP-PASS-TRUE] */ 
-      wf->NU5     = IMRPhenomXCP_NU5_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      wf->NU5     = XLALSimIMRPhenomXCP_NU5_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
       
       /* NU6 modifies wf->fDAMP [EXTRAP-PASS-TRUE] */
-      wf->NU6     = IMRPhenomXCP_NU6_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      wf->NU6     = XLALSimIMRPhenomXCP_NU6_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
       
       /* ZETA1 modifies pPhase->b4 */
-      wf->ZETA1   = IMRPhenomXCP_ZETA1_l3m3( wf22->theta_LS, wf22->eta, wf22->a1 );
+      wf->ZETA1   = XLALSimIMRPhenomXCP_ZETA1_l3m3( wf22->theta_LS, wf22->eta, wf22->a1 );
       
       /* ZETA2 modifies pPhase->b1  */
-      wf->ZETA2   = IMRPhenomXCP_ZETA2_l3m3( wf22->theta_LS, wf22->eta, wf22->a1 );
+      wf->ZETA2   = XLALSimIMRPhenomXCP_ZETA2_l3m3( wf22->theta_LS, wf22->eta, wf22->a1 );
       
       /* DEBUGGING: Turn off select deviations */
       // wf->MU1 = 0;

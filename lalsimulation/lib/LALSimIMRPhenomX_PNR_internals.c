@@ -1126,17 +1126,26 @@ extern "C"
 
     // NOTE that it only makes sense to use this function inside of LALSimIMRPhenomX_precession.c
 
-    double window_q_boundary     = 8.0;
-    double window_theta_boundary = 150.0*LAL_PI/180.0;
-    double window_a1_boundary    = 0.8;
-
-    double width_window_q     = 0.50;
-    double width_window_theta = 0.50;
-    double width_window_a1    = 0.02;
+    // Set window parameters based on selected model version
+    double window_q_boundary;
+    double width_window_q;
+      
+    // Location of boundaries
+    window_q_boundary     = 10.0; // LEGACY VALUE --->  8.0;
+    // Width of the transition AFTER the boundary location
+    width_window_q        = 10.0; // LEGACY VALUE --->  0.50;
+      
+    // // Location of boundaries
+    // double window_theta_boundary = 150.0*LAL_PI/180.0;
+    // double window_a1_boundary    = 0.8; 
+    
+    // // Width of the transition AFTER the boundary location
+    // double width_window_theta = 0.50;
+    // double width_window_a1    = 0.02;
 
     double window_q_argument     = (pWF->q   - window_q_boundary     )/ width_window_q;
-    double window_theta_argument = (pWF->theta_LS - window_theta_boundary )/ width_window_theta;
-    double window_a1_argument    = (pWF->a1       - window_a1_boundary    )/ width_window_a1;
+    // double window_theta_argument = (pWF->theta_LS - window_theta_boundary )/ width_window_theta;
+    // double window_a1_argument    = (pWF->a1       - window_a1_boundary    )/ width_window_a1;
 
     // When the arguments are <=0, then the model is on
     // when they are between 0 and 1, the model is turning off
@@ -1152,28 +1161,29 @@ extern "C"
       window_q_value = 1;
     } //
 
-    // For theta
-    double window_theta_value;
-    if ( (window_theta_argument>0) && (window_theta_argument<=1) ){
-      window_theta_value = 0.5*cos( window_theta_argument     * LAL_PI ) + 0.5;
-    } else if ( window_theta_argument>1  ) {
-      window_theta_value = 0;
-    } else {
-      window_theta_value = 1;
-    } //
+    // // For theta
+    // double window_theta_value;
+    // if ( (window_theta_argument>0) && (window_theta_argument<=1) ){
+    //   window_theta_value = 0.5*cos( window_theta_argument     * LAL_PI ) + 0.5;
+    // } else if ( window_theta_argument>1  ) {
+    //   window_theta_value = 0;
+    // } else {
+    //   window_theta_value = 1;
+    // } //
 
-    // For a1
-    double window_a1_value;
-    if ( (window_a1_argument>0) && (window_a1_argument<=1) ){
-      window_a1_value = 0.5*cos( window_a1_argument     * LAL_PI ) + 0.5;
-    } else if ( window_a1_argument>1  ) {
-      window_a1_value = 0;
-    } else {
-      window_a1_value = 1;
-    } //
+    // // For a1
+    // double window_a1_value;
+    // if ( (window_a1_argument>0) && (window_a1_argument<=1) ){
+    //   window_a1_value = 0.5*cos( window_a1_argument     * LAL_PI ) + 0.5;
+    // } else if ( window_a1_argument>1  ) {
+    //   window_a1_value = 0;
+    // } else {
+    //   window_a1_value = 1;
+    // } //
 
     // the NET window will be the product of the individual windows so that any one parameter may turn the model off. We're only interested in this if PNR is desired via the pflag option.
-    double pnr_window = window_q_value * window_theta_value * window_a1_value;
+    double pnr_window = window_q_value;
+    // double pnr_window = window_q_value * window_theta_value * window_a1_value;
 
     //
     return pnr_window;
@@ -1559,40 +1569,48 @@ INT4 IMRPhenomX_PNR_GetAndSetCoPrecParams(
      to be unchanged from the value used during tuning e.g. a1*sin(theta)
     << ------------------------------------------------------ */
 
+    // Flatten mass-ratio dependence to limit extrapolation artifacts outside of calibration region
+    double coprec_eta = ( pWF->eta >= 0.09876 ) ? pWF->eta : 0.09876;
+    // Flatten spin dependence to limit extrapolation artifacts outside of calibration region
+    double coprec_a1 = pWF->a1;
+    coprec_a1  = ( coprec_a1  <= 0.8     ) ? coprec_a1  : 0.8;
+	  coprec_a1  = ( coprec_a1  >= 0.2     ) ? coprec_a1  : 0.2;
+
+
     /* MU1 modifies pAmp->v1RD */
-    pWF->MU1     = IMRPhenomXCP_MU1_l2m2(   theta_LS, pWF->eta, a1 );
+    pWF->MU1     = XLALSimIMRPhenomXCP_MU1_l2m2(   theta_LS, coprec_eta, coprec_a1 );
 
     // NOTE that the function for MU2 is not defined in the model
     /* MU2 would modify pAmp->gamma2 */
 
     /* MU2  */
-    pWF->MU2     = IMRPhenomXCP_MU2_l2m2(   theta_LS, pWF->eta, a1 );
+    pWF->MU2     = XLALSimIMRPhenomXCP_MU2_l2m2(   theta_LS, coprec_eta, coprec_a1 );
 
     /* MU3 modifies pAmp->gamma3 */
-    pWF->MU3     = IMRPhenomXCP_MU3_l2m2(   theta_LS, pWF->eta, a1 );
+    pWF->MU3     = XLALSimIMRPhenomXCP_MU3_l2m2(   theta_LS, coprec_eta, coprec_a1 );
 
     /* MU4 modifies V2 for the intermediate amplitude
     for the DEFAULT value of IMRPhenomXIntermediateAmpVersion
     use in IMRPhenomXPHM */
-    // pWF->MU4     = IMRPhenomXCP_MU4_l2m2(   theta_LS, pWF->eta, a1 );
+    // pWF->MU4     = XLALSimIMRPhenomXCP_MU4_l2m2(   theta_LS, coprec_eta, coprec_a1 );
 
     /* NU0 modifies the output of IMRPhenomX_TimeShift_22() */
-    pWF->NU0     = IMRPhenomXCP_NU0_l2m2(   theta_LS, pWF->eta, a1 );
+    pWF->NU0     = XLALSimIMRPhenomXCP_NU0_l2m2(   theta_LS, coprec_eta, coprec_a1 );
 
     /* NU4 modifies pPhase->cL */
-    pWF->NU4     = IMRPhenomXCP_NU4_l2m2(   theta_LS, pWF->eta, a1 );
+    pWF->NU4     = XLALSimIMRPhenomXCP_NU4_l2m2(   theta_LS, coprec_eta, coprec_a1 );
 
     /* NU5 modifies pWF->fRING [EXTRAP-PASS-TRUE] */
-    pWF->NU5     = IMRPhenomXCP_NU5_l2m2(   theta_LS, pWF->eta, a1 );
+    pWF->NU5     = XLALSimIMRPhenomXCP_NU5_l2m2(   theta_LS, coprec_eta, coprec_a1 );
 
     /* NU6 modifies pWF->fDAMP [EXTRAP-PASS-TRUE] */
-    pWF->NU6     = IMRPhenomXCP_NU6_l2m2(   theta_LS, pWF->eta, a1 );
+    pWF->NU6     = XLALSimIMRPhenomXCP_NU6_l2m2(   theta_LS, coprec_eta, coprec_a1 );
 
     /* ZETA1 modifies pPhase->b4 */
-    pWF->ZETA1   = IMRPhenomXCP_ZETA1_l2m2( theta_LS, pWF->eta, a1 );
+    pWF->ZETA1   = XLALSimIMRPhenomXCP_ZETA1_l2m2( theta_LS, coprec_eta, coprec_a1 );
 
     /* ZETA2 modifies pPhase->b1  */
-    pWF->ZETA2   = IMRPhenomXCP_ZETA2_l2m2( theta_LS, pWF->eta, a1 );
+    pWF->ZETA2   = XLALSimIMRPhenomXCP_ZETA2_l2m2( theta_LS, coprec_eta, coprec_a1 );
 
   }
 
