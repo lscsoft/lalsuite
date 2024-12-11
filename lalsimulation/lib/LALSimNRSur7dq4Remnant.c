@@ -74,6 +74,7 @@
 #endif
 
 #include "LALSimNRSurRemnantUtils.h"
+#include "LALSimIMRDataUtilities.h"
 #include "LALSimNRSur7dq4Remnant.h"
 
 
@@ -128,6 +129,9 @@ static void NRSur7dq4Remnant_Init_LALDATA(void) {
 
     int ret = PrecessingNRSurRemnant_Init(&__lalsim_NRSur7dq4Remnant_data,
             file);
+
+    ret |= ROM_check_canonical_file_basename(file,NRSur7dq4Remnant_DATAFILE,
+            "CANONICAL_FILE_BASENAME");
 
     XLALH5FileClose(file);
     if (ret != XLAL_SUCCESS) {

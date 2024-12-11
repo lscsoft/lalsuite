@@ -63,6 +63,7 @@
 
 #include "LALSimIMRPrecessingNRSur.h"
 #include "LALSimIMRSEOBNRROMUtilities.c"
+#include "LALSimIMRDataUtilities.h"
 
 #include <lal/LALConfig.h>
 #ifdef LAL_PTHREAD_LOCK
@@ -195,6 +196,9 @@ static void NRSur7dq4_Init_LALDATA(void) {
 
     // 1 is for NRSur7dq4
     int ret = PrecessingNRSur_Init(&__lalsim_NRSur7dq4_data, file, 1);
+
+    ret |= ROM_check_canonical_file_basename(file,NRSUR7DQ4_DATAFILE,
+            "CANONICAL_FILE_BASENAME");
 
     if (ret != XLAL_SUCCESS)
         XLAL_ERROR_VOID(XLAL_FAILURE, "Failure loading data from %s\n", file_path);

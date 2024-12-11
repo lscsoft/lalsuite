@@ -59,6 +59,7 @@
 #endif
 
 #include "LALSimIMRNRHybSur3dq8.h"
+#include "LALSimIMRDataUtilities.h"
 
 
 #include <libgen.h>
@@ -134,6 +135,10 @@ static void NRHybSur3dq8_Init_LALDATA(void) {
     }
 
     int ret = NRHybSur_Init(&__lalsim_NRHybSur3dq8_data, file);
+
+    ret |= ROM_check_canonical_file_basename(file,NRHybSur3dq8_DATAFILE,
+        "CANONICAL_FILE_BASENAME");
+
     XLALH5FileClose(file);
     if (ret != XLAL_SUCCESS) {
         XLAL_ERROR_VOID(XLAL_FAILURE, "Failure loading data from %s\n",

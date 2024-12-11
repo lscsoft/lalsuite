@@ -54,8 +54,8 @@
 
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
-static const char SurDataHDF5[] = "SEOBNRv4T_surrogate_v1.0.0.hdf5";
-static const INT4 SurDataHDF5_VERSION_MAJOR = 1;
+static const char SurDataHDF5[] = "SEOBNRv4T_surrogate_v2.0.0.hdf5";
+static const INT4 SurDataHDF5_VERSION_MAJOR = 2;
 static const INT4 SurDataHDF5_VERSION_MINOR = 0;
 static const INT4 SurDataHDF5_VERSION_MICRO = 0;
 #endif
@@ -67,6 +67,7 @@ static const INT4 SurDataHDF5_VERSION_MICRO = 0;
 #include "LALSimUniversalRelations.h"
 #include "LALSimInspiralPNCoefficients.c"
 #include "LALSimIMRSEOBNRROMUtilities.c"
+#include "LALSimIMRDataUtilities.h"
 
 #include <lal/LALConfig.h>
 #ifdef LAL_PTHREAD_LOCK
@@ -541,6 +542,7 @@ int Surrogatedata_Init(
   ret = ROM_check_version_number(file, SurDataHDF5_VERSION_MAJOR,
                                        SurDataHDF5_VERSION_MINOR,
                                        SurDataHDF5_VERSION_MICRO);
+  ret |= ROM_check_canonical_file_basename(file,SurDataHDF5,"CANONICAL_FILE_BASENAME");
 
   XLALFree(path);
   XLALH5FileClose(file);
@@ -1107,9 +1109,8 @@ static int SurrogateCore(
  *
  * This is a frequency domain model that approximates the time domain TEOBv4 model.
  *
- * The binary data HDF5 file (SEOBNRv4T_surrogate_v1.0.0.hdf5)
- * will be available at on LIGO clusters in /home/cbc/ and can be downloaded from
- * https://git.ligo.org/lscsoft/lalsuite-extra/blob/master/data/lalsimulation/SEOBNRv4T_surrogate_v1.0.0.hdf5.
+ * The binary data HDF5 file (SEOBNRv4T_surrogate_v2.0.0.hdf5)
+ * is available on CIT at /home/lalsimulation_data and soon through CVMFS.
  * Make sure the files are in your LAL_DATA_PATH.
  *
  * @note Note that due to its construction the iFFT of the surrogate has a small (~ 20 M) offset

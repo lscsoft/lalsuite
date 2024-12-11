@@ -66,7 +66,7 @@
 
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
-static const char ROMDataHDF5[] = "SEOBNRv4HMROM.hdf5";
+static const char ROMDataHDF5[] = "SEOBNRv4HMROM_v1.0.hdf5";
 static const INT4 ROMDataHDF5_VERSION_MAJOR = 1;
 static const INT4 ROMDataHDF5_VERSION_MINOR = 0;
 static const INT4 ROMDataHDF5_VERSION_MICRO = 0;
@@ -76,6 +76,7 @@ static const INT4 ROMDataHDF5_VERSION_MICRO = 0;
 #include <lal/LALSimIMR.h>
 
 #include "LALSimIMRSEOBNRROMUtilities.c"
+#include "LALSimIMRDataUtilities.h"
 
 #include <lal/LALConfig.h>
 #ifdef LAL_PTHREAD_LOCK
@@ -658,6 +659,7 @@ int SEOBNRROMdataDS_Init(
   ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR,
                                  ROMDataHDF5_VERSION_MINOR,
                                  ROMDataHDF5_VERSION_MICRO);
+  ret |= ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->hqhs, dir, "hqhs",index_mode);
   if (ret==XLAL_SUCCESS) XLALPrintInfo("%s : submodel high q high spins loaded sucessfully.\n", __func__);
@@ -2505,7 +2507,8 @@ UNUSED static int SEOBNRv4HMROMCoreModesHybridized(
  *
  * This is a frequency domain model that approximates the time domain SEOBNRv4HM model described in Phys.Rev.D 98 (2018) 8, 084028, arXiv: 1803.10701.
  *
- * The binary data HDF5 file (SEOBNRv4HMROM.hdf5) is available on the lalsuite-extra repository https://git.ligo.org/lscsoft/lalsuite-extra
+ * The binary data HDF5 file (SEOBNRv4HMROM_v1.0.hdf5)
+ * is available on CIT at /home/lalsimulation_data and soon through CVMFS.
  * Make sure the files are in your LAL_DATA_PATH.
  *
  * @note Parameter ranges:

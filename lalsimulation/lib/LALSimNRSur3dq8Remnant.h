@@ -56,7 +56,8 @@
  */
 
 // https://dcc.ligo.org/LIGO-T1900034/public, should be placed in $LAL_DATA_PATH
-static const char NRSur3dq8Remnant_DATAFILE[] = "NRSur3dq8Remnant.h5";
+// Also available on CIT at /home/lalsimulation_data and soon through CVMFS.
+static const char NRSur3dq8Remnant_DATAFILE[] = "NRSur3dq8Remnant_v1.0.h5";
 
 //*************************************************************************/
 //************************* function declarations *************************/

@@ -54,8 +54,8 @@
 
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
-static const char ROMDataHDF5[] = "SEOBNRv4ROM_v2.0.hdf5";
-static const INT4 ROMDataHDF5_VERSION_MAJOR = 2;
+static const char ROMDataHDF5[] = "SEOBNRv4ROM_v3.0.hdf5";
+static const INT4 ROMDataHDF5_VERSION_MAJOR = 3;
 static const INT4 ROMDataHDF5_VERSION_MINOR = 0;
 static const INT4 ROMDataHDF5_VERSION_MICRO = 0;
 #endif
@@ -64,6 +64,7 @@ static const INT4 ROMDataHDF5_VERSION_MICRO = 0;
 #include <lal/LALSimIMR.h>
 
 #include "LALSimIMRSEOBNRROMUtilities.c"
+#include "LALSimIMRDataUtilities.h"
 
 #include <lal/LALConfig.h>
 #ifdef LAL_PTHREAD_LOCK
@@ -501,6 +502,7 @@ int SEOBNRROMdataDS_Init(
   ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR,
                                  ROMDataHDF5_VERSION_MINOR,
                                  ROMDataHDF5_VERSION_MICRO);
+  ret |= ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
 
   XLALFree(path);
   XLALH5FileClose(file);
@@ -1113,8 +1115,8 @@ static int SEOBNRv4ROMCore(
  *
  * This is a frequency domain model that approximates the time domain SEOBNRv4 model.
  *
- * The binary data HDF5 file (SEOBNRv4ROM_DS_HI_v1.0.hdf5)
- * will be available at on LIGO clusters in /home/cbc/.
+ * The binary data HDF5 file (SEOBNRv4ROM_v3.0.hdf5)
+ * is available on CIT at /home/lalsimulation_data and soon through CVMFS.
  * Make sure the files are in your LAL_DATA_PATH.
  *
  * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
