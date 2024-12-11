@@ -78,6 +78,7 @@
 #include <lal/LALSimIMR.h>
 
 #include "LALSimNRSurRemnantUtils.h"
+#include "LALSimIMRDataUtilities.h"
 
 #include "LALSimNRSur3dq8Remnant.h"
 
@@ -133,6 +134,9 @@ static void NRSur3dq8Remnant_Init_LALDATA(void) {
 
     int ret = AlignedSpinNRSurRemnant_Init(&__lalsim_NRSur3dq8Remnant_data,
             file);
+
+    ret |= ROM_check_canonical_file_basename(file,NRSur3dq8Remnant_DATAFILE,
+            "CANONICAL_FILE_BASENAME");
 
     XLALH5FileClose(file);
     if (ret != XLAL_SUCCESS) {

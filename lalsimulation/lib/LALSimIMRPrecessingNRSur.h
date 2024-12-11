@@ -71,8 +71,9 @@ static const int NRSUR_LMAX = 4;
 
 // Surrogate model data, in LAL_DATA_PATH. File available in lalsuite-extra or at
 // https://www.black-holes.org/surrogates
+// Also available on CIT at /home/lalsimulation_data and soon through CVMFS.
 static const char NRSUR7DQ2_DATAFILE[] = "NRSur7dq2.h5";
-static const char NRSUR7DQ4_DATAFILE[] = "NRSur7dq4.h5";
+static const char NRSUR7DQ4_DATAFILE[] = "NRSur7dq4_v1.0.h5";
 
 /***********************************************************************************/
 /****************************** Type definitions ***********************************/

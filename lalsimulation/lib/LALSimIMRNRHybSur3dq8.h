@@ -70,7 +70,8 @@
 
 
 // https://dcc.ligo.org/LIGO-T1900034
-static const char NRHybSur3dq8_DATAFILE[] = "NRHybSur3dq8_lal.h5";
+// Also available on CIT at /home/lalsimulation_data and soon through CVMFS.
+static const char NRHybSur3dq8_DATAFILE[] = "NRHybSur3dq8_lal_v1.0.h5";
 
 
 //*************************************************************************/

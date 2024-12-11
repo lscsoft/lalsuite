@@ -81,6 +81,7 @@ static const INT4 ROM22DataHDF5_VERSION_MICRO = 0;
 #include <lal/LALSimIMR.h>
 
 #include "LALSimIMRSEOBNRROMUtilities.c"
+#include "LALSimIMRDataUtilities.h"
 
 #include <lal/LALConfig.h>
 #ifdef LAL_PTHREAD_LOCK
@@ -735,7 +736,7 @@ int SEOBNRROMdataDS_Init(
     ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR,
                                   ROMDataHDF5_VERSION_MINOR,
                                   ROMDataHDF5_VERSION_MICRO);
-    ret = ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
+    ret |= ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
   }
   else{
     PrintInfoStringAttribute(file, "Email");
@@ -743,7 +744,7 @@ int SEOBNRROMdataDS_Init(
     ret = ROM_check_version_number(file, ROM22DataHDF5_VERSION_MAJOR,
                                   ROM22DataHDF5_VERSION_MINOR,
                                   ROM22DataHDF5_VERSION_MICRO);
-    ret = ROM_check_canonical_file_basename(file,ROM22DataHDF5,"CANONICAL_FILE_BASENAME");
+    ret |= ROM_check_canonical_file_basename(file,ROM22DataHDF5,"CANONICAL_FILE_BASENAME");
   }
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->highf, dir, "highf",index_mode,use_hm);
@@ -2570,8 +2571,10 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
  *
  * This is a frequency domain model that approximates the time domain SEOBNRv5HM model described in ...
  *
- * The binary data HDF5 file (SEOBNRv5ROM_v1.0.hdf5) is available on the lalsuite-extra repository https://git.ligo.org/lscsoft/lalsuite-extra
+ * The binary data HDF5 files (SEOBNRv5ROM_v1.0.hdf5, SEOBNRv5HMROM_v1.0.hdf5)
+ * are available on CIT at /home/lalsimulation_data and soon through CVMFS.
  * Make sure the files are in your LAL_DATA_PATH.
+ * Data can also be downloaded from https://dcc.ligo.org/LIGO-T2300128, https://dcc.ligo.org/LIGO-T2400174.
  *
  * @note Parameter ranges:
  *   * 1 <= q <= 100
