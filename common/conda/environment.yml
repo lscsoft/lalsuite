@@ -13,6 +13,7 @@ dependencies:
   - autoconf
   - automake
   - bc
+  - black ~=22.0
   - cfitsio
   - doxygen
   - fftw
@@ -36,6 +37,7 @@ dependencies:
   - numpy
   - openmpi
   - pillow
+  - pip
   - pkg-config >=0.18.0
   - pytest
   - python
@@ -46,3 +48,6 @@ dependencies:
   - tqdm
   - xz
   - zlib
+  - pip:
+    - astyle
+ 
