@@ -60,6 +60,8 @@ int main( int argc, char **argv )
   /* Default for output directory */
   XLAL_CHECK_MAIN( ( outputDir = XLALStringDuplicate( "." ) ) != NULL, XLAL_EFUNC );
 
+  BOOLEAN allow_skipping = 0;
+
   /*========================================================================================================================*/
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &SFTpatt,      "SFTs",         STRING, 'p', REQUIRED, "SFT location/pattern. Possibilities are:\n"
@@ -75,6 +77,7 @@ int main( int argc, char **argv )
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &freqres,      "freqRes",      REAL8,  'r', OPTIONAL, "Spectrogram freq resolution in Hz" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &subband,      "subband",      REAL8,  'b', OPTIONAL, "Subdivide the output normalized average spectra txt files into these subbands" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &timebaseline, "timeBaseline", REAL8,  't', REQUIRED, "The time baseline of sfts in seconds" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &allow_skipping, "allow_skipping", BOOLEAN, 'x', OPTIONAL, "Allow to exit without an error if no SFTs are found" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   BOOLEAN should_exit = 0;
   XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -97,15 +100,10 @@ int main( int argc, char **argv )
   XLAL_TRY( catalog = XLALSFTdataFind( SFTpatt, &constraints ), errnum );
 
   // Ensure that some SFTs were found given the start and end time and IFO constraints
-  // unless the file "nosfts" exists in the path to the SFT files
+  // unless --allow_skipping is true
   if ( errnum != 0 ) {
-    CHAR XLAL_INIT_DECL( path, [4096] );
-    snprintf( path, sizeof( path ), "%s/nosfts", dirname( SFTpatt ) );
-    if ( access( path, F_OK ) == 0 ) {
-      LogPrintf( LOG_CRITICAL, "%s found no SFTs but 'nosfts' file was present. Exiting.\n", SFTpatt );
-      if ( catalog != NULL ) {
-        XLALDestroySFTCatalog( catalog );
-      }
+    if ( allow_skipping ) {
+      LogPrintf( LOG_CRITICAL, "No SFTs were found, exiting without error due to --allow_skipping=true\n" );
       XLALDestroyUserVars();
       exit( 0 );
     } else {

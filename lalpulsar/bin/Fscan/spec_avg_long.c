@@ -80,6 +80,8 @@ int main( int argc, char **argv )
   /* Default for output directory */
   XLAL_CHECK_MAIN( ( outputDir = XLALStringDuplicate( "." ) ) != NULL, XLAL_EFUNC );
 
+  BOOLEAN allow_skipping = 0;
+
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &SFTpatt,       "SFTs",          STRING, 'p', REQUIRED, "SFT location/pattern. Possibilities are:\n"
                                           " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &IFO,           "IFO",           STRING, 'I', REQUIRED, "Detector (e.g., H1)" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -96,6 +98,7 @@ int main( int argc, char **argv )
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &persistSNRthresh,  "persistSNRthresh",  REAL8, 'z', OPTIONAL, "SNR of lines for being present in the data" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &line_freq,     "lineFreq",      STRINGVector,  0, OPTIONAL, "CSV list of line frequencies (e.g., --lineFreq=21.5,22.0). If set, then an output file with all GPS start times of SFTs with float values of number of standard deviations above the mean (>0 indicates above mean). Be careful that the CSV list of values are interpreted as floating point values" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &auto_track,    "autoTrack",     REAL8,  'a', OPTIONAL, "If specified, also track any frequency whose persistency is >= this threshold within range [0,1]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &allow_skipping, "allow_skipping", BOOLEAN, 'x', OPTIONAL, "Allow to exit without an error if no SFTs are found" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   BOOLEAN should_exit = 0;
   XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -139,15 +142,10 @@ int main( int argc, char **argv )
   XLAL_TRY( catalog = XLALSFTdataFind( SFTpatt, &constraints ), errnum );
 
   // Ensure that some SFTs were found given the start and end time and IFO constraints
-  // unless the file "nosfts" exists in the path to the SFT files
+  // unless --allow_skipping is true
   if ( errnum != 0 ) {
-    CHAR XLAL_INIT_DECL( path, [4096] );
-    snprintf( path, sizeof( path ), "%s/nosfts", dirname( SFTpatt ) );
-    if ( access( path, F_OK ) == 0 ) {
-      LogPrintf( LOG_CRITICAL, "%s found no SFTs but 'nosfts' file was present. Exiting.\n", SFTpatt );
-      if ( catalog != NULL ) {
-        XLALDestroySFTCatalog( catalog );
-      }
+    if ( allow_skipping ) {
+      LogPrintf( LOG_CRITICAL, "No SFTs were found, exiting without error due to --allow_skipping=true\n" );
       XLALDestroyUserVars();
       exit( 0 );
     } else {
