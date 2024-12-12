@@ -47,7 +47,6 @@
 #include <lal/LALPulsarVCSInfo.h>
 
 /* Prototypes */
-int report_nosfts( CHAR *path );
 
 int main( int argc, char *argv[] )
 {
@@ -430,7 +429,6 @@ int main( int argc, char *argv[] )
         if ( errnum != 0 && uvar->allow_skipping ) {
           LogPrintf( LOG_CRITICAL, "--require-channel=FALSE and %s is not in frames\n", uvar->channel_name->data[n] );
           LogPrintf( LOG_CRITICAL, "==> No SFTs will be made for channel %s\n", uvar->channel_name->data[n] );
-          XLAL_CHECK_MAIN( report_nosfts( uvar->sft_write_path->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
           continue;
         } else if ( errnum != 0 ) {
           XLAL_ERROR_MAIN( errnum );
@@ -444,7 +442,6 @@ int main( int argc, char *argv[] )
         if ( errnum != 0 && uvar->allow_skipping ) {
           LogPrintf( LOG_CRITICAL, "--require-channel=FALSE and %s is not in frames\n", uvar->channel_name->data[n] );
           LogPrintf( LOG_CRITICAL, "==> No SFTs will be made for channel %s\n", uvar->channel_name->data[n] );
-          XLAL_CHECK_MAIN( report_nosfts( uvar->sft_write_path->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
           continue;
         } else if ( errnum != 0 ) {
           XLAL_ERROR_MAIN( errnum );
@@ -491,7 +488,6 @@ int main( int argc, char *argv[] )
         // If the sampling rate is too low for the requested band, skip this channel if allowed
         if ( SFT_fft_data->length < SFT_bins && uvar->allow_skipping ) {
           LogPrintf( LOG_CRITICAL, "Sampling rate is too low for band requested, skipping %s\n", uvar->channel_name->data[n] );
-          XLAL_CHECK_MAIN( report_nosfts( uvar->sft_write_path->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
           XLALDestroyREAL8TimeSeries( SFT_time_series );
           XLALDestroyREAL8Window( SFT_window );
           XLALDestroyCOMPLEX16Vector( SFT_fft_data );
@@ -626,20 +622,4 @@ int main( int argc, char *argv[] )
   LALCheckMemoryLeaks();
 
   return 0;
-}
-
-// Write to an empty nosfts file if channel is not in frames or sample frequency too low.
-// This is only used when user arguement --allow-skipping = true
-int report_nosfts( CHAR *path )
-{
-
-  CHAR XLAL_INIT_DECL( pathtofile, [4096] );
-  snprintf( pathtofile, sizeof( pathtofile ), "%s/nosfts", path );
-  LALFILE *f = NULL;
-  XLAL_CHECK( ( f = XLALFileOpen( pathtofile, "w" ) ) != NULL, XLAL_EFUNC );
-  XLAL_CHECK( XLALFileClose( f ) == XLAL_SUCCESS, XLAL_EFUNC );
-  f = NULL;
-
-  return XLAL_SUCCESS;
-
 }

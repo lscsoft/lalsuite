@@ -53,6 +53,8 @@ int main( int argc, char **argv )
   /* Default for output directory */
   XLAL_CHECK_MAIN( ( outputDir = XLALStringDuplicate( "." ) ) != NULL, XLAL_EFUNC );
 
+  BOOLEAN allow_skipping = 0;
+
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &SFTpattA,      "ChASFTs",         STRING, 'p', REQUIRED, "SFT location/pattern. Possibilities are:\n"
                                           " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &SFTpattB,      "ChBSFTs",         STRING, 'q', REQUIRED, "SFT location/pattern. Possibilities are:\n"
@@ -64,6 +66,7 @@ int main( int argc, char **argv )
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputDir,    "outputDir",    STRING, 'd', OPTIONAL, "Output directory for data files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputBname,  "outputBname",  STRING, 'o', OPTIONAL, "Base name of output files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &timebaseline, "timeBaseline", REAL8,  't', REQUIRED, "The time baseline of sfts" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &allow_skipping, "allow_skipping", BOOLEAN, 'x', OPTIONAL, "Allow to exit without an error if no SFTs are found" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   BOOLEAN should_exit = 0;
   XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -87,13 +90,10 @@ int main( int argc, char **argv )
   printf( "Calling XLALSFTdataFind with SFTpattB=%s\n", SFTpattB );
   XLAL_TRY( catalog_b = XLALSFTdataFind( SFTpattB, &constraints ), errnumB );
 
-  /* Ensure that some SFTs were found given the start and end time and IFO constraints unless the file "nosfts" is present */
+  /* Ensure that some SFTs were found given the start and end time and IFO constraints unless --allow_skipping is true */
   if ( errnumA != 0 || errnumB != 0 ) {
-    CHAR XLAL_INIT_DECL( path_a, [4096] );
-    CHAR XLAL_INIT_DECL( path_b, [4096] );
-    snprintf( path_a, sizeof( path_a ), "%s/nosfts", dirname( SFTpattA ) );
-    if ( errnumA != 0 && access( path_a, F_OK ) == 0 ) {
-      LogPrintf( LOG_CRITICAL, "Channel A %s found no SFTs but 'nosfts' file was present. Exiting.\n", SFTpattA );
+    if ( errnumA != 0 && allow_skipping ) {
+      LogPrintf( LOG_CRITICAL, "Channel A %s found no SFTs, exiting without error due to --allow_skipping=true\n", SFTpattA );
       if ( catalog_a != NULL ) {
         XLALDestroySFTCatalog( catalog_a );
       }
@@ -105,9 +105,8 @@ int main( int argc, char **argv )
     } else if ( errnumA != 0 ) {
       XLAL_ERROR_MAIN( errnumA );
     }
-    snprintf( path_b, sizeof( path_b ), "%s/nosfts", dirname( SFTpattB ) );
-    if ( errnumB != 0 && access( path_b, F_OK ) == 0 ) {
-      LogPrintf( LOG_CRITICAL, "Channel B %s found no SFTs but 'nosfts' file was present. Exiting.\n", SFTpattB );
+    if ( errnumB != 0 && allow_skipping ) {
+      LogPrintf( LOG_CRITICAL, "Channel B %s found no SFTs, exiting without error due to --allow_skipping=true\n", SFTpattB );
       if ( catalog_a != NULL ) {
         XLALDestroySFTCatalog( catalog_a );
       }

@@ -139,10 +139,6 @@ if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
-if ! test -f "./MSFTs/nosfts"; then
-    echo "ERROR: could not find file './MSFTs/nosfts'"
-    exit 1
-fi
 
 ## test edge case of SFTs ending right on a frames boundary
 tend3=$(echo "${tend1} + ${duration1}" | bc)
