@@ -87,6 +87,7 @@ DopplerFullScanState *XLALInitDopplerFullScan( const DopplerFullScanInit *init )
 
 int  XLALNextDopplerPos( PulsarDopplerParams *pos, DopplerFullScanState *scan );
 REAL8 XLALNumDopplerTemplates( DopplerFullScanState *scan );
+UINT8 XLALNumDopplerPointsAtDimension( DopplerFullScanState *scan, const size_t dim );
 int XLALGetDopplerSpinRange( PulsarSpinRange *spinRange, const DopplerFullScanState *scan );
 void XLALDestroyDopplerFullScan( DopplerFullScanState *scan );
 
@@ -114,6 +115,14 @@ int XLALSetLatticeTilingF2DotBrakingBound(
   const size_t f2dot_dimension,         ///< [in] Second spindown dimension
   const double min_braking,             ///< [in] Minimum braking index
   const double max_braking              ///< [in] Maximum braking index
+);
+
+///
+/// Return the step size of the spindown lattice tiling in a given dimension, or 0 for non-tiled dimensions.
+///
+REAL8 XLALGetDopplerLatticeTilingStepSize(
+  DopplerFullScanState *scan,           ///< [in] Doppler scan state object
+  const size_t dim                      ///< [in] Dimension of which to return step size
 );
 
 // ========== deprecated LAL functions ==========

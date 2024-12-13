@@ -407,6 +407,35 @@ XLALNumDopplerTemplates( DopplerFullScanState *scan )
 
 } /* XLALNumDopplerTemplates() */
 
+
+/**
+ * Compute and return the total number of frequency and spindown points
+ * up to and along a certain dimension \a dim of the DopplerScan \a scan
+ */
+UINT8
+XLALNumDopplerPointsAtDimension( DopplerFullScanState *scan, const size_t dim )
+{
+  UINT8 numTemplates;
+  switch ( scan->gridType ) {
+  case GRID_SPINDOWN_SQUARE: /* square parameter space */
+  case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
+    LogPrintf( LOG_DEBUG, "Counting templates of spindown lattice at dimension %ld... ", dim );
+    numTemplates = XLALLatticeTilingPointsAtDimension( scan->spindownTilingItr, dim );
+    LogPrintfVerbatim( LOG_DEBUG, "%" LAL_INT8_FORMAT "\n", numTemplates );
+    break;
+
+  default:
+    /* FIXME: not implemented yet */
+    LogPrintf( LOG_NORMAL, "template counting not implemented yet for gridType=%d!\n", scan->gridType );
+    return -1;
+    break;
+  } /* switch() */
+
+  return numTemplates;
+
+} /* XLALNumDopplerPointsAtDimension() */
+
+
 /**
  * Function to step through the full template grid point by point.
  * Normal return = 0,
@@ -980,5 +1009,15 @@ int XLALSetLatticeTilingF2DotBrakingBound(
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, f2dot_dimension, F2DotBrakingBound, sizeof( info_lower ), &info_lower, &info_upper ) == XLAL_SUCCESS, XLAL_EFAILED );
 
   return XLAL_SUCCESS;
+
+}
+
+REAL8 XLALGetDopplerLatticeTilingStepSize(
+  DopplerFullScanState *scan,
+  const size_t dim
+)
+{
+
+  return XLALLatticeTilingStepSize( scan->spindownTiling, dim );
 
 }
