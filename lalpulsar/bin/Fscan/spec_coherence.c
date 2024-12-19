@@ -93,7 +93,7 @@ int main( int argc, char **argv )
   /* Ensure that some SFTs were found given the start and end time and IFO constraints unless --allow_skipping is true */
   if ( errnumA != 0 || errnumB != 0 ) {
     if ( errnumA != 0 && allow_skipping ) {
-      LogPrintf( LOG_CRITICAL, "Channel A %s found no SFTs, exiting without error due to --allow_skipping=true\n", SFTpattA );
+      LogPrintf( LOG_CRITICAL, "Channel A %s found no SFTs, exiting with code %d due to --allow_skipping=true\n", SFTpattA, XLAL_EUSR0 );
       if ( catalog_a != NULL ) {
         XLALDestroySFTCatalog( catalog_a );
       }
@@ -101,12 +101,12 @@ int main( int argc, char **argv )
         XLALDestroySFTCatalog( catalog_b );
       }
       XLALDestroyUserVars();
-      exit( 0 );
+      exit( XLAL_EUSR0 );
     } else if ( errnumA != 0 ) {
       XLAL_ERROR_MAIN( errnumA );
     }
     if ( errnumB != 0 && allow_skipping ) {
-      LogPrintf( LOG_CRITICAL, "Channel B %s found no SFTs, exiting without error due to --allow_skipping=true\n", SFTpattB );
+      LogPrintf( LOG_CRITICAL, "Channel B %s found no SFTs, exiting with code %d due to --allow_skipping=true\n", SFTpattB, XLAL_EUSR0 );
       if ( catalog_a != NULL ) {
         XLALDestroySFTCatalog( catalog_a );
       }
@@ -114,7 +114,7 @@ int main( int argc, char **argv )
         XLALDestroySFTCatalog( catalog_b );
       }
       XLALDestroyUserVars();
-      exit( 0 );
+      exit( XLAL_EUSR0 );
     } else if ( errnumB != 0 ) {
       XLAL_ERROR_MAIN( errnumB );
     }

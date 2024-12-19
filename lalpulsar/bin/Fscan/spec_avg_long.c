@@ -145,9 +145,9 @@ int main( int argc, char **argv )
   // unless --allow_skipping is true
   if ( errnum != 0 ) {
     if ( allow_skipping ) {
-      LogPrintf( LOG_CRITICAL, "No SFTs were found, exiting without error due to --allow_skipping=true\n" );
+      LogPrintf( LOG_CRITICAL, "No SFTs were found, exiting with code %d due to --allow_skipping=true\n", XLAL_EUSR0 );
       XLALDestroyUserVars();
-      exit( 0 );
+      exit( XLAL_EUSR0 );
     } else {
       XLAL_ERROR_MAIN( errnum );
     }

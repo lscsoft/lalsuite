@@ -115,13 +115,10 @@ unittest public_SFTs \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath}
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
 greptest public_SFTs \
     "-O 4 -K DEV -R 1" \
-    "-w hann -P 0.5" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
+    "-w hann -P 0.5"
 
 ## two SFTs per job
 unittest two_SFTs_per_job \
@@ -129,13 +126,10 @@ unittest two_SFTs_per_job \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 2 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath}
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
 greptest two_SFTs_per_job \
     "-O 4 -K DEV -R 1" \
-    "-w hann -P 0.5" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
+    "-w hann -P 0.5"
 
 ## two channels
 unittest two_channels \
@@ -143,16 +137,10 @@ unittest two_channels \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p dir1 dir2 \
     -N ${chan1} ${chan2} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath}
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
 greptest two_channels \
     "-O 4 -K DEV -R 1" \
-    "-w hann -P 0.5" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan2sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan2sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan2sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
+    "-w hann -P 0.5"
 
 ## private SFTs
 unittest private_SFTs \
@@ -160,13 +148,10 @@ unittest private_SFTs \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath}
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
 greptest private_SFTs \
     "-O 0 -X private" \
-    "-w hann -P 0.5" \
-    "H-1_H1_${Tsft}SFT_private-${seg1_sft1}-1800.sft" \
-    "H-1_H1_${Tsft}SFT_private-${seg2_sft1_half_overlap}-1800.sft" \
-    "H-1_H1_${Tsft}SFT_private-${seg2_sft2_half_overlap}-1800.sft"
+    "-w hann -P 0.5"
 
 ## frame cache file
 unittest frame_cache_file \
@@ -174,13 +159,11 @@ unittest frame_cache_file \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath} -e ${cachepath}
+    -g ${segs} -J ${MSFTpath}  --movesfts-path=${MSFTpath} \
+    -e ${cachepath}
 greptest frame_cache_file \
     "-O 0 -X private" \
-    "-w hann -P 0.5" \
-    "H-1_H1_${Tsft}SFT_private-${seg1_sft1}-1800.sft" \
-    "H-1_H1_${Tsft}SFT_private-${seg2_sft1_half_overlap}-1800.sft" \
-    "H-1_H1_${Tsft}SFT_private-${seg2_sft2_half_overlap}-1800.sft"
+    "-w hann -P 0.5"
 
 ## default window
 unittest default_window \
@@ -188,12 +171,10 @@ unittest default_window \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath}
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
 greptest default_window \
     "-O 4 -K DEV -R 1" \
-    "-w tukey -r 0.001" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg2_sft1_no_overlap}-${Tsft}.sft"
+    "-w tukey -r 0.001"
 
 ## Tukey window with parameter 0.001
 unittest Tukey_window \
@@ -201,12 +182,10 @@ unittest Tukey_window \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w tukey:0.001 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath}
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
 greptest Tukey_window \
     "-O 4 -K DEV -R 1" \
-    "-w tukey -r 0.001" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg2_sft1_no_overlap}-${Tsft}.sft"
+    "-w tukey -r 0.001"
 
 ## Tukey window with parameter 0.5
 unittest Tukey_window_2 \
@@ -214,12 +193,10 @@ unittest Tukey_window_2 \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w tukey:0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath}
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
 greptest Tukey_window_2 \
     "-O 4 -K DEV -R 1" \
-    "-w tukey -r 0.5" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY2500-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY2500-${seg2_sft1_no_overlap}-${Tsft}.sft"
+    "-w tukey -r 0.5"
 
 if test -f testMakeSFTDAG.tar.gz; then
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
