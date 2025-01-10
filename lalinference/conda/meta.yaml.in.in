@@ -239,7 +239,7 @@ outputs:
       ignore_run_exports:
         - python
         # extras to help the solver
-        - icu  # [mpi != 'nompi']
+        - icu *
       script_env:
         - CI_COMMIT_TAG
         - CI_PIPELINE_SOURCE
@@ -263,8 +263,6 @@ outputs:
         - numpy                               # [build_platform != target_platform]
         - python                              # [build_platform != target_platform]
         - {{ mpi }}                           # [build_platform != target_platform and mpi == 'openmpi']
-        # extras to help the solver
-        - icu  # [mpi != 'nompi']
       host:
         - gsl  # [mpi != 'nompi']
         - libgomp  # [linux and mpi != 'nompi']
@@ -285,6 +283,8 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
         - python-ligo-lw  # [build_platform == target_platform]
         - scipy >=0.9.0  # [build_platform == target_platform]
+        # extras to help the solver
+        - icu *
       run:
         - astropy >=1.1.1
         - gsl  # [mpi != 'nompi']
