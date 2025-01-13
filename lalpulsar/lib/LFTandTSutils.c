@@ -914,7 +914,7 @@ XLALSincInterpolateCOMPLEX8TimeSeries( COMPLEX8Vector *y_out,           ///< [ou
     REAL8 t = t_out->data[l] - tmin;          // measure time since start of input timeseries
 
     // samples outside of input timeseries are returned as 0
-    if ( ( t < 0 ) || ( t > ( numSamplesIn - 1 )*dt ) ) { // avoid any extrapolations!
+    if ( ( t < 0 ) || ( t > ( numSamplesIn - 1 ) * dt ) ) { // avoid any extrapolations!
       y_out->data[l] = 0;
       continue;
     }
@@ -999,7 +999,7 @@ XLALSincInterpolateCOMPLEX8FrequencySeries( COMPLEX8Vector *y_out,              
     REAL8 f = f_out->data[l] - fMin;          // measure frequency from lowest input bin
 
     // bins outside of input frequency-series are returned as 0
-    if ( ( f < 0 ) || ( f > ( numBinsIn - 1 )*df ) ) { // avoid any extrapolations!
+    if ( ( f < 0 ) || ( f > ( numBinsIn - 1 ) * df ) ) { // avoid any extrapolations!
       y_out->data[l] = 0;
       continue;
     }

@@ -249,7 +249,7 @@ void numericFAR( farStruct *output, templateStruct *templatestruct, REAL8 thresh
         ii = 0;
         jj++;
         status = GSL_CONTINUE;
-        if ( ( gsl_root_fdfsolver_set( s0, &FDF, gsl_rng_uniform_pos( inputParams->rng )*Rhigh ) ) != 0 ) {
+        if ( ( gsl_root_fdfsolver_set( s0, &FDF, gsl_rng_uniform_pos( inputParams->rng ) * Rhigh ) ) != 0 ) {
           fprintf( stderr, "%s: Unable to initialize root solver to first guess.\n", __func__ );
           XLAL_ERROR_VOID( XLAL_EFUNC );
         }

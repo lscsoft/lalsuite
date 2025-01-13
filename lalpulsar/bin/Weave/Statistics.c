@@ -165,20 +165,20 @@ const UserChoices WeaveStatisticChoices = {
   { SUPPORTED_STATISTICS, "all" }
 };
 const char *const WeaveStatisticHelpString = \
-    ENTRY_2_HELPSTR( ENTRY_COH2F ) \
-    ENTRY_2_HELPSTR( ENTRY_COH2F_DET ) \
-    ENTRY_2_HELPSTR( ENTRY_MAX2F ) \
-    ENTRY_2_HELPSTR( ENTRY_MAX2F_DET ) \
-    ENTRY_2_HELPSTR( ENTRY_SUM2F ) \
-    ENTRY_2_HELPSTR( ENTRY_SUM2F_DET ) \
-    ENTRY_2_HELPSTR( ENTRY_MEAN2F ) \
-    ENTRY_2_HELPSTR( ENTRY_MEAN2F_DET ) \
-    ENTRY_2_HELPSTR( ENTRY_BSGL ) \
-    ENTRY_2_HELPSTR( ENTRY_BSGLtL ) \
-    ENTRY_2_HELPSTR( ENTRY_BtSGLtL ) \
-    ENTRY_2_HELPSTR( ENTRY_NCOUNT ) \
-    ENTRY_2_HELPSTR( ENTRY_NCOUNT_DET ) \
-    ;
+  ENTRY_2_HELPSTR( ENTRY_COH2F ) \
+  ENTRY_2_HELPSTR( ENTRY_COH2F_DET ) \
+  ENTRY_2_HELPSTR( ENTRY_MAX2F ) \
+  ENTRY_2_HELPSTR( ENTRY_MAX2F_DET ) \
+  ENTRY_2_HELPSTR( ENTRY_SUM2F ) \
+  ENTRY_2_HELPSTR( ENTRY_SUM2F_DET ) \
+  ENTRY_2_HELPSTR( ENTRY_MEAN2F ) \
+  ENTRY_2_HELPSTR( ENTRY_MEAN2F_DET ) \
+  ENTRY_2_HELPSTR( ENTRY_BSGL ) \
+  ENTRY_2_HELPSTR( ENTRY_BSGLtL ) \
+  ENTRY_2_HELPSTR( ENTRY_BtSGLtL ) \
+  ENTRY_2_HELPSTR( ENTRY_NCOUNT ) \
+  ENTRY_2_HELPSTR( ENTRY_NCOUNT_DET ) \
+  ;
 
 // Subset of statistics that are supported as toplist ranking statistics
 #define SUPPORTED_TOPLISTS ( \
@@ -198,12 +198,12 @@ const UserChoices WeaveToplistChoices = {
   {SUPPORTED_TOPLISTS, "all" }
 };
 const char *const WeaveToplistHelpString = \
-    ENTRY_2_HELPSTR( ENTRY_MEAN2F ) \
-    ENTRY_2_HELPSTR( ENTRY_SUM2F ) \
-    ENTRY_2_HELPSTR( ENTRY_BSGL ) \
-    ENTRY_2_HELPSTR( ENTRY_BSGLtL ) \
-    ENTRY_2_HELPSTR( ENTRY_BtSGLtL ) \
-    ;
+  ENTRY_2_HELPSTR( ENTRY_MEAN2F ) \
+  ENTRY_2_HELPSTR( ENTRY_SUM2F ) \
+  ENTRY_2_HELPSTR( ENTRY_BSGL ) \
+  ENTRY_2_HELPSTR( ENTRY_BSGLtL ) \
+  ENTRY_2_HELPSTR( ENTRY_BtSGLtL ) \
+  ;
 
 ///
 /// Set all bits in 'deps' corresponding to *direct* dependencies of the set of input statistics 'stat'

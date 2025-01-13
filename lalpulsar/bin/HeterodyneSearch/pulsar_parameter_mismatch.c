@@ -1128,10 +1128,9 @@ REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat )
     if ( data[i].matPos != 0 ) {
       for ( j = 0; j < MAXPARAMS; j++ ) {
         if ( data[j].matPos != 0 ) {
-          covMat->data[( data[i].matPos - 1 )*covMat->dimLength->data[0] +
-                                                                         data[j].matPos - 1] =
-                         corMat->data[( data[i].matPos - 1 ) * corMat->dimLength->data[0] +
-                                      data[j].matPos - 1] * data[i].sigma * data[j].sigma;
+          covMat->data[( data[i].matPos - 1 ) * covMat->dimLength->data[0] + data[j].matPos - 1] =
+            corMat->data[( data[i].matPos - 1 ) * corMat->dimLength->data[0] + data[j].matPos - 1]
+            * data[i].sigma * data[j].sigma;
         }
       }
     }

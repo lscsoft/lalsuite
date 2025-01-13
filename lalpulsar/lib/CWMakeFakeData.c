@@ -56,21 +56,21 @@
 const REAL8 eps = 10 * LAL_REAL8_EPS;
 
 const char *const InjectionSourcesHelpString = "Source parameters to inject for simulated signal(s).\n"
-    "This is a comma-separated list of file patterns for configuration files,\n"
-    "or else direct configuration strings in the following format:\n"
-    "  * Enclose with curly braces ('{}').\n"
-    "  * Give pulsar parameters as key=value pairs with a '=' separator.\n"
-    "  * Separate each key=value pair with a semicolon (';').\n"
-    "Available parameters are:\n"
-    "  * Required parameters: Alpha, Delta, Freq, refTime\n"
-    "  * Optional parameters:\n"
-    "    - Injection amplitudes: either (h0, cosi) or (aPlus, aCross), psi, phi0\n"
-    "    - Higher-order spindowns: f1dot, f2dot, ... f6dot\n"
-    "    - Binary sources: orbitTp, orbitArgp, orbitasini, orbitEcc, orbitPeriod\n"
-    "    - Transient injections: transientWindowType, transientStartTime, transientTau\n"
-    "Examples:\n"
-    "  * '{Alpha=0; Delta=0; Freq=50; f1dot=1e-11; f2dot=0; refTime=1000000000; h0=1.00000000e-23; cosi=0; psi=0; phi0=0;}'\n"
-    "  * 'file1.dat,someFiles*.txt,{Alpha=0;Delta=0;Freq=0;refTime=1000000000;},someOtherFiles[0-9].dat'\n\n";
+  "This is a comma-separated list of file patterns for configuration files,\n"
+  "or else direct configuration strings in the following format:\n"
+  "  * Enclose with curly braces ('{}').\n"
+  "  * Give pulsar parameters as key=value pairs with a '=' separator.\n"
+  "  * Separate each key=value pair with a semicolon (';').\n"
+  "Available parameters are:\n"
+  "  * Required parameters: Alpha, Delta, Freq, refTime\n"
+  "  * Optional parameters:\n"
+  "    - Injection amplitudes: either (h0, cosi) or (aPlus, aCross), psi, phi0\n"
+  "    - Higher-order spindowns: f1dot, f2dot, ... f6dot\n"
+  "    - Binary sources: orbitTp, orbitArgp, orbitasini, orbitEcc, orbitPeriod\n"
+  "    - Transient injections: transientWindowType, transientStartTime, transientTau\n"
+  "Examples:\n"
+  "  * '{Alpha=0; Delta=0; Freq=50; f1dot=1e-11; f2dot=0; refTime=1000000000; h0=1.00000000e-23; cosi=0; psi=0; phi0=0;}'\n"
+  "  * 'file1.dat,someFiles*.txt,{Alpha=0;Delta=0;Freq=0;refTime=1000000000;},someOtherFiles[0-9].dat'\n\n";
 
 // ---------- local prototypes
 static UINT4 gcd( UINT4 numer, UINT4 denom );
