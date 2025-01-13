@@ -49,5 +49,4 @@ dependencies:
   - xz
   - zlib
   - pip:
-    - astyle
- 
+    - astyle ==3.4.*   # keep this version in sync with CONTRIBUTING.md
