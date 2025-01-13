@@ -207,7 +207,7 @@ You may optionally specify that certain C or Python sources should be _pretty fo
 To check that your local changes are pretty-formatted correctly and will pass the CI pipelines:
 * Make sure [Artistic Style][prettyastyle] and [Black][prettyblack] are installed.
   * Artistic Style is best installed by running `pip install 'astyle==3.4.*'`; this will install the same version as used in the CI pipelines.
-  * Black is best installed by running `pip install 'black~=22.0'`; this will install the same version as used in the CI pipelines.
+  * Black is best installed by running `pip install 'black==22.*'`; this will install the same version as used in the CI pipelines.
 * Make sure you have committed your local changes, just in case the pretty-formatting does something weird and you need to back out.
 * At the top level of the repository, run `make pretty`. This will show a list of files that have been pretty-formatted (if any).
 * Commit any changes, e.g. `git add ...` to stage the changed files, `git commit` to commit.

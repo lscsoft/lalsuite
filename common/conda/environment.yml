@@ -13,7 +13,7 @@ dependencies:
   - autoconf
   - automake
   - bc
-  - black ~=22.0
+  - black ==22.*   # keep this version in sync with CONTRIBUTING.md
   - cfitsio
   - doxygen
   - fftw
