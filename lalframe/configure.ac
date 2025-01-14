@@ -166,7 +166,7 @@ AS_IF([test "${framec}" = "true"], [
 
 AS_IF([test "${framel}" = "true"], [
        FRAMEL_AVAILABLE="yes"
-       PKG_CHECK_MODULES([FRAMEL],[framel],[true],[false])
+       PKG_CHECK_MODULES([FRAMEL],[framel >= ${MIN_FRAMEL_VERSION}],[true],[false])
        LALSUITE_ADD_FLAGS([C],[${FRAMEL_CFLAGS}],[${FRAMEL_LIBS}])
        AC_CHECK_LIB([framel],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
        AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
