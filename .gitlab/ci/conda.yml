@@ -19,6 +19,7 @@
   - RETRY_CLEANUP="rm -rf ${CONDA_PKGS_DIRS}"
   # init conda
   - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
+  - command -v conda &> /dev/null && CONDA_ROOT=$(conda info --base) || true
   - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
   # configure conda options
   - rm -fv ${CONDARC}  # start afresh
@@ -29,7 +30,9 @@
   - conda config --show aggressive_update_packages >> ${CONDARC}
   - conda config --file ${CONDARC} --remove aggressive_update_packages openssl
   # install build helpers
-  - retry conda install -n base
+  - retry conda install
+        --name base
+        --satisfied-skip-solve
         "conda-build!=3.18.10,!=24.11.1"
         conda-forge-pinning
         "conda-smithy>=3.7.5"
