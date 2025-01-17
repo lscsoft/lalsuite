@@ -76,6 +76,18 @@
           -f rpmlintrc
           "*${PACKAGE}*"
           ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
+    - |
+      # create a codeclimate report from the rpmlint report
+      rpmlint -f rpmlintrc --info "*${PACKAGE}*" ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm > rpmlint.out || true
+      unset PIP_NO_INDEX && rm -rf ~/.pydistutils.cfg
+      python3 -m venv .env
+      .env/bin/python3 -m pip install -q -U pip wheel
+      .env/bin/python3 -m pip install -q rpmlint-codeclimate
+      .env/bin/python3 -m rpmlint_codeclimate rpmlint.out -s ${PACKAGE}.spec -o ${CI_PROJECT_DIR}/rpmlint-gl-codeclimate-${PACKAGE}.json
+      sed -i \
+        -e "s|${PACKAGE}.spec|${PACKAGE}/${PACKAGE}.spec.in|g" \
+        $CI_PROJECT_DIR/rpmlint-gl-codeclimate-$PACKAGE.json
+      echo "rpmlint codeclimate report written to rpmlint-gl-codeclimate-${PACKAGE}.json"
   artifacts:
     expire_in: 18h
     paths:
@@ -90,6 +102,7 @@
       - "rpmbuild/BUILD/**/swiglal_lal*_octave.cpp"
       - "rpmbuild/BUILD/**/swiglal_lal*_python.c"
     reports:
+      codequality: "rpmlint-gl-codeclimate-*.json"
       junit: "rpmbuild/BUILD/**/*junit*.xml"
     when: always
   rules:

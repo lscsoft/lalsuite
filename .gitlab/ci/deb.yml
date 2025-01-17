@@ -19,6 +19,7 @@
     # install extra build requirements
     - apt-get install -y -q -q
           lintian
+          python3-venv
     # setup local apt repository to house upstream packages
     - if test -n "$(find . -maxdepth 1 -name '*.deb' -print -quit)"; then
           apt-get -y -q -q install local-apt-repository;
@@ -52,6 +53,18 @@
          --prepend-path=/usr/lib/ccache --set-envvar=CCACHE_DIR=${CCACHE_DIR}
          -us -uc -r
          --lintian-opts --color=always --allow-root
+    - |
+      # create a codeclimate report from the lintian report
+      lintian --allow-root --fail-on none --info --color never ../${PACKAGE}_*.changes > lintian.out
+      python3 -m venv .env
+      .env/bin/python3 -m pip install -q -U pip
+      .env/bin/python3 -m pip install -q "lintian-codeclimate>=0.1.1"
+      .env/bin/python3 -m lintian_codeclimate lintian.out -d . -o $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
+      sed -i \
+        -e "s|debian\/control|debian/control.in|g" \
+        -e "s|debian\/|$PACKAGE/debian/|g" \
+        $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
+      echo "lintian codeclimate report written to lintian-gl-codeclimate-${PACKAGE}.json"
     # print package info
     - set +x
     - cd ${CI_PROJECT_DIR}
@@ -77,6 +90,7 @@
       # the orig tarball
       - "${CI_JOB_NAME%%:*}*.orig.*"
     reports:
+      codequality: "lintian-gl-codeclimate-*.json"
       junit: "${CI_JOB_NAME%%:*}-*/**/*junit*.xml"
     when: always
   rules:
