@@ -325,8 +325,8 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
 {
     /* ode integration variables */
     const double epsabs = 0.0;
-    double y[TOV_VIRIAL_ODE_VARS_DIM];
-    double dy[TOV_VIRIAL_ODE_VARS_DIM];
+    double y[TOV_VIRIAL_ODE_VARS_DIM] = {0.0};
+    double dy[TOV_VIRIAL_ODE_VARS_DIM] = {0.0};
     struct tov_virial_ode_vars *vars = tov_virial_ode_vars_cast(y);
     gsl_odeiv_system sys = { tov_virial_ode, NULL, TOV_VIRIAL_ODE_VARS_DIM, eos };
     gsl_odeiv_step *step =
@@ -514,10 +514,14 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     double y[TOV_VIRIAL_ODE_VARS_DIM] = {0.0};
     double dy[TOV_VIRIAL_ODE_VARS_DIM] = {0.0};
     struct tov_virial_ode_vars *vars = tov_virial_ode_vars_cast(y);
+    /* Set up the actual ODE system to solve with tov_virial_ode */
     gsl_odeiv_system sys = { tov_virial_ode, NULL, TOV_VIRIAL_ODE_VARS_DIM, eos };
+    /* Set up the iterative method to solve the ODE, and the dimension of the ODE set */
     gsl_odeiv_step *step =
         gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_VIRIAL_ODE_VARS_DIM);
+    /* Set up the precision of the numerical method with relative error epsrel */
     gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);
+    /* Set up evolution function to solve ODE with the dimension of the ODE set */
     gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_VIRIAL_ODE_VARS_DIM);
 
     double npt_low = XLALSimNeutronStarEOSPhaseTransition(eos)[0];
