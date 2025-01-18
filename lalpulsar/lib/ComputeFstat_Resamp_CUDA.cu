@@ -1083,7 +1083,7 @@ __global__ void CUDASincInterp( cuComplex *out,
   REAL8 t = t_out[l] - tmin;            // measure time since start of input timeseries
 
   // samples outside of input timeseries are returned as 0
-  if ( ( t < 0 ) || ( t > ( numSamplesIn - 1 )*dt ) ) { // avoid any extrapolations!
+  if ( ( t < 0 ) || ( t > ( numSamplesIn - 1 ) * dt ) ) { // avoid any extrapolations!
     out[l] = make_cuComplex( 0, 0 );
     return;
   }

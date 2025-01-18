@@ -2346,8 +2346,8 @@ INT4 remove_outliers( COMPLEX16TimeSeries *data, REAL8Vector *times,
   /* exclude those points who's absolute value is greater than our
      stddevthreshold */
   for ( i = 0; i < ( INT4 )data->data->length; i++ ) {
-    if ( fabs( creal( data->data->data[i] ) ) < creal( stddev )*stddevthresh &&
-         fabs( cimag( data->data->data[i] ) ) < cimag( stddev )*stddevthresh ) {
+    if ( fabs( creal( data->data->data[i] ) ) < creal( stddev ) * stddevthresh &&
+         fabs( cimag( data->data->data[i] ) ) < cimag( stddev ) * stddevthresh ) {
       data->data->data[j] = data->data->data[i];
       times->data[j] = times->data[i];
       j++;
