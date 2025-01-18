@@ -441,7 +441,7 @@ static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronS
         XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos); // Central energy density derivative
     double dhdp = 1.0 / (eps + p);
     double dedh = dedp / dhdp;
-    printf("Initiial of vars: %g %.6e %.6e \n", variables->m / LAL_MRSUN_SI, variables->r, variables->H);
+    // printf("Initiial of vars: %g %.6e %.6e \n", variables->m / LAL_MRSUN_SI, variables->r, variables->H);
 
     double rval = sqrt(-3.0 * dh / (2.0 * LAL_PI * (eps + 3.0 * p)));
     double mval = 4.0 * LAL_PI * rval * rval * rval * eps / 3.0;
@@ -474,7 +474,7 @@ static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronS
     variables->J1 = J1val;
     variables->J2 = J2val;
 
-    printf("Initiial of vars: %.6e %.6e %.6e \n", mval / LAL_MRSUN_SI, rval, Hval);
+    // printf("Initiial of vars: %.6e %.6e %.6e \n", mval / LAL_MRSUN_SI, rval, Hval);
 
 
     return 0;
@@ -533,10 +533,10 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     double hpt_low = XLALSimNeutronStarEOSPhaseTransition(eos)[6];
     double hpt_up = XLALSimNeutronStarEOSPhaseTransition(eos)[7];
 
-    printf("In TOV info data hpt : %g %g \n", hpt_low, hpt_up);
-    printf("In TOV info data npt : %g %g \n", npt_low, npt_up);
-    printf("In TOV info data Ppt : %g %g \n", ppt_low, ppt_up);
-    printf("In TOV info data ept : %g %g \n", ept_low, ept_up);
+    printf("\n\n\nIn TOV info data hpt : %g %g \n", hpt_low, hpt_up);
+    printf("\t\t\t npt : %g %g \n", npt_low, npt_up);
+    printf("\t\t\t Ppt : %g %g \n", ppt_low, ppt_up);
+    printf("\t\t\t ept : %g %g \n", ept_low, ept_up);
 
     /* central values */
     /* note: will be updated with Lindblom's series expansion */
@@ -549,7 +549,7 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     double dh = -1e-12 * hc;
     double h0 = hc + dh;
     double h1 = 0.0 - dh;
-
+    printf("Choice for min and max h in integration: h0 = %.6e \t h1 = %.6e\n", h0, h1);
     double yy;
     double c;
     double h;
@@ -558,44 +558,42 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     tov_initial_condition(ec, pc, dh, eos, vars);
 
     h = h0;
-    if (npt_low!=0.0){
-        tov_initial_condition(ec, pc, dh, eos, vars);
-        while (h > hpt_up) {
-            printf("First int %.6e %g\n", h, vars->m  / LAL_MRSUN_SI);
-            int s =
-                gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hpt_up, &dh, y);
-            if (s != GSL_SUCCESS)
-                XLAL_ERROR(XLAL_EERR,
-                    "Error encountered in GSL's ODE integrator after PT \n");
-        }
-        // TODO add the jump to hpt_low: what makes the code die if we start from another enthalpy
-        while (h > h1) {
-            printf("Second int %.6e %g \n", h, vars->m  / LAL_MRSUN_SI);
-            int s =
-                gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
-            if (s != GSL_SUCCESS)
-                XLAL_ERROR(XLAL_EERR,
-                    "Error encountered in GSL's ODE integrator before PT \n");
-        }
+    printf("Initial value of h = %.6e\n", h);
 
-
-        /* compute tidal Love number k2 */
-        c = vars->m / vars->r;      /* compactness */
-        yy = vars->r * vars->b / vars->H;
-    }else{
+    tov_initial_condition(ec, pc, dh, eos, vars);
+    if (h0 <= hpt_low || npt_low == 0){
         while (h > h1) {
-            printf("In TOV integration %g %g %g \n", h, h0, h1);
+            printf("Unique int h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
             int s =
                 gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
             if (s != GSL_SUCCESS)
                 XLAL_ERROR(XLAL_EERR,
                     "Error encountered in GSL's ODE integrator\n");
         }
-        /* compute tidal Love number k2 */
-        c = vars->m / vars->r;      /* compactness */
-        yy = vars->r * vars->b / vars->H;
+    }else{ // TODO should we make sure that one integration point goes exactly on hpt_low ??
+        while (h > hpt_up) {
+            printf("First part int h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+            int s =
+                gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hpt_up, &dh, y);
+            if (s != GSL_SUCCESS)
+                XLAL_ERROR(XLAL_EERR,
+                    "Error encountered in GSL's ODE integrator after PT \n");
+        }
+        printf("After first part int h= %.16e \t h-dh = %.16e \t M = %.3f \n", h, h-dh, vars->m  / LAL_MRSUN_SI);
+        h = hpt_low; // TODO do we use hpt_low -dh ??
+        while (h > h1) {
+            printf("Second part int h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+            int s =
+                gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+            if (s != GSL_SUCCESS)
+                XLAL_ERROR(XLAL_EERR,
+                    "Error encountered in GSL's ODE integrator before PT \n");
+        }
+        printf("After second part int h= %.6e M = %.6f \n", h, vars->m  / LAL_MRSUN_SI);
     }
-
+    /* compute tidal Love number k2 and compactness */
+    c = vars->m / vars->r;      /* compactness */
+    yy = vars->r * vars->b / vars->H;
 
 
     /*take one final Euler step to get to surface*/
