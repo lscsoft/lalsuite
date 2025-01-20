@@ -229,7 +229,7 @@ def read_psd_xmldoc(xmldoc, root_name = u"psd"):
     """
     if root_name is not None:
         xmldoc, = (elem for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == root_name)
-    result = dict((ligolw_param.get_pyvalue(elem, u"instrument"), parse_REAL8FrequencySeries(elem)) for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == u"REAL8FrequencySeries")
+    result = dict((ligolw_param.Param.get_param(elem, u"instrument").value, parse_REAL8FrequencySeries(elem)) for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == u"REAL8FrequencySeries")
     # interpret empty frequency series as None
     for instrument in result:
         if len(result[instrument].data.data) == 0:

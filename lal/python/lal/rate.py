@@ -2248,7 +2248,7 @@ class BinnedLnPDF(BinnedDensity):
 	def from_xml(cls, xml, name):
 		elem = cls.get_xml_root(xml, name)
 		self = super(BinnedLnPDF, cls).from_xml(elem, name)
-		self.norm = ligolw_param.get_pyvalue(elem, "norm")
+		self.norm = ligolw_param.Param.get_param(elem, "norm").value
 		return self
 
 

@@ -119,7 +119,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 	@classmethod
 	def from_xml(cls, xml, name):
 		xml = cls.get_xml_root(xml, name)
-		self = cls(lsctables.instrumentsproperty.get(ligolw_param.get_pyvalue(xml, "instruments")))
+		self = cls(lsctables.instrumentsproperty.get(ligolw_param.Param.get_param(xml, "instruments").value))
 		for key in self.densities:
 			self.densities[key] = rate.BinnedLnPDF.from_xml(xml, key)
 		return self
