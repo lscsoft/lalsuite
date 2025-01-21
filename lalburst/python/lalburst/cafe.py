@@ -35,7 +35,7 @@ import sys
 
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
-from ligo import segments
+import igwn_segments as segments
 
 
 from . import offsetvector
@@ -189,7 +189,7 @@ class LALCacheBin(packing.Bin):
 	Subclass of the packing.Bin class representing a LAL file cache.
 	The files contained in the bin are available in the .objects
 	attribute, which is a list of lal.utils.CacheEntry objects.  The
-	.size attribute holds a ligo.segments.segmentlistdict object giving
+	.size attribute holds a igwn_segments.segmentlistdict object giving
 	the times spanned by the files in the bin.  The .extent attribute
 	holds the result of running .extent_all() on the .size attribute.
 	"""
@@ -489,7 +489,7 @@ def ligolw_cafe(cache, offset_vectors, verbose = False, extentlimit = None):
 	consider.  Set verbose to True for verbosity.
 
 	The output is a two-element tuple.  The first element is a
-	ligo.segments.segmentlistdict object describing the times for which
+	igwn_segments.segmentlistdict object describing the times for which
 	coincident data is available (derived from the segment metadata of
 	the input cache).  The second element is a list of LALCacheBin
 	objects, providing the file groups.

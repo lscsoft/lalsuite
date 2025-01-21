@@ -52,6 +52,8 @@ Depends:
  lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  libframel8 (>= 8.0),
  python3-h5py,
+ python3-igwn-segments,
+ python3-igwn-ligolw (>= @MIN_PYTHON_LIGO_LW_VERSION@~),
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
@@ -60,8 +62,6 @@ Depends:
  python3-lalburst (>= @MIN_LALBURST_VERSION@~),
  python3-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
  python3-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
- python3-ligo-segments,
- python3-ligo-lw (>= @MIN_PYTHON_LIGO_LW_VERSION@~),
  python3-tqdm,
 Breaks: lalinference-python (<< 1.9.4.1-1~)
 Description: LVK Algorithm Library Applications

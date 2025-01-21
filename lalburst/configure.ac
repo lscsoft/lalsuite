@@ -189,7 +189,7 @@ AM_COND_IF(
     AC_MSG_CHECKING(expected outcome of snglcoinc_verify.py)
     AM_CONDITIONAL(
       [SNGLCOINC_XPASS],
-      [${PYTHON} -c "import scipy; import ligo.lw; assert scipy.__version__ > '0.18.999'" 2> /dev/null],
+      [${PYTHON} -c "import scipy; import igwn_ligolw; assert scipy.__version__ > '0.18.999'" 2> /dev/null],
     )
     AS_IF(
       [test "x${SNGLCOINC_XPASS}" = xyes],

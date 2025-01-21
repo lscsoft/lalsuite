@@ -139,7 +139,8 @@ outputs:
       run:
         - gsl
         - {{ pin_subpackage('liblalburst', exact=True) }}
-        - ligo-segments
+        - igwn-ligolw >={{ python_ligo_lw_version }}
+        - igwn-segments
         - lscsoft-glue
         - matplotlib-base
         - numpy
@@ -147,7 +148,6 @@ outputs:
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy
         - tqdm
     test:

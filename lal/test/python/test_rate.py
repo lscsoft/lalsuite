@@ -1,7 +1,7 @@
 import doctest
 
 try:
-	from ligo.lw import ligolw
+	from igwn_ligolw import ligolw
 except ImportError as exc:
 	import warnings
 	import sys

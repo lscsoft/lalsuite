@@ -41,8 +41,8 @@ import tempfile
 from configparser import (ConfigParser, NoOptionError)
 
 
-from ligo import segments
-from ligo.segments import utils as segmentsUtils
+import igwn_segments as segments
+from igwn_segments import utils as segmentsUtils
 # pipeline.py is required, but the version available in lalsuite is
 # currently broken and we can't add a dependency on gstlal because it would
 # create a cycle, so we make the import optional.  the program cannot run

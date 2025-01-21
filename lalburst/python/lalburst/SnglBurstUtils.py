@@ -43,10 +43,10 @@ import re
 import sys
 
 
-from ligo.lw import lsctables
-from ligo.lw import dbtables
-from ligo.lw.utils import search_summary as ligolw_search_summary
-from ligo.lw.utils import segments as ligolw_segments
+from igwn_ligolw import lsctables
+from igwn_ligolw import dbtables
+from igwn_ligolw.utils import search_summary as ligolw_search_summary
+from igwn_ligolw.utils import segments as ligolw_segments
 from .offsetvector import offsetvector
 
 

@@ -77,7 +77,8 @@ requirements:
     - python
     # extras needed for help2man (not when cross compiling)
     - h5py  # [build_platform == target_platform]
-    - ligo-segments  # [build_platform == target_platform]
+    - igwn-ligolw  # [build_platform == target_platform]
+    - igwn-segments  # [build_platform == target_platform]
     - numpy  # [build_platform == target_platform]
     - pillow  # [build_platform == target_platform]
     - python-lal >={{ lal_version }}  # [build_platform == target_platform]
@@ -88,13 +89,14 @@ requirements:
     - python-lalmetaio >={{ lalmetaio_version }}  # [build_platform == target_platform]
     - python-lalpulsar >={{ lalpulsar_version }}  # [build_platform == target_platform]
     - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
-    - python-ligo-lw  # [build_platform == target_platform]
     - tqdm
   run:
     - astropy
     - cfitsio
     - gsl
     - h5py
+    - igwn-ligolw >={{ python_ligo_lw_version }}
+    - igwn-segments
     - lalpulsar >={{ lalpulsar_version }}
     - libframel >={{ framel_version }}
     - liblal >={{ lal_version }}
@@ -105,7 +107,6 @@ requirements:
     - liblalsimulation >={{ lalsimulation_version }}
     - liblalburst >={{ lalburst_version }}
     - liblalinspiral >={{ lalinspiral_version }}
-    - ligo-segments
     - numpy
     - libmetaio
     - pillow
@@ -118,7 +119,6 @@ requirements:
     - python-lalmetaio >={{ lalmetaio_version }}
     - python-lalpulsar >={{ lalpulsar_version }}
     - python-lalsimulation >={{ lalsimulation_version }}
-    - python-ligo-lw >={{ python_ligo_lw_version }}
     - tqdm
 
 test:

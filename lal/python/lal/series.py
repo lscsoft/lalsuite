@@ -27,9 +27,9 @@ the DMT to store time- and frequency-series data in XML files,
 """
 
 
-from ligo.lw import ligolw
-from ligo.lw import array as ligolw_array
-from ligo.lw import param as ligolw_param
+from igwn_ligolw import ligolw
+from igwn_ligolw import array as ligolw_array
+from igwn_ligolw import param as ligolw_param
 import lal
 import numpy as np
 
@@ -242,7 +242,7 @@ def read_psd_xmldoc(xmldoc, root_name = u"psd"):
 class PSDContentHandler(ligolw.LIGOLWContentHandler):
     """A content handler suitable for reading PSD documents. Use like this:
 
-    >>> from ligo.lw.utils import load_filename
+    >>> from igwn_ligolw.utils import load_filename
     >>> xmldoc = load_filename('psd.xml', contenthandler=PSDContentHandler)
     >>> psds = read_psd_xmldoc(xmldoc)
     """

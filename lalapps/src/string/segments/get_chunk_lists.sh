@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from ligo import segments
-from ligo.segments import utils as segmentsUtils
+import igwn_segments as segments
+from igwn_segments import utils as segmentsUtils
 
 S5h1_seg=segmentsUtils.fromsegwizard(open("../S5-H1segments-cat1.txt")).coalesce()
 S5h2_seg=segmentsUtils.fromsegwizard(open("../S5-H2segments-cat1.txt")).coalesce()

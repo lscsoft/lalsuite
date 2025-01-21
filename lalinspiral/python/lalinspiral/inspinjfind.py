@@ -43,10 +43,10 @@ import tqdm
 
 
 from lal import iterutils
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw.utils import coincs as ligolw_coincs
-from ligo.lw.utils import time_slide as ligolw_time_slide
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw.utils import coincs as ligolw_coincs
+from igwn_ligolw.utils import time_slide as ligolw_time_slide
 from . import thinca
 
 
