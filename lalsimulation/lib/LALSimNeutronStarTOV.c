@@ -255,6 +255,7 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
     double m = vars->m;
     double H = vars->H;
     double b = vars->b;
+    // printf("Inside the tov virial ode: %.16e \n", b);
     double p =
         XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos);
     double e =
@@ -474,9 +475,6 @@ static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronS
     variables->J1 = J1val;
     variables->J2 = J2val;
 
-    // printf("Initiial of vars: %.6e %.6e %.6e \n", mval / LAL_MRSUN_SI, rval, Hval);
-
-
     return 0;
 }
 
@@ -555,6 +553,7 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     double h;
     size_t i;
 
+
     tov_initial_condition(ec, pc, dh, eos, vars);
 
     h = h0;
@@ -571,6 +570,8 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
                     "Error encountered in GSL's ODE integrator\n");
         }
     }else{ // TODO should we make sure that one integration point goes exactly on hpt_low ??
+        double yy_up = 0.0;
+        double eps_mean = 0.0;
         while (h > hpt_up) {
             printf("First part int h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
             int s =
@@ -580,7 +581,13 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
                     "Error encountered in GSL's ODE integrator after PT \n");
         }
         printf("After first part int h= %.16e \t h-dh = %.16e \t M = %.3f \n", h, h-dh, vars->m  / LAL_MRSUN_SI);
-        h = hpt_low; // TODO do we use hpt_low -dh ??
+        h = hpt_low; // TODO do we use hpt_low -dh ?? TODO do we want false PTs to be corrected ?
+        eps_mean = vars->m / (4.0 / 3.0 * LAL_PI * (vars->r) * (vars->r) * (vars->r) ) ;
+        yy_up = vars->r * vars->b / vars->H ;
+        printf("at PT value b before = %.16e \n", vars->b);
+        /* Phase transition correction, see Eq.14 of Postnikov et al. 2010 Phys. Rev. D 82, 024016 (https://arxiv.org/abs/1004.5098) */
+        vars->b = vars->H / vars->r * (yy_up + 3.0 * (ept_up - ept_low) / eps_mean) ;
+        printf("at PT value b after = %.16e \n", vars->b);
         while (h > h1) {
             printf("Second part int h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
             int s =
@@ -591,10 +598,9 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
         }
         printf("After second part int h= %.6e M = %.6f \n", h, vars->m  / LAL_MRSUN_SI);
     }
-    /* compute tidal Love number k2 and compactness */
+    /* compute tidal Love number k2 and compactness at the surface of the star */
     c = vars->m / vars->r;      /* compactness */
-    yy = vars->r * vars->b / vars->H;
-
+    yy = vars->r * vars->b / vars->H; /* Eq. 13 of Hinderer et al. Phys. Rev. D 81 123016 */
 
     /*take one final Euler step to get to surface*/
     for (int w = 0 ; w < 1 ; ++w){
