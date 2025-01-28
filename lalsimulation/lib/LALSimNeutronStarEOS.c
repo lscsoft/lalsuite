@@ -65,7 +65,7 @@ struct tagLALSimNeutronStarEOS {
     double hmax;
     double hMinAcausal; /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1) */
     // CUTER-dev
-    double pt_var[8];
+    double pt_var[3];
     double (*e_of_p) (double p, LALSimNeutronStarEOS * myself);
     double (*h_of_p) (double p, LALSimNeutronStarEOS * myself);
     double (*p_of_h) (double h, LALSimNeutronStarEOS * myself);
