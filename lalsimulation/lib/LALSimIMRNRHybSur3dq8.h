@@ -25,9 +25,13 @@
  * \brief C code for NRHybSur3dq8 waveform model, an NR-hybrid surrogate model
  * for aligned-spin BBH.
  *
- * The binary data file is available at https://dcc.ligo.org/LIGO-T1900034.
- * Get the lalsuite-extra repo or put the data into a location in your
+ * The binary data file (NRHybSur3dq8_lal_v1.0.h5) is available at:
+ * https://git.ligo.org/waveforms/software/lalsuite-waveform-data.
+ * Get the lalsuite-waveform-data repo or put the data into a location in your
  * LAL_DATA_PATH.
+ * The data is also available on CIT at /home/lalsimulation_data and via CVMFS
+ * at /cvmfs/shared.storage.igwn.org/igwn/shared/auxiliary/obs_sci/cbc/waveform/lalsimulation_data
+ * Make sure the files are in your LAL_DATA_PATH.
  *
  * **Paper**: https://arxiv.org/abs/1812.07865
  *
