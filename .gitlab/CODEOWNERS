@@ -16,7 +16,6 @@
 # @evan-goetz          = Evan Goetz
 # @florent-robinet     = Florent Robinet
 # @francesco-pannarale = Francesco Pannarale
-# @gabriele-vedovato   = Gabriele Vedovato
 # @geraint.pratten     = Geraint Pratten
 # @gregory.ashton      = Gregory Ashton
 # @ian-harry           = Ian Harry
@@ -42,7 +41,7 @@ lal/                            @adam-mercer @jolien-creighton @kipp.cannon
 lalframe/                       @adam-mercer @ed-maros @jolien-creighton
 lalmetaio/                      @adam-mercer @jolien-creighton @kipp.cannon
 lalsimulation/                  @kipp.cannon @antoni.ramos-buades @geraint.pratten @vijay.varma
-lalburst/                       @adam-mercer @duncanmmacleod @gabriele-vedovato @kipp.cannon @marco-drago
+lalburst/                       @adam-mercer @duncanmmacleod @kipp.cannon @marco-drago
 lalinspiral/                    @adam-mercer @ian-harry @jolien-creighton @kipp.cannon
 lalinference/                   @aaron.zimmerman @bfarr @cjhaster @gregory.ashton @john-veitch @patricia-schmidt @salvatore-vitale @vivien
 lalpulsar/                      @david-keitel @evan-goetz @john-whelan @karl-wette @matthew-pitkin
