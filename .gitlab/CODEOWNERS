@@ -23,7 +23,7 @@
 # @john-whelan         = John T. Whelan
 # @jolien-creighton    = Jolien Creighton
 # @karl-wette          = Karl Wette
-# @kipp.cannon         = Kipp Cannon
+# @kipp                = Kipp Cannon
 # @leo-singer          = Leo Singer
 # @marco-drago         = Marco Drago
 # @matthew-pitkin      = Matthew Pitkin
@@ -37,12 +37,12 @@
 *                               @adam-mercer @duncanmmacleod @karl-wette
 
 # package-level owners
-lal/                            @adam-mercer @jolien-creighton @kipp.cannon
+lal/                            @adam-mercer @jolien-creighton @kipp
 lalframe/                       @adam-mercer @ed-maros @jolien-creighton
-lalmetaio/                      @adam-mercer @jolien-creighton @kipp.cannon
-lalsimulation/                  @kipp.cannon @antoni.ramos-buades @geraint.pratten @vijay.varma
-lalburst/                       @adam-mercer @duncanmmacleod @kipp.cannon @marco-drago
-lalinspiral/                    @adam-mercer @ian-harry @jolien-creighton @kipp.cannon
+lalmetaio/                      @adam-mercer @jolien-creighton @kipp
+lalsimulation/                  @kipp @antoni.ramos-buades @geraint.pratten @vijay.varma
+lalburst/                       @adam-mercer @duncanmmacleod @kipp @marco-drago
+lalinspiral/                    @adam-mercer @ian-harry @jolien-creighton @kipp
 lalinference/                   @aaron.zimmerman @bfarr @cjhaster @gregory.ashton @john-veitch @patricia-schmidt @salvatore-vitale @vivien
 lalpulsar/                      @david-keitel @evan-goetz @john-whelan @karl-wette @matthew-pitkin
 
@@ -51,9 +51,9 @@ lalapps/src/findchirp/          @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/frametools/         @adam-mercer @ed-maros @jolien-creighton
 lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/lalapps/            @adam-mercer @duncanmmacleod @jolien-creighton
-lalapps/src/power/              @adam-mercer @kipp.cannon @soichiro.kuwahara
+lalapps/src/power/              @adam-mercer @kipp @soichiro.kuwahara
 lalapps/src/ring/               @francesco-pannarale @ian-harry @jolien-creighton
-lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
+lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp
 
 # build / packaging / support files
 *.md                            @adam-mercer @duncanmmacleod @karl-wette
