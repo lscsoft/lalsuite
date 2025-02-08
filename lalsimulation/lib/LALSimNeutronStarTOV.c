@@ -342,7 +342,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     /* note: will be updated with Lindblom's series expansion */
     /* geometrisized units for variables in length (m) */
     double pc = central_pressure_si * LAL_G_C4_SI;
-    double ec =
+    double ec = // TODO find a way to add the new value of Eps after PT.
         XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos);
     double hc =
         XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos);
@@ -399,7 +399,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
 
     h = h0;
     while (h > h1) {
-        printf("Star integration h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+        // printf("Star integration h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
         int s =
             gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
         if (s != GSL_SUCCESS)
@@ -438,7 +438,6 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     return 0;
 }
 
-// CUTER-dev
 
 static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_virial_ode_vars *variables){
 
@@ -484,6 +483,70 @@ static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronS
 
 
 
+
+// CUTER-dev
+
+
+/* ODE integrand for TOV equations and Virial equations with pseudo-enthalpy independent variable.
+ * Implements Eqs. (5) and (6) of Lindblom, Astrophys. J. 398, 569 (1992).
+ * Also uses Eqs. (7) and (8) [ibid] for inner boundary data, and
+ * Eqs. (18), (27), (28) of Damour & Nagar, Phys. Rev. D 80, 084035 (2009)
+ * [See also: Eqs. (11) & (12) Hinderer et al. Phys. Rev. D 81 123016 (2010)]
+ * for the metric perturbation used to obtain the Love number.
+ * For the Virial portion, implements equations provided by A. Nikolaidis, N. Stergioulas, H. Markakis. */
+static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params)
+{
+    struct tov_virial_ode_vars *vars = tov_virial_ode_vars_cast(y);
+    struct tov_virial_ode_vars *derivs = tov_virial_ode_vars_cast(dy);
+    LALSimNeutronStarEOS *eos = params;
+
+    double p, e, dedp;
+
+    p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos);
+    e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos);
+    dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos);
+
+    double r = vars->r;
+    double m = vars->m;
+    double H = vars->H;
+    double b = vars->b;
+
+    /* Eq. (18) of Damour & Nagar PRD 80 084035 (2009). */
+    double A = 1.0 / (1.0 - 2.0 * m / r);
+    /* Eq. (28) of Damour & Nagar PRD 80 084035 (2009). */
+    double C1 = 2.0 / r + A * (2.0 * m / (r * r) + 4.0 * LAL_PI * r * (p - e));
+    /* Eq. (29) of Damour & Nagar PRD 80 084035 (2009). */
+    double C0 =
+        A * (-(2) * (2 + 1) / (r * r) + 4.0 * LAL_PI * (e + p) * dedp +
+        4.0 * LAL_PI * (5.0 * e + 9.0 * p)) - pow(2.0 * (m +
+            4.0 * LAL_PI * r * r * r * p) / (r * (r - 2.0 * m)), 2.0);
+    double dr = -r * (r - 2.0 * m) / (m + 4.0 * LAL_PI * r * r * r * p);
+    double dm = 4.0 * LAL_PI * r * r * e * dr;
+    double dH = b * dr;
+    double db = -(C0 * H + C1 * b) * dr; // CUTER-dev exactly Eq.(12) in Hindered 2008 https://arxiv.org/pdf/0911.3535
+
+    double alpha = 1.0 - 2.0 * m / r;
+    double beta = (m + 4.0 * LAL_PI * r * r * r * p) / (r * r);
+
+    double dI1 = 8.0 * LAL_PI * r * pow(alpha, (-1.0/2.0)) * p * dr;
+    double dI2 = r * pow(alpha, (-1.5)) * pow(beta, (2.0)) * dr;
+    double dJ1 = 4.0 * LAL_PI * r * r * pow(alpha, (-0.5)) * 3.0 * p * dr;
+    double dJ2 = pow(alpha, (-0.5)) * (pow(alpha, (-1.0)) * pow((beta * r), (2.0)) - 0.5 * pow((sqrt(alpha) - 1.0), (2.0))) * dr;
+
+
+    derivs->r = dr;
+    derivs->m = dm;
+    derivs->H = dH;
+    derivs->b = db;
+    derivs->I1 = dI1;
+    derivs->I2 = dI2;
+    derivs->J1 = dJ1;
+    derivs->J2 = dJ2;
+
+    return 0;
+}
+
+
 /**
  * @brief Integrates the Tolman-Oppenheimer-Volkov stellar structure equations and the Virial Equations with phase transitions.
  * @details
@@ -517,7 +580,7 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     double dy[TOV_VIRIAL_ODE_VARS_DIM] = {0.0};
     struct tov_virial_ode_vars *vars = tov_virial_ode_vars_cast(y);
     /* Set up the actual ODE system to solve with tov_virial_ode */
-    gsl_odeiv_system sys = { tov_virial_ode, NULL, TOV_VIRIAL_ODE_VARS_DIM, eos };
+    gsl_odeiv_system sys = { tov_virial_ode_pt, NULL, TOV_VIRIAL_ODE_VARS_DIM, eos };
     /* Set up the iterative method to solve the ODE, and the dimension of the ODE set */
     gsl_odeiv_step *step =
         gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_VIRIAL_ODE_VARS_DIM);
@@ -527,10 +590,10 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_VIRIAL_ODE_VARS_DIM);
 
     double npt_low = XLALSimNeutronStarEOSPhaseTransition(eos)[0];
-    double hpt_low = XLALSimNeutronStarEOSPhaseTransition(eos)[1];
+    double hpt = XLALSimNeutronStarEOSPhaseTransition(eos)[1];
     double deps = XLALSimNeutronStarEOSPhaseTransition(eos)[2];
 
-    printf("\n\n\nIn TOV info data hpt : %g \n", hpt_low);
+    printf("\n\n\nIn TOV info data hpt : %g \n", hpt);
     printf("\t\t\t npt : %g \n", npt_low);
     printf("\t\t\t Deps : %g \n", deps);
 
@@ -551,14 +614,11 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     double h;
     size_t i;
 
-
-    tov_initial_condition(ec, pc, dh, eos, vars);
-
     h = h0;
     printf("Initial value of h = %.6e\n", h);
-
     tov_initial_condition(ec, pc, dh, eos, vars);
-    if (h0 <= hpt_low || npt_low == 0){
+
+    if (h0 <= hpt || npt_low == 0){
         while (h > h1) {
             // printf("Star integration h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
             int s =
@@ -567,23 +627,29 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
                 XLAL_ERROR(XLAL_EERR,
                     "Error encountered in GSL's ODE integrator\n");
         }
-    }else{ // TODO should we make sure that one integration point goes exactly on hpt_low ??
-        while (h >= hpt_low) {
+    }else{ // TODO should we make sure that one integration point goes exactly on hpt ??
+        while (h >= hpt) {
             // printf("Star integration (before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
             int s =
-                gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hpt_low, &dh, y);
+                gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hpt, &dh, y);
             if (s != GSL_SUCCESS)
                 XLAL_ERROR(XLAL_EERR,
                     "Error encountered in GSL's ODE integrator after PT \n");
         }
 
+        // Add the exact upper point of the phase transition
+        h = hpt;
+        int ss = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hpt, &dh, y);
+        if (ss != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR, "Error encountered in GSL's ODE integrator after PT \n");
+        printf("before 3 %.16e\n", h);
         /* Phase transition correction, see Eq.14 of Postnikov et al. 2010 Phys. Rev. D 82, 024016 (https://arxiv.org/abs/1004.5098) */
-        double eps_mean = vars->m / (4.0 / 3.0 * LAL_PI * (vars->r) * (vars->r) * (vars->r) ) ;
-        double yy_up = vars->r * vars->b / vars->H ;
-        // printf("at PT value b before = %.16e \n", vars->b);
-        vars->b = vars->H / vars->r * (yy_up + 3.0 * deps / eps_mean) ;
+        // double eps_mean = vars->m / (4.0 / 3.0 * LAL_PI * (vars->r) * (vars->r) * (vars->r) ) ;
+        // double yy_up = vars->r * vars->b / vars->H ;
+        // // printf("at PT value b before = %.16e \n", vars->b);
+        // vars->b = vars->H / vars->r * (yy_up + 3.0 * deps / eps_mean) ;
 
-        // h = hpt_low; // TODO do we use hpt_low -dh ?? TODO do we want false PTs to be corrected ?
+
+        // h = hpt; // TODO do we use hpt_low -dh ?? TODO do we want false PTs to be corrected ?
         while (h > h1) {
             // printf("Star integration (after PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
             int s =
@@ -626,6 +692,11 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     gsl_odeiv_step_free(step);
     return 0;
 }
+
+
+
+
+
 
 int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass, 
     double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos)

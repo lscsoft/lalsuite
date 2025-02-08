@@ -359,6 +359,10 @@ static void find_phase_transition_variables(double pt_val[2], int ndat, double *
     pt_val[0] = 0.0; // baryon density value of lower bound PT
     pt_val[1] = 0.0; // enthalpy value of lower bound PT
     pt_val[2] = 0.0; // step in energy density of PT
+    pt_val[3] = 0.0; // energy density at lower bound PT
+    pt_val[4] = 0.0; // pressure at lower bound PT
+    pt_val[5] = 0.0; // de/dp at lower bound PT
+    pt_val[6] = 0.0; // energy density at upper bound PT
     for (int i = 1; i < ndat; i++){
         if (nbdat[i] >= 0.1 && pdat[i] >= pdat[i-1]){
             gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
@@ -366,6 +370,10 @@ static void find_phase_transition_variables(double pt_val[2], int ndat, double *
                 pt_val[0] = nbdat[i-1];
                 pt_val[1] = hdat[i-1];
                 pt_val[2] = edat[i] - edat[i-1] ; // Step in energy density of PT
+                pt_val[3] = edat[i-1];
+                pt_val[4] = pdat[i-1];
+                pt_val[5] = (edat[i-1] - edat[i-2])/(pdat[i-1] - pdat[i-2]) ;// TODO check with Micaela that this is ok ?
+                pt_val[6] = edat[i];
             }
         }
     }
@@ -373,8 +381,166 @@ static void find_phase_transition_variables(double pt_val[2], int ndat, double *
 }
 
 
-// CUTER-dev
 static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
+   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
+{
+    LALSimNeutronStarEOS *eos;
+    LALSimNeutronStarEOSDataTabular *data;
+    size_t i;
+
+    eos = LALCalloc(1, sizeof(*eos));
+    data = LALCalloc(1, sizeof(*data));
+
+    eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_TABULAR;
+    eos->data.tabular = data;
+
+    /* setup function pointers */
+    eos->free = eos_free_tabular;
+    eos->e_of_p = eos_e_of_p_tabular;
+    eos->h_of_p = eos_h_of_p_tabular;
+    eos->e_of_h = eos_e_of_h_tabular;
+    eos->p_of_h = eos_p_of_h_tabular;
+    eos->rho_of_h = eos_rho_of_h_tabular;
+    eos->p_of_e = eos_p_of_e_tabular;
+    eos->p_of_rho = eos_p_of_rho_tabular;
+    eos->dedp_of_p = eos_dedp_of_p_tabular;
+    eos->v_of_h = eos_v_of_h_tabular;
+
+    data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
+
+    if(ncol == 2) {
+        /* allocate memory for eos data; ignore first points if 0 */
+        while (*pdat == 0.0 || *edat == 0.0) {
+            ++pdat;
+            ++edat;
+            --ndat;
+        }
+
+        data->ncol = ncol;
+        data->ndat = ndat;
+        data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
+        data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
+        data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
+
+        /* take log of eos data */
+        for (i = 0; i < ndat; ++i) {
+            data->log_pdat[i] = log(pdat[i]);
+            data->log_edat[i] = log(edat[i]);
+        }
+        /* compute pseudo-enthalpy h from dhdp */
+        /* Integrate in log space:
+        dhdp = 1 / [e(p) + p]
+        h(p) = h(p0) + \int_p0^p dhdp dp
+        h(p) = h(p0) + \int_ln(p0)^ln(p) exp[ln(p) + ln(dhdp)] dln(p)
+        First point is
+        h(p0) = p0 / [e(p0) + p0]
+        */
+        double *integrand;
+        integrand = LALMalloc(ndat * sizeof(*integrand));
+        for (i = 0; i < ndat; ++i)
+            integrand[i] = exp(data->log_pdat[i] + log(1.0 / (edat[i] + pdat[i])));
+
+        gsl_interp_accel * dhdp_of_p_acc_temp = gsl_interp_accel_alloc();
+        gsl_interp * dhdp_of_p_interp_temp = gsl_interp_alloc(gsl_interp_linear, ndat);
+        gsl_interp_init(dhdp_of_p_interp_temp, data->log_pdat, integrand, ndat);
+
+        data->log_hdat[0] = log(pdat[0] / (edat[0] + pdat[0]));
+        for (i = 1; i < ndat; ++i)
+            data->log_hdat[i] = log(exp(data->log_hdat[0]) + gsl_interp_eval_integ(dhdp_of_p_interp_temp, data->log_pdat, integrand, data->log_pdat[0], data->log_pdat[i], dhdp_of_p_acc_temp));
+
+        gsl_interp_free(dhdp_of_p_interp_temp);
+        gsl_interp_accel_free(dhdp_of_p_acc_temp);
+        LALFree(integrand);
+    }
+    else if (ncol > 2) {
+        /* allocate memory for eos data; ignore first points if 0 */
+        while (*pdat == 0.0 || *edat == 0.0 || *hdat == 0.0) {
+            ++pdat;
+            ++edat;
+            ++hdat;
+            --ndat;
+        }
+
+        data->ndat = ndat;
+        data->ncol = ncol - 1;
+        data->nbdat = XLALMalloc(ndat * sizeof(*data->nbdat));
+        data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
+        data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
+        data->mubdat = XLALMalloc(ndat * sizeof(*data->mubdat));
+        data->muedat = XLALMalloc(ndat * sizeof(*data->muedat));
+        data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
+        data->yedat = XLALMalloc(ndat * sizeof(*data->yedat));
+        data->log_cs2dat = XLALMalloc(ndat * sizeof(*data->log_cs2dat));
+
+        /* take log of eos data */
+        for (i = 0; i < ndat; ++i) {
+            data->nbdat[i] = nbdat[i];
+            data->log_pdat[i] = log(pdat[i]);
+            data->log_edat[i] = log(edat[i]);
+            data->mubdat[i] = mubdat[i];
+            data->muedat[i] = muedat[i];
+            data->log_hdat[i] = log(hdat[i]);
+            data->yedat[i] = yedat[i];
+            data->log_cs2dat[i] = log(cs2dat[i]);
+        }
+
+        /* these can be set up only using the new eos tables; so they are set up here */
+        data->log_cs2_of_log_h_acc = gsl_interp_accel_alloc();
+        data->log_cs2_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+        gsl_interp_init(data->log_cs2_of_log_h_interp, data->log_hdat, data->log_cs2dat, ndat);
+    }
+
+    // Find rho from e, p, and h: rho = (e+p)/exp(h)
+    for (i = 0; i < ndat; i++)
+        data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
+
+    eos->pmax = exp(data->log_pdat[ndat - 1]);
+    eos->hmax = exp(data->log_hdat[ndat - 1]);
+
+    /* setup interpolation tables */
+
+    data->log_e_of_log_p_acc = gsl_interp_accel_alloc();
+    data->log_h_of_log_p_acc = gsl_interp_accel_alloc();
+    data->log_e_of_log_h_acc = gsl_interp_accel_alloc();
+    data->log_p_of_log_h_acc = gsl_interp_accel_alloc();
+    data->log_rho_of_log_h_acc = gsl_interp_accel_alloc();
+    data->log_p_of_log_e_acc = gsl_interp_accel_alloc();
+    data->log_p_of_log_rho_acc = gsl_interp_accel_alloc();
+
+    data->log_e_of_log_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_h_of_log_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_e_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_p_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_rho_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_p_of_log_e_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_p_of_log_rho_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+
+    gsl_interp_init(data->log_e_of_log_p_interp, data->log_pdat, data->log_edat, ndat);
+    gsl_interp_init(data->log_h_of_log_p_interp, data->log_pdat, data->log_hdat, ndat);
+    gsl_interp_init(data->log_e_of_log_h_interp, data->log_hdat, data->log_edat, ndat);
+    gsl_interp_init(data->log_p_of_log_h_interp, data->log_hdat, data->log_pdat, ndat);
+    gsl_interp_init(data->log_rho_of_log_h_interp, data->log_hdat, data->log_rhodat, ndat);
+    gsl_interp_init(data->log_p_of_log_e_interp, data->log_edat, data->log_pdat, ndat);
+    gsl_interp_init(data->log_p_of_log_rho_interp, data->log_rhodat, data->log_pdat, ndat);
+
+    eos->hMinAcausal =
+        eos_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
+
+//    printf("%e\n", XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(eos->pmax, eos));
+//
+//    printf("datatype = %d\n", eos->datatype);
+//    printf("pmax = %e\n", eos->pmax);
+//    printf("hmax = %e\n", eos->hmax);
+//    printf("hMinAcausal = %e\n", eos->hMinAcausal);
+
+    return eos;
+}
+
+
+
+
+// CUTER-dev
+static LALSimNeutronStarEOS *eos_alloc_tabular_pt(double *nbdat, double *edat, double *pdat,
    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol) // TODO make it possible without tabulated EoS
 {
     LALSimNeutronStarEOS *eos;
@@ -410,9 +576,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
 
 
     printf("In LAL eos_alloc_tabular ...\n");
-
-
-
 
     if(ncol == 2) { // TODO work with the variables we have if only P and eps
         //TODO do the case with 2 columns and a PT
@@ -470,6 +633,11 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
             ++hdat;
             --ndat;
         }
+        // for (size_t ii = 0; ii < ndat; ii++){
+        //     if (nbdat[ii] >= 0.16){
+        //         printf("%.6e \n", nbdat[ii]);
+        //     }
+        // }
 
         // Find a phase transition CUTER-dev
         find_phase_transition_variables(eos->pt_var, ndat, nbdat, edat, pdat, hdat);
@@ -479,7 +647,8 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
             printf("\tRemove the phase transition point from the EoS array.\n");
             int step = 0;
             for (size_t ii = 0; ii < ndat; ii++){
-                if (hdat[ii] == hdat[ii-1] && hdat[ii] == eos->pt_var[1]){
+                if (hdat[ii] == eos->pt_var[1] && nbdat[ii] == eos->pt_var[0]){ // remove the lower bound point
+                // if (hdat[ii] == eos->pt_var[1] && hdat[ii] == hdat[ii-1]){
                     printf("\tSkipping phase transition point nb=%.6e \t P=%.6e \n", nbdat[ii], pdat[ii]);
                 }else{
                     nbdat_pt[step] = nbdat[ii] ;
@@ -494,8 +663,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
                 }
             }
             ndat = step;
-
-            // printf("%.6e \t %.6e \t %.6e \t %.6e \t %.6e \t %.6e \t %.6e \t %.6e \n", nbdat_pt[step-1], edat_pt[step-1], pdat_pt[step-1], mubdat_pt[step-1], muedat_pt[step-1], hdat_pt[step-1], yedat_pt[step-1], cs2dat_pt[step-1]);
 
             data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
             data->ndat = ndat;
@@ -548,6 +715,8 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
             }
         }
 
+
+
         /* these can be set up only using the new eos tables; so they are set up here */
         data->log_cs2_of_log_h_acc = gsl_interp_accel_alloc();
         data->log_cs2_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
@@ -559,7 +728,11 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
         data->log_rhodat[i] = log(exp(data->log_edat[i]) + exp(data->log_pdat[i])) - exp(data->log_hdat[i]); // CUTER-dev
         // data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
 
-
+    // for (size_t ii = 0; ii < ndat; ii++){
+    //         if (data->nbdat[ii] >= 0.16){
+    //             printf("%.6e \n", data->nbdat[ii]);
+    //         }
+    //     }
     eos->pmax = exp(data->log_pdat[ndat - 1]);
     eos->hmax = exp(data->log_hdat[ndat - 1]);
 
@@ -707,7 +880,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
 
 
 
-// CUTER-dev TODO make it so it can handle just the two column format ?
+
 /**
  * @brief Reads arrays for the different variables of the equation of state.
  * @details Reads 9 arrays a data file specified by a path fname that contains two
@@ -731,9 +904,39 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat)
 {
-    // TODO add: looking for PT, clean the eos with one less line, monotonicity here
     LALSimNeutronStarEOS *eos;
     eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 9);
+    return eos;
+}
+
+
+// CUTER-dev TODO make it so it can handle just the two column format ?
+/**
+ * @brief Reads arrays for the different variables of the equation of state.
+ * @details Reads 9 arrays a data file specified by a path fname that contains two
+ * whitespace separated columns of equation of state data.  The first column
+ * contains the pressure in Pa and the second column contains the energy
+ * density in J/m^3.  Every line beginning with the character '#' then it is
+ * ignored.  If the path is an absolute path then this specific file is opened;
+ * otherwise, search for the file in paths given in the environment variable
+ * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
+ * @param nbdat array of size ndat containing the baryon density in 1/fm^3
+ * @param edat array of size ndat containing the energy density in g/cm^3
+ * @param pdat array of size ndat containing the pressure in dyn/cm^2
+ * @param mubdat array of size ndat containing the baryon chemical potential in MeV
+ * @param muedat array of size ndat containing the electron chemical potential in MeV
+ * @param hdat array of size ndat containing the log of enthalpy (dimensionless)
+ * @param yedat array of size ndat containing the lepton fration (dimensionless)
+ * @param cs2dat array of size ndat containing the sound speed squared normalized to the speed of light (dimensionless)
+ * @param ndat size of the arrays for equation of state quantities
+ * @return A pointer to neutron star equation of state structure.
+ */
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabDataPT(double *nbdat, double *edat, double *pdat,
+   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat)
+{
+    // TODO add: looking for PT, clean the eos with one less line, monotonicity here
+    LALSimNeutronStarEOS *eos;
+    eos = eos_alloc_tabular_pt(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 9);
     return eos;
 }
 

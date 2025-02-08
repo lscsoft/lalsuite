@@ -54,7 +54,6 @@
 
 /** Incomplete type for the neutron star Equation of State (EOS). */
 typedef struct tagLALSimNeutronStarEOS LALSimNeutronStarEOS;
-
 /** Recognised names of equations of state */
 extern const char * const lalSimNeutronStarEOSNames[111];
 
@@ -66,8 +65,10 @@ char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
-//CUTER-dev
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
+    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
+//CUTER-dev
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabDataPT(double *nbdat, double *edat, double *pdat,
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
