@@ -853,7 +853,8 @@ class TimeSlideGraphNode(object):
 			# the unused events returned by the doubles
 			# generator in the len==2 code path.
 			assert not coinc_windows
-			self.components = (coincgen_doubles_type.singlesqueue(0.),)
+			offset, = offset_vector.values()
+			self.components = (coincgen_doubles_type.singlesqueue(offset, 0.),)
 			self.index = self.components[0].index
 		else:
 			raise ValueError("offset_vector cannot be empty")
