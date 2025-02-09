@@ -142,7 +142,37 @@ When you feel that your work is finished, you should create a merge request to p
 
 After you have pushed your new feature branch to `origin`, you should find a new button on the [LALSuite repository home page][lalsuiterepo] inviting you to create a merge request out of your newly pushed branch. (If the button does not exist, you can initiate a merge request by going to the `Merge Requests` tab on your fork website on `git.ligo.org` and clicking `New merge request`)
 
-You should click the button, and proceed to fill in the title and description boxes on the merge request page. It is recommended that you check the box to *Remove source branch when merge request is accepted*; this will result in the branch being automatically removed from your fork when the merge request is accepted.
+You should click the button, and proceed to fill in the title and description boxes on the merge request page:
+
+- Please provide a descriptive title for the merge request.
+- In the **Detailed Description** section of the description box, please provide a detailed description of the changes, why they are being made, etc. Also indicate appropriate tickets and tests that have been run to determine that the changes work as intended and do not introduce other problems.
+- In the **API Changes** section of the description box, please tick one of the following checkboxes:
+  - *These changes do not modify the API*. Examples of such changes are:
+    - C code:
+      - No changes to a public C header (i.e. any `.h` header which is installed in `include/lal`).
+    - Python code:
+      - No changes to the arguments of a function/class method which is public (i.e. its name is not preceded by an `_`).
+      - No new public functions/class methods.
+      - No new classes/modules.
+  - *These changes are backwards compatible*. Examples of such changes are:
+    - C code:
+      - Adding a new type/struct/function to a public C header.
+    - Python code:
+      - Adding a new optional argument to an existing public function/class method, which does not change behaviour if the default value is used.
+      - Adding a new public function/class method.
+      - Adding a new class/module.
+  - *These changes are backwards incompatible*. Examples of such changes are:
+    - C code:
+      - Modifying an existing type/struct/function in a public C header.
+      - Removing an existing type/struct/function from a public C header.
+    - Python code:
+      - Adding a new positional (i.e. non-optional) argument to an existing public function/class method.
+      - Removing an existing public function/class method.
+      - Removing a class/module.
+- If you checked the *These changes are backwards incompatible* checkbox:
+  - In the **Justification for Backwards Incompatible Changes** section of the description box, please provide a justification for why these changes are necessary and why they need to be done in a backwards incompatible way.
+- In the **Review Status** section of the description box, please provide details on any reviews related to these changes and the associated reviewers.
+- It is recommended that you check the box to *Remove source branch when merge request is accepted*; this will result in the branch being automatically removed from your fork when the merge request is accepted.
 
 Once the request has been opened, one of the maintainers will assign someone to review the change. There may be suggestions and/or discussion with the reviewer. These interactions are intended to make the resulting changes better. The reviewer will merge your request.
 
