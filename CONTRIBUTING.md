@@ -164,11 +164,13 @@ You should click the button, and proceed to fill in the title and description bo
   - *These changes are backwards incompatible*. Examples of such changes are:
     - C code:
       - Modifying an existing type/struct/function in a public C header.
-      - Removing an existing type/struct/function from a public C header.
+      - Removing or renaming an existing type/struct/function from a public C header.
     - Python code:
       - Adding a new positional (i.e. non-optional) argument to an existing public function/class method.
-      - Removing an existing public function/class method.
-      - Removing a class/module.
+      - Removing or renaming arguments (even optional ones) of an existing public function/class method.
+      - Changing the return values of an existing public function/class method.
+      - Removing or renaming an existing public function/class method.
+      - Removing or renaming a class/module.
 - If you checked the *These changes are backwards incompatible* checkbox:
   - In the **Justification for Backwards Incompatible Changes** section of the description box, please provide a justification for why these changes are necessary and why they need to be done in a backwards incompatible way.
 - In the **Review Status** section of the description box, please provide details on any reviews related to these changes and the associated reviewers.
