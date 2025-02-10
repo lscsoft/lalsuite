@@ -474,6 +474,9 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
 
         /* take log of eos data */
         for (i = 0; i < ndat; ++i) {
+            if (nbdat[i] >= 0.16){
+                printf("%.6e %.6e %.6e \n", nbdat[i], pdat[i], edat[i]);
+            }
             data->nbdat[i] = nbdat[i];
             data->log_pdat[i] = log(pdat[i]);
             data->log_edat[i] = log(edat[i]);

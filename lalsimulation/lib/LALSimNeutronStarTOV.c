@@ -399,7 +399,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
 
     h = h0;
     while (h > h1) {
-        // printf("Star integration h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+        // printf("Old TOV solver star integration h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
         int s =
             gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
         if (s != GSL_SUCCESS)
