@@ -449,6 +449,7 @@ class CWSimulator(object):
         window="rectangular",
         window_param=0,
         prog_bar=None,
+        fmin=0,
     ):
         """
         Generate SFTs [2] containing strain time series of a continuous-wave signal.
@@ -463,6 +464,8 @@ class CWSimulator(object):
             the named window function; see XLALCreateNamedREAL8Window()
         @param window_param: parameter for the window function given by @b window, if needed
         @param prog_bar: use to display a progress bar, e.g. prog_bar=tqdm
+        @param fmin: if >0, minimum SFT frequency, in Hz
+            (note that this only modifies the output SFT bandwidth; internally a full-band SFT is still produced by sampling at 2*fmax)
 
         @return (@b sft, @b i, @b N), where:
             @b sft = SFT;
@@ -508,6 +511,11 @@ class CWSimulator(object):
                 sft_h, sft_ts, window, window_param
             )
 
+            if fmin != 0:
+                sft_vect = lalpulsar.ExtractStrictBandFromSFTVector(
+                    sft_vect, fMin=fmin, Band=fmax - fmin
+                )
+
             # yield current SFT
             yield sft_vect.data[0], i, N
 
@@ -522,6 +530,7 @@ class CWSimulator(object):
         window="rectangular",
         window_param=0,
         prog_bar=None,
+        fmin=0,
     ):
         """
         Write SFT files [2] containing strain time series of a continuous-wave signal.
@@ -538,6 +547,8 @@ class CWSimulator(object):
             the named window function; see XLALCreateNamedREAL8Window()
         @param window_param: parameter for the window function given by @b window, if needed
         @param prog_bar: use to display a progress bar, e.g. prog_bar=tqdm
+        @param fmin: if >0, minimum SFT frequency, in Hz
+            (note that this only modifies the output SFT bandwidth; internally a full-band SFT is still produced by sampling at 2*fmax)
 
         @return (@b file, @b i, @b N), where:
             @b file = name of SFT file just written;
@@ -578,6 +589,7 @@ class CWSimulator(object):
             window=window,
             window_param=window_param,
             prog_bar=prog_bar,
+            fmin=fmin,
         ):
             # write SFT
             lalpulsar.WriteSFT2StandardFile(sft, spec, self.__origin_str)
