@@ -52,8 +52,6 @@ gcc:
   parallel:
     matrix:
       - GCC_VERSION:
-          - 10
-          - 11
           - 12
           - 13
           - 14
