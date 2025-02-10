@@ -173,10 +173,10 @@ typedef struct tagPrecessingNRSurData {
 /***********************************************************************************/
 /****************************** Function declarations*******************************/
 /***********************************************************************************/
+#ifdef LAL_HDF5_ENABLED
 UNUSED static void NRSur7dq2_Init_LALDATA(void);
 UNUSED static void NRSur7dq4_Init_LALDATA(void);
 
-#ifdef LAL_HDF5_ENABLED
 static int PrecessingNRSur_Init(PrecessingNRSurData *data, LALH5File *file, UINT4 PrecessingNRSurVersion);
 static void PrecessingNRSur_LoadFitData(FitData **fit_data, LALH5File *sub, const char *name);
 static void NRSur7dq4_LoadVectorFitData(VectorFitData **vector_fit_data, LALH5File *sub, const char *name, const size_t size);
