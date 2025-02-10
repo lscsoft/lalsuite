@@ -22,6 +22,15 @@ while (<IN>) {
 }
 close IN;
 
+$_ = $ENV{"CI_COMMIT_AUTHOR"};
+if (defined($_)) {
+
+  my ($name, $mail) = m/^([^<>]+)\s+<([^>]+)>$/ or die;
+
+  $name2mails{$name}->{$mail} = -1 if !defined($name2mails{$name}->{$mail});
+
+}
+
 open IN, "git log --full-history --no-merges HEAD | git shortlog --summary --email --numbered |" or die $!;
 binmode IN, ":encoding(UTF-8)";
 while (<IN>) {
