@@ -14,92 +14,54 @@
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
 
-.compiler-test:clang:
+# -- clang ---------------------------
+
+clang:
   extends:
     - .compiler-test
+  parallel:
+    matrix:
+      - CLANG_VERSION:
+         - 14
+         - 15
+         - 16
+         - 17
+         - 18
+         - dev
+  image: igwn/lalsuite-dev-clang:$CLANG_VERSION
   variables:
     CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
     # Clang has weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
+    # build with the right version
+    CC: "clang-$CLANG_VERSION"
+    CXX: "clang++-$CLANG_VERSION"
+  before_script:
+    # 'dev' build doesn't use version in variables
+    - if [ "${CLANG_VERSION}" = "dev" ]; then
+        export CC="clang";
+        export CXX="clang++";
+      fi
+    - !reference [.compiler-test, before_script]
 
-clang:14:
-  extends:
-    - .compiler-test:clang
-  image: igwn/lalsuite-dev-clang:14
-  variables:
-    CC: clang-14
-    CXX: clang++-14
+# -- gcc -----------------------------
 
-clang:15:
-  extends:
-    - .compiler-test:clang
-  image: igwn/lalsuite-dev-clang:15
-  variables:
-    CC: clang-15
-    CXX: clang++-15
-
-clang:16:
-  extends:
-    - .compiler-test:clang
-  image: igwn/lalsuite-dev-clang:16
-  variables:
-    CC: clang-16
-    CXX: clang++-16
-
-clang:17:
-  extends:
-    - .compiler-test:clang
-  image: igwn/lalsuite-dev-clang:17
-  variables:
-    CC: clang-17
-    CXX: clang++-17
-
-clang:18:
-  extends:
-    - .compiler-test:clang
-  image: igwn/lalsuite-dev-clang:18
-  variables:
-    CC: clang-18
-    CXX: clang++-18
-
-clang:dev:
-  extends:
-    - .compiler-test:clang
-  image: igwn/lalsuite-dev-clang:dev
-  variables:
-    CC: clang
-    CXX: clang++
-
-.compiler-test:gcc:
+gcc:
   extends:
     - .compiler-test
+  parallel:
+    matrix:
+      - GCC_VERSION:
+          - 10
+          - 11
+          - 12
+          - 13
+          - 14
+  image: igwn/lalsuite-dev-gcc:$GCC_VERSION
   variables:
     CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
-gcc:10:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:10
-
-gcc:11:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:11
-
-gcc:12:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:12
-
-gcc:13:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:13
-
-gcc:14:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:14
+# -- cuda ----------------------------
 
 cuda:
   extends:
