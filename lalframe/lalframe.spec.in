@@ -36,12 +36,10 @@ BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python3x
-BuildRequires: python-srpm-macros
-BuildRequires: python3-rpm-macros
-BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-pytest
+BuildRequires: python3-devel
+BuildRequires: python3-lal >= @MIN_LAL_VERSION@
+BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+BuildRequires: python3dist(pytest)
 
 # octave
 BuildRequires: octave-devel
@@ -52,8 +50,7 @@ BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 #%%package -n lalframe
 Summary: LVK Algorithm Frame Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
-Obsoletes: python2-%{name} <= 1.5.4-1
+Requires: python3-%{name} = %{version}-%{release}
 %description
 The LVK Algorithm Frame Library for gravitational wave data analysis.
 This package provides the runtime tools.
@@ -85,15 +82,13 @@ package contains files needed build applications that use the LAL Frame
 library.
 
 # python3x-lalframe
-%package -n python%{python3_pkgversion}-%{name}
+%package -n python3-%{name}
 Summary: Python %{python3_version} Bindings for LALFrame
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-Obsoletes: python2-%{name} < 1.5.5-1
-%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-%description -n python%{python3_pkgversion}-%{name}
+Requires: python3
+Requires: python3-lal >= @MIN_LAL_VERSION@
+Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+%description -n python3-%{name}
 The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings for LALFrame.
 
@@ -149,7 +144,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files -n python%{python3_pkgversion}-%{name}
+%files -n python3-%{name}
 %defattr(-,root,root)
 %doc README.md
 %license COPYING
