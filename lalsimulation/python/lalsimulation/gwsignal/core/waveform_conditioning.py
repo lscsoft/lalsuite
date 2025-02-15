@@ -484,6 +484,9 @@ def generate_conditioned_fd_waveform_from_td(parameter_dict, generator):
 
     hpf = hp.fft()
     hcf = hc.fft()
+    
+    hpf.epoch = hp.t0
+    hcf.epoch = hc.t0
 
     # Normalize to match lalsuite
     hpf = hpf/(2*hpf.df)
