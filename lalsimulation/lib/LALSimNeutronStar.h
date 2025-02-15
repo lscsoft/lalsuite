@@ -60,6 +60,15 @@ extern const char * const lalSimNeutronStarEOSNames[111];
 /** Incomplete type for a neutron star family having a particular EOS. */
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
+//CUTER-dev
+struct eosDouble{
+  LALSimNeutronStarEOS * eos_low;
+  LALSimNeutronStarEOS * eos_up;
+  double hpt;
+  double delta_eps;
+  int flag_up;
+};
+
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
 char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
@@ -95,8 +104,6 @@ double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS *
 double XLALSimNeutronStarEOSMaxPseudoEnthalpy(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(LALSimNeutronStarEOS *
     eos);
-//CUTER-dev
-double *XLALSimNeutronStarEOSPhaseTransition(LALSimNeutronStarEOS * eos);
 
 double XLALSimNeutronStarEOSEnergyDensityOfPressure(double p,
     LALSimNeutronStarEOS * eos);
@@ -152,15 +159,17 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos, double epsrel);
 
+
+//CUTER-dev
 int XLALSimNeutronStarVirialPTODEIntegrate(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
-    LALSimNeutronStarEOS * eos);
+    LALSimNeutronStarEOS * eos1, LALSimNeutronStarEOS * eos2, double *pt_var);
 
 int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
-    LALSimNeutronStarEOS * eos, double epsrel);
+    LALSimNeutronStarEOS * eos1,  LALSimNeutronStarEOS * eos2, double *pt_var, double epsrel);
 
 /* MASS-RADIUS TYPE RELATIONSHIP ROUTINES */
 

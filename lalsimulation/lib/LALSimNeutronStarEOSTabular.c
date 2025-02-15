@@ -302,83 +302,83 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
 
 
 // CUTER-dev
-static void find_phase_transition_variables(double pt_val[2], int ndat, double *nbdat, double *edat, double *pdat, double *hdat)
-{
-    // double pt_tol = 0.5;
-    // double grad, old_grad, delta_grad, step_n;
-    // int n_pt = 0;
-    // grad = 0.0;
-    // old_grad = 0.0;
-    // delta_grad = 0.0;
-    // step_n = 0.0;
-    // for (int i = 1; i < ndat; i++){
-    //     if (nbdat[i] > 0.1) {
-    //         // pMev_n = pdat[i] / (LAL_G_C4_SI * 1e-1 * 1.6022e33); /* transform from Gerometrized units to SI and then to CGS and then to nuclear */
-    //         // pMev_nm1 = pdat[i-1] / (LAL_G_C4_SI * 1e-1 * 1.6022e33);
-    //         // epsMev_n = edat[i] / (LAL_G_C2_SI * 1e3 * 1.7827e12); /* transform from Gerometrized units to SI and then to CGS and then to nuclear */
-    //         // epsMev_nm1 = edat[i-1] / (LAL_G_C2_SI * 1e3 * 1.7827e12);
-    //         // grad = (pMev_n - pMev_nm1)/(epsMev_n - epsMev_nm1); // convert to MeV/fm^3
-    //
-    //         grad = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1])  * 1.7827e12 / 1.6022e33;
-    //         delta_grad = (grad - old_grad)/grad;
-    //         if (step_n == 0.0){
-    //             if ( (delta_grad < 0.0 || grad == 0.0) && fabs(delta_grad) >= pt_tol){
-    //                 // Append the first point of the PT
-    //                 step_n = nbdat[i] - nbdat[i-1];
-    //                 pt_val[0] = nbdat[i-1]; // low bound baryon density for the PT
-    //                 pt_val[1] = nbdat[i]; // high bound baryon density
-    //                 pt_val[2] = edat[i-1] ; // low bound energy density for the PT
-    //                 pt_val[3] = edat[i]; // high bound energy density
-    //                 pt_val[4] = pdat[i-1] ; // low bound pressure for the PT
-    //                 pt_val[5] = pdat[i] ; // high bound pressure
-    //                 pt_val[6] = hdat[i-1]; // low bound enthalpy for the PT
-    //                 pt_val[7] = hdat[i]; // high bound enthalpy
-    //                 n_pt += 1 ;
-    //             }
-    //         }else{
-    //             // redefines that upper bound of the PT if it is over several points
-    //             if (fabs(delta_grad) >= pt_tol || grad == 0. || delta_grad < 0.){
-    //                 step_n = step_n + (nbdat[i] - nbdat[i-1]);
-    //                 pt_val[1] = nbdat[i];
-    //                 pt_val[3] = edat[i];
-    //                 pt_val[5] = pdat[i];
-    //                 pt_val[7] = hdat[i];
-    //             }else{
-    //                 step_n = 0.0;
-    //             }
-    //         }
-    //         old_grad = grad;
-    //     }
-    // }
-    // if (n_pt !=0){
-    //     printf("\nIn LAL, PT found:\n     nb range [%.3e, %.3e]\n     eps range [%.3e, %.3e]\n     P range [%.3e, %.3e]\n     h range [%.3e, %.3e]\n", pt_val[0], pt_val[1], pt_val[2], pt_val[3], pt_val[4], pt_val[5], pt_val[6], pt_val[7]);
-    // }
-
-
-    double gradient;
-    pt_val[0] = 0.0; // baryon density value of lower bound PT
-    pt_val[1] = 0.0; // enthalpy value of lower bound PT
-    pt_val[2] = 0.0; // step in energy density of PT
-    pt_val[3] = 0.0; // energy density at lower bound PT
-    pt_val[4] = 0.0; // pressure at lower bound PT
-    pt_val[5] = 0.0; // de/dp at lower bound PT
-    pt_val[6] = 0.0; // energy density at upper bound PT
-    for (int i = 1; i < ndat; i++){
-        if (nbdat[i] >= 0.1 && pdat[i] >= pdat[i-1]){
-            gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
-            if (gradient == 0.0){
-                pt_val[0] = nbdat[i-1];
-                pt_val[1] = hdat[i-1];
-                pt_val[2] = edat[i] - edat[i-1] ; // Step in energy density of PT
-                pt_val[3] = edat[i-1];
-                pt_val[4] = pdat[i-1];
-                pt_val[5] = (edat[i-1] - edat[i-2])/(pdat[i-1] - pdat[i-2]) ;// TODO check with Micaela that this is ok ?
-                pt_val[6] = edat[i];
-            }
-        }
-    }
-    return ;
-}
+// static void find_phase_transition_variables(double pt_val[2], int ndat, double *nbdat, double *edat, double *pdat, double *hdat)
+// {
+//     // double pt_tol = 0.5;
+//     // double grad, old_grad, delta_grad, step_n;
+//     // int n_pt = 0;
+//     // grad = 0.0;
+//     // old_grad = 0.0;
+//     // delta_grad = 0.0;
+//     // step_n = 0.0;
+//     // for (int i = 1; i < ndat; i++){
+//     //     if (nbdat[i] > 0.1) {
+//     //         // pMev_n = pdat[i] / (LAL_G_C4_SI * 1e-1 * 1.6022e33); /* transform from Gerometrized units to SI and then to CGS and then to nuclear */
+//     //         // pMev_nm1 = pdat[i-1] / (LAL_G_C4_SI * 1e-1 * 1.6022e33);
+//     //         // epsMev_n = edat[i] / (LAL_G_C2_SI * 1e3 * 1.7827e12); /* transform from Gerometrized units to SI and then to CGS and then to nuclear */
+//     //         // epsMev_nm1 = edat[i-1] / (LAL_G_C2_SI * 1e3 * 1.7827e12);
+//     //         // grad = (pMev_n - pMev_nm1)/(epsMev_n - epsMev_nm1); // convert to MeV/fm^3
+//     //
+//     //         grad = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1])  * 1.7827e12 / 1.6022e33;
+//     //         delta_grad = (grad - old_grad)/grad;
+//     //         if (step_n == 0.0){
+//     //             if ( (delta_grad < 0.0 || grad == 0.0) && fabs(delta_grad) >= pt_tol){
+//     //                 // Append the first point of the PT
+//     //                 step_n = nbdat[i] - nbdat[i-1];
+//     //                 pt_val[0] = nbdat[i-1]; // low bound baryon density for the PT
+//     //                 pt_val[1] = nbdat[i]; // high bound baryon density
+//     //                 pt_val[2] = edat[i-1] ; // low bound energy density for the PT
+//     //                 pt_val[3] = edat[i]; // high bound energy density
+//     //                 pt_val[4] = pdat[i-1] ; // low bound pressure for the PT
+//     //                 pt_val[5] = pdat[i] ; // high bound pressure
+//     //                 pt_val[6] = hdat[i-1]; // low bound enthalpy for the PT
+//     //                 pt_val[7] = hdat[i]; // high bound enthalpy
+//     //                 n_pt += 1 ;
+//     //             }
+//     //         }else{
+//     //             // redefines that upper bound of the PT if it is over several points
+//     //             if (fabs(delta_grad) >= pt_tol || grad == 0. || delta_grad < 0.){
+//     //                 step_n = step_n + (nbdat[i] - nbdat[i-1]);
+//     //                 pt_val[1] = nbdat[i];
+//     //                 pt_val[3] = edat[i];
+//     //                 pt_val[5] = pdat[i];
+//     //                 pt_val[7] = hdat[i];
+//     //             }else{
+//     //                 step_n = 0.0;
+//     //             }
+//     //         }
+//     //         old_grad = grad;
+//     //     }
+//     // }
+//     // if (n_pt !=0){
+//     //     printf("\nIn LAL, PT found:\n     nb range [%.3e, %.3e]\n     eps range [%.3e, %.3e]\n     P range [%.3e, %.3e]\n     h range [%.3e, %.3e]\n", pt_val[0], pt_val[1], pt_val[2], pt_val[3], pt_val[4], pt_val[5], pt_val[6], pt_val[7]);
+//     // }
+//
+//
+//     double gradient;
+//     pt_val[0] = 0.0; // baryon density value of lower bound PT
+//     pt_val[1] = 0.0; // enthalpy value of lower bound PT
+//     pt_val[2] = 0.0; // step in energy density of PT
+//     pt_val[3] = 0.0; // energy density at lower bound PT
+//     pt_val[4] = 0.0; // pressure at lower bound PT
+//     pt_val[5] = 0.0; // de/dp at lower bound PT
+//     pt_val[6] = 0.0; // energy density at upper bound PT
+//     for (int i = 1; i < ndat; i++){
+//         if (nbdat[i] >= 0.1 && pdat[i] >= pdat[i-1]){
+//             gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
+//             if (gradient == 0.0){
+//                 pt_val[0] = nbdat[i-1];
+//                 pt_val[1] = hdat[i-1];
+//                 pt_val[2] = edat[i] - edat[i-1] ; // Step in energy density of PT
+//                 pt_val[3] = edat[i-1];
+//                 pt_val[4] = pdat[i-1];
+//                 pt_val[5] = (edat[i-1] - edat[i-2])/(pdat[i-1] - pdat[i-2]) ;// TODO check with Micaela that this is ok ?
+//                 pt_val[6] = edat[i];
+//             }
+//         }
+//     }
+//     return ;
+// }
 
 
 static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
@@ -474,9 +474,9 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
 
         /* take log of eos data */
         for (i = 0; i < ndat; ++i) {
-            if (nbdat[i] >= 0.16){
-                printf("%.6e %.6e %.6e \n", nbdat[i], pdat[i], edat[i]);
-            }
+            // if (nbdat[i] >= 0.16){
+            //     printf("%.6e %.6e %.6e \n", nbdat[i], pdat[i], edat[i]);
+            // }
             data->nbdat[i] = nbdat[i];
             data->log_pdat[i] = log(pdat[i]);
             data->log_edat[i] = log(edat[i]);
@@ -529,245 +529,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
     eos->hMinAcausal =
         eos_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
 
-//    printf("%e\n", XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(eos->pmax, eos));
-//
-//    printf("datatype = %d\n", eos->datatype);
-//    printf("pmax = %e\n", eos->pmax);
-//    printf("hmax = %e\n", eos->hmax);
-//    printf("hMinAcausal = %e\n", eos->hMinAcausal);
-
-    return eos;
-}
-
-
-
-
-// CUTER-dev
-static LALSimNeutronStarEOS *eos_alloc_tabular_pt(double *nbdat, double *edat, double *pdat,
-   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol) // TODO make it possible without tabulated EoS
-{
-    LALSimNeutronStarEOS *eos;
-    LALSimNeutronStarEOSDataTabular *data;
-    size_t i;
-
-    double nbdat_pt[ndat-1];
-    double pdat_pt[ndat-1];
-    double edat_pt[ndat-1];
-    double mubdat_pt[ndat-1];
-    double muedat_pt[ndat-1];
-    double hdat_pt[ndat-1];
-    double yedat_pt[ndat-1];
-    double cs2dat_pt[ndat-1];
-
-    eos = LALCalloc(1, sizeof(*eos));
-    data = LALCalloc(1, sizeof(*data));
-
-    eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_TABULAR;
-    eos->data.tabular = data;
-
-    /* setup function pointers */
-    eos->free = eos_free_tabular;
-    eos->e_of_p = eos_e_of_p_tabular;
-    eos->h_of_p = eos_h_of_p_tabular;
-    eos->e_of_h = eos_e_of_h_tabular;
-    eos->p_of_h = eos_p_of_h_tabular;
-    eos->rho_of_h = eos_rho_of_h_tabular;
-    eos->p_of_e = eos_p_of_e_tabular;
-    eos->p_of_rho = eos_p_of_rho_tabular;
-    eos->dedp_of_p = eos_dedp_of_p_tabular;
-    eos->v_of_h = eos_v_of_h_tabular;
-
-
-    printf("In LAL eos_alloc_tabular ...\n");
-
-    if(ncol == 2) { // TODO work with the variables we have if only P and eps
-        //TODO do the case with 2 columns and a PT
-
-        data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
-        /* allocate memory for eos data; ignore first points if 0 */
-        while (*pdat == 0.0 || *edat == 0.0) {
-            ++pdat;
-            ++edat;
-            --ndat;
-        }
-
-        data->ncol = ncol;
-        data->ndat = ndat;
-        data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
-        data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
-        data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
-
-        /* take log of eos data */
-        for (i = 0; i < ndat; ++i) {
-            data->log_pdat[i] = log(pdat[i]);
-            data->log_edat[i] = log(edat[i]);
-        }
-        /* compute pseudo-enthalpy h from dhdp */
-        /* Integrate in log space:
-        dhdp = 1 / [e(p) + p]
-        h(p) = h(p0) + \int_p0^p dhdp dp
-        h(p) = h(p0) + \int_ln(p0)^ln(p) exp[ln(p) + ln(dhdp)] dln(p)
-        First point is
-        h(p0) = p0 / [e(p0) + p0]
-        */
-        double *integrand;
-        integrand = LALMalloc(ndat * sizeof(*integrand));
-        for (i = 0; i < ndat; ++i)
-            integrand[i] = exp(data->log_pdat[i] + log(1.0 / (edat[i] + pdat[i])));
-
-        gsl_interp_accel * dhdp_of_p_acc_temp = gsl_interp_accel_alloc();
-        gsl_interp * dhdp_of_p_interp_temp = gsl_interp_alloc(gsl_interp_linear, ndat);
-        gsl_interp_init(dhdp_of_p_interp_temp, data->log_pdat, integrand, ndat);
-
-        data->log_hdat[0] = log(pdat[0] / (edat[0] + pdat[0]));
-        for (i = 1; i < ndat; ++i)
-            data->log_hdat[i] = log(exp(data->log_hdat[0]) + gsl_interp_eval_integ(dhdp_of_p_interp_temp, data->log_pdat, integrand, data->log_pdat[0], data->log_pdat[i], dhdp_of_p_acc_temp));
-
-        gsl_interp_free(dhdp_of_p_interp_temp);
-        gsl_interp_accel_free(dhdp_of_p_acc_temp);
-        LALFree(integrand);
-    }
-    else if (ncol > 2) {
-
-        /* allocate memory for eos data; ignore first points if 0 */
-        while (*pdat == 0.0 || *edat == 0.0 || *hdat == 0.0) {
-            ++pdat;
-            ++edat;
-            ++hdat;
-            --ndat;
-        }
-        // for (size_t ii = 0; ii < ndat; ii++){
-        //     if (nbdat[ii] >= 0.16){
-        //         printf("%.6e \n", nbdat[ii]);
-        //     }
-        // }
-
-        // Find a phase transition CUTER-dev
-        find_phase_transition_variables(eos->pt_var, ndat, nbdat, edat, pdat, hdat);
-        if (eos->pt_var[0] != 0.0){ // A phase transition has been found
-            printf("\tPhase transition found at: \n\t\tnb=%.6e \t h=%.6e \t DEps=%.6e \n", eos->pt_var[0], eos->pt_var[1], eos->pt_var[2]);
-
-            printf("\tRemove the phase transition point from the EoS array.\n");
-            int step = 0;
-            for (size_t ii = 0; ii < ndat; ii++){
-                if (hdat[ii] == eos->pt_var[1] && nbdat[ii] == eos->pt_var[0]){ // remove the lower bound point
-                // if (hdat[ii] == eos->pt_var[1] && hdat[ii] == hdat[ii-1]){
-                    printf("\tSkipping phase transition point nb=%.6e \t P=%.6e \n", nbdat[ii], pdat[ii]);
-                }else{
-                    nbdat_pt[step] = nbdat[ii] ;
-                    edat_pt[step] = edat[ii] ;
-                    pdat_pt[step] = pdat[ii] ;
-                    mubdat_pt[step] = mubdat[ii] ;
-                    muedat_pt[step] = muedat[ii] ;
-                    hdat_pt[step] = hdat[ii] ;
-                    yedat_pt[step] = yedat[ii] ;
-                    cs2dat_pt[step] = cs2dat[ii] ;
-                    step+=1;
-                }
-            }
-            ndat = step;
-
-            data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
-            data->ndat = ndat;
-            data->ncol = ncol - 1;
-            data->nbdat = XLALMalloc(ndat * sizeof(*data->nbdat));
-            data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
-            data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
-            data->mubdat = XLALMalloc(ndat * sizeof(*data->mubdat));
-            data->muedat = XLALMalloc(ndat * sizeof(*data->muedat));
-            data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
-            data->yedat = XLALMalloc(ndat * sizeof(*data->yedat));
-            data->log_cs2dat = XLALMalloc(ndat * sizeof(*data->log_cs2dat));
-
-            /* take log of eos data */
-            for (i = 0; i < ndat; ++i) {
-                data->nbdat[i] = nbdat_pt[i];
-                data->log_pdat[i] = log(pdat_pt[i]);
-                data->log_edat[i] = log(edat_pt[i]);
-                data->mubdat[i] = mubdat_pt[i];
-                data->muedat[i] = muedat_pt[i];
-                data->log_hdat[i] = log(hdat_pt[i]);
-                data->yedat[i] = yedat_pt[i];
-                data->log_cs2dat[i] = log(cs2dat_pt[i]);
-            }
-
-
-        }else{
-            data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
-            data->ndat = ndat;
-            data->ncol = ncol - 1;
-            data->nbdat = XLALMalloc(ndat * sizeof(*data->nbdat));
-            data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
-            data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
-            data->mubdat = XLALMalloc(ndat * sizeof(*data->mubdat));
-            data->muedat = XLALMalloc(ndat * sizeof(*data->muedat));
-            data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
-            data->yedat = XLALMalloc(ndat * sizeof(*data->yedat));
-            data->log_cs2dat = XLALMalloc(ndat * sizeof(*data->log_cs2dat));
-
-            /* take log of eos data */
-            for (i = 0; i < ndat; ++i) {
-                data->nbdat[i] = nbdat[i];
-                data->log_pdat[i] = log(pdat[i]);
-                data->log_edat[i] = log(edat[i]);
-                data->mubdat[i] = mubdat[i];
-                data->muedat[i] = muedat[i];
-                data->log_hdat[i] = log(hdat[i]);
-                data->yedat[i] = yedat[i];
-                data->log_cs2dat[i] = log(cs2dat[i]);
-            }
-        }
-
-
-
-        /* these can be set up only using the new eos tables; so they are set up here */
-        data->log_cs2_of_log_h_acc = gsl_interp_accel_alloc();
-        data->log_cs2_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-        gsl_interp_init(data->log_cs2_of_log_h_interp, data->log_hdat, data->log_cs2dat, ndat);
-    }
-
-    // Find rho from e, p, and h: rho = (e+p)/exp(h)
-    for (i = 0; i < ndat; i++)
-        data->log_rhodat[i] = log(exp(data->log_edat[i]) + exp(data->log_pdat[i])) - exp(data->log_hdat[i]); // CUTER-dev
-        // data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
-
-    // for (size_t ii = 0; ii < ndat; ii++){
-    //         if (data->nbdat[ii] >= 0.16){
-    //             printf("%.6e \n", data->nbdat[ii]);
-    //         }
-    //     }
-    eos->pmax = exp(data->log_pdat[ndat - 1]);
-    eos->hmax = exp(data->log_hdat[ndat - 1]);
-
-    /* setup interpolation tables */
-
-    data->log_e_of_log_p_acc = gsl_interp_accel_alloc();
-    data->log_h_of_log_p_acc = gsl_interp_accel_alloc();
-    data->log_e_of_log_h_acc = gsl_interp_accel_alloc();
-    data->log_p_of_log_h_acc = gsl_interp_accel_alloc();
-    data->log_rho_of_log_h_acc = gsl_interp_accel_alloc();
-    data->log_p_of_log_e_acc = gsl_interp_accel_alloc();
-    data->log_p_of_log_rho_acc = gsl_interp_accel_alloc();
-
-    data->log_e_of_log_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_h_of_log_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_e_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_p_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_rho_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_p_of_log_e_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_p_of_log_rho_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-
-    gsl_interp_init(data->log_e_of_log_p_interp, data->log_pdat, data->log_edat, ndat);
-    gsl_interp_init(data->log_h_of_log_p_interp, data->log_pdat, data->log_hdat, ndat);
-    gsl_interp_init(data->log_e_of_log_h_interp, data->log_hdat, data->log_edat, ndat);
-    gsl_interp_init(data->log_p_of_log_h_interp, data->log_hdat, data->log_pdat, ndat);
-    gsl_interp_init(data->log_rho_of_log_h_interp, data->log_hdat, data->log_rhodat, ndat);
-    gsl_interp_init(data->log_p_of_log_e_interp, data->log_edat, data->log_pdat, ndat);
-    gsl_interp_init(data->log_p_of_log_rho_interp, data->log_rhodat, data->log_pdat, ndat);
-
-    eos->hMinAcausal =
-        eos_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
-
    // printf("%e\n", XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(eos->pmax, eos));
    //
    // printf("datatype = %d\n", eos->datatype);
@@ -778,6 +539,243 @@ static LALSimNeutronStarEOS *eos_alloc_tabular_pt(double *nbdat, double *edat, d
     return eos;
 }
 
+
+// // CUTER-dev
+// static LALSimNeutronStarEOS *eos_alloc_tabular_pt(double *nbdat, double *edat, double *pdat,
+//    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol) // TODO make it possible without tabulated EoS
+// {
+//     LALSimNeutronStarEOS *eos;
+//     LALSimNeutronStarEOSDataTabular *data;
+//     size_t i;
+//
+//     double nbdat_pt[ndat-1];
+//     double pdat_pt[ndat-1];
+//     double edat_pt[ndat-1];
+//     double mubdat_pt[ndat-1];
+//     double muedat_pt[ndat-1];
+//     double hdat_pt[ndat-1];
+//     double yedat_pt[ndat-1];
+//     double cs2dat_pt[ndat-1];
+//
+//     eos = LALCalloc(1, sizeof(*eos));
+//     data = LALCalloc(1, sizeof(*data));
+//
+//     eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_TABULAR;
+//     eos->data.tabular = data;
+//
+//     /* setup function pointers */
+//     eos->free = eos_free_tabular;
+//     eos->e_of_p = eos_e_of_p_tabular;
+//     eos->h_of_p = eos_h_of_p_tabular;
+//     eos->e_of_h = eos_e_of_h_tabular;
+//     eos->p_of_h = eos_p_of_h_tabular;
+//     eos->rho_of_h = eos_rho_of_h_tabular;
+//     eos->p_of_e = eos_p_of_e_tabular;
+//     eos->p_of_rho = eos_p_of_rho_tabular;
+//     eos->dedp_of_p = eos_dedp_of_p_tabular;
+//     eos->v_of_h = eos_v_of_h_tabular;
+//
+//
+//     printf("In LAL eos_alloc_tabular ...\n");
+//
+//     if(ncol == 2) { // TODO work with the variables we have if only P and eps
+//         //TODO do the case with 2 columns and a PT
+//
+//         data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
+//         /* allocate memory for eos data; ignore first points if 0 */
+//         while (*pdat == 0.0 || *edat == 0.0) {
+//             ++pdat;
+//             ++edat;
+//             --ndat;
+//         }
+//
+//         data->ncol = ncol;
+//         data->ndat = ndat;
+//         data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
+//         data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
+//         data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
+//
+//         /* take log of eos data */
+//         for (i = 0; i < ndat; ++i) {
+//             data->log_pdat[i] = log(pdat[i]);
+//             data->log_edat[i] = log(edat[i]);
+//         }
+//         /* compute pseudo-enthalpy h from dhdp */
+//         /* Integrate in log space:
+//         dhdp = 1 / [e(p) + p]
+//         h(p) = h(p0) + \int_p0^p dhdp dp
+//         h(p) = h(p0) + \int_ln(p0)^ln(p) exp[ln(p) + ln(dhdp)] dln(p)
+//         First point is
+//         h(p0) = p0 / [e(p0) + p0]
+//         */
+//         double *integrand;
+//         integrand = LALMalloc(ndat * sizeof(*integrand));
+//         for (i = 0; i < ndat; ++i)
+//             integrand[i] = exp(data->log_pdat[i] + log(1.0 / (edat[i] + pdat[i])));
+//
+//         gsl_interp_accel * dhdp_of_p_acc_temp = gsl_interp_accel_alloc();
+//         gsl_interp * dhdp_of_p_interp_temp = gsl_interp_alloc(gsl_interp_linear, ndat);
+//         gsl_interp_init(dhdp_of_p_interp_temp, data->log_pdat, integrand, ndat);
+//
+//         data->log_hdat[0] = log(pdat[0] / (edat[0] + pdat[0]));
+//         for (i = 1; i < ndat; ++i)
+//             data->log_hdat[i] = log(exp(data->log_hdat[0]) + gsl_interp_eval_integ(dhdp_of_p_interp_temp, data->log_pdat, integrand, data->log_pdat[0], data->log_pdat[i], dhdp_of_p_acc_temp));
+//
+//         gsl_interp_free(dhdp_of_p_interp_temp);
+//         gsl_interp_accel_free(dhdp_of_p_acc_temp);
+//         LALFree(integrand);
+//     }
+//     else if (ncol > 2) {
+//
+//         /* allocate memory for eos data; ignore first points if 0 */
+//         while (*pdat == 0.0 || *edat == 0.0 || *hdat == 0.0) {
+//             ++pdat;
+//             ++edat;
+//             ++hdat;
+//             --ndat;
+//         }
+//         // for (size_t ii = 0; ii < ndat; ii++){
+//         //     if (nbdat[ii] >= 0.16){
+//         //         printf("%.6e \n", nbdat[ii]);
+//         //     }
+//         // }
+//
+//         // Find a phase transition CUTER-dev
+//         // find_phase_transition_variables(eos->pt_var, ndat, nbdat, edat, pdat, hdat);
+//         // if (eos->pt_var[0] != 0.0){ // A phase transition has been found
+//         //     printf("\tPhase transition found at: \n\t\tnb=%.6e \t h=%.6e \t DEps=%.6e \n", eos->pt_var[0], eos->pt_var[1], eos->pt_var[2]);
+//         //
+//         //     printf("\tRemove the phase transition point from the EoS array.\n");
+//         //     int step = 0;
+//         //     for (size_t ii = 0; ii < ndat; ii++){
+//         //         if (hdat[ii] == eos->pt_var[1] && nbdat[ii] == eos->pt_var[0]){ // remove the lower bound point
+//         //         // if (hdat[ii] == eos->pt_var[1] && hdat[ii] == hdat[ii-1]){
+//         //             printf("\tSkipping phase transition point nb=%.6e \t P=%.6e \n", nbdat[ii], pdat[ii]);
+//         //         }else{
+//         //             nbdat_pt[step] = nbdat[ii] ;
+//         //             edat_pt[step] = edat[ii] ;
+//         //             pdat_pt[step] = pdat[ii] ;
+//         //             mubdat_pt[step] = mubdat[ii] ;
+//         //             muedat_pt[step] = muedat[ii] ;
+//         //             hdat_pt[step] = hdat[ii] ;
+//         //             yedat_pt[step] = yedat[ii] ;
+//         //             cs2dat_pt[step] = cs2dat[ii] ;
+//         //             step+=1;
+//         //         }
+//         //     }
+//         //     ndat = step;
+//         //
+//         //     data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
+//         //     data->ndat = ndat;
+//         //     data->ncol = ncol - 1;
+//         //     data->nbdat = XLALMalloc(ndat * sizeof(*data->nbdat));
+//         //     data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
+//         //     data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
+//         //     data->mubdat = XLALMalloc(ndat * sizeof(*data->mubdat));
+//         //     data->muedat = XLALMalloc(ndat * sizeof(*data->muedat));
+//         //     data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
+//         //     data->yedat = XLALMalloc(ndat * sizeof(*data->yedat));
+//         //     data->log_cs2dat = XLALMalloc(ndat * sizeof(*data->log_cs2dat));
+//         //
+//         //     /* take log of eos data */
+//         //     for (i = 0; i < ndat; ++i) {
+//         //         data->nbdat[i] = nbdat_pt[i];
+//         //         data->log_pdat[i] = log(pdat_pt[i]);
+//         //         data->log_edat[i] = log(edat_pt[i]);
+//         //         data->mubdat[i] = mubdat_pt[i];
+//         //         data->muedat[i] = muedat_pt[i];
+//         //         data->log_hdat[i] = log(hdat_pt[i]);
+//         //         data->yedat[i] = yedat_pt[i];
+//         //         data->log_cs2dat[i] = log(cs2dat_pt[i]);
+//         //     }
+//         //
+//         //
+//         // }else{
+//             data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
+//             data->ndat = ndat;
+//             data->ncol = ncol - 1;
+//             data->nbdat = XLALMalloc(ndat * sizeof(*data->nbdat));
+//             data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
+//             data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
+//             data->mubdat = XLALMalloc(ndat * sizeof(*data->mubdat));
+//             data->muedat = XLALMalloc(ndat * sizeof(*data->muedat));
+//             data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
+//             data->yedat = XLALMalloc(ndat * sizeof(*data->yedat));
+//             data->log_cs2dat = XLALMalloc(ndat * sizeof(*data->log_cs2dat));
+//
+//             /* take log of eos data */
+//             for (i = 0; i < ndat; ++i) {
+//                 data->nbdat[i] = nbdat[i];
+//                 data->log_pdat[i] = log(pdat[i]);
+//                 data->log_edat[i] = log(edat[i]);
+//                 data->mubdat[i] = mubdat[i];
+//                 data->muedat[i] = muedat[i];
+//                 data->log_hdat[i] = log(hdat[i]);
+//                 data->yedat[i] = yedat[i];
+//                 data->log_cs2dat[i] = log(cs2dat[i]);
+//             }
+//         // }
+//
+//
+//
+//         /* these can be set up only using the new eos tables; so they are set up here */
+//         data->log_cs2_of_log_h_acc = gsl_interp_accel_alloc();
+//         data->log_cs2_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+//         gsl_interp_init(data->log_cs2_of_log_h_interp, data->log_hdat, data->log_cs2dat, ndat);
+//     }
+//
+//     // Find rho from e, p, and h: rho = (e+p)/exp(h)
+//     for (i = 0; i < ndat; i++)
+//         data->log_rhodat[i] = log(exp(data->log_edat[i]) + exp(data->log_pdat[i])) - exp(data->log_hdat[i]); // CUTER-dev
+//         // data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
+//
+//     // for (size_t ii = 0; ii < ndat; ii++){
+//     //         if (data->nbdat[ii] >= 0.16){
+//     //             printf("%.6e \n", data->nbdat[ii]);
+//     //         }
+//     //     }
+//     eos->pmax = exp(data->log_pdat[ndat - 1]);
+//     eos->hmax = exp(data->log_hdat[ndat - 1]);
+//
+//     /* setup interpolation tables */
+//
+//     data->log_e_of_log_p_acc = gsl_interp_accel_alloc();
+//     data->log_h_of_log_p_acc = gsl_interp_accel_alloc();
+//     data->log_e_of_log_h_acc = gsl_interp_accel_alloc();
+//     data->log_p_of_log_h_acc = gsl_interp_accel_alloc();
+//     data->log_rho_of_log_h_acc = gsl_interp_accel_alloc();
+//     data->log_p_of_log_e_acc = gsl_interp_accel_alloc();
+//     data->log_p_of_log_rho_acc = gsl_interp_accel_alloc();
+//
+//     data->log_e_of_log_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+//     data->log_h_of_log_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+//     data->log_e_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+//     data->log_p_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+//     data->log_rho_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+//     data->log_p_of_log_e_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+//     data->log_p_of_log_rho_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+//
+//     gsl_interp_init(data->log_e_of_log_p_interp, data->log_pdat, data->log_edat, ndat);
+//     gsl_interp_init(data->log_h_of_log_p_interp, data->log_pdat, data->log_hdat, ndat);
+//     gsl_interp_init(data->log_e_of_log_h_interp, data->log_hdat, data->log_edat, ndat);
+//     gsl_interp_init(data->log_p_of_log_h_interp, data->log_hdat, data->log_pdat, ndat);
+//     gsl_interp_init(data->log_rho_of_log_h_interp, data->log_hdat, data->log_rhodat, ndat);
+//     gsl_interp_init(data->log_p_of_log_e_interp, data->log_edat, data->log_pdat, ndat);
+//     gsl_interp_init(data->log_p_of_log_rho_interp, data->log_rhodat, data->log_pdat, ndat);
+//
+//     eos->hMinAcausal =
+//         eos_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
+//
+//    // printf("%e\n", XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(eos->pmax, eos));
+//    //
+//    // printf("datatype = %d\n", eos->datatype);
+//    // printf("pmax = %e\n", eos->pmax);
+//    // printf("hmax = %e\n", eos->hmax);
+//    // printf("hMinAcausal = %e\n", eos->hMinAcausal);
+//
+//     return eos;
+// }
+//
 
 
 
@@ -939,7 +937,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabDataPT(double *nbdat, double *
 {
     // TODO add: looking for PT, clean the eos with one less line, monotonicity here
     LALSimNeutronStarEOS *eos;
-    eos = eos_alloc_tabular_pt(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 9);
+    eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 9);
     return eos;
 }
 
