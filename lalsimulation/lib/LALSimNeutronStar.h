@@ -76,9 +76,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
-//CUTER-dev
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabDataPT(double *nbdat, double *edat, double *pdat,
-    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);
