@@ -737,10 +737,14 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
         s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
         if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
 
-        /* Phase transition correction, see Eq.14 of Postnikov et al. 2010 Phys. Rev. D 82, 024016 (https://arxiv.org/abs/1004.5098) */
-        double eps_mean = vars->m / (4.0 / 3.0 * LAL_PI * (vars->r) * (vars->r) * (vars->r) ) ;
+        // /* Phase transition correction, see Eq.14 of Postnikov et al. 2010 Phys. Rev. D 82, 024016 (https://arxiv.org/abs/1004.5098) !! Approximation taken for the denominator of the correction !! */
+        // double rho_mean = vars->m / (4.0 / 3.0 * LAL_PI * (vars->r) * (vars->r) * (vars->r) ) ;
+        /* Phase transition correction, see Eq.41 of Pereira et al. 2020 ApJ 895 28 (https://arxiv.org/pdf/2003.10781) */
+        double r3 = (vars->r) * (vars->r) * (vars->r);
+        double rho_bar = (vars->m + 4.0 * LAL_PI * r3 * ppt)/ (4.0 / 3.0 * LAL_PI * r3 ) ;
         double hprim_plus = vars->b;
-        vars->b = hprim_plus - vars->H / vars->r * dpt_eps * 3.0 / eps_mean ;
+        // vars->b = hprim_plus - vars->H / vars->r * dpt_eps * 3.0 / rho_mean ;
+        vars->b = hprim_plus - vars->H / vars->r * dpt_eps * 3.0 / rho_bar ;
 
         // Lower PT point
         h=hpt;
