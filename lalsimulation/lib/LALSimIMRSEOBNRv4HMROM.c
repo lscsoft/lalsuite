@@ -659,7 +659,7 @@ int SEOBNRROMdataDS_Init(
   XLALPrintInfo("ROM metadata\n============\n");
   PrintInfoStringAttribute(file, "Email");
   PrintInfoStringAttribute(file, "Description");
-  ret |= ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
+  ret = ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->hqhs, dir, "hqhs",index_mode);
   if (ret==XLAL_SUCCESS) XLALPrintInfo("%s : submodel high q high spins loaded sucessfully.\n", __func__);

@@ -733,12 +733,12 @@ int SEOBNRROMdataDS_Init(
   if (use_hm == true){
     PrintInfoStringAttribute(file, "Email");
     PrintInfoStringAttribute(file, "Description");
-    ret |= ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
+    ret = ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
   }
   else{
     PrintInfoStringAttribute(file, "Email");
     PrintInfoStringAttribute(file, "Description");
-    ret |= ROM_check_canonical_file_basename(file,ROM22DataHDF5,"CANONICAL_FILE_BASENAME");
+    ret = ROM_check_canonical_file_basename(file,ROM22DataHDF5,"CANONICAL_FILE_BASENAME");
   }
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->highf, dir, "highf",index_mode,use_hm);

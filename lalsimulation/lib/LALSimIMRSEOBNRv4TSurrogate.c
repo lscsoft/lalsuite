@@ -536,7 +536,7 @@ int Surrogatedata_Init(
   XLALPrintInfo("Surrogate metadata\n============\n");
   PrintInfoStringAttribute(file, "Email");
   PrintInfoStringAttribute(file, "Description");
-  ret |= ROM_check_canonical_file_basename(file,SurDataHDF5,"CANONICAL_FILE_BASENAME");
+  ret = ROM_check_canonical_file_basename(file,SurDataHDF5,"CANONICAL_FILE_BASENAME");
 
   XLALFree(path);
   XLALH5FileClose(file);
