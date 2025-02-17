@@ -662,9 +662,6 @@ int SEOBNRROMdataDS_Init(
   XLALPrintInfo("ROM metadata\n============\n");
   PrintInfoStringAttribute(file, "Email");
   PrintInfoStringAttribute(file, "Description");
-  ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR,
-                                 ROMDataHDF5_VERSION_MINOR,
-                                 ROMDataHDF5_VERSION_MICRO);
   ret |= ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->hqhs, dir, "hqhs",index_mode);

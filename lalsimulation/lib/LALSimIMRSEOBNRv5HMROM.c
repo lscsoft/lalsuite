@@ -739,17 +739,11 @@ int SEOBNRROMdataDS_Init(
   if (use_hm == true){
     PrintInfoStringAttribute(file, "Email");
     PrintInfoStringAttribute(file, "Description");
-    ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR,
-                                  ROMDataHDF5_VERSION_MINOR,
-                                  ROMDataHDF5_VERSION_MICRO);
     ret |= ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
   }
   else{
     PrintInfoStringAttribute(file, "Email");
     PrintInfoStringAttribute(file, "Description");
-    ret = ROM_check_version_number(file, ROM22DataHDF5_VERSION_MAJOR,
-                                  ROM22DataHDF5_VERSION_MINOR,
-                                  ROM22DataHDF5_VERSION_MICRO);
     ret |= ROM_check_canonical_file_basename(file,ROM22DataHDF5,"CANONICAL_FILE_BASENAME");
   }
 
