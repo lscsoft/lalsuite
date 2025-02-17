@@ -572,7 +572,7 @@ static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params
     return 0;
 }
 
-
+// CUTER-dev
 /**
  * @brief Integrates the Tolman-Oppenheimer-Volkov stellar structure equations and the Virial Equations with phase transitions.
  * @details
@@ -590,7 +590,9 @@ static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params
  * @param[out] int6 Virial parameter.
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
- * @param eos Pointer to the Equation of State structure.
+ * @param eos1 Pointer to the Equation of State structure (below the phase transition).
+ * @param eos2 Pointer to the Equation of State structure (beyond the phase transition).
+ * @param pt_var Table with phase transition information
  * @param[in] epsrel The relative error in the TOV solver routine.
  * @retval 0 Success.
  * @retval <0 Failure.
@@ -741,75 +743,8 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     gsl_odeiv_control_free(ctrl);
     gsl_odeiv_step_free(step);
 
-
-    // }else{
-    //     printf("Entering the sequence branch with hc > hpt\n");
-    //     while (h > hpt) {
-    //         printf("Star integration (hc after PT, h before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
-    //         int s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hpt, &dh, y);
-    //         if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator after PT \n");
-    //     }
-        // // Add the exact upper point of the phase transition
-        // h = hpt;
-        // int ss = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hpt, &dh, y);
-        // if (ss != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR, "Error encountered in GSL's ODE integrator after PT \n");
-        // printf("before 3 %.16e\n", h);
-        /* Phase transition correction, see Eq.14 of Postnikov et al. 2010 Phys. Rev. D 82, 024016 (https://arxiv.org/abs/1004.5098) */
-        // double eps_mean = vars->m / (4.0 / 3.0 * LAL_PI * (vars->r) * (vars->r) * (vars->r) ) ;
-        // double yy_up = vars->r * vars->b / vars->H ;
-        // // printf("at PT value b before = %.16e \n", vars->b);
-        // vars->b = vars->H / vars->r * (yy_up + 3.0 * deps / eps_mean) ;
-        // h = hpt; // TODO do we use hpt_low -dh ?? TODO do we want false PTs to be corrected ?
-    //     h += dh ;
-    //     while (h > h1) {
-    //         printf("Star integration (after PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
-    //         int s =
-    //             gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
-    //         if (s != GSL_SUCCESS)
-    //             XLAL_ERROR(XLAL_EERR,
-    //                 "Error encountered in GSL's ODE integrator before PT \n");
-    //     }
-    //     // printf("After second part int h= %.6e M = %.6f \n", h, vars->m  / LAL_MRSUN_SI);
-
-
-
-
-
-
-    // /* compute tidal Love number k2 and compactness at the surface of the star */
-    // c = vars->m / vars->r;      /* compactness */
-    // yy = vars->r * vars->b / vars->H; /* Eq. 13 of Hinderer et al. Phys. Rev. D 81 123016 */
-    //
-    // /*take one final Euler step to get to surface*/
-    // for (int w = 0 ; w < 1 ; ++w){
-    //     tov_virial_ode(h, y, dy, eos1);
-    //     for (i = 0; i < TOV_ODE_VARS_DIM; ++i)
-    //         y[i] += dy[i] * (0.0 - h1);
-    // }
-    //
-    // *int3 = (1.0 - vars->m / vars->r) * pow((1.0 - 2.0 * vars->m / vars->r), (-0.5)) - 1.0;
-    // *int6 = vars->r * (*int3);
-    //
-    // *int1 = vars->I1;
-    // *int2 = vars->I2;
-    // *int4 = vars->J1;
-    // *int5 = vars->J2;
-    //
-    // /* convert from geometric units to SI units */
-    // *radius = vars->r;
-    // *mass = vars->m * LAL_MSUN_SI / LAL_MRSUN_SI;
-    // *love_number_k2 = tidal_Love_number_k2(c, yy);
-    //
-    // /* free ode memory */
-    // gsl_odeiv_evolve_free(evolv);
-    // gsl_odeiv_control_free(ctrl);
-    // gsl_odeiv_step_free(step);
     return 0;
 }
-
-
-
-
 
 
 int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass, 
