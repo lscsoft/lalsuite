@@ -48,6 +48,53 @@ static double tidal_Love_number_k2(double c, double y)
     return num / den;
 }
 
+//CUTER-dev
+
+/* Implements Eq.(51) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).*/
+static double tidal_Love_number_k3(double c, double y){
+    double num;
+    double den;
+    double c2 = pow(c, 2.0);
+    double c3 = pow(c, 3.0);
+    double c4 = pow(c, 4.0);
+    double c5 = pow(c, 5.0);
+    double c7 = pow(c, 7.0);
+
+    num = (8.0 / 7.0) * pow(1 - 2 * c, 2.0) * c7
+        * (2 * (y - 1) * c2 - 3.0 * (y - 2.0) * c + y - 3.0);
+    den = 2.0 * c * (  4*(y + 1)*c5 + 2*(9*y - 2)*c4
+                        - 20*(7*y - 9)*c3 + 5*(37*y - 72)*c2
+                        - 45*(2*y - 5)*c  + 15*(y - 3) ) ;
+
+    den -= 15*pow(1 - 2 * c, 2.0) * ( 2*(y - 1)*c2 - 3*(y-2)*c + y - 3 ) * log(1.0 / (1 - 2 * c));
+
+    return num / den;
+}
+
+//CUTER-dev
+
+/* Implements Eq.(52) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).*/
+static double tidal_Love_number_k4(double c, double y){
+    double num;
+    double den;
+    double c2 = pow(c, 2.0);
+    double c3 = pow(c, 3.0);
+    double c4 = pow(c, 4.0);
+    double c5 = pow(c, 5.0);
+    double c6 = pow(c, 6.0);
+    double c9 = pow(c, 9.0);
+
+    num = (32.0 / 147.0) * pow(1 - 2 * c, 2.0) * c9
+        * ( 12*(y - 1)*c3 - 34*(y - 2)*c2 + 28*(y - 3)*c - 7*(y - 4) );
+    den = 2.0 * c * (  8*(y + 1)*c6 + (68*y - 8)*c5 + (1284 - 996)*c4
+                        + 40*(55*y - 116)*c3 + (5360 - 1910*y)*c2
+                        + 105*(7*y - 24)*c - 105*(y - 4) ) ;
+
+    den -= 15*pow(1 - 2 * c, 2.0) * ( 12*(y - 1)*c3 - 34*(y - 2)*c2 + 28*(y - 3)*c - 7*(y - 4) ) * log(1.0 / (1 - 2 * c));
+
+    return num / den;
+}
+
 /* For convenience, use a structure that provides a dictionary between
  * a vector of the ode variables and what they represent. */
 struct tov_ode_vars {
@@ -496,15 +543,11 @@ static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params
 {
     struct tov_virial_ode_vars *vars = tov_virial_ode_vars_cast(y);
     struct tov_virial_ode_vars *derivs = tov_virial_ode_vars_cast(dy);
-    // LALSimNeutronStarEOS *eos = params;
     struct eosDouble eosPT = *(struct eosDouble *)params;
 
     LALSimNeutronStarEOS *eos1 = eosPT.eos_low;
     LALSimNeutronStarEOS *eos2 = eosPT.eos_up;
     double hpt = eosPT.hpt;
-    // double deps = eosPT.delta_eps;
-    // int flag_up = eosPT.flag_up;
-    // printf("THE FLAG: %i\n", eosPT.flag_up);
 
     double p, e, dedp;
     p = 0.0;
@@ -589,6 +632,8 @@ static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params
  * @param[out] int5 Virial parameter.
  * @param[out] int6 Virial parameter.
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
+ * @param[out] love_number_k3 The k_3 tidal love number of the star.
+ * @param[out] love_number_k4 The k_4 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
  * @param eos1 Pointer to the Equation of State structure (below the phase transition).
  * @param eos2 Pointer to the Equation of State structure (beyond the phase transition).
@@ -599,7 +644,7 @@ static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params
  */
 int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
-    double *love_number_k2, double central_pressure_si, // Pressure in Pa
+    double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si, // Pressure in Pa
     LALSimNeutronStarEOS * eos1,LALSimNeutronStarEOS * eos2, double *pt_var, double epsrel)
 {
     /* ode integration variables */
@@ -631,7 +676,6 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     double dpt_eps = pt_var[4]-pt_var[3];
 
     printf("\n\n\nIn TOV info data hpt = %.6e \t Ppt = %.6e \n", hpt, ppt);
-    // printf("blabla remove %g %g %g\n", pt_var[0], pt_var[1], npt_low);
 
 
     /* central values */
@@ -714,7 +758,7 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
         }
     }
 
-    /* compute tidal Love number k2 and compactness at the surface of the star */
+    /* compute tidal Love numbers and compactness at the surface of the star */
     c = vars->m / vars->r;      /* compactness */
     yy = vars->r * vars->b / vars->H; /* Eq. 13 of Hinderer et al. Phys. Rev. D 81 123016 */
 
@@ -737,6 +781,8 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     *radius = vars->r;
     *mass = vars->m * LAL_MSUN_SI / LAL_MRSUN_SI;
     *love_number_k2 = tidal_Love_number_k2(c, yy);
+    *love_number_k3 = tidal_Love_number_k3(c, yy);
+    *love_number_k4 = tidal_Love_number_k4(c, yy);
 
     /* free ode memory */
     gsl_odeiv_evolve_free(evolv);
@@ -767,12 +813,12 @@ int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
 // CUTER-dev
 int XLALSimNeutronStarVirialPTODEIntegrate(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
-    double *love_number_k2, double central_pressure_si,
+    double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
     LALSimNeutronStarEOS * eos1, LALSimNeutronStarEOS * eos2, double *pt_var)
 {
     const double epsrel = 1e-6;
     return XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(radius, mass,
-    int1, int2, int3, int4, int5, int6, love_number_k2, central_pressure_si, eos1, eos2, pt_var, epsrel);
+    int1, int2, int3, int4, int5, int6, love_number_k2, love_number_k3, love_number_k4, central_pressure_si, eos1, eos2, pt_var, epsrel);
 }
 
 /** @} */
