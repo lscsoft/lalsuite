@@ -482,8 +482,6 @@ static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronS
 }
 
 
-
-
 // CUTER-dev
 
 
@@ -693,12 +691,10 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
         s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
         if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
 
-        // TODO add the correction
-
         /* Phase transition correction, see Eq.14 of Postnikov et al. 2010 Phys. Rev. D 82, 024016 (https://arxiv.org/abs/1004.5098) */
         double eps_mean = vars->m / (4.0 / 3.0 * LAL_PI * (vars->r) * (vars->r) * (vars->r) ) ;
-        double yy_up = vars->r * vars->b / vars->H ;
-        vars->b = vars->H / vars->r * (yy_up + 3.0 * dpt_eps / eps_mean) ;
+        double hprim_plus = vars->b;
+        vars->b = hprim_plus - vars->H / vars->r * dpt_eps * 3.0 / eps_mean ;
 
         // Lower PT point
         h=hpt;
