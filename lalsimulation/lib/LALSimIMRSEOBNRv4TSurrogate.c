@@ -55,9 +55,6 @@
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
 static const char SurDataHDF5[] = "SEOBNRv4T_surrogate_v2.0.0.hdf5";
-static const INT4 SurDataHDF5_VERSION_MAJOR = 2;
-static const INT4 SurDataHDF5_VERSION_MINOR = 0;
-static const INT4 SurDataHDF5_VERSION_MICRO = 0;
 #endif
 
 #include <lal/LALSimInspiral.h>
