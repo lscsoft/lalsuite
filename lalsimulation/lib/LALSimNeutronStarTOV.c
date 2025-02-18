@@ -293,7 +293,7 @@ static struct tov_virial_ode_vars *tov_virial_ode_vars_cast(const double *y)
  * Also uses Eqs. (7) and (8) [ibid] for inner boundary data, and
  * Eqs. (18), (27), (28) of Damour & Nagar, Phys. Rev. D 80, 084035 (2009)
  * [See also: Eqs. (11) & (12) Hinderer et al. Phys. Rev. D 81 123016 (2010)]
- * for the metric perturbation used to obtain the Love number. 
+ * for the metric perturbation used to obtain the Love number.
  * For the Virial portion, implements equations provided by A. Nikolaidis, N. Stergioulas, H. Markakis. */
 static int tov_virial_ode(double h, const double *y, double *dy, void *params)
 {
@@ -334,7 +334,7 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
     double dI2 = r * pow(alpha, (-1.5)) * pow(beta, (2.0)) * dr;
     double dJ1 = 4.0 * LAL_PI * r * r * pow(alpha, (-0.5)) * 3.0 * p * dr;
     double dJ2 = pow(alpha, (-0.5)) * (pow(alpha, (-1.0)) * pow((beta * r), (2.0)) - 0.5 * pow((sqrt(alpha) - 1.0), (2.0))) * dr;
-    
+
 
     derivs->r = dr;
     derivs->m = dm;
@@ -370,7 +370,7 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
  * @retval <0 Failure.
  */
 int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *mass,
-    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6, 
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos, double epsrel)
 {
@@ -432,7 +432,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     double I2_0 = - 16.0 * LAL_PI * LAL_PI * r0 * r0 * r0 * r0 * pc * pc * dh - 6.0 * LAL_PI * r0 * r0 * pc * dh * dh;
     double J1_0 = - 12.0 * LAL_PI * r0 * r0 * r0 * pc * dh - 3.0 * r0 * dh * dh * dh;
     double J2_0 = - 16.0 * LAL_PI * LAL_PI * r0 * r0 * r0 * r0 * r0 * pc * pc * dh + 8.0 * LAL_PI * LAL_PI * r0 * r0 * r0 * r0 * r0 * pc * pc * dh * dh;
-    
+
 
     /* perform integration */
     vars->r = r0;
@@ -485,14 +485,55 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     return 0;
 }
 
+// CUTER-dev
 
-static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_virial_ode_vars *variables){
+
+/* For convenience, use a structure that provides a dictionary between
+ * a vector of the ode variables and what they represent. */
+struct tov_virial_pt_ode_vars {
+    double r;   /* radial coordinate, m */
+    double m;   /* mass within r in geometric units, m */
+    double mb;
+    double H;   /* stellar perturbation in arbitrary units */
+    double b;   /* derivative of metric pertubation in arbitrary units */
+    double I1;  /* dependent variable for Virial ODEs */
+    double I2;  /* dependent variable for Virial ODEs */
+    double J1; /* dependent variable for Virial ODEs */
+    double J2; /* dependent variable for Virial ODEs */
+};
+
+#define TOV_VIRIAL_PT_ODE_VARS_DIM (sizeof(struct tov_virial_pt_ode_vars)/sizeof(double))
+
+struct tov_pt_ode_vars {
+    double r;   /* radial coordinate, m */
+    double m;   /* mass within r in geometric units, m */
+    double mb;
+    double H;   /* stellar perturbation in arbitrary units */
+    double b;   /* derivative of metric pertubation in arbitrary units */
+};
+
+#define TOV_PT_ODE_VARS_DIM (sizeof(struct tov_pt_ode_vars)/sizeof(double))
+
+
+/* Casts an array of doubles to a structure with named parameter. */
+static struct tov_virial_pt_ode_vars *tov_virial_pt_ode_vars_cast(const double *y)
+{
+    union {
+        const double *y;
+        struct tov_virial_pt_ode_vars *v;
+    } u = {
+    y};
+    return u.v;
+}
+
+
+
+static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_virial_pt_ode_vars *variables){
 
     double dedp =
         XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos); // Central energy density derivative
     double dhdp = 1.0 / (eps + p);
     double dedh = dedp / dhdp;
-    // printf("Initiial of vars: %g %.6e %.6e \n", variables->m / LAL_MRSUN_SI, variables->r, variables->H);
 
     double rval = sqrt(-3.0 * dh / (2.0 * LAL_PI * (eps + 3.0 * p)));
     double mval = 4.0 * LAL_PI * rval * rval * rval * eps / 3.0;
@@ -500,11 +541,11 @@ static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronS
     double bval = 2.0 * rval;
 
     /* series expansion for the initial core */
-
     /* second factor of Eq. (7) of Lindblom (1992) */
     rval *= 1.0 + 0.25 * dh * (eps - 3.0 * p  - 0.6 * dedh) / (eps + 3.0 * p);
     /* second factor of Eq. (8) of Lindblom (1992) */
     mval *= 1.0 + 0.6 * dh * dedh / eps;
+    double mbval = mval;
 
 
     /* Virial ODEs starting points */
@@ -518,6 +559,7 @@ static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronS
     /* perform integration */
     variables->r = rval;
     variables->m = mval;
+    variables->mb = mbval;
     variables->H = Hval;
     variables->b = bval;
     variables->I1 = I1val;
@@ -541,8 +583,8 @@ static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronS
  * For the Virial portion, implements equations provided by A. Nikolaidis, N. Stergioulas, H. Markakis. */
 static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params)
 {
-    struct tov_virial_ode_vars *vars = tov_virial_ode_vars_cast(y);
-    struct tov_virial_ode_vars *derivs = tov_virial_ode_vars_cast(dy);
+    struct tov_virial_pt_ode_vars *vars = tov_virial_pt_ode_vars_cast(y);
+    struct tov_virial_pt_ode_vars *derivs = tov_virial_pt_ode_vars_cast(dy);
     struct eosDouble eosPT = *(struct eosDouble *)params;
 
     LALSimNeutronStarEOS *eos1 = eosPT.eos_low;
@@ -591,6 +633,7 @@ static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params
             4.0 * LAL_PI * r * r * r * p) / (r * (r - 2.0 * m)), 2.0);
     double dr = -r * (r - 2.0 * m) / (m + 4.0 * LAL_PI * r * r * r * p);
     double dm = 4.0 * LAL_PI * r * r * e * dr;
+    double dmb = 4.0 * LAL_PI * r * r * e * sqrt(A) * dr;
     double dH = b * dr;
     double db = -(C0 * H + C1 * b) * dr; // CUTER-dev exactly Eq.(12) in Hindered 2008 https://arxiv.org/pdf/0911.3535
 
@@ -605,6 +648,7 @@ static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params
 
     derivs->r = dr;
     derivs->m = dm;
+    derivs->mb = dmb;
     derivs->H = dH;
     derivs->b = db;
     derivs->I1 = dI1;
@@ -625,6 +669,7 @@ static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params
  * Masses and Radii", Astrophys. J. 398 569. Includes the phase transition treatement
  * @param[out] radius The radius of the star in m.
  * @param[out] mass The mass of the star in kg.
+ * @param[out] baryon_mass The baryon mass of the star in kg.
  * @param[out] int1 Virial parameter.
  * @param[out] int2 Virial parameter.
  * @param[out] int3 Virial parameter.
@@ -642,15 +687,16 @@ static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *mass,
+int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(
+    double *radius, double *mass, double *baryon_mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si, // Pressure in Pa
     LALSimNeutronStarEOS * eos1,LALSimNeutronStarEOS * eos2, double *pt_var, double epsrel)
 {
     /* ode integration variables */
     const double epsabs = 0.0;
-    double y[TOV_VIRIAL_ODE_VARS_DIM] = {0.0};
-    double dy[TOV_VIRIAL_ODE_VARS_DIM] = {0.0};
+    double y[TOV_VIRIAL_PT_ODE_VARS_DIM] = {0.0};
+    double dy[TOV_VIRIAL_PT_ODE_VARS_DIM]= {0.0};
 
     struct eosDouble eosPT;
     eosPT.eos_low = eos1;
@@ -658,17 +704,18 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     eosPT.hpt = pt_var[2];
     eosPT.delta_eps = pt_var[4] - pt_var[3];
     eosPT.flag_up = -1;
-    struct tov_virial_ode_vars *vars = tov_virial_ode_vars_cast(y);
+
+    struct tov_virial_pt_ode_vars *vars = tov_virial_pt_ode_vars_cast(y);
     /* Set up the actual ODE system to solve with tov_virial_ode */
     // gsl_odeiv_system sys = { tov_virial_ode_pt, NULL, TOV_VIRIAL_ODE_VARS_DIM, eos1};
-    gsl_odeiv_system sys = { tov_virial_ode_pt, NULL, TOV_VIRIAL_ODE_VARS_DIM, &eosPT};
+    gsl_odeiv_system sys = { tov_virial_ode_pt, NULL, TOV_VIRIAL_PT_ODE_VARS_DIM, &eosPT};
     /* Set up the iterative method to solve the ODE, and the dimension of the ODE set */
     gsl_odeiv_step *step =
-        gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_VIRIAL_ODE_VARS_DIM);
+        gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_VIRIAL_PT_ODE_VARS_DIM);
     /* Set up the precision of the numerical method with relative error epsrel */
     gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);
     /* Set up evolution function to solve ODE with the dimension of the ODE set */
-    gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_VIRIAL_ODE_VARS_DIM);
+    gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_VIRIAL_PT_ODE_VARS_DIM);
 
     // double npt_low = pt_var[0];
     double hpt = pt_var[2];
@@ -702,12 +749,14 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
         // Set up boundary condition
         h = h0;
         tov_initial_condition(ec, pc, dh, eos1, vars);
+        // printf("Initial condition set.\n");
         while (h > h1) {
             // printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
-            // int s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
             if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
         }
+
+        // printf("Done with the loop if hc < hpt\n");
 
     }else{
         printf("Hc > hpt\n");
@@ -761,18 +810,19 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
             if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
         }
     }
-
+    printf("Compute the compactness and the y for Lambda ...\n");
     /* compute tidal Love numbers and compactness at the surface of the star */
     c = vars->m / vars->r;      /* compactness */
     yy = vars->r * vars->b / vars->H; /* Eq. 13 of Hinderer et al. Phys. Rev. D 81 123016 */
+    printf("...done !!\n");
 
     /*take one final Euler step to get to surface*/
     for (int w = 0 ; w < 1 ; ++w){
-        tov_virial_ode(h, y, dy, eos1);
-        for (i = 0; i < TOV_ODE_VARS_DIM; ++i)
+        tov_virial_ode_pt(h, y, dy, &eosPT);
+        for (i = 0; i < TOV_PT_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
             y[i] += dy[i] * (0.0 - h1);
     }
-
+    printf("Done taking the final step with Euler.\n");
     *int3 = (1.0 - vars->m / vars->r) * pow((1.0 - 2.0 * vars->m / vars->r), (-0.5)) - 1.0;
     *int6 = vars->r * (*int3);
 
@@ -784,6 +834,7 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
     /* convert from geometric units to SI units */
     *radius = vars->r;
     *mass = vars->m * LAL_MSUN_SI / LAL_MRSUN_SI;
+    *baryon_mass = vars->mb * LAL_MSUN_SI / LAL_MRSUN_SI;
     *love_number_k2 = tidal_Love_number_k2(c, yy);
     *love_number_k3 = tidal_Love_number_k3(c, yy);
     *love_number_k4 = tidal_Love_number_k4(c, yy);
@@ -797,7 +848,7 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(double *radius, double *
 }
 
 
-int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass, 
+int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos)
 {
     const double epsrel = 1e-6;
@@ -805,7 +856,7 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
 }
 
 int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
-    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6, 
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos)
 {
@@ -815,13 +866,14 @@ int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
 }
 
 // CUTER-dev
-int XLALSimNeutronStarVirialPTODEIntegrate(double *radius, double *mass,
+int XLALSimNeutronStarVirialPTODEIntegrate(
+    double *radius, double *mass, double *baryon_mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
     LALSimNeutronStarEOS * eos1, LALSimNeutronStarEOS * eos2, double *pt_var)
 {
     const double epsrel = 1e-6;
-    return XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(radius, mass,
+    return XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(radius, mass, baryon_mass,
     int1, int2, int3, int4, int5, int6, love_number_k2, love_number_k3, love_number_k4, central_pressure_si, eos1, eos2, pt_var, epsrel);
 }
 
