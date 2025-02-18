@@ -63,7 +63,11 @@
     # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
     # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
     - ${PYTHON} -m pip install --upgrade pip
-    - ${PYTHON} -m pip install 'numpy>=2.0.0rc1'
+    - ${PYTHON} -m pip install
+          'numpy>=2.0.0'
+          setuptools
+          wheel
+    - ${PYTHON} -m pip list installed
     # Build wheel
     - ./00boot
     - SSE="solar_system_ephemerides/ephemerides"
