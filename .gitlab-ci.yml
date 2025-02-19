@@ -139,26 +139,90 @@ default:
 # to use:
 # - !reference [.name-of-fragment]
 
-# simple bash command to retry a stage up to 3 times
-# with a 15-second delay (mainly to survive transient
-# network issues)
 #
-# set RETRY_EXIT_PATTERN to an awk pattern to exit the
-# command if the pattern is detected in its output
+# Run a command up to 5 times with delays, mainly to survive
+# transient network issues. The delay starts at 15 seconds,
+# and increases by 15 seconds after each retry. If all
+# retried commands fail, exit with a given exit code.
 #
-# set RETRY_CLEANUP to a cleanup command to execute
-# before re-attempting the command
+# Usage:
+#   retry [--exit-code <exit-code>]
+#         [--max-try <2--5>]
+#         [--exit-patt <awk-pattern>]
+#         [--cleanup-cmd <cleanup-command>]
+#         [--]
+#         <command> <args>...
+#
+# Options:
+#   --exit-code:
+#       Exit code if all retries fail (1--255, default: 111).
+#   --max-try:
+#       How many times to try <command> (2--5, default: 3).
+#   --exit-patt:
+#       Fail if <awk-pattern> is detected in the output of
+#       <command>. A default pattern may also be set using
+#       the $RETRY_EXIT_PATT environment variable.
+#   --cleanup-cmd:
+#       Run <cleanup-command> before retrying <command>. A
+#       default cleanup command may also be set using the
+#       $RETRY_CLEANUP_CMD environment variable.
+#
 .retry: |
-  RETRY_EXIT_PATTERN=
-  RETRY_CLEANUP=
   retry() {
-    local n=1
+    local exitcode=111
     local max=3
-    local delay=15
     local awkprog="{print}"
-    if [[ "X${RETRY_EXIT_PATTERN}" != X ]]; then
-      awkprog="${awkprog} ${RETRY_EXIT_PATTERN} {exit 1}"
+    if [[ "X${RETRY_EXIT_PATT}" != X ]]; then
+      awkprog="${awkprog} ${RETRY_EXIT_PATT} {exit ${exitcode}}"
     fi
+    local cleanup="${RETRY_CLEANUP_CMD}"
+    while true; do
+      case "$1" in
+        --exit-code)
+          shift
+          if [ 1 -le $1 ] && [ $1 -le 255 ]; then
+            exitcode=$1
+          else
+            echo "retry: expected 1--255 as argument to --exit-code; got '$1'" >&2
+            exit 1
+          fi
+          shift
+          ;;
+        --max-try)
+          shift
+          if [ 2 -le $1 ] && [ $1 -le 5 ]; then
+            max=$1
+          else
+            echo "retry: expected 2--5 as argument to --max-try; got '$1'" >&2
+            exit 1
+          fi
+          shift
+          ;;
+        --exit-patt)
+          shift
+          awkprog="${awkprog} $1 {exit ${exitcode}}"
+          shift
+          ;;
+        --cleanup-cmd)
+          shift
+          if [ "X${cleanup}" != X ]; then
+            cleanup="${cleanup}; $1"
+          else
+            cleanup="$1"
+          fi
+          shift
+          ;;
+        --)
+          shift
+          break
+          ;;
+        *)
+          break
+          ;;
+      esac
+    done
+    local n=1
+    local delay=15
     while true; do
       if ( set -o pipefail; "$@" 2>&1 | awk "${awkprog}" ); then
         break
@@ -166,14 +230,17 @@ default:
         if [[ ${n} -lt ${max} ]]; then
           ((n++))
           echo "retry: command failed: $@"
-          echo "retry: cleaning up: ${RETRY_CLEANUP}"
-          eval ${RETRY_CLEANUP}
+          if [ "X${cleanup}" != X ]; then
+            echo "retry: cleaning up: ${cleanup}"
+            eval ${cleanup}
+          fi
           echo "retry: sleeping for ${delay} seconds..."
           sleep ${delay};
+          ((delay+=15))
           echo "retry: attempt ${n}/${max}: $@"
         else
           echo "retry: command failed after ${n} attempts: $@" >&2
-          exit 1
+          exit ${exitcode}
         fi
       fi
     done

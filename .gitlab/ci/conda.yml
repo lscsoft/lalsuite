@@ -15,8 +15,8 @@
   #   corrupted packages in $CONDA_PKGS_DIRS
   # - need to remove $CONDA_PKGS_DIRS before retrying
   - !reference [.retry]
-  - RETRY_EXIT_PATTERN='/appears to be corrupted/'
-  - RETRY_CLEANUP="rm -rf ${CONDA_PKGS_DIRS}"
+  - RETRY_EXIT_PATT='/appears to be corrupted/'
+  - RETRY_CLEANUP_CMD="test ! -d '${CONDA_PKGS_DIRS}' || rm -rf ${CONDA_PKGS_DIRS}/"
   # init conda
   - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
   - command -v conda &> /dev/null && CONDA_ROOT=$(conda info --base) || CONDA_ROOT=/opt/conda

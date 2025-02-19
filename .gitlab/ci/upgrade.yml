@@ -101,9 +101,8 @@ upgrade:conda:linux:
     # - need to remove environment upgrade-test before retrying;
     #   `conda env remove -n upgrade-test` does not reliably remove
     #   the environment directory, so need to manually delete
-    - _SAVE_RETRY_CLEANUP="${RETRY_CLEANUP}"
-    - RETRY_CLEANUP="${_SAVE_RETRY_CLEANUP}; rm -rf ${CONDA_ENVS_PATH}/upgrade-test"
-    - retry conda create -n upgrade-test
+    - retry --cleanup-cmd "rm -rf ${CONDA_ENVS_PATH}/upgrade-test"
+          conda create -n upgrade-test
           python=${LALSUITE_PYTHON_VERSION}
           lal
           lalframe
@@ -114,7 +113,6 @@ upgrade:conda:linux:
           lalinference
           lalpulsar
           lalapps
-    - RETRY_CLEANUP="${_SAVE_RETRY_CLEANUP}"
     # install new packages
     - retry conda update -n upgrade-test --use-local
           lal
