@@ -63,7 +63,11 @@
     # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
     # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
     - ${PYTHON} -m pip install --upgrade pip
-    - ${PYTHON} -m pip install 'numpy>=2.0.0rc1'
+    - ${PYTHON} -m pip install
+          'numpy>=2.0.0'
+          setuptools
+          wheel
+    - ${PYTHON} -m pip list installed
     # Build wheel
     - ./00boot
     - SSE="solar_system_ephemerides/ephemerides"
@@ -160,6 +164,10 @@ wheel:cp311-cp311-manylinux_2_28_x86_64:
   extends:
     - .wheel:manylinux_2_28_x86_64
 wheel:cp312-cp312-manylinux_2_28_x86_64:
+  # allow to fail due to build error in ligo-segments:
+  #   https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/2418#note_1324099
+  # revert once !2397 is merged
+  allow_failure: true
   extends:
     - .wheel:manylinux_2_28_x86_64
   rules:  # reference build for this platform
