@@ -55,9 +55,6 @@
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
 static const char SurDataHDF5[] = "SEOBNRv4T_surrogate_v2.0.0.hdf5";
-static const INT4 SurDataHDF5_VERSION_MAJOR = 2;
-static const INT4 SurDataHDF5_VERSION_MINOR = 0;
-static const INT4 SurDataHDF5_VERSION_MICRO = 0;
 #endif
 
 #include <lal/LALSimInspiral.h>
@@ -539,10 +536,7 @@ int Surrogatedata_Init(
   XLALPrintInfo("Surrogate metadata\n============\n");
   PrintInfoStringAttribute(file, "Email");
   PrintInfoStringAttribute(file, "Description");
-  ret = ROM_check_version_number(file, SurDataHDF5_VERSION_MAJOR,
-                                       SurDataHDF5_VERSION_MINOR,
-                                       SurDataHDF5_VERSION_MICRO);
-  ret |= ROM_check_canonical_file_basename(file,SurDataHDF5,"CANONICAL_FILE_BASENAME");
+  ret = ROM_check_canonical_file_basename(file,SurDataHDF5,"CANONICAL_FILE_BASENAME");
 
   XLALFree(path);
   XLALH5FileClose(file);

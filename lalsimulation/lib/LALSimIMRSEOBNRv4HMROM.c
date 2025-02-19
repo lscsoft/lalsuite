@@ -67,9 +67,6 @@
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
 static const char ROMDataHDF5[] = "SEOBNRv4HMROM_v1.0.hdf5";
-static const INT4 ROMDataHDF5_VERSION_MAJOR = 1;
-static const INT4 ROMDataHDF5_VERSION_MINOR = 0;
-static const INT4 ROMDataHDF5_VERSION_MICRO = 0;
 #endif
 
 #include <lal/LALSimInspiral.h>
@@ -662,10 +659,7 @@ int SEOBNRROMdataDS_Init(
   XLALPrintInfo("ROM metadata\n============\n");
   PrintInfoStringAttribute(file, "Email");
   PrintInfoStringAttribute(file, "Description");
-  ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR,
-                                 ROMDataHDF5_VERSION_MINOR,
-                                 ROMDataHDF5_VERSION_MICRO);
-  ret |= ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
+  ret = ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->hqhs, dir, "hqhs",index_mode);
   if (ret==XLAL_SUCCESS) XLALPrintInfo("%s : submodel high q high spins loaded sucessfully.\n", __func__);
