@@ -19,8 +19,8 @@
   - RETRY_CLEANUP="rm -rf ${CONDA_PKGS_DIRS}"
   # init conda
   - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
-  - command -v conda &> /dev/null && CONDA_ROOT=$(conda info --base) || true
-  - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
+  - command -v conda &> /dev/null && CONDA_ROOT=$(conda info --base) || CONDA_ROOT=/opt/conda
+  - source ${CONDA_ROOT}/etc/profile.d/conda.sh
   # configure conda options
   - rm -fv ${CONDARC}  # start afresh
   - conda config --file ${CONDARC} --set always_yes yes
