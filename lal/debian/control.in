@@ -16,7 +16,6 @@ Build-Depends:
  python3-all-dev,
  python3-dateutil,
  python3-freezegun,
- python3-ligo-lw,
  python3-ligo-segments,
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-pytest,
@@ -94,9 +93,10 @@ Depends:
  liblal@LIBMAJOR@ (= ${binary:Version}),
  liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
  python3-dateutil,
- python3-ligo-lw,
  python3-ligo-segments,
  python3-scipy,
+Recommends:
+ python3-ligo-lw,
 Description: Python 3 bindings for LAL
  The LVK Algorithm Library for gravitational wave analysis.
  This package contains Python 3 bindings for the LAL library.
