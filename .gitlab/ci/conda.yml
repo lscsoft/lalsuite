@@ -19,7 +19,8 @@
   - RETRY_CLEANUP="rm -rf ${CONDA_PKGS_DIRS}"
   # init conda
   - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
-  - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
+  - command -v conda &> /dev/null && CONDA_ROOT=$(conda info --base) || CONDA_ROOT=/opt/conda
+  - source ${CONDA_ROOT}/etc/profile.d/conda.sh
   # configure conda options
   - rm -fv ${CONDARC}  # start afresh
   - conda config --file ${CONDARC} --set always_yes yes
@@ -29,7 +30,9 @@
   - conda config --show aggressive_update_packages >> ${CONDARC}
   - conda config --file ${CONDARC} --remove aggressive_update_packages openssl
   # install build helpers
-  - retry conda install -n base
+  - retry conda install
+        --name base
+        --satisfied-skip-solve
         "conda-build!=3.18.10,!=24.11.1"
         conda-forge-pinning
         "conda-smithy>=3.7.5"
@@ -156,16 +159,16 @@
 
 # activate conda LALSuite development environment
 .conda-lalsuite-dev:
-  - conda env create
+  - retry conda env create
         --file ${ENVIRONMENT_FILE}
         --quiet
   - conda list --name lalsuite-dev
   - conda activate lalsuite-dev
   # manually install packages that have circular dependencies upon lal
-  - conda install --yes --quiet --name lalsuite-dev
+  - retry conda install --yes --quiet --name lalsuite-dev
         python-ligo-lw
   # then forcibly remove lalsuite
-  - conda uninstall --yes --quiet --name lalsuite-dev --solver classic --force-remove
+  - retry conda uninstall --yes --quiet --name lalsuite-dev --solver classic --force-remove
         "liblal*"
         "lal*"
         "python-lal*"
