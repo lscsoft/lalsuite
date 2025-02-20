@@ -20,7 +20,7 @@
     # init yum stuff from the template
     - !reference [".rhel:base", before_script]
     # install our packages
-    - yum -y -q install
+    - retry yum -y -q install
           createrepo
           git
           git-lfs
@@ -37,7 +37,7 @@
       gpgcheck=0
       EOF
     # install required packages
-    - yum -y install "lal*" "liblal*-devel" "python*-lal*" --exclude "lalsuite*" --exclude lalapps --exclude "*lalpulsar*"
+    - retry yum -y install "lal*" "liblal*-devel" "python*-lal*" --exclude "lalsuite*" --exclude lalapps --exclude "*lalpulsar*"
 
 lalinference_testjob:
   extends:

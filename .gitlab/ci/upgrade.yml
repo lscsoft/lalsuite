@@ -15,9 +15,9 @@
   script:
     - !reference [.retry]
     # install latest release
-    - yum -y -q install lal* python*-lal* --exclude lalsuite*
+    - retry yum -y -q install lal* python*-lal* --exclude lalsuite*
     # create local repo
-    - yum -y -q install createrepo
+    - retry yum -y -q install createrepo
     - LOCAL_REPO="${CI_PROJECT_DIR}/local-builds"
     - cp -r rpmbuild/RPMS ${LOCAL_REPO}
     - createrepo --quiet --workers "${CPU_COUNT}" "${LOCAL_REPO}"
@@ -30,7 +30,7 @@
       gpgcheck=0
       EOF
     # install new packages
-    - yum -y upgrade
+    - retry yum -y upgrade
 
 upgrade:rpm-el8:
   extends:

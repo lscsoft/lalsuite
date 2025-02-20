@@ -39,7 +39,7 @@
         /BuildRequires: *liblal/d
         /BuildRequires: *python.*-lal/d
       ' ${PACKAGE}.spec > ${PACKAGE}-nolal.spec
-    - yum-builddep -y ${PACKAGE}-nolal.spec
+    - retry yum-builddep -y ${PACKAGE}-nolal.spec
     # we use xargs here in case CONFIGURE_FLAGS contains
     # variables with spaces, etc etc
     - DEFAULT_CONFIGURE_FLAGS="--prefix=${PWD}/../_inst --enable-strict-defs"
