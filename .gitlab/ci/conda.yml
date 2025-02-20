@@ -10,11 +10,10 @@
 #       macos runners at CIT, if you need a writable base env
 #       on those machines, install miniconda/miniforge yourself
 .conda-init:
-  # use retry()
+  # set up retry()
   # - "appears to be corrupted" error messages are caused by
   #   corrupted packages in $CONDA_PKGS_DIRS
   # - need to remove $CONDA_PKGS_DIRS before retrying
-  - !reference [.retry]
   - RETRY_EXIT_PATT='/appears to be corrupted/'
   - RETRY_CLEANUP_CMD="test ! -d '${CONDA_PKGS_DIRS}' || rm -rf ${CONDA_PKGS_DIRS}/"
   # init conda

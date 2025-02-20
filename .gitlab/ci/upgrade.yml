@@ -13,6 +13,7 @@
   extends:
     - .upgrade-test
   script:
+    - !reference [.retry]
     # install latest release
     - yum -y -q install lal* python*-lal* --exclude lalsuite*
     # create local repo

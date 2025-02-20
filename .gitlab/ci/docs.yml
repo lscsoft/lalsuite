@@ -9,6 +9,7 @@ documentation:
   stage: documentation
   needs: []
   script:
+    - !reference [.retry]
     - apt-get -y -q install pandoc
     - ./00boot
     - ./configure --enable-doxygen --prefix=$(pwd)/_inst

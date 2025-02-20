@@ -16,6 +16,7 @@
     - .rpmbuild:el8
     - .integration-tests
   before_script:
+    - !reference [.build-init]
     # init yum stuff from the template
     - !reference [".rhel:base", before_script]
     # install our packages
@@ -65,7 +66,6 @@ lalpulsar_longtests:
   extends:
     - .long-test-job
   script:
-    - !reference [.build-init]
     - PACKAGE=lalpulsar
     - cd ${PACKAGE}/
     # unpack tarball
@@ -122,6 +122,7 @@ top-level:pulsar:
     - .make-distcheck
     - .integration-tests
   before_script:
+    - !reference [.build-init]
     # install build dependencies
     - apt-get -y -q update
     - cat lal/debian/control.in lalpulsar/debian/control.in

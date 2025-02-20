@@ -248,6 +248,8 @@ default:
 
 # basic steps for a job that compiles stuff
 .build-init:
+  # use retry()
+  - !reference [.retry]
   # do not save coredumps
   - ulimit -S -c 0
   # set up ccache

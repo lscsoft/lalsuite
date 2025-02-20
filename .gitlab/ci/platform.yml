@@ -29,6 +29,7 @@ platform:debian:bookworm:
     CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
     ENVIRONMENT_FILE: "common/conda/environment.yml"
   before_script:
+    - !reference [.build-init]
     # configure conda
     - !reference [.conda-init]
     # install the dev environment for the default python version
