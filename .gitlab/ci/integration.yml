@@ -124,8 +124,9 @@ top-level:pulsar:
   before_script:
     - !reference [.build-init]
     # install build dependencies
-    - apt-get -y -q update
-    - cat lal/debian/control.in lalpulsar/debian/control.in
+    - retry apt-get -y -q update
+    - pkgs=`cat lal/debian/control.in lalpulsar/debian/control.in
       | sed -n '/^Build-Depends:/{:top;n;s/^ \([^, ]*\).*/\1/p;t top}'
       | sed '/lal/d;s/cfitsio3/cfitsio/'
-      | sort | uniq | xargs apt-get -y -q install liboctave-dev
+      | sort | uniq`
+    - retry apt-get -y -q install ${pkgs} liboctave-dev

@@ -17,16 +17,16 @@
     - !reference [.build-init]
     - PACKAGE=${CI_JOB_NAME%%:*}
     # install extra build requirements
-    - apt-get install -y -q -q
+    - retry apt-get install -y -q -q
           lintian
           python3-venv
     # setup local apt repository to house upstream packages
     - if test -n "$(find . -maxdepth 1 -name '*.deb' -print -quit)"; then
-          apt-get -y -q -q install local-apt-repository;
+          retry apt-get -y -q -q install local-apt-repository;
           mkdir -pv /srv/local-apt-repository;
           mv -v *.deb /srv/local-apt-repository;
           /usr/lib/local-apt-repository/rebuild;
-          apt-get -y -q update;
+          retry apt-get -y -q update;
       fi
     # create orig tarball
     - cd ${PACKAGE}/
@@ -43,7 +43,7 @@
     # update changelog
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
-    - mk-build-deps
+    - retry mk-build-deps
           --tool "apt-get -y -q -o Debug::pkgProblemResolver=yes --no-install-recommends"
           --install
           --remove
