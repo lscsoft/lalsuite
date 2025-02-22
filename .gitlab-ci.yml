@@ -186,9 +186,10 @@ default:
   # set up ccache
   - export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
   # print environment for debugging
-  - echo "===== env ====="
-  - env
-  - echo "----- env -----"
+  - |
+    echo "===== env ====="
+    declare -x | cut -c 12-
+    echo "----- env -----"
 
 # -- base templates ----------------------------------
 
