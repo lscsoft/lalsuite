@@ -22,8 +22,6 @@ clang:
   parallel:
     matrix:
       - CLANG_VERSION:
-         - 16
-         - 17
          - 18
          - 19
          - 20
