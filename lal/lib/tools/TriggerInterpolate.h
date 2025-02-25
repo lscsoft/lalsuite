@@ -108,7 +108,7 @@ int XLALTriggerInterpolateCubicSplineAmpPhase(
  *
  * \warning It is an error if the window size is less than 2.
  */
-    int XLALTriggerInterpolateCubicSpline(
+int XLALTriggerInterpolateCubicSpline(
     double *tmax,
     double _Complex *ymax,
     const double _Complex *y,
