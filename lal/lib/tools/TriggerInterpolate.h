@@ -69,7 +69,7 @@ extern "C" {
  * Upon failure, the return value is nonzero and neither \c *tmax nor \c *ymax
  * are modified.
  *
- * The recommended algorithm are \c XLALTriggerInterpolateCubicSplineAmpPhase.
+ * The recommended algorithms are \c XLALTriggerInterpolateCubicSplineAmpPhase.
  * and \c XLALTriggerInterpolateQuadraticFit. The
  * \c XLALTriggerInterpolateCubicSpline and \c XLALTriggerInterpolateLanczos
  * methods should not be used because they tend to exhibit oscillations between
