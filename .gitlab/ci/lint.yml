@@ -60,7 +60,7 @@ lint:api-merge-diff:
     - .lint:api
   script:
     # install required packages
-    - yum -y install
+    - retry yum -y install
           abi-dumper
           abi-compliance-checker
     # configure and build LALSuite before changes are merged
@@ -107,7 +107,7 @@ lint:api-last-release:
     - .lint:api
   script:
     # install required packages
-    - yum -y install
+    - retry yum -y install
           lalsuite-devel
           lalsuite-debug
           abi-dumper
