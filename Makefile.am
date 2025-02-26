@@ -65,32 +65,6 @@ uninstall-local:
 
 endif
 
-.PHONY: update-authors
-update-authors:
-	$(AM_V_at)cd $(top_srcdir); \
-	echo "Updating .mailmap entries"; \
-	./common/code-quality-scripts/update_mailmap || exit 1; \
-	for subdir in @subdirs@; do \
-		echo "Updating authors of $${subdir}"; \
-		./common/code-quality-scripts/update_authors $${subdir} || exit 1; \
-	done; \
-	if git diff --exit-code -- .mailmap lal*/AUTHORS; then \
-		echo "------------------------------------------------------------------------"; \
-		echo "The LALSuite author lists are up to date."; \
-		echo "------------------------------------------------------------------------"; \
-		exit 0; \
-	fi; \
-	filestocommit=`git diff --name-only -- .mailmap lal*/AUTHORS | xargs echo`; \
-	echo "------------------------------------------------------------------------"; \
-	echo "The LALSuite author files are incomplete; see the above diff."; \
-	echo ""; \
-	echo "To fix this, run these commands from the top-level of the Git repo:"; \
-	echo ""; \
-	echo "\$$ git commit -m 'Update authors' $$filestocommit"; \
-	echo "\$$ make update-authors"; \
-	echo "------------------------------------------------------------------------"; \
-	exit 1
-
 .PHONY: pretty
 pretty:
 	$(AM_V_at)for subdir in @subdirs@; do \

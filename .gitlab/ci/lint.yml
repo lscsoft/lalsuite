@@ -145,6 +145,13 @@ lint:pre-commit:
   extends:
     .lint
   image: igwn/lalsuite-dev:el8
+  variables:
+    GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
+  before_script:
+    # this jobs needs the full Git history to update the authors
+    - git fetch --unshallow --quiet
+    # check that the first commit in LALSuite exists
+    - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
   script:
     # install pre-commit
     - |
@@ -172,31 +179,6 @@ lint:pre-commit:
   artifacts:
     reports:
       codequality: code-quality-pre-commit.json
-
-lint:authors:
-  extends:
-    - .build-job
-    - .lint
-  image: igwn/lalsuite-dev:el8
-  variables:
-    # this jobs needs the full Git history to update the authors
-    GIT_STRATEGY: fetch
-  script:
-    # this jobs needs the full Git history to update the authors
-    - git fetch --unshallow --quiet
-    # check that the first commit in LALSuite exists
-    - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
-    # configure LALSuite
-    - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} --disable-doxygen --disable-swig
-    # check .mailmap and lal*/AUTHORS
-    - |
-      make update-authors && status=0 || status=$?
-      ./common/code-quality-scripts/git_diff_to_code_quality_report "Mailmap and author list" > code-quality-authors.json
-      exit ${status}
-  artifacts:
-    reports:
-      codequality: code-quality-authors.json
 
 lint:depends:
   extends:

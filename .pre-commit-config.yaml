@@ -20,3 +20,5 @@ repos:
       - id: fix-makefile-indents
 
       - id: fix-gitignore-entries
+
+      - id: fix-mailmap-authors
