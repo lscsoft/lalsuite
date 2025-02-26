@@ -22,3 +22,5 @@ repos:
       - id: fix-gitignore-entries
 
       - id: fix-mailmap-authors
+
+      - id: make-code-pretty

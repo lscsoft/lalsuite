@@ -238,9 +238,6 @@ LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat]
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
 
-# check for pretty code formatters
-LALSUITE_PROG_PRETTY_CODE
-
 # configure CUDA
 LALSUITE_USE_CUDA
 

@@ -13,7 +13,6 @@ dependencies:
   - autoconf
   - automake
   - bc
-  - black ==22.*   # keep this version in sync with CONTRIBUTING.md
   - cfitsio
   - doxygen
   - fftw
@@ -49,5 +48,3 @@ dependencies:
   - tqdm
   - xz
   - zlib
-  - pip:
-    - astyle ==3.4.*   # keep this version in sync with CONTRIBUTING.md
