@@ -69,10 +69,10 @@ endif
 update-authors:
 	$(AM_V_at)cd $(top_srcdir); \
 	echo "Updating .mailmap entries"; \
-	./common/maintainer-scripts/update_mailmap || exit 1; \
+	./common/code-quality-scripts/update_mailmap || exit 1; \
 	for subdir in @subdirs@; do \
 		echo "Updating authors of $${subdir}"; \
-		./common/maintainer-scripts/update_authors $${subdir} || exit 1; \
+		./common/code-quality-scripts/update_authors $${subdir} || exit 1; \
 	done; \
 	if git diff --exit-code -- .mailmap lal*/AUTHORS; then \
 		echo "------------------------------------------------------------------------"; \

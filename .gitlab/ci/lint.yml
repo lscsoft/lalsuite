@@ -81,7 +81,7 @@ lint:api-merge-diff:
     - make install
     # compare API of LALSuite libraries before and after changes are merged
     - export PYTHONUNBUFFERED=yes
-    - ./common/maintainer-scripts/compare_library_api
+    - ./common/code-quality-scripts/compare_library_api
           --old-lib-dir=./OLD/lib
           --old-pub-header-dir=./OLD/include/lal
           --old-sha=${CI_MERGE_REQUEST_DIFF_BASE_SHA}
@@ -119,7 +119,7 @@ lint:api-last-release:
     - make install
     # compare API of LALSuite libraries between last release and current commit
     - export PYTHONUNBUFFERED=yes
-    - ./common/maintainer-scripts/compare_library_api
+    - ./common/code-quality-scripts/compare_library_api
           --old-lib-dir=/usr/lib64
           --old-pub-header-dir=/usr/include/lal
           --old-debug-dir=/usr/lib/debug
@@ -160,7 +160,7 @@ lint:authors:
     # check .mailmap and lal*/AUTHORS
     - |
       make update-authors && status=0 || status=$?
-      ./common/maintainer-scripts/git_diff_to_code_quality_report "Mailmap and author list" > code-quality-authors.json
+      ./common/code-quality-scripts/git_diff_to_code_quality_report "Mailmap and author list" > code-quality-authors.json
       exit ${status}
   artifacts:
     reports:
@@ -179,7 +179,7 @@ lint:depends:
           python-debian
           python-rpm-spec
   script:
-    - ./common/maintainer-scripts/check_library_dependencies
+    - ./common/code-quality-scripts/check_library_dependencies
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
@@ -203,7 +203,7 @@ lint:execute:
     # check for changes
     - |
       git diff --quiet && status=0 || status=1
-      ./common/maintainer-scripts/git_diff_to_code_quality_report "File should not be executable" > code-quality-execute.json
+      ./common/code-quality-scripts/git_diff_to_code_quality_report "File should not be executable" > code-quality-execute.json
       if test ${status} -ne 0; then
         echo 'ERROR: the following files cannot be executable:'
         git diff --name-only
@@ -323,7 +323,7 @@ lint:pretty:
     # run pretty formatters and check for changes
     - |
       make pretty && status=0 || status=$?
-      ./common/maintainer-scripts/git_diff_to_code_quality_report "Code pretty formatting" > code-quality-pretty.json
+      ./common/code-quality-scripts/git_diff_to_code_quality_report "Code pretty formatting" > code-quality-pretty.json
       exit ${status}
   artifacts:
     reports:
