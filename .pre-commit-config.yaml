@@ -18,3 +18,5 @@ repos:
     rev: v0.1
     hooks:
       - id: fix-makefile-indents
+
+      - id: fix-gitignore-entries
