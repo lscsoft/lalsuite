@@ -141,6 +141,38 @@ lint:api-last-release:
     # run on release branches
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /release/'
 
+lint:pre-commit:
+  extends:
+    .lint
+  image: igwn/lalsuite-dev:el8
+  script:
+    # install pre-commit
+    - |
+      python3.11 -m venv .venv
+      source .venv/bin/activate
+      python3 -m pip install --upgrade pip
+      python3 -m pip install pre-commit
+    # run pre-commit
+    - |
+      pre-commit run -a && status=0 || status=$?
+      if ! git diff --quiet; then
+        echo "------------------------------------------------------------------------"
+        echo "The pre-commit hooks have made the following fixes to your code:"
+        echo "------------------------------------------------------------------------"
+        git diff
+        echo "------------------------------------------------------------------------"
+        echo "To reproduce these fixes locally, install pre-commit, then run:"
+        echo "$ pre-commit install"
+        echo "$ pre-commit run -a"
+        echo "See CONTRIBUTING.md for further information."
+        echo "------------------------------------------------------------------------"
+      fi
+      ./common/code-quality-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
+      exit ${status}
+  artifacts:
+    reports:
+      codequality: code-quality-pre-commit.json
+
 lint:authors:
   extends:
     - .build-job
