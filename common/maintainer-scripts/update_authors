@@ -1,6 +1,8 @@
 #!/usr/bin/env perl
 # Author: Karl Wette, 2022
 
+# Update the AUTHORS file based on the Git commit history.
+
 use strict;
 use File::Copy;
 

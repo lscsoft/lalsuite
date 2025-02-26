@@ -1,6 +1,11 @@
 #!/usr/bin/env perl
 # Author: Karl Wette, 2016
 
+# Perform some cleanup operations on the Git `.mailmap` file:
+# - sync `.mailmap` with Git log entries;
+# - provide unique author/email mappings;
+# - prefer `ligo.org` email addresses.
+
 use strict;
 
 my %name2mails;

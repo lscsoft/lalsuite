@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # Author: Karl Wette, 2022
 
+# Check for consistent library dependencies across `.gitlab-ci.yml`,
+# autotools, and the Conda, Debian, and RPM packages. This script is
+# run by the `lint:depends` GitLab CI job.
+
 import logging
 import os
 import sys
