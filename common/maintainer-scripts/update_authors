@@ -17,6 +17,7 @@ while (<IN>) {
   next if /^\s*#/;
   $authors{$_} = 1;
 }
+close IN;
 
 open IN, "git log --full-history --no-merges HEAD -- $subdir/ | git shortlog --summary |" or die "$0: git log failed: $!";
 binmode IN, ":encoding(UTF-8)";
@@ -25,6 +26,7 @@ while (<IN>) {
   my ($n, $author) = m/^\s*(\d+)\s+(.+)$/ or die "$0: could not match line from git log: $_";
   $authors{$author} = 1;
 }
+close IN;
 
 if (defined($ENV{"UPDATE_AUTHORS_WITH_GIT_BLAME"})) {
   my @files;
@@ -34,6 +36,7 @@ if (defined($ENV{"UPDATE_AUTHORS_WITH_GIT_BLAME"})) {
     chomp;
     push @files, $_;
   }
+  close IN;
   my $nfiles = @files;
   for (my $i = 0; $i < @files; ++$i) {
     print STDERR "$0: updating authors of $subdir: file $i of $nfiles: $files[$i]\n";
@@ -45,6 +48,7 @@ if (defined($ENV{"UPDATE_AUTHORS_WITH_GIT_BLAME"})) {
       next if defined($authors{$_});
       $authors{$_} = 1;
     }
+    close IN2;
   }
 }
 
@@ -53,4 +57,5 @@ binmode OUT, ":encoding(UTF-8)";
 foreach my $author (sort { $a cmp $b } keys(%authors)) {
   print OUT "$author\n";
 }
+close OUT;
 move("$subdir/AUTHORS.tmp", "$subdir/AUTHORS") or die "$0: could not move $subdir/AUTHORS.tmp to $subdir/AUTHORS: $!";
