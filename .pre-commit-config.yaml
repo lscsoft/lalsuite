@@ -14,9 +14,14 @@ repos:
         args: [--unique]
         files: \.gitattributes$
 
+      - id: check-executables-have-shebangs
+
   - repo: https://git.ligo.org/lscsoft/lalsuite-code-quality.git
     rev: v0.1
     hooks:
+      - id: remove-executable-bits
+        exclude: 00boot$|common/|conda/|debian/|gnuscripts/
+
       - id: fix-makefile-indents
 
       - id: fix-gitignore-entries

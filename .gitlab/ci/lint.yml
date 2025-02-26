@@ -198,35 +198,6 @@ lint:depends:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
 
-lint:execute:
-  extends:
-    - .build-job
-    - .lint
-  image: igwn/lalsuite-dev:el8
-  needs: []
-  script:
-    # remove execute permissions from file which should not be executable
-    - |
-      git ls-files |
-      grep -v '\(^\|/\)00boot$' |
-      grep -v '^common/' |
-      grep -v '/conda/' |
-      grep -v '/debian/' |
-      grep -v '\(^\|/\)gnuscripts/' |
-      xargs chmod a-x
-    # check for changes
-    - |
-      git diff --quiet && status=0 || status=1
-      ./common/code-quality-scripts/git_diff_to_code_quality_report "File should not be executable" > code-quality-execute.json
-      if test ${status} -ne 0; then
-        echo 'ERROR: the following files cannot be executable:'
-        git diff --name-only
-      fi
-      exit ${status}
-  artifacts:
-    reports:
-      codequality: code-quality-execute.json
-
 lint:gitignore:
   extends:
     - .build-job
