@@ -1,6 +1,6 @@
 /*
 *  Copyright (C) 2007 Gregory Mendell
-*                2021, 2023 Evan Goetz
+*                2021-2025 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ int main( int argc, char **argv )
   REAL4Vector *timeavg = NULL;
   CHAR outbase[256], outfile[512], outfile2[512], outfile3[512], outfile4[512];
 
-  CHAR *SFTpatt = NULL, *IFO = NULL, *outputDir = NULL, *outputBname = NULL;
+  CHAR *SFTpatt = NULL, *IFO = NULL, *outputDir = NULL, *outputBname = NULL, *header = NULL;
   INT4 startGPS = 0, endGPS = 0;
   REAL8 f_min = 0.0, f_max = 0.0, freqres = 0.1, subband = 100.0, timebaseline = 0;
   INT4 blocksRngMed = 101, cur_epoch = 0;
@@ -78,6 +78,7 @@ int main( int argc, char **argv )
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &subband,      "subband",      REAL8,  'b', OPTIONAL, "Subdivide the output normalized average spectra txt files into these subbands" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &timebaseline, "timeBaseline", REAL8,  't', REQUIRED, "The time baseline of sfts in seconds" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &allow_skipping, "allow_skipping", BOOLEAN, 'x', OPTIONAL, "Allow to exit without an error if no SFTs are found" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &header,         "header",     STRING, 'H', OPTIONAL, "Header line in the output file; if not provided then no header line will be made" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   BOOLEAN should_exit = 0;
   XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -138,6 +139,13 @@ int main( int argc, char **argv )
   fp4 = fopen( outfile4, "w" );
   fopenerr = errno;
   XLAL_CHECK_MAIN( fp4 != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile4, strerror( fopenerr ) );
+
+  // Write header line to files, if provided
+  if ( XLALUserVarWasSet( &header ) ) {
+    fprintf( fp, "# %s\n", header );
+    fprintf( fp2, "# %s\n", header );
+    fprintf( fp4, "# %s\n", header );
+  }
 
   // Record timestamps for each SFT or gap
   // This is not known a priori so we end up resizing this vector as we go
