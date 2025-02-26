@@ -9,3 +9,8 @@ repos:
       - id: check-yaml
         args: [--unsafe]
         files: ^\.gitlab.*\.yml$
+
+  - repo: https://git.ligo.org/lscsoft/lalsuite-code-quality.git
+    rev: v0.1
+    hooks:
+      - id: fix-makefile-indents
