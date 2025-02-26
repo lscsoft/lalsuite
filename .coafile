@@ -2,8 +2,3 @@
 bears = SpaceConsistencyBear
 files = **Makefile.am
 use_spaces = False
-
-[GitLabYAML]
-bears = SpaceConsistencyBear
-files = .gitlab-ci.yml, .gitlab/ci/*.yml
-use_spaces = True

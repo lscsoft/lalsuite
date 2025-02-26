@@ -5,3 +5,7 @@ repos:
     hooks:
       - id: check-yaml
         files: ^\.pre-commit-config.yaml$
+
+      - id: check-yaml
+        args: [--unsafe]
+        files: ^\.gitlab.*\.yml$
