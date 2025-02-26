@@ -10,6 +10,10 @@ repos:
         args: [--unsafe]
         files: ^\.gitlab.*\.yml$
 
+      - id: file-contents-sorter
+        args: [--unique]
+        files: \.gitattributes$
+
   - repo: https://git.ligo.org/lscsoft/lalsuite-code-quality.git
     rev: v0.1
     hooks:
