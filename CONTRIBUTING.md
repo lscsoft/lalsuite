@@ -65,6 +65,25 @@ Then, clone your fork with
 git clone git@git.ligo.org:<namespace>/lalsuite.git
 ```
 
+### Installing pre-commit hooks
+
+LALSuite uses pre-commit hooks to check/fix a variety of code quality issues.
+These are run by the [`pre-commit`][precommit] tool, which can be installed
+using `conda`, `pip`, etc. Once `pre-commit` is installed, it must be
+configured:
+
+```bash
+cd lalsuite
+pre-commit install
+```
+
+You only need to do this **once**.
+
+The pre-commit hooks are run every time a new commit is made. If any code
+quality issues are identified, these will usually be fixed automatically, but
+you will need to include the extra changes in the commit e.g. using `git
+add`. Once all code quality issues are resolved, the new commit will be created.
+
 ### Keeping your fork up to date
 
 Link your clone to the main (`upstream`) repository so that you can `fetch` and
@@ -172,14 +191,6 @@ complete. The workflow is:
 
    If there are conflicts between `upstream` changes and your changes, you will
    need to resolve them before pushing everything to your fork.
-
-### Adding yourself to the author list
-
-If you've never contributed to LALSuite before, you'll also need to add your name to the author list by running
-```bash
-make update-authors
-```
-from the top level of the repository. You can further edit the `.mailmap` file to adjust how your name is presented; special characters (e.g. accents) are supported.
 
 ### Open a merge request
 
@@ -387,26 +398,7 @@ formatted_ in a consistent style, which will be enforced by the CI pipelines.
   * A LALSuite library level file, e.g. `lallib/.pretty.black`, will
     pretty-format all Python source files in `lallib/`.
 
-To check that your local changes are pretty-formatted correctly and will pass
-the CI pipelines:
-
-* Make sure [Artistic Style][prettyastyle] and [Black][prettyblack] are
-  installed.
-
-  * Artistic Style is best installed by running `pip install 'astyle==3.4.*'`;
-    this will install the same version as used in the CI pipelines.
-
-  * Black is best installed by running `pip install 'black==22.*'`; this will
-    install the same version as used in the CI pipelines.
-
-* Make sure you have committed your local changes, just in case the
-  pretty-formatting does something weird and you need to back out.
-
-* At the top level of the repository, run `make pretty`. This will show a list
-  of files that have been pretty-formatted (if any).
-
-* Commit any changes, e.g. `git add ...` to stage the changed files, `git
-  commit` to commit.
+The pre-commit hooks will check that your local changes are pretty-formatted correctly.
 
 ## More information
 
@@ -428,5 +420,6 @@ the CI pipelines:
 [lalsuitewiki]:  https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
 [mergerequests]: https://git.ligo.org/help/user/project/merge_requests/index.html
 [nightlydocs]:   https://lscsoft.docs.ligo.org/lalsuite
+[precommit]:     https://pre-commit.com/
 [prettyastyle]:  https://astyle.sourceforge.net/
 [prettyblack]:   https://black.readthedocs.io/en/stable/
