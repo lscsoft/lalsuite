@@ -8,9 +8,11 @@ changes work as intended and do not introduce other problems. -->
 
 ### API Changes
 
+Please tick **one** of the following options:
+
 - [ ] These changes do not modify the API.
-- [ ] These changes are backwards compatible.
-- [ ] These changes are **backwards incompatible**.
+- [ ] These changes do modify the API, and are backwards compatible.
+- [ ] These changes do modify the API, and are **backwards incompatible**.
 
 For examples of changes that do not modify the API and/or are considered
 backwards (in)compatible, please see the [contributing guide][cg].
@@ -30,3 +32,6 @@ in a backwards incompatible way. -->
 <!-- Please provide details on any reviews related to these changes and the
 associated reviewers. -->
 
+
+
+<!-- End of template -->
