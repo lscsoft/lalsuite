@@ -39,6 +39,7 @@ dependencies:
   - pillow
   - pip
   - pkg-config >=0.18.0
+  - pre-commit
   - pytest
   - python <3.13.0a0
   #- python-ligo-lw  <-- depends upon python-lal
