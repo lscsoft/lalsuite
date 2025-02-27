@@ -76,14 +76,13 @@
           -f rpmlintrc
           "*${PACKAGE}*"
           ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
-    - |
       # create a codeclimate report from the rpmlint report
+    - unset PIP_NO_INDEX && rm -rf ~/.pydistutils.cfg
+    - !reference [.pip-venv]
+    - pip install rpmlint-codeclimate
+    - |
       rpmlint -f rpmlintrc --info "*${PACKAGE}*" ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm > rpmlint.out || true
-      unset PIP_NO_INDEX && rm -rf ~/.pydistutils.cfg
-      python3 -m venv .env
-      .env/bin/python3 -m pip install -q -U pip wheel
-      .env/bin/python3 -m pip install -q rpmlint-codeclimate
-      .env/bin/python3 -m rpmlint_codeclimate rpmlint.out -s ${PACKAGE}.spec -o ${CI_PROJECT_DIR}/rpmlint-gl-codeclimate-${PACKAGE}.json
+      python3 -m rpmlint_codeclimate rpmlint.out -s ${PACKAGE}.spec -o ${CI_PROJECT_DIR}/rpmlint-gl-codeclimate-${PACKAGE}.json
       sed -i \
         -e "s|${PACKAGE}.spec|${PACKAGE}/${PACKAGE}.spec.in|g" \
         $CI_PROJECT_DIR/rpmlint-gl-codeclimate-$PACKAGE.json
