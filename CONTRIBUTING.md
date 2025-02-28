@@ -12,6 +12,10 @@ In either case, please include as much detail as possible to reproduce the error
 
 Note that when an issue is marked as *Confidential*, currently this means that most internal users will also not be able to see it, but only a small number of people with reporter, developer or maintainer status.
 
+## Building LALSuite
+
+Please see [here][buildfromsrc] for instructions on building LALSuite from source.
+
 ## Contributing code
 
 All contributions to LALSuite code must be made using the fork and [merge request][mergerequests] [workflow][forkworkflow], which must then be reviewed by one of the project maintainers.
@@ -244,17 +248,13 @@ To check that your local changes are pretty-formatted correctly and will pass th
 * At the top level of the repository, run `make pretty`. This will show a list of files that have been pretty-formatted (if any).
 * Commit any changes, e.g. `git add ...` to stage the changed files, `git commit` to commit.
 
-## Conda dev environment
-A recipe for creating a conda developer environment is provided in the repo under `common/conda` or [under this link][condadevyml].
-Note that some extra steps are needed to be able to run all LALSuite tests in such an environment; see the comments in the file.
-
 ## More information
 
 * More information regarding the usage of GitLab can be found in the main GitLab [documentation][githelp].
 * See also [the LALSuite gitlab wiki pages][lalsuitewiki] for some additional developer FAQs.
 
+[buildfromsrc]:  https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md#building-from-source
 [compguidegit]:  https://computing.docs.ligo.org/guide/gitlab/
-[condadevyml]:   https://git.ligo.org/lscsoft/lalsuite/-/blob/master/common/conda/environment.yml
 [doxygen]:       https://doxygen.nl
 [forkworkflow]:  https://git.ligo.org/help/user/project/repository/forking_workflow.html
 [githelp]:       https://git.ligo.org/help
