@@ -1,6 +1,6 @@
 # LALSuite
 
-This is the main LALSuite development repository.  If you would like to just use
+This is the main LALSuite development repository. If you would like to just use
 a released version, see [here][igwnconda] for IGWN conda environments including
 LALSuite, or the project pages on [conda-forge][condaforge] and on [PyPI][pypi].
 
@@ -55,7 +55,7 @@ repository. It can then be cloned using:
 ## Building from Source
 
 The recommended way to build LALSuite from source is in a `conda` environment.
-[A recipe file][condaenv] is available with all main dependencies.  This can
+[A recipe file][condaenv] is available with all main dependencies. This can
 serve as the base for custom recipes, or be used directly via:
 
      $ conda env create -f common/conda/environment.yml
@@ -90,7 +90,7 @@ Some commonly-used options are:
 
 - `--enable-lal<name>`: Build the `lal<name>` component of LALSuite. This option
   can be combined with the `--disable-all-lal` option to selectively build
-  LALSuite components, e.g.  `--disable-all-lal --enable-lalframe
+  LALSuite components, e.g. `--disable-all-lal --enable-lalframe
   --enable-lalinference` will build only the `lal`, `lalframe`, and
   `lalinference` components.
 
