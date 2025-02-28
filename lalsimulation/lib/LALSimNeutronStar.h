@@ -60,7 +60,7 @@ extern const char * const lalSimNeutronStarEOSNames[111];
 /** Incomplete type for a neutron star family having a particular EOS. */
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
-//CUTER-dev
+//CUTER-dev // TODO why can I not name this LAL blabla ??
 struct eosDouble{
   LALSimNeutronStarEOS * eos_low;
   LALSimNeutronStarEOS * eos_up;
