@@ -80,13 +80,13 @@ Depends:
  ${python3:Depends},
  ${shlibs:Depends},
  liblalinspiral@LIBMAJOR@ (= ${binary:Version}),
+ python3-igwn-ligolw,
+ python3-igwn-segments,
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  python3-lalburst (>= @MIN_LALBURST_VERSION@~),
- python3-ligo-lw,
- python3-ligo-segments,
  python3-lscsoft-glue,
  python3-tqdm,
 Description: Python 3 bindings for LALInspiral
@@ -99,8 +99,8 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  liblalinspiral@LIBMAJOR@ (= ${binary:Version}),
+ python3-igwn-segments,
  python3-lalinspiral (= ${binary:Version}),
- python3-ligo-segments,
 Description: LVK Algorithm Library Inspiral
  The LVK Algorithm Inspiral Library for gravitational wave data analysis.
  This package provides the runtime tools.

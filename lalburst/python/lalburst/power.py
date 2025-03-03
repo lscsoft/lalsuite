@@ -34,8 +34,8 @@ import sys
 import time
 
 
-from ligo import segments
-from ligo.segments import utils as segmentsUtils
+import igwn_segments as segments
+from igwn_segments import utils as segmentsUtils
 from glue import pipeline
 import lal
 from lal import iterutils

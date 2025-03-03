@@ -62,12 +62,12 @@ else:
 '''
 from scipy.signal import signaltools
 
-from ligo import segments
+import igwn_segments as segments
 
-from ligo.lw import ligolw
-from ligo.lw import array as ligolw_array
-from ligo.lw import param as ligolw_param
-from ligo.lw import types as ligolw_types
+from igwn_ligolw import ligolw
+from igwn_ligolw import array as ligolw_array
+from igwn_ligolw import param as ligolw_param
+from igwn_ligolw import types as ligolw_types
 import lal
 from . import iterutils
 from . import git_version
@@ -933,7 +933,7 @@ class Categories(Bins):
 
 	Example with continuous values:
 
-	>>> from ligo.segments import *
+	>>> from igwn_segments import *
 	>>> categories = Categories([
 	...	segmentlist([segment(1, 3), segment(5, 7)]),
 	...	segmentlist([segment(0, PosInfinity)])
@@ -1075,7 +1075,7 @@ class NDBins(tuple):
 	>>> y = NDBins((LogarithmicBins(1, 25, 3), LogarithmicBins(1, 25, 3)))
 	>>> x == y
 	False
-	>>> from ligo.lw.ligolw import LIGO_LW
+	>>> from igwn_ligolw.ligolw import LIGO_LW
 	>>> import sys
 	>>> elem = x.to_xml(LIGO_LW())
 	>>> elem.write(sys.stdout)	# doctest: +NORMALIZE_WHITESPACE
@@ -1336,14 +1336,14 @@ class NDBins(tuple):
 
 def bins_spanned(bins, seglist):
 	"""
-	Input is a Bins subclass instance and a ligo.segments.segmentlist
+	Input is a Bins subclass instance and a igwn_segments.segmentlist
 	instance.  The output is an array object the length of the binning,
 	which each element in the array set to the interval in the
 	corresponding bin spanned by the segment list.
 
 	Example:
 
-	>>> from ligo.segments import *
+	>>> from igwn_segments import *
 	>>> s = segmentlist([segment(1.5, 10.333), segment(15.8, 24)])
 	>>> b = LinearBins(0, 30, 100)
 	>>> bins_spanned(b, s)

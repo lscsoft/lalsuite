@@ -28,7 +28,7 @@ from tqdm import tqdm
 
 
 from lal import iterutils
-from ligo import segments
+import igwn_segments as segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

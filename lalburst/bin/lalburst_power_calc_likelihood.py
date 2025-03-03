@@ -31,7 +31,7 @@ import sys
 import sqlite3
 
 
-from ligo.lw import dbtables
+from igwn_ligolw import dbtables
 from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import burca_tailor

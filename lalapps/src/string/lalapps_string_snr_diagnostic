@@ -370,7 +370,7 @@ plots = [
 #
 
 
-from ligo.lw import dbtables
+from igwn_ligolw import dbtables
 
 for n, filename in enumerate(filenames):
 	if options.verbose:

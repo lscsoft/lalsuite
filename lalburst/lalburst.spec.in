@@ -39,12 +39,12 @@ BuildRequires: python3-devel
 BuildRequires: python3-lal >= @MIN_LAL_VERSION@
 BuildRequires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python3dist(igwn-ligolw) >= @MIN_PYTHON_LIGO_LW_VERSION@
 BuildRequires: python3dist(lscsoft-glue)
 BuildRequires: python3dist(matplotlib)
 BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 BuildRequires: python3dist(pillow)
 BuildRequires: python3dist(pytest)
-BuildRequires: python3dist(python-ligo-lw) >= @MIN_PYTHON_LIGO_LW_VERSION@
 BuildRequires: python3dist(scipy)
 
 # octave
@@ -62,11 +62,11 @@ Requires: python3-%{name} = %{version}-%{release}
 Requires: python3-lal
 Requires: python3-lalmetaio
 Requires: python3-lalsimulation
-Requires: python3dist(ligo-segments)
+Requires: python3dist(igwn-ligolw)
+Requires: python3dist(igwn-segments)
 Requires: python3dist(matplotlib)
 Requires: python3dist(numpy)
 Requires: python3dist(pillow)
-Requires: python3dist(python-ligo-lw)
 Requires: python3dist(scipy)
 Requires: python3dist(tqdm)
 %description
@@ -107,10 +107,10 @@ Requires: python3
 Requires: python3-lal >= @MIN_LAL_VERSION@
 Requires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: python3dist(ligo-segments)
+Requires: python3dist(igwn-ligolw)
+Requires: python3dist(igwn-segments)
 Requires: python3dist(lscsoft-glue)
 Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
-Requires: python3dist(python-ligo-lw)
 Requires: python3dist(scipy)
 Requires: python3dist(tqdm)
 %description -n python3-%{name}

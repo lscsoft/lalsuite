@@ -35,14 +35,14 @@ import sqlite3
 import sys
 
 
-from ligo.lw import dbtables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import dbtables
+from igwn_ligolw import utils as ligolw_utils
 from lal import rate
 from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import SimBurstUtils
 from lalburst import SnglBurstUtils
-from ligo import segments
+import igwn_segments as segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

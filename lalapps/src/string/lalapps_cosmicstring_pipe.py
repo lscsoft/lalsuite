@@ -30,15 +30,15 @@ from configparser import ConfigParser
 
 
 from glue import pipeline
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import segments as ligolw_segments
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw.utils import segments as ligolw_segments
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import offsetvector
 from lalburst import power
 from lalapps import cosmicstring
-from ligo import segments
+import igwn_segments as segments
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'

@@ -30,14 +30,14 @@ from optparse import OptionParser
 import sys
 
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import segments as ligolw_segments
-from ligo.lw.utils import process as ligolw_process
-from ligo.lw.utils import search_summary as ligolw_search_summary
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw.utils import segments as ligolw_segments
+from igwn_ligolw.utils import process as ligolw_process
+from igwn_ligolw.utils import search_summary as ligolw_search_summary
 from lalburst import git_version
-from ligo import segments
+import igwn_segments as segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

@@ -147,6 +147,7 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
       run:
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
+        - igwn-ligolw
         - lscsoft-glue
         - numpy
         - python
@@ -155,7 +156,6 @@ outputs:
         - python-lalframe >={{ lalframe_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw
         - tqdm
     test:
       requires:
@@ -201,9 +201,9 @@ outputs:
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - python
       run:
+        - igwn-segments
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
-        - ligo-segments
         - python
         - {{ pin_subpackage('python-lalinspiral', exact=True) }}
     test:

@@ -20,7 +20,7 @@ import os
 import sys
 
 
-from ligo import segments
+import igwn_segments as segments
 from glue import pipeline
 from lal import iterutils
 from lal import LIGOTimeGPS

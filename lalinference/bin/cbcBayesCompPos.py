@@ -493,7 +493,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
 
     if injection_path is not None and os.path.exists(injection_path) and eventnum is not None:
         eventnum=int(eventnum)
-        from ligo.lw import ligolw, lsctables, utils
+        from igwn_ligolw import ligolw, lsctables, utils
         injections = lsctables.SimInspiralTable.get_table(
                 utils.load_filename(injection_path, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
         if eventnum is not None:

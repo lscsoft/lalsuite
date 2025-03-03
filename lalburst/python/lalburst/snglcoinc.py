@@ -47,10 +47,10 @@ from collections import ChainMap, Counter
 import warnings
 
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw.utils import coincs as ligolw_coincs
-from ligo import segments
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw.utils import coincs as ligolw_coincs
+import igwn_segments as segments
 import lal
 from . import offsetvector
 
@@ -370,8 +370,8 @@ class singlesqueue(object):
 		lal.LIGOTimeGPS object.  If some other type is used, it
 		must support arithmetic and comparison with python float
 		objects and lal.LIGOTimeGPS objects, and support comparison
-		with ligo.segments.PosInfinity and
-		ligo.segments.NegInfinity, and it must have a .__dict__ or
+		with igwn_segments.PosInfinity and
+		igwn_segments.NegInfinity, and it must have a .__dict__ or
 		other mechanism allowing an additional attribute named
 		.event to be set on the object.  The builtin float type is
 		not suitable, but a subclass of float would be.

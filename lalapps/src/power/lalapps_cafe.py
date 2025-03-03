@@ -34,8 +34,8 @@ LIGO Light-Weight XML Coincidence Analysis Front End.
 from optparse import OptionParser
 
 
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 from lalburst import git_version
 from lalburst import cafe
 

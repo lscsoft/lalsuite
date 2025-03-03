@@ -35,15 +35,15 @@ import scipy.stats
 import sys
 
 
-from ligo.lw import ligolw
-from ligo.lw import array as ligolw_array
-from ligo.lw import param as ligolw_param
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
+from igwn_ligolw import ligolw
+from igwn_ligolw import array as ligolw_array
+from igwn_ligolw import param as ligolw_param
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw.utils import process as ligolw_process
 import lal
 from lal import rate
-from ligo.segments import utils as segmentsUtils
+from igwn_segments import utils as segmentsUtils
 from .offsetvector import offsetvector
 from . import snglcoinc
 

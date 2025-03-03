@@ -5246,9 +5246,9 @@ def effectiveSampleSize(samples, Nskip=1):
 def readCoincXML(xml_file, trignum):
     triggers=None
 
-    from ligo.lw import ligolw
-    from ligo.lw import lsctables
-    from ligo.lw import utils
+    from igwn_ligolw import ligolw
+    from igwn_ligolw import lsctables
+    from igwn_ligolw import utils
     coincXML = utils.load_filename(xml_file, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
     coinc = lsctables.CoincTable.get_table(coincXML)
     coincMap = lsctables.CoincMapTable.get_table(coincXML)
@@ -6238,7 +6238,7 @@ def confidence_interval_uncertainty(cl, cl_bounds, posteriors):
 
 def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V1']):
     #import sim inspiral table content handler
-    from ligo.lw import lsctables,ligolw
+    from igwn_ligolw import lsctables,ligolw
     from lalsimulation.lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
     from lalsimulation.lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
     from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT
@@ -6248,7 +6248,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
     from lal.lal import PC_SI as LAL_PC_SI
     import lalsimulation as lalsim
     from math import cos,sin,sqrt
-    from ligo.lw import utils
+    from igwn_ligolw import utils
     import os
     import numpy as np
     from numpy import arange
@@ -6837,8 +6837,8 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
     from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS
 
     from math import cos,sin,sqrt
-    from ligo.lw import lsctables
-    from ligo.lw import utils
+    from igwn_ligolw import lsctables
+    from igwn_ligolw import utils
     import os
     import numpy as np
     from numpy import arange,real,absolute,fabs,pi
@@ -6850,8 +6850,8 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
     colors_inj={'H1':'r','L1':'g','V1':'m','I1':'b','J1':'y'}
     colors_rec={'H1':'k','L1':'k','V1':'k','I1':'k','J1':'k'}
     #import sim inspiral table content handler
-    from ligo.lw import ligolw
-    from ligo.lw import table
+    from igwn_ligolw import ligolw
+    from igwn_ligolw import table
     class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
         def __init__(self,document):
             ligolw.LIGOLWContentHandler.__init__(self,document)

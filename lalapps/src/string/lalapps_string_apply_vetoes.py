@@ -34,8 +34,8 @@ import sqlite3
 import sys
 
 
-from ligo.lw import dbtables
-from ligo.lw.utils import segments as ligolwsegments
+from igwn_ligolw import dbtables
+from igwn_ligolw.utils import segments as ligolwsegments
 from lalburst import git_version
 
 
@@ -104,8 +104,8 @@ def create_string_sngl_is_vetoed_function(connection, veto_segments_name = None)
 	If veto_segments_name is None then a no-op function is created that
 	always returns False.
 
-	Note:  this funtion requires ligo.lw.dbtables and
-	ligo.lw.utils.segments to be imported as dbtables and
+	Note:  this funtion requires igwn_ligolw.dbtables and
+	igwn_ligolw.utils.segments to be imported as dbtables and
 	ligolwsegments respectively.
 	"""
 	if veto_segments_name is None:
