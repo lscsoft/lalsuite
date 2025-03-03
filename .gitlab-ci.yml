@@ -96,6 +96,12 @@ cache:
 variables:
   PIPELINE_NAME: "LALSuite CI/CD"
 
+  # job stage attempts
+  ARTIFACT_DOWNLOAD_ATTEMPTS: 2
+  EXECUTOR_JOB_SECTION_ATTEMPTS: 2
+  GET_SOURCES_ATTEMPTS: 2
+  RESTORE_CACHE_ATTEMPTS: 2
+
   # run autoreconf in pedantic and loud mode
   AUTORECONF: "autoreconf --verbose --warnings=error"
 
