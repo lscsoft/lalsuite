@@ -131,8 +131,19 @@ variables:
 
 # default parameters for jobs
 default:
-  # retry running jobs on failure
-  retry: 1
+  # retry running jobs on abnormal failures
+  retry:
+    max: 1
+    when:
+      - unknown_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+      - stale_schedule
+      - archived_failure
+      - scheduler_failure
+    exit_codes:
+      # exit code of retry() macro after all attempts
+      - 111
 
   # cancel job when a newer pipeline starts
   interruptible: true
