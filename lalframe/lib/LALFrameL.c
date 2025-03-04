@@ -227,7 +227,7 @@ int XLALFrameUFileCksumValid_FrameL_(LALFrameUFrFile * stream)
 
     /* sequential read */
 
-    /* FIXME: WARNING: HACK: 
+    /* FIXME: WARNING: HACK:
      * the following line may need to be updated in future */
     FrIOSet(stream->handle->frfd, FR_FILE_HEADER_SIZE);
 
@@ -786,7 +786,7 @@ int XLALFrameUFrameHSetRun_FrameL_(LALFrameUFrameH * frame, int run)
     return 0;
 }
 
-/* 
+/*
  * FrChan functions
  */
 
