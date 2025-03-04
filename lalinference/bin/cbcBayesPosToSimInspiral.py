@@ -305,4 +305,3 @@ if __name__ == "__main__":
     output_file = open(opts.output, 'w')
     xmldoc.write(output_file)
     output_file.close()
-
