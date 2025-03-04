@@ -367,7 +367,7 @@ lalapps (6.6.2-1) unstable; urgency=low
 lalapps (6.6.1-1) unstable; urgency=low
 
   * updates to lalapps_binj for ER1 data generation
-  * update to automake-1.11.2 
+  * update to automake-1.11.2
 
  -- Adam Mercer <adam.mercer@ligo.org>  Wed, 28 Dec 2011 11:13:02 -0600
 
@@ -504,4 +504,3 @@ lalapps (5.2-1) unstable; urgency=low
   * Initial release
 
  -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Fri,  5 Oct 2007 13:11:00 +0200
-
