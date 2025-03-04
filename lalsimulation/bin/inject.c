@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
     /* add injections to target */
     for (c = 1; c < n; ++c) {
         /* sample rates deduced from file might have roundoff
-         * errors: if an injection series' deltaT is close enough 
+         * errors: if an injection series' deltaT is close enough
          * the target series' deltaT, make it equal */
         if (fabs(1.0 / h[c]->deltaT - 1.0 / h[0]->deltaT) < 0.1)
             h[c]->deltaT = h[0]->deltaT;
