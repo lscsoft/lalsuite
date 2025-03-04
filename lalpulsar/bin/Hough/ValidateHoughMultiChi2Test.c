@@ -786,7 +786,3 @@ void SplitSFTs( LALStatus         *status,
   /* normal exit */
   RETURN( status );
 }
-
-
-
-
