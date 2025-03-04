@@ -78,7 +78,7 @@
 #undef ARG
 
 /* Note that LALI8PrintTimeSeries does a typecast to REAL8 and is thus
- * inaccurate for numbers >~ 1e15 
+ * inaccurate for numbers >~ 1e15
  */
 #define TYPECODE I8
 #define TYPE INT8
@@ -117,7 +117,7 @@
 #undef ARG
 
 /* Note that LALU8PrintTimeSeries does a typecast to REAL8 and is thus
- * inaccurate for numbers >~ 1e15 
+ * inaccurate for numbers >~ 1e15
  */
 #define TYPECODE U8
 #define TYPE UINT8
