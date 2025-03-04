@@ -1,6 +1,6 @@
 /*
  *
- *  LALInference:             Bayesian Followup        
+ *  LALInference:             Bayesian Followup
  *  LALInferenceTemplate.h:   Template generation functions
  *
  *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
@@ -76,7 +76,7 @@ SWIGLAL(
  * File contains real & imaginary parts of plus & cross components.
  * Template amplitude is (usually) scaled to 1 Mpc luminosity distance.
  */
-void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceModel *model, 
+void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LALInferenceModel *model,
                                         const char *filename);
 
 
@@ -85,7 +85,7 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
  * File contains time series of plus & cross components.
  * Template amplitude is (usually) scaled to 1 Mpc luminosity distance.
  */
-void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceModel *model, 
+void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams, LALInferenceModel *model,
                                         const char *filename);
 
 
