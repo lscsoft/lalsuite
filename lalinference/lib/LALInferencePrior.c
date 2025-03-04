@@ -104,7 +104,7 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
                                 "uniform_distance", &uniform_distance,
                                 LALINFERENCE_INT4_t,
                                 LALINFERENCE_PARAM_OUTPUT);
-	
+
     LALInferenceAddVariable(runState->priorArgs,
                                 "src_comove_volume_distance", &src_comove_volume_distance,
                                 LALINFERENCE_INT4_t,
@@ -529,7 +529,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     if(LALInferenceGetVariableVaryType(params,"declination")==LALINFERENCE_PARAM_LINEAR)
       logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
   }
- 
+
 
   if(LALInferenceCheckVariable(params,"logmc")) {
     mc=exp(*(REAL8 *)LALInferenceGetVariable(params,"logmc"));
@@ -585,7 +585,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
         *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&
         !within_malmquist(runState, params, model))
       return -INFINITY;
-  
+
   UINT4 volumetric_spins = LALInferenceCheckVariable(runState->priorArgs,"volumetric_spin") && LALInferenceGetVariable(runState->priorArgs,"volumetric_spin");
   /* Apply spin priors for precessing case */
   if(LALInferenceCheckVariable(params,"tilt_spin1"))
@@ -647,7 +647,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
               logPrior+=log(fabs((3./4.)*(a_max*a_max - a*a)))-log(fabs(V));
      }
   }
-  
+
   /* Optional prior on aligned spin component that corresponds to the effective prior on
    that component when using a precessing spin model. p(z) = (1/2)(1/R)log(|z|/R)
    Where R is the maximum magnitude of the spin vector max(|a_spin1_max|,|a_spin1_min|).
@@ -1137,7 +1137,7 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
 
     val = *(REAL8 *)paraHead->value;
 
-    if (val == INFINITY) 
+    if (val == INFINITY)
       return;
 
     // Nothing to do if between bounds
@@ -2892,7 +2892,7 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       npars++;
       LALInferenceRemoveVariable( priorArgs, nparsdonename );
     }
-  
+
     LALInferenceAddVariable( priorArgs, nparsdonename, &npars, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
 
     /* remove GMM multivariate deviates if all parameter in the GMM have been set */
