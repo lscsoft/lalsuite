@@ -20,7 +20,7 @@ for bandnumber = 1:Nbands; %the  current frequency band
    else
      Sigmax(bandnumber) = NaN ;
    end
-   
+
 end
 
 save MultiSigMax25_50_100W BandList Sigmax
