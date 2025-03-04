@@ -95,13 +95,13 @@ static double eos_e_of_p_spectral_decomposition(double x, double gamma[], int si
        0.2692667193099963,
        0.2190863625159820,
        0.1494513491505806,
-       0.0666713443086881 
+       0.0666713443086881
        };
 
     /* Calculation of \mu(x) */
-    /* Calculation based on integral in Eq. 8 of PRD 82 103011 (2010): 
+    /* Calculation based on integral in Eq. 8 of PRD 82 103011 (2010):
 
-       \mu(x) = \exp[ - Integral(x) ] 
+       \mu(x) = \exp[ - Integral(x) ]
 
        Intergral(x) = \int_{0}^{x} 1 / \Gamma(xp) dxp
 
@@ -171,7 +171,7 @@ static double eos_e_of_p_spectral_decomposition(double x, double gamma[], int si
 /**
  * @brief Reads spectral decomposition eos parameters to make an eos.
  * @details Reads an array of spectral decomposition eos parameters and the
- * array length to construct an eos using a spectral decomposition of the 
+ * array length to construct an eos using a spectral decomposition of the
  * adiabatic index. The specifics of this implementation are outlined  in
  * PRD 98 063004 (2018). Generic model presented in PRD 82 103011 (2010).
  * @param[in] gamma[] Array of spectral decomposition eos parameters.
@@ -312,7 +312,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double gamma[],
 /**
  * @brief Reads 4 spectral decomposition eos parameters to make an eos.
  * @details Reads 4 spectral decomposition eos parameters to construct an eos
- * using a spectral decomposition of the adiabatic index, outlined in 
+ * using a spectral decomposition of the adiabatic index, outlined in
  * PRD 82 103011 (2010).
  * @param[in] SDgamma0,SDgamma1,SDgamma2,SDgamma3 The spectral decomposition
  * eos parameters.
