@@ -31,7 +31,7 @@ int main ( int argc, char *argv[] )
   FILE   *bankfp = NULL;
   FILE   *txtfp = NULL;
   long int seed = 0;
-  
+
   if ( argc != 4 )
   {
     fprintf( stderr, "useage: %s [mimumum mass] [maximum mass] [number of "
@@ -59,7 +59,7 @@ int main ( int argc, char *argv[] )
     perror( "could not open /dev/urandom" );
     exit ( 1 );
   }
-  
+
   for ( i = 0; i < 8; ++i )
   {
     long int rbyte = (long int) fgetc( fp );
@@ -90,10 +90,10 @@ int main ( int argc, char *argv[] )
       "<int_4u name='gps_sec:stop_time' units='sec'>0</int_4u>\n"
       "<int_4u name='gps_nan:stop_time' units='nanosec'>0</int_4u>\n"
       "<real_8 name='time:step_size' units='sec'>1.0e+00</real_8>\n"
-      "<real_8 dims='2,%d' name='data' ndim='2' units='mass,mass'>", 
+      "<real_8 dims='2,%d' name='data' ndim='2' units='mass,mass'>",
       seed, ntmplts );
   fprintf( txtfp, "#seed = %ld\n", seed );
-    
+
   for ( i = 0; i < 2 * ntmplts; ++i )
   {
     double mass = mmin + ( mmax - mmin ) * drand48();
