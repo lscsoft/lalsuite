@@ -11,7 +11,7 @@ df=1/8;
 % referenceSpectrum = sqrt(shotReference.^2 + ...
 %                          thermalReference.^2 + ...
 %                          seismicReference.^2);
-                     
+
 load lho4k_060102_strain.txt
 
 frequency=lho4k_060102_strain(fstart/df:fend/df,1);
