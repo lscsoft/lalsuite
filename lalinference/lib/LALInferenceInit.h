@@ -1,6 +1,6 @@
 /*
  *
- *  LALInferenceInit.h:   Initialisation functions for LALInference codes        
+ *  LALInferenceInit.h:   Initialisation functions for LALInference codes
  *
  *  Copyright (C) 2009 Vivien Raymond and John Veitch
  *
@@ -93,7 +93,7 @@ void LALInferenceInitGlitchVariables(LALInferenceRunState *runState, LALInferenc
 /**
  * Review functions
  *
- * 
+ *
  */
 
 LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *state);
@@ -101,11 +101,10 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunStat
 LALInferenceModel *LALInferenceInitModelReviewEvidence_banana(LALInferenceRunState *state);
 
 /**
- * Check options consistency 
+ * Check options consistency
  **/
 void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine);
 
 void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInferenceVariables *currentParams);
 
 #endif
-
