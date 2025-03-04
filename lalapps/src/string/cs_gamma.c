@@ -40,15 +40,15 @@
 
 struct CommandLineArgsTag {
   double f;                /* frequency */
-  double logGmustart;      
-  double logGmuend;        
+  double logGmustart;
+  double logGmuend;
   int  nGmu;
   double logepsilonstart;
-  double logepsilonend;    
+  double logepsilonend;
   int  nepsilon;
   double n;
-  double logpstart;        
-  double logpend;          
+  double logpstart;
+  double logpend;
   int  np;
   char *efficiencyfile;
 } CLA;
@@ -91,31 +91,31 @@ int main( int argc, char *argv[] )
 
 	/* read efficiency function */
 	if (ReadEfficiencyFile(CLA)) return 2;
-	
+
 	snprintf( filename, sizeof( filename ), "gamma.dat");
 	fp = fopen( filename, "w" );
 	fprintf( fp,"%%     p           n           epsilon         Gmu       gammaAverage    gammaMin      gammaMax\n");
 	for ( i = 0; i <  CLA.nepsilon; i++ )
 	  {
 	    epsilon=pow(10.0,CLA.logepsilonstart+i*(CLA.logepsilonend-CLA.logepsilonstart)/(CLA.nepsilon-1));
-	    
+
 	    for ( j = 0; j <  CLA.nGmu; j++ )
 	      {
 		Gmu=pow(10.0,CLA.logGmustart+j*(CLA.logGmuend-CLA.logGmustart)/(CLA.nGmu-1));
 		alpha = epsilon * pow( Gamma * Gmu, CLA.n );
-			       
+
 		/* find the z's corresponding to those A's */
 		if(findzofA(Gmu, alpha)) return 3;
-		
+
 		/* compute the rate derivative at those z's */
 		if(finddRdz(Gmu, alpha, f, Gamma)) return 4;
-			
+
 		for ( k = 0; k <  CLA.np; k++ )
 		  {
 		    p=pow(10.0, CLA.logpstart+k*(CLA.logpend-CLA.logpstart)/(CLA.np));
-		    
+
  		    fprintf(stdout,"%%Computing effective rate for Gmu=%e, epsilon=%e, p=%e\n ",Gmu, epsilon, p);
-		    
+
 		    /* Compute the rate of bursts */
 		    gammaAverage=0.0;
 		    gammaMin = 0.0;
@@ -134,7 +134,7 @@ int main( int argc, char *argv[] )
 		    fprintf( fp,"%e  %e  %e  %e  %e  %e  %e\n", p,CLA.n,epsilon,Gmu,gammaAverage,gammaMin,gammaMax);
 
 		  }
-				
+
 	      }
 	  }
 
@@ -158,20 +158,20 @@ int finddRdz(double Gmu, double alpha, double f, double Gamma)
   int j;
 
   cosmofns = XLALCSCosmoFunctions( zofA, (size_t) Namp);
-  
+
   for ( j = 0; j < Namp; j++ )
     {
 
 
       double theta = pow((1+cosmofns.z[j]) * f * alpha * cosmofns.phit[j] / H0, -1.0/3.0);
-      
+
       if (theta > 1.0)
 	{
 	  dRdz[j] = 0.0;
 	}
       else
 	{
-	
+
 	  dRdz[j] = 0.5 * H0 * pow(f/H0,-2.0/3.0) * pow(alpha, -5.0/3.0) / (Gamma*Gmu) *
 	    pow(cosmofns.phit[j],-14.0/3.0) * cosmofns.phiV[j] * pow(1+cosmofns.z[j],-5.0/3.0);
 	}
@@ -193,16 +193,16 @@ int findzofA(double Gmu, double alpha)
   cs_cosmo_functions_t cosmofns;
   double *fz,*z;
   double a;
-  gsl_interp *zofa_interp; 
-  gsl_interp_accel *acc_zofa = gsl_interp_accel_alloc(); 
+  gsl_interp *zofa_interp;
+  gsl_interp_accel *acc_zofa = gsl_interp_accel_alloc();
 
   cosmofns = XLALCSCosmoFunctionsAlloc( exp( lnz_min ), dlnz, numz );
 
   zofa_interp = gsl_interp_alloc (gsl_interp_linear, cosmofns.n);
 
-  fz   = calloc( cosmofns.n, sizeof( *fz ) ); 
-  z   = calloc( cosmofns.n, sizeof( *z ) ); 
-  
+  fz   = calloc( cosmofns.n, sizeof( *fz ) );
+  z   = calloc( cosmofns.n, sizeof( *z ) );
+
   /* first compute the function that relates A and z */
   /* invert order; b/c fz is a monotonically decreasing func of z */
   j=0;
@@ -230,7 +230,7 @@ int findzofA(double Gmu, double alpha)
   gsl_interp_accel_free(acc_zofa);
 
   return 0;
-  
+
 }
 
 /*******************************************************************************/
@@ -239,7 +239,7 @@ int ReadEfficiencyFile(struct CommandLineArgsTag CLA)
 {
 
   char line[256];
-  
+
   int i=0;
   FILE *fpEff;
 
@@ -264,13 +264,13 @@ int ReadEfficiencyFile(struct CommandLineArgsTag CLA)
   if (Namp>1)
     {
       /* Allocate amplitude, efficiency and efficieny error arrays */
-      lnamp  = calloc( Namp, sizeof( *lnamp ) ); 
-      eff    = calloc( Namp, sizeof( *eff ) ); 
-      Deff   = calloc( Namp, sizeof( *Deff ) ); 
-      amp    = calloc( Namp, sizeof( *amp ) ); 
-      zofA   = calloc( Namp, sizeof( *zofA ) ); 
-      dzdA   = calloc( Namp, sizeof( *dzdA ) ); 
-      dRdz   = calloc( Namp, sizeof( *dRdz ) ); 
+      lnamp  = calloc( Namp, sizeof( *lnamp ) );
+      eff    = calloc( Namp, sizeof( *eff ) );
+      Deff   = calloc( Namp, sizeof( *Deff ) );
+      amp    = calloc( Namp, sizeof( *amp ) );
+      zofA   = calloc( Namp, sizeof( *zofA ) );
+      dzdA   = calloc( Namp, sizeof( *dzdA ) );
+      dRdz   = calloc( Namp, sizeof( *dRdz ) );
 
       /*read them from the file */
       i=0;
@@ -321,11 +321,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   };
   char args[] = "ha:b:c:d:e:f:g:i:j:k:l:";
 
-  CLA->f=               -300;     
-  CLA->logGmustart=     -300;      
-  CLA->logGmuend=       -300;        
+  CLA->f=               -300;
+  CLA->logGmustart=     -300;
+  CLA->logGmuend=       -300;
   CLA->nGmu=            -1;
-  CLA->logepsilonstart= -300;  
+  CLA->logepsilonstart= -300;
   CLA->logepsilonend=   -300;
   CLA->nepsilon=        -1;
   CLA->n=               -1;
@@ -333,7 +333,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->logpend=         -300;
   CLA->np=              -1;
   CLA->efficiencyfile=  NULL;
-  
+
 
   /* Scan through list of command line arguments */
   while ( 1 )
@@ -500,4 +500,3 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
   return errflg;
 }
-
