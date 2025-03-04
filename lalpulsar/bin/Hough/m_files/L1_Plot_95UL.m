@@ -18,9 +18,9 @@ UL =  load(fileinput);
 fmin = UL(:,2);
 fmax = UL(:,3);
 Nmax = UL(:,4);
- 
+
 upper = UL(:,5);
- 
+
 Nbands =length(fmin);
 
 totalband = 0;
