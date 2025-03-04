@@ -191,12 +191,12 @@ static void NRSur7dq4_Init_LALDATA(void) {
 
     char *path = XLAL_FILE_RESOLVE_PATH(NRSUR7DQ4_DATAFILE);
     if (path==NULL){
-        XLAL_ERROR_VOID(XLAL_EIO, 
+        XLAL_ERROR_VOID(XLAL_EIO,
         "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
         "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
         "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
         "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
-        "https://git.ligo.org/lscsoft/lalsuite-extra\n", 
+        "https://git.ligo.org/lscsoft/lalsuite-extra\n",
         NRSUR7DQ4_DATAFILE);
     }
     char *dir = dirname(path);
@@ -318,7 +318,7 @@ static void PrecessingNRSur_LoadFitData(
     nwritten = snprintf(tmp_name, str_size, "%s_coefs", name);
     XLAL_CHECK_ABORT(nwritten < str_size);
     (*fit_data)->coefs = NULL;
-    
+
     ReadHDF5RealVectorDataset(sub, tmp_name, &((*fit_data)->coefs));
 
     nwritten = snprintf(tmp_name, str_size, "%s_bfOrders", name);
@@ -2795,4 +2795,3 @@ int XLALPrecessingNRSurDynamics(
 
 /** @} */
 /** @} */
-
