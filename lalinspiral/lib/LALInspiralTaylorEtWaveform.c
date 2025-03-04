@@ -363,7 +363,7 @@ int XLALTaylorEtWaveform (
       XLAL_ERROR(XLAL_EFAULT);
 
    /* Check the parameters are sane */
-   if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0 
+   if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0
          || params->tSampling <= 0 || params->totalMass <= 0. )
       XLAL_ERROR(XLAL_EINVAL);
 
@@ -396,7 +396,7 @@ int XLALTaylorEtWaveformTemplates (
       XLAL_ERROR(XLAL_EFAULT);
 
    /* Check the parameters are sane */
-   if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0 
+   if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0
          || params->tSampling <= 0 || params->totalMass <= 0. )
       XLAL_ERROR(XLAL_EINVAL);
 
