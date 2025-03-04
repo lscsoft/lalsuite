@@ -4,8 +4,8 @@
 # Model Crust_BsK24_nbmin_1e-11_core_GPPVA_FSU2H# Model computed at temperature 0.0  MeV
 #
 #1000	number of points in H
-# This table has been interpolated from the original one in H 
-#  n_B [1/fm^3]   eps[g/cm^3]   P[dyn/cm^2] mu_B [MeV] mu_e [MeV] log-enthalpy H [dimensionless] Y_e+Y_mu[dimensionless] cs2[speed of sound squared] 
+# This table has been interpolated from the original one in H
+#  n_B [1/fm^3]   eps[g/cm^3]   P[dyn/cm^2] mu_B [MeV] mu_e [MeV] log-enthalpy H [dimensionless] Y_e+Y_mu[dimensionless] cs2[speed of sound squared]
 #
 0	1.0004441456906452e-11	1.6586122468902155e+04	1.6736726261730990e+19	9.3041428045287444e+02	9.4999999999999996e-01	1.0000000000000000e-10	4.6428571428571430e-01	2.2723210548084334e-06
 1	1.0000010768959678e-11	1.6586140330457205e+04	1.6744892031526873e+19	9.3041428045531336e+02	9.4999999999999996e-01	1.0235176035381806e-10	4.6428571428571430e-01	2.2723220839046176e-06
