@@ -35,7 +35,7 @@
 
 #include <lal/LALSimReadData.h>
 
-/* 
+/*
  * This routine generates a single segment of data.  Note that this segment is
  * generated in the frequency domain and is inverse Fourier transformed into
  * the time domain; consequently the data is periodic in the time domain.
@@ -763,7 +763,7 @@ int test_sgwb(void)
 			seg[0]->data->data[j] = window->data->data[j] * rec[0]->data->data[j + l*stride];
 			seg[1]->data->data[j] = window->data->data[j] * rec[1]->data->data[j + l*stride];
 		}
-		
+
 		XLALREAL8TimeFreqFFT(htilde1, seg[0], plan);
 		XLALREAL8TimeFreqFFT(htilde2, seg[1], plan);
 		for (k = klow; k < seglen/2; ++k) {
