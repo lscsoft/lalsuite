@@ -1018,7 +1018,7 @@ int XLALSimNoisePSD(
 	psd->sampleUnits = strainSquaredPerHertzUnit;
 
 	/* determine low frequency cutoff */
-	if (flow < psd->f0) 
+	if (flow < psd->f0)
 		flow = psd->f0;
 	if (psd->f0 == 0.0)
 		kmin = 1; /* will set DC to zero */
@@ -1068,7 +1068,7 @@ int XLALSimNoisePSDFromFile(
 	if (n == (size_t)(-1))
 		XLAL_ERROR(XLAL_EFUNC);
 
-	/* take the log of the amplitude spectral density data 
+	/* take the log of the amplitude spectral density data
 	 * and record the first valid index of h */
 	for (i = 0; i < n; ++i)
 		if (h[i] > 0.0) {
@@ -1085,7 +1085,7 @@ int XLALSimNoisePSDFromFile(
 	/* determine low frequency cutoff */
 	if (flow <= 0.0) /* use lowest non-zero value in data */
 		flow = f[imin];
-	if (flow < psd->f0) 
+	if (flow < psd->f0)
 		flow = psd->f0;
 
 	kmin = (flow - psd->f0) / psd->deltaF;
@@ -1569,7 +1569,7 @@ int XLALSimNoisePSDaLIGOAPlusDesignSensitivityT1800042(
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
- * to an updated aLIGO configuration design sensitivity scenario in 
+ * to an updated aLIGO configuration design sensitivity scenario in
  * LIGO-T1800044.
  */
 int XLALSimNoisePSDaLIGODesignSensitivityT1800044(
