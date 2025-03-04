@@ -51,7 +51,7 @@ tempoutdir=/scratch/tmp/$iam/$1.MultiMC-1.run
 trap "/bin/rm -rf ${tempoutdir}; exit 0" 0 1 2 9 15
 
 
-# make the temporary directory where we work 
+# make the temporary directory where we work
 mkdir -p $tempoutdir
 
 # make the temporary output directory where results are stored
@@ -77,7 +77,7 @@ echo finished copying stuff
 
 # the frequency band analyzed by the i^{th} node is "startfreq+freqband*i"
 temp=`mult $1 $freqband`
-freq=`add $temp $startfreq` 
+freq=`add $temp $startfreq`
 echo frequency range analysed is from $freq Hz with bandwidth $freqband Hz
 
 #input file with predicted UL
