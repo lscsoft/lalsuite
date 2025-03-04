@@ -658,7 +658,7 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
 	}
 	status = XLALSimIMRSpinEOBCalculateNewtonianMultipole(&hNewton,
 							      vPhi2, r, cartvalues->data[12] + cartvalues->data[13], (UINT4) l, m, params->eobParams);
-							  
+
 	if (status == XLAL_FAILURE) {
 		XLAL_ERROR(XLAL_EFUNC);
 	}
@@ -772,7 +772,7 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
 		switch (m) {
 		case 3:
 			deltalm = vh3 * (hCoeffs->delta33vh3 + vh3 * (hCoeffs->delta33vh6 + hCoeffs->delta33vh9 * vh3))
-				+ hCoeffs->delta33v5 * v * v2 * v2 + hCoeffs->delta33v7 * v2 * v2 * v2 * v;	
+				+ hCoeffs->delta33v5 * v * v2 * v2 + hCoeffs->delta33v7 * v2 * v2 * v2 * v;
 			//R.C: delta33v7 is set to 0, whoever is adding it here as a coefficient is evil, TODO: double check that is zero and then remove it
 			//RC: This terms are in Eq.A6 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028 [arXiv:1803.10701]
 			rholm = 1. + v2 * (hCoeffs->rho33v2 + v * (hCoeffs->rho33v3 + v * (hCoeffs->rho33v4 + v * (hCoeffs->rho33v5 + v * (hCoeffs->rho33v6 +
