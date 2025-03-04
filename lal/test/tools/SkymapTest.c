@@ -196,15 +196,15 @@ static void uncertain(void)
     int n;
 
     rng = XLALCreateRandomParams(0);
-    
+
     for (n = 3; n != 4; ++n)
     {
     	XLALSkymapPlanConstruct(8192, n, siteNumbers, &plan);
-	
+
 	direction[0] = LAL_PI * XLALUniformDeviate(rng);
 	direction[1] = LAL_TWOPI * XLALUniformDeviate(rng);
 	XLALSkymapDirectionPropertiesConstruct(&plan, direction, &properties);
-	
+
 	XLALSkymapKernelConstruct(&plan, &properties, wSw, &kernel);
 	XLALSkymapUncertainKernelConstruct(&plan, &properties, wSw, error, &kernel2);
 
@@ -221,7 +221,7 @@ static void uncertain(void)
 	    }
 	    // fprintf(stderr, "\n");
 	}
-	// fprintf(stderr, "%e =?= %e\n", kernel.logNormalization, kernel2.logNormalization); 
+	// fprintf(stderr, "%e =?= %e\n", kernel.logNormalization, kernel2.logNormalization);
 	if (fabs(kernel.logNormalization - kernel2.logNormalization) > 1e-10)
 	{
 	    fprintf(stderr, "Loose normalization does not match simple normalization for zero error\n");
@@ -249,4 +249,3 @@ int main(void)
 
     return 0;
 }
-
