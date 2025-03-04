@@ -5,7 +5,7 @@ function toggleVisible(division) {
   } else {
     document.getElementById("div_" + division).style.display = "none";
     document.getElementById("input_" + division).checked = false;
-  } 
+  }
 }
 function gotoSection(section) {
   document.getElementById("div_" + section).style.display = "block";
@@ -38,5 +38,3 @@ function setSubPage() {  hrefString  = document.location.href ? document.locatio
     index = path[path.length-2]
     setActiveMenu(document.getElementById("menubar").getElementsByTagName("a"), index)
 }
-
-
