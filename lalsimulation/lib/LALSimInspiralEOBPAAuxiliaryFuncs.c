@@ -47,7 +47,7 @@ XLALSimInspiralEOBPACalculateMassRatio(
 }
 
 /**
- * Function which calculates the symmetric mass ratio nu from the mass 
+ * Function which calculates the symmetric mass ratio nu from the mass
  * ratio q
  */
 REAL8
@@ -67,7 +67,7 @@ XLALSimInspiralEOBPACalculateSymmetricMassRatio(
 }
 
 /**
- * Function which calculates the parameter X1 from the symmetric mass 
+ * Function which calculates the parameter X1 from the symmetric mass
  * ratio nu
  */
 REAL8
@@ -95,7 +95,7 @@ XLALSimInspiralEOBPACalculateX1(
 }
 
 /**
- * Function which calculates the parameter X2 from the symmetric mass 
+ * Function which calculates the parameter X2 from the symmetric mass
  * ratio nu
  */
 REAL8
