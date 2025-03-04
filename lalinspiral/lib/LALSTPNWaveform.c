@@ -1091,7 +1091,7 @@ LALSTPNWaveformEngine (
 	}
 
       /*---- Uncomment the next line for debugging ----*/
-      /*fprintf(outFile,"%f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
+      /*fprintf(outFile,"%f %f %f %f %f %f %f %f %f %f %f %f %f\n",
         t, vphi, omega, 2.0*alpha, LNhx, LNhy, LNhz,
         S1x, S1y, S1z, S2x, S2y, S2z);*/
       /* ----------------------------------------------*/
@@ -1210,4 +1210,3 @@ LALSTPNWaveformEngine (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-
