@@ -28,7 +28,7 @@
  *
  * reads a data from a file contianing two columns of frequency
  * and power/amplitude spectral density. It outputs the distance in Kpc
- * for a source with the given rms SNR. 
+ * for a source with the given rms SNR.
  */
 
 #include <stdlib.h>
@@ -40,11 +40,11 @@ int main (int argc, char **argv)
 	double m1, m2, totalMass, eta, flso, lso, fOld, sevenBy3 = 7.L/3.L;
 	double x, pwrSpec;
 	double freq, flow;
-	double rhorms, rmsD, Crms, integral;  
+	double rhorms, rmsD, Crms, integral;
 	double MTSUN_SI=4.925e-6, pi=3.14159, PC_SI=3.e19, C_SI=3.e8;
 	double SNRat1Mpc;
 	int ispec;
-   
+
 	if (argc !=7 )
 	{
 		fprintf(stderr, "-----------------------------\n");
@@ -70,18 +70,18 @@ int main (int argc, char **argv)
 	/*
         printf("%e %e %e %e \n",totalMass, eta, Crms, flso );
 	*/
-        
+
 	integral = 0.;
-	if (scanf("%le %le\n", &freq, &x) == EOF) 
+	if (scanf("%le %le\n", &freq, &x) == EOF)
 	{
 		fprintf(stderr, "No data in file\n");
 		return 1;
 	}
 	fOld = freq;
-		
+
 	while ( scanf("%le %le\n", &freq, &x) != EOF)
 	{
-	
+
 		if (freq > flso) break;
 		if (x && freq > flow)
 		{
