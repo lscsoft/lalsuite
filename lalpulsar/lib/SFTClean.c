@@ -1007,4 +1007,3 @@ void LALRemoveKnownLinesInMultiSFTVector( LALStatus        *status,        /**< 
   /* normal exit */
   RETURN( status );
 }
-
