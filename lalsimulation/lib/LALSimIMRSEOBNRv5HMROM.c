@@ -469,12 +469,12 @@ UNUSED static void SEOBNRv5HMROM_Init_LALDATA(void)
 #define datafile ROMDataHDF5
   char *path = XLAL_FILE_RESOLVE_PATH(datafile);
   if (path==NULL){
-      XLAL_ERROR_VOID(XLAL_EIO, 
+      XLAL_ERROR_VOID(XLAL_EIO,
         "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
         "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
         "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
         "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
-        "https://git.ligo.org/lscsoft/lalsuite-extra\n", 
+        "https://git.ligo.org/lscsoft/lalsuite-extra\n",
         datafile);
   }
   char *dir = dirname(path);
@@ -2508,7 +2508,7 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
         }
       }
     }
-    else {  
+    else {
     // Loop over frequency points in sequence
       for (UINT4 i=0; i < freqs->length; i++) {
         double f = freqs->data[i];
@@ -2559,14 +2559,14 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
 /**
  * @addtogroup LALSimIMRSEOBNRv5HMROM_c
  *
- * \author Lorenzo Pompili, Roberto Cotesta, Sylvain Marsat, Michael Puerrer 
+ * \author Lorenzo Pompili, Roberto Cotesta, Sylvain Marsat, Michael Puerrer
  *
- * \brief C code for SEOBNRv5HM reduced order model * 
+ * \brief C code for SEOBNRv5HM reduced order model *
  *
- * This is a frequency domain model that approximates the time domain SEOBNRv5HM model 
+ * This is a frequency domain model that approximates the time domain SEOBNRv5HM model
  * described in Phys.Rev.D 108 (2023) 12, 124035, https://arxiv.org/abs/2303.18039.
  *
- * The binary data files (SEOBNRv5ROM_v1.0.hdf5, SEOBNRv5HMROM_v1.0.hdf5) 
+ * The binary data files (SEOBNRv5ROM_v1.0.hdf5, SEOBNRv5HMROM_v1.0.hdf5)
  * are available at:
  * https://git.ligo.org/waveforms/software/lalsuite-waveform-data.
  * Get the lalsuite-waveform-data repo or put the data into a location in your
@@ -2612,7 +2612,7 @@ int XLALSimIMRSEOBNRv5HMROM(
   UNUSED UINT4 nModes,                                 /**< Number of modes to use. This should be 1 for SEOBNRv5_ROM and 7 for SEOBNRv5HM_ROM */
   bool use_hybridization,                              /**< Whether the ROM should be hybridized */
   LALDict *LALParams, /**< Additional lal parameters including the tidal deformability*/
-  NRTidal_version_type NRTidal_version /**< only NRTidalv3_V or NoNRT_V in case of BBH baseline */	
+  NRTidal_version_type NRTidal_version /**< only NRTidalv3_V or NoNRT_V in case of BBH baseline */
 )
 {
   REAL8 sign_odd_modes = 1.;
@@ -3249,7 +3249,7 @@ int XLALSimIMRSEOBNRv5ROMTimeOfFrequency(
   double Mf = frequency * (m1SI + m2SI) * LAL_MTSUN_SI / LAL_MSUN_SI;
 
   int ret = SEOBNRv5ROMTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final,
-                                          &Mtot_sec, m1SI, m2SI, chi1, chi2, Mf, 
+                                          &Mtot_sec, m1SI, m2SI, chi1, chi2, Mf,
                                           &Mf_ROM_min, &Mf_ROM_max);
   if(ret != 0)
     XLAL_ERROR(ret);
