@@ -30,7 +30,7 @@ for k=1:length(l1)
   index= find (l12(:,1)==fr);
   ratio(k)=l1(k,2)/l12(index,4);
 end
- 
+
 semilogy(l1(:,1), ratio(:), 'b.')
 axis([50 1000 0.1 100])
 xlabel('Frequency (Hz)')
