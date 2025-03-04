@@ -95,7 +95,7 @@
 
 #define FAILVAL XLAL_REAL4_FAIL_NAN
 
-#define TYPECODE C 
+#define TYPECODE C
 #define TYPE COMPLEX8
 #include "H5FileIOScalar_source.c"
 #include "H5FileIOVector_source.c"
@@ -107,7 +107,7 @@
 
 #define FAILVAL XLAL_REAL8_FAIL_NAN
 
-#define TYPECODE Z 
+#define TYPECODE Z
 #define TYPE COMPLEX16
 #include "H5FileIOScalar_source.c"
 #include "H5FileIOVector_source.c"
@@ -525,7 +525,7 @@ static CHARVectorSequence *XLALH5DatasetReadCHARVectorSequence(LALH5Dataset *dse
 
     ndim = XLALH5DatasetQueryNDim(dset);
     XLAL_CHECK_NULL(ndim == 1, XLAL_EDIMS);
-   
+
     npoints = XLALH5DatasetQueryNPoints(dset);
     XLAL_CHECK_NULL(npoints != (size_t)(-1), XLAL_EFUNC);
 
@@ -586,11 +586,11 @@ LALStringVector *XLALH5DatasetReadStringVector(LALH5Dataset *dset)
          	XLALDestroyCHARVectorSequence(sequence);
 		return vector;
 	}
- 
+
 	ndim = XLALH5DatasetQueryNDim(dset);
 	if (ndim != 1)
 		XLAL_ERROR_NULL(XLAL_EDIMS);
- 
+
 	npoints = XLALH5DatasetQueryNPoints(dset);
 	if (npoints == (size_t)(-1))
 		XLAL_ERROR_NULL(XLAL_EFUNC);
