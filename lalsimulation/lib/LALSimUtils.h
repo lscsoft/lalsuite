@@ -40,7 +40,7 @@ extern "C" {
  * @brief Ratio of horizon distance to sense-monitor range.
  *
  * This factor is used in XLALMeasureStandardSirenSenseMonitorRange().
- * 
+ *
  * `sensemon_range = horizon_dist / LAL_HORIZON_DISTANCE_OVER_SENSEMON_RANGE`
  *
  * The factor can be computed using Monte Carlo methods; its value has been
