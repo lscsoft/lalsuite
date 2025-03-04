@@ -1,6 +1,9 @@
 #!/usr/bin/env perl
 # Author: Karl Wette, 2024
 
+# Transform the output of `git diff` into a GitLab code quality report
+# in JSON format.
+
 use strict;
 
 my ($description) = @ARGV;

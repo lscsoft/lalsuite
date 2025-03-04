@@ -1,12 +1,8 @@
 # LALSuite
 
-This is the main LALSuite development repository.
-If you would like to just use a released version,
-see [here](https://computing.docs.ligo.org/conda/)
-for IGWN conda environments including LALSuite,
-or the project pages
-on [conda-forge](https://anaconda.org/conda-forge/lalsuite)
-and on [PyPI](https://pypi.org/project/lalsuite/).
+This is the main LALSuite development repository. If you would like to just use
+a released version, see [here][igwnconda] for IGWN conda environments including
+LALSuite, or the project pages on [conda-forge][condaforge] and on [PyPI][pypi].
 
 ## Acknowledgment
 
@@ -59,9 +55,8 @@ repository. It can then be cloned using:
 ## Building from Source
 
 The recommended way to build LALSuite from source is in a `conda` environment.
-[A recipe file](common/conda/environment.yml) is available with all main dependencies.
-This can serve as the base for custom recipes,
-or be used directly via:
+[A recipe file][condaenv] is available with all main dependencies. This can
+serve as the base for custom recipes, or be used directly via:
 
      $ conda env create -f common/conda/environment.yml
 
@@ -95,7 +90,7 @@ Some commonly-used options are:
 
 - `--enable-lal<name>`: Build the `lal<name>` component of LALSuite. This option
   can be combined with the `--disable-all-lal` option to selectively build
-  LALSuite components, e.g.  `--disable-all-lal --enable-lalframe
+  LALSuite components, e.g. `--disable-all-lal --enable-lalframe
   --enable-lalinference` will build only the `lal`, `lalframe`, and
   `lalinference` components.
 
@@ -141,8 +136,8 @@ After pulling updates or making your own changes, you will usually only need to
 call `make && make install` again, as reconfiguration and re-running `00boot`
 should be handled automatically if needed.
 
-If you prefer managing dependencies yourself without conda,
-see [here](https://wiki.ligo.org/Computing/LALSuite#Dependencies).
+If you prefer managing dependencies yourself without conda, see
+[here][lalsuitedeps].
 
 ## Contributing to LALSuite
 
@@ -176,11 +171,16 @@ the [Git LFS][gitlfs] conversion. Please note:
 
 Please visit the [LALSuite project page][project].
 
-[doi]:          https://doi.org/10.7935/GT1W-FZ16
-[swiglal]:      https://lscsoft.docs.ligo.org/lalsuite/lalsuite/swiglal_tutorial.html
-[gitlfs]:       https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client
+[condaenv]:     https://git.ligo.org/lscsoft/lalsuite/-/blob/master/common/conda/environment.yml
+[condaforge]:   https://anaconda.org/conda-forge/lalsuite
 [contributing]: https://lscsoft.docs.ligo.org/lalsuite/lalsuite/lalsuite_contributing.html
+[doi]:          https://doi.org/10.7935/GT1W-FZ16
+[gitlfs]:       https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client
+[igwnconda]:    https://computing.docs.ligo.org/conda/
+[lalsuitedeps]: https://wiki.ligo.org/Computing/LALSuite#Dependencies
 [nightlydocs]:  https://lscsoft.docs.ligo.org/lalsuite
 [oldlalsuite]:  https://git.ligo.org/lscsoft/lalsuite-archive
 [oldredmine]:   https://bugs.ligo.org/redmine/projects/lalsuite
 [project]:      https://wiki.ligo.org/Computing/LALSuite
+[pypi]:         https://pypi.org/project/lalsuite/
+[swiglal]:      https://lscsoft.docs.ligo.org/lalsuite/lalsuite/swiglal_tutorial.html

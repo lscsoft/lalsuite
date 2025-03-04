@@ -81,7 +81,7 @@ lint:api-merge-diff:
     - make install
     # compare API of LALSuite libraries before and after changes are merged
     - export PYTHONUNBUFFERED=yes
-    - ./common/maintainer-scripts/compare_library_api
+    - ./common/code-quality-scripts/compare_library_api
           --old-lib-dir=./OLD/lib
           --old-pub-header-dir=./OLD/include/lal
           --old-sha=${CI_MERGE_REQUEST_DIFF_BASE_SHA}
@@ -119,7 +119,7 @@ lint:api-last-release:
     - make install
     # compare API of LALSuite libraries between last release and current commit
     - export PYTHONUNBUFFERED=yes
-    - ./common/maintainer-scripts/compare_library_api
+    - ./common/code-quality-scripts/compare_library_api
           --old-lib-dir=/usr/lib64
           --old-pub-header-dir=/usr/include/lal
           --old-debug-dir=/usr/lib/debug
@@ -141,30 +141,44 @@ lint:api-last-release:
     # run on release branches
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /release/'
 
-lint:authors:
+lint:pre-commit:
   extends:
-    - .build-job
-    - .lint
+    .lint
   image: igwn/lalsuite-dev:el8
   variables:
-    # this jobs needs the full Git history to update the authors
-    GIT_STRATEGY: fetch
-  script:
+    GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
+  before_script:
     # this jobs needs the full Git history to update the authors
     - git fetch --unshallow --quiet
     # check that the first commit in LALSuite exists
     - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
-    # configure LALSuite
-    - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} --disable-doxygen --disable-swig
-    # check .mailmap and lal*/AUTHORS
+  script:
+    # install pre-commit
     - |
-      make update-authors && status=0 || status=$?
-      ./common/maintainer-scripts/git_diff_to_code_quality_report "Mailmap and author list" > code-quality-authors.json
+      python3.11 -m venv .venv
+      source .venv/bin/activate
+      python3 -m pip install --upgrade pip
+      python3 -m pip install pre-commit
+    # run pre-commit
+    - |
+      pre-commit run -a && status=0 || status=$?
+      if ! git diff --quiet; then
+        echo "------------------------------------------------------------------------"
+        echo "The pre-commit hooks have made the following fixes to your code:"
+        echo "------------------------------------------------------------------------"
+        git diff
+        echo "------------------------------------------------------------------------"
+        echo "To reproduce these fixes locally, install pre-commit, then run:"
+        echo "$ pre-commit install"
+        echo "$ pre-commit run -a"
+        echo "See CONTRIBUTING.md for further information."
+        echo "------------------------------------------------------------------------"
+      fi
+      ./common/code-quality-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
       exit ${status}
   artifacts:
     reports:
-      codequality: code-quality-authors.json
+      codequality: code-quality-pre-commit.json
 
 lint:depends:
   extends:
@@ -179,155 +193,46 @@ lint:depends:
           python-debian
           python-rpm-spec
   script:
-    - ./common/maintainer-scripts/check_library_dependencies
+    - ./common/code-quality-scripts/check_library_dependencies
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
-
-lint:execute:
-  extends:
-    - .build-job
-    - .lint
-  image: igwn/lalsuite-dev:el8
-  needs: []
-  script:
-    # remove execute permissions from file which should not be executable
-    - |
-      git ls-files |
-      grep -v '\(^\|/\)00boot$' |
-      grep -v '^common/' |
-      grep -v '/conda/' |
-      grep -v '/debian/' |
-      grep -v '\(^\|/\)gnuscripts/' |
-      xargs chmod a-x
-    # check for changes
-    - |
-      git diff --quiet && status=0 || status=1
-      ./common/maintainer-scripts/git_diff_to_code_quality_report "File should not be executable" > code-quality-execute.json
-      if test ${status} -ne 0; then
-        echo 'ERROR: the following files cannot be executable:'
-        git diff --name-only
-      fi
-      exit ${status}
-  artifacts:
-    reports:
-      codequality: code-quality-execute.json
 
 lint:gitignore:
   extends:
     - .build-job
     - .lint
   image: igwn/lalsuite-dev:el8
-  needs: []
   script:
-    # check that .gitignore entries are in the right place
-    - |
-      status=0
-      for file in .gitignore lal*/.gitignore; do
-        basedir=`dirname ${file}`
-        for line in `cat ${file}`; do
-          subdir=`echo ${line} | sed 's|^/||;s|/.*||'`
-          if test -f "${basedir}/${subdir}/.gitignore"; then
-            echo "ERROR: line '${line}' in '${file}' should be in '${basedir}/${subdir}/.gitignore'"
-            status=1
-          fi
-        done
-      done
-      test ${status} -eq 0 || exit ${status}
     # build in source directory, including tests
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-python --enable-swig-python
     - make -j${CPU_COUNT} VERBOSE=1 all
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
+    # install pre-commit
+    - |
+      python3.11 -m venv .venv
+      source .venv/bin/activate
+      python3 -m pip install --upgrade pip
+      python3 -m pip install pre-commit
     # check for build files not in .gitignore
     - |
       status=0
-      for line in `git status --short | sed -n 's|^?? ||p'`; do
-        subdir=`echo ${line} | sed 's|/.*||'`
-        rempath=`echo ${line} | sed "s|^${subdir}/||"`
-        if test -f "${subdir}/.gitignore"; then
-          echo "ERROR: please add '${rempath}' to '${subdir}/.gitignore'"
-        else
-          echo "ERROR: please add '${line}' to '.gitignore'"
-        fi
+      git status --short | sed -n 's|^?? ||p' >> .gitignore
+      pre-commit run -a fix-gitignore-entries
+      if ! git diff --quiet; then
+        echo "------------------------------------------------------------------------"
+        echo "The following entries are missing from the .gitignore files:"
+        echo "------------------------------------------------------------------------"
+        git diff
+        echo "------------------------------------------------------------------------"
         status=1
-      done
-      test ${status} -eq 0 || exit ${status}
-  artifacts:
-    # upload some files to debug failures
-    paths:
-      - config.log
-      - Makefile
-      - lal*/config.log
-      - lal*/Makefile
-    when: on_failure
-
-lint:coala:
-  extends:
-    - .lint
-  image: coala/base
-  script:
-    # run first for codeclimate (using --json)
-    - coala --ci --json -o coala.json || true
-    # run again to get plaintxt output for the user
-    # (and the exit code)
-    - coala --ci
-  after_script:
-    - |
-      python3 - <<EOF
-      import json
-      import sys
-      SEVERITY = ['info', 'minor', 'major', 'critical', 'blocker']
-      with open('coala.json', 'r') as file:
-          indata = json.load(file)
-      outdata = []
-      for key in indata['results']:
-          for e in indata['results'][key]:
-              start = e['affected_code'][0]['start']
-              end = e['affected_code'][0]['end']
-              outdata.append({
-                  'type': 'issue',
-                  'check_name': e['origin'],
-                  'content': e['additional_info'] or None,
-                  'description': e['message'],
-                  'fingerprint': e['id'],
-                  'severity': SEVERITY[e['severity']],
-                  'location': {
-                      'path': start['file'],
-                      'begin': start['line'],
-                      'end': end['line'],
-                  },
-              })
-      with open('codequality.json', 'w') as file:
-          json.dump(outdata, file, separators=(',', ':'))
-      EOF
-  artifacts:
-    paths:
-      - coala.json
-      - codequality.json
-    reports:
-      # don't upload report, see lint:combine-reports
-      codequality: null
-    when: always
-
-lint:pretty:
-  extends:
-    - .platform-test:conda
-    - .lint
-  image: igwn/base:conda
-  needs: []
-  script:
-    # configure LALSuite
-    - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} --disable-doxygen --disable-swig --enable-python
-    # run pretty formatters and check for changes
-    - |
-      make pretty && status=0 || status=$?
-      ./common/maintainer-scripts/git_diff_to_code_quality_report "Code pretty formatting" > code-quality-pretty.json
+      fi
+      ./common/code-quality-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
       exit ${status}
   artifacts:
     reports:
-      codequality: code-quality-pretty.json
+      codequality: code-quality-gitignore.json
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
