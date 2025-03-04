@@ -370,7 +370,7 @@ LIGOTimeGPS * XLALSimInspiralInjectionEndTime(LIGOTimeGPS *epoch, LALDict *injpa
 
     t_ring = XLALSimInspiralRingdownTimeBound(mass1 + mass2, spin_final);
     XLAL_CHECK_NULL(!XLAL_IS_REAL8_FAIL_NAN(t_ring), XLAL_EFUNC);
- 
+
     return XLALGPSAdd(epoch, t_ring);
 }
 
