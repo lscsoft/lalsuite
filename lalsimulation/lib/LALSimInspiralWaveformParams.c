@@ -983,7 +983,7 @@ REAL8 XLALSimInspiralGetPolarSpin_phiFromCartesian(REAL8 spiny, REAL8 spinz){
 		return spin_phi;
 }
 
-/* SPIN parameters LOOKUP functions 
+/* SPIN parameters LOOKUP functions
  *  Read cartesian and polar spin components from LALDict
  *  These functions do not check if the spins are overdetermined.
  *  For one spin you cannot mix cartesian and polar components. The three components must be or cartesian or polar.
