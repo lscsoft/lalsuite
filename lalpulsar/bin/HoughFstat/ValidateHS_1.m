@@ -1,6 +1,6 @@
 #! /usr/bin/octave -q
 ## Another script for comparing HierarchicalSearch.c with CFSv2.
-## This is more general that ValidateHS.c because it goes through 
+## This is more general that ValidateHS.c because it goes through
 ## the results produved by HS 1-by-1.  Thus it can deal with the case
 ## when we use multiple stacks
 
@@ -9,7 +9,7 @@ fBand=0.1;
 fdot=0;
 fdotBand=1.0e-9;
 nStacks1=10;
-maxEndTime=820631477; 
+maxEndTime=820631477;
 minStartTime=0;
 refTime=600000000;
 DataFiles="/local_data/badkri/fakesfts/H-1_H1*.sft";
@@ -26,7 +26,7 @@ cmdline = sprintf("HierarchicalSearch --sftData=%s --followUp=0 \
 --nStacks1=%d --skyGridFile=%s --gridType=3 --blocksRngMed=50 \
 --Dterms=16 --refTime=%d --minStartTime=%d --maxEndTime=%d", \
 		  DataFiles, fStart, fBand, fdot, fdotBand, nStacks1, \
-		  skyGridFile, refTime, minStartTime, maxEndTime); 
+		  skyGridFile, refTime, minStartTime, maxEndTime);
 
 #[output,status] = system(cmdline)
 
@@ -51,9 +51,9 @@ cmdline = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
  		  maxEndTime, refTime, DataFiles, skyGridFile)
 
 
-#for index=1:length(Freq) 
+#for index=1:length(Freq)
 for index=1:length(F_HS)
- 
+
   cmdline = sprintf("ComputeFStatistic_v2 --Freq=%.12g --f1dot=%.12g \
   --FreqBand=%.12g --f1dotBand=%.12g --dFreq=%.12g --df1dot=%.12g \
   --dAlpha=%.12g  --dDelta=%.12g --minStartTime=%d --maxEndTime=%d --refTime=%d \
@@ -63,16 +63,16 @@ for index=1:length(F_HS)
       --outputFstat=CFSv2 ", freq_HS(index), fdot_HS(index), 0.1, 0, dFreq, df1dot, \
 		    0.2, 0.2, minStartTime, maxEndTime, refTime, DataFiles, \
 		    alpha_HS(index), delta_HS(index));
-  
+
   [output, status] = system(cmdline);
 
   index
 
   load CFSv2
-    
+
   F_CFSv2(index) = CFSv2(1 ,7);
 
-  clear CFSv2 
+  clear CFSv2
 
 endfor
 
