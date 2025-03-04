@@ -16,7 +16,7 @@ xx=kk(1:Nbands ,2)*2^(0.25)/1800;
 x=sqrt(S).*xx;
 
 
-for bandnumber = 1:Nbands;  
+for bandnumber = 1:Nbands;
   fprintf(fid,'%d  %d %d %d \n', fmin(bandnumber), fmax(bandnumber),  Sigmax(bandnumber), 11.0*x(bandnumber) );
 end
 
