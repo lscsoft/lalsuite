@@ -15,7 +15,7 @@
  *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *  MA  02110-1301  USA
  */
- 
+
 #ifndef LALCOSMOLOGYCALCULATOR_H
 #define LALCOSMOLOGYCALCULATOR_H
 
@@ -46,7 +46,7 @@ typedef struct tagLALCosmologicalParameters
 
 typedef struct tagLALCosmologicalRateParameters
 {
-    double r0;  /* local coalescence rate in units of Mpc^-3 yr^-1 */ 
+    double r0;  /* local coalescence rate in units of Mpc^-3 yr^-1 */
     double W;           /* phenomenological parameter for the analytical fit to the SFR rate */
     double Q;           /* phenomenological parameter for the analytical fit to the SFR rate */
     double R;           /* phenomenological parameter for the analytical fit to the SFR rate */
@@ -59,31 +59,31 @@ typedef struct tagLALCosmologicalParametersAndRate
 } LALCosmologicalParametersAndRate;
 
 double XLALLuminosityDistance(
-            LALCosmologicalParameters *omega, 
+            LALCosmologicalParameters *omega,
             double z);
 
 double XLALAngularDistance(
-            LALCosmologicalParameters *omega, 
+            LALCosmologicalParameters *omega,
             double z);
 
 double XLALComovingLOSDistance(
-            LALCosmologicalParameters *omega, 
+            LALCosmologicalParameters *omega,
             double z);
 
 double XLALComovingTransverseDistance(
-            LALCosmologicalParameters *omega, 
-            double z);            
+            LALCosmologicalParameters *omega,
+            double z);
 
 double XLALHubbleDistance(
             LALCosmologicalParameters *omega
             );
-            
+
 double XLALHubbleParameter(double z,
             void *omega
             );
-            
+
 double XLALIntegrateHubbleParameter(
-            LALCosmologicalParameters *omega, 
+            LALCosmologicalParameters *omega,
             double z);
 
 double XLALComovingVolumeElement(
@@ -100,14 +100,14 @@ double XLALUniformComovingVolumeDensity(
             void *omega);
 
 double XLALUniformComovingVolumeDistribution(
-            LALCosmologicalParameters *omega, 
+            LALCosmologicalParameters *omega,
             double z,
             double zmax);
 
 double XLALIntegrateComovingVolume(LALCosmologicalParameters *omega, double z);
 
 double XLALIntegrateComovingVolumeDensity(LALCosmologicalParameters *omega, double z);
-            
+
 LALCosmologicalParameters *XLALCreateCosmologicalParameters(double h, double om, double ol, double w0, double w1, double w2);
 LALCosmologicalParameters *XLALCreateDefaultCosmologicalParameters(void);
 
@@ -136,4 +136,3 @@ LALCosmologicalParametersAndRate *XLALCreateCosmologicalParametersAndRate(void);
 void XLALDestroyCosmologicalParametersAndRate(LALCosmologicalParametersAndRate *p);
 void XLALSetCosmologicalRateParametersDefaultValue(LALCosmologicalRateParameters *params);
 #endif
-
