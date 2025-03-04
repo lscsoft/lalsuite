@@ -81,7 +81,7 @@ typedef struct tagPhenomXPbetaMRD
               double cosbeta_sign;
               bool flat_RD;
               double dfdamp;
-         
+
           } PhenomXPbetaMRD;
 
 typedef struct tagPhenomXPalphaMRD
@@ -89,7 +89,7 @@ typedef struct tagPhenomXPalphaMRD
               double aRD;
               double bRD;
               double cRD;
-         
+
           } PhenomXPalphaMRD;
 
 typedef struct tagPhenomXPInspiralArrays{
@@ -423,16 +423,16 @@ typedef struct tagIMRPhenomXPrecessionStruct
         REAL8 LPN_coefficients[6];
 
         REAL8 constants_L[5];
-       
+
         // Variables to interpolate SpinTaylor angles, up to fmax_angles
         gsl_spline *alpha_spline;
         gsl_spline *cosbeta_spline;
         gsl_spline *gamma_spline;
-    
+
         gsl_interp_accel *alpha_acc;
         gsl_interp_accel *cosbeta_acc;
         gsl_interp_accel *gamma_acc;
-        
+
         REAL8 Mfmax_angles;
         REAL8 alpha_ref;
         REAL8 gamma_ref;
@@ -449,7 +449,7 @@ typedef struct tagIMRPhenomXPrecessionStruct
         INT4 M_MIN;
         INT4 M_MAX;
         PhenomXPInspiralArrays *PNarrays;
-   
+
         INT4 MSA_ERROR; /**< Flag to track errors in initialization of MSA system. */
 
         /* PNR-specific additions for single-spin mapping */
