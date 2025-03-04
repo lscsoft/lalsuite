@@ -78,12 +78,12 @@ if load_data==0
         if ((BandN/10) == fix(BandN/10)) || BandN==0;
             disp(['READING: ',num2str(BandN),'/',num2str(BandNf),'   ',datestr(now)])
         end
-        
+
         y_filename=sprintf(Y_input,grup,BandN);
         x_filename=sprintf(X_input,grup,BandN);
         x = [];
         y = [];
-        
+
         if exist(x_filename, 'file')
             x=load(x_filename);
             if ~isempty(x)
@@ -99,7 +99,7 @@ if load_data==0
             xmissing=cat(1,xmissing,BandN);
             str = sprintf('FirstSet missing for %d',BandN)
         end
-        
+
         if exist(y_filename, 'file')
             y=load(y_filename);
             if ~isempty(y)
@@ -118,7 +118,7 @@ if load_data==0
             ymissing=cat(1,ymissing,BandN);
             str	= sprintf('SecondSet missing for %d',BandN)
         end
-        
+
     end
 
 	y_filename=sprintf(Y_input,grup-50,499);
@@ -205,93 +205,93 @@ g_Toplist=[];
 kmax=ceil((f0_grup_max-f0_grup)/f0_band - 1);
 k0=0;
 if ~isempty(x_Toplist) && ~isempty(y_Toplist)
-    
+
     %x1_y = x_Toplist(:,1) - x_Toplist(:,4) * (x_tref - y_tref); % Translate frequency from one data set reftime to the other
     y1_x = y_Toplist(:,1) - y_Toplist(:,4) * (y_tref - x_tref);
 
     % Extract a portion f0_rang_grup_band of the candidates based on there frequency to reduce the height of the toplist on the following step.
-    % (We add a wings considering r_W/Tcoh the maximum possible distance in frequency)    
+    % (We add a wings considering r_W/Tcoh the maximum possible distance in frequency)
     for k=1:kmax+1;
-        
+
         if (k/(f0_rang_grup_band)) == fix(k/(f0_rang_grup_band)) || k==1 || k==kmax
             disp(['COINCIDENCES: ',num2str(k),'/',num2str([kmax,grup+f0_band*(k-1)]),'(Hz)   ',datestr(now)])
             I_rang_grup_band_x= find( f0_grup + k0*floor(f0_rang_grup_band*f0_band) - f0_band <= x_Toplist(:,1) & f0_grup + (k0+1)*ceil(f0_rang_grup_band*f0_band) + f0_band >= x_Toplist(:,1));
             I_rang_grup_band_y= find( f0_grup + k0*floor(f0_rang_grup_band*f0_band)           <= y1_x           & f0_grup + (k0+1)*ceil(f0_rang_grup_band*f0_band) >= y1_x);
             k0=k0+1;
         end
-        
+
         % Extract a f0_band from the f0_rang_grup_band extraction to compute the coincidences (We add wings considering r_W/Tcoh the maximum possible distance in frequency)
         L_band_x= ( f0_grup + (k-1)*f0_band - f0_band  <= x_Toplist(I_rang_grup_band_x,1))      &  (f0_grup + (k)*f0_band +  f0_band >= x_Toplist(I_rang_grup_band_x,1));
         L_band_y= ( f0_grup + (k-1)*f0_band            <= y1_x(I_rang_grup_band_y,1)) &  (f0_grup + (k)*f0_band            >= y1_x(I_rang_grup_band_y,1));
-        
+
         if sum(L_band_x) && sum(L_band_y)
-            
+
             % We generate two toplist from the extracion
             %x=[x1_y(I_rang_grup_band_x(L_band_x)),x_Toplist(I_rang_grup_band_x(L_band_x),2:end)];  y=y_Toplist(I_rang_grup_band_y(L_band_y),:);
             x=x_Toplist(I_rang_grup_band_x(L_band_x),:);  y=[y1_x(I_rang_grup_band_y(L_band_y)),y_Toplist(I_rang_grup_band_y(L_band_y),2:end)];
-            
+
             I_sigchi2_x=1:length(x(:,1));
             I_sigchi2_y=1:length(y(:,1));
-            
+
             chi2_STD_x=chi2_STD(x(:,5),x(:,7),p);
             chi2_STD_y=chi2_STD(y(:,5),y(:,7),p);
-            
+
             % We extract the veto and threshold candidates from the toplist
-            
+
             %I_sigchi2_x(chi2_STD_x>=chisquare_STD_veto | x(:,5)<sigma_veto_toplist(x(:,1)))=[];
             %I_sigchi2_y(chi2_STD_y>=chisquare_STD_veto | y(:,5)<sigma_veto_toplist(y(:,1)))=[];
             I_sigchi2_x(x(:,5)<sigma_veto_toplist(x(:,1)))=[];
-            I_sigchi2_y(y(:,5)<sigma_veto_toplist(y(:,1)))=[];            
+            I_sigchi2_y(y(:,5)<sigma_veto_toplist(y(:,1)))=[];
 
             if ~isempty(I_sigchi2_x) && ~isempty(I_sigchi2_y)
-                
+
                 % overwrite a toplist without the vetoed and thresholded
-                
+
                 x=x(I_sigchi2_x,:);  y=y(I_sigchi2_y,:);
-                
+
                 % Calculate the distace between candidates
-                
+
                 [m_D,m_D5]=Distance_candidates(x,y,df0,df1,Tcoh,PixelFactor,r_W);
                 [I_sigchi2_y_cn,I_sigchi2_x_cn]=find(m_D<r_W); % & m_D5<rp_sig); % candidates X,Y inside a radius r_W of each other
-                
+
                 if ~isempty(I_sigchi2_x_cn) && ~isempty(I_sigchi2_y_cn)
-                    
+
                     % Calculate the harmonic mean for the significance, between all the coincidental candidates.
                     s_harm=2*(x(I_sigchi2_x_cn,5).*y(I_sigchi2_y_cn,5)./(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5)));
-                    
+
                     % Reduce the coincidences by sorting with the harmonic significance and thresholding by toplist max # of candidates
                     [~,I]=sort(s_harm,'descend');
                     %if length(I)>Ntop; I=I(1:Ntop,:); end;
-                    
+
                     I_sigchi2_x_cn=I_sigchi2_x_cn(I); I_sigchi2_x_cn=reshape(I_sigchi2_x_cn,1, numel(I_sigchi2_x_cn))';
                     I_sigchi2_y_cn=I_sigchi2_y_cn(I); I_sigchi2_y_cn=reshape(I_sigchi2_y_cn,1, numel(I_sigchi2_y_cn))';
-                    
+
                     % Calculate the centre between each coincidetal candidates weighted by the significance
                     gf0=(x(I_sigchi2_x_cn,5).*x(I_sigchi2_x_cn,1)+y(I_sigchi2_y_cn,5).*y(I_sigchi2_y_cn,1))./(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5));
-                    
+
                     x_xecl = cos(x(I_sigchi2_x_cn,2)).*cos(x(I_sigchi2_x_cn,3));
-                    y_xecl = cos(y(I_sigchi2_y_cn,2)).*cos(y(I_sigchi2_y_cn,3));                        
+                    y_xecl = cos(y(I_sigchi2_y_cn,2)).*cos(y(I_sigchi2_y_cn,3));
                     x_yecl = sin(x(I_sigchi2_x_cn,2)).*cos(x(I_sigchi2_x_cn,3)).*cos(phi) + sin(phi).*sin(x(I_sigchi2_x_cn,3));
-                    y_yecl = sin(y(I_sigchi2_y_cn,2)).*cos(y(I_sigchi2_y_cn,3)).*cos(phi) + sin(phi).*sin(y(I_sigchi2_y_cn,3));                       
+                    y_yecl = sin(y(I_sigchi2_y_cn,2)).*cos(y(I_sigchi2_y_cn,3)).*cos(phi) + sin(phi).*sin(y(I_sigchi2_y_cn,3));
                     x_zecl = sin(x(I_sigchi2_x_cn,3)).*cos(phi) - sin(phi).*cos(x(I_sigchi2_x_cn,3)).*sin(x(I_sigchi2_x_cn,2));
                     y_zecl = sin(y(I_sigchi2_y_cn,3)).*cos(phi) - sin(phi).*cos(y(I_sigchi2_y_cn,3)).*sin(y(I_sigchi2_y_cn,2));
-                        
+
                     gx = (x_xecl.*x(I_sigchi2_x_cn,5) + y_xecl.*y(I_sigchi2_y_cn,5))./(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5));
                     gy = (x_yecl.*x(I_sigchi2_x_cn,5) + y_yecl.*y(I_sigchi2_y_cn,5))./(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5));
                     gz = (x_zecl.*x(I_sigchi2_x_cn,5) + y_zecl.*y(I_sigchi2_y_cn,5))./(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5));
 	       	    norm = sqrt(gx.^2 + gy.^2 + gz.^2);
 		    gx = gx./norm;
                     gy = gy./norm;
-                    gz = gz./norm;                    
+                    gz = gz./norm;
 
                     gf1=(x(I_sigchi2_x_cn,5).*x(I_sigchi2_x_cn,4)+y(I_sigchi2_y_cn,5).*y(I_sigchi2_y_cn,4))./(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5));
                     s_mean=(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5))/2;
-                    
+
                     % Array containing the results and the coincidental index, adding the results for each iteration
 %                    g_cn_data0 = [gf0,gx,gy,gz,gf1,s_mean,s_harm(I),I_sigchi2_x_cn,I_sigchi2_y_cn,x(I_sigchi2_x_cn,2),y(I_sigchi2_y_cn,2),x(I_sigchi2_x_cn,3),y(I_sigchi2_y_cn,3)];
 		     g_cn_data0 = [gf0,gx,gy,gz,gf1,s_mean,s_harm(I),I_sigchi2_x_cn,I_sigchi2_y_cn,x(I_sigchi2_x_cn,1),y(I_sigchi2_y_cn,1),x(I_sigchi2_x_cn,2),y(I_sigchi2_y_cn,2),x(I_sigchi2_x_cn,3),y(I_sigchi2_y_cn,3),x(I_sigchi2_x_cn,4),y(I_sigchi2_y_cn,4),x(I_sigchi2_x_cn,10),y(I_sigchi2_y_cn,10)];
                     g_Toplist=cat(1,g_Toplist,g_cn_data0);
-                    
+
                     g_cn_data0=[];
                end
            end
@@ -305,44 +305,44 @@ save (file2,'g_Toplist')
 aaaab=1;
 %if aaaab==2
 if ~isempty(g_Toplist)
-    
+
     % Sort by frequency the results of the full group and save the generated Toplist
     [~,I]=sort(g_Toplist(:,1));  g_Toplist=g_Toplist(I,:);
     disp(['Save: ',file2,'   ',datestr(now)])
     %save (file2,'g_Toplist')
-    
+
     k0=0;
     I_N_Cluster=0;
     I_partial_cluster=[];
     I_partial_cluster{1}=[];
     for k=1:kmax+1;
-        
+
         % Extract a portion f0_rang_grup_band of the candidates based on there frequency
         % to reduce the height of the toplist on the following step.
         % (We add a wings considering r_W/Tcoh the maximum possible distance in frequency)
-        
+
         if (k/(f0_rang_grup_band)) == fix(k/(f0_rang_grup_band)) || k==1 || k==kmax
             disp(['CLUSTER: ',num2str(k),'/',num2str([kmax,grup+f0_band*k]),'(Hz)   ',datestr(now)])
             I_rang_grup_band_x= find( f0_grup + k0*floor(f0_rang_grup_band*f0_band) - r_W_cl/Tcoh <= g_Toplist(:,1) & f0_grup + (k0+1)*ceil(f0_rang_grup_band*f0_band) + r_W_cl/Tcoh >= g_Toplist(:,1));
             k0=k0+1;
         end
-        
+
         gx_Toplist=g_Toplist(I_rang_grup_band_x,:);
-        
+
         % Extract a f0_band from the f0_rang_grup_band extraction to compute the coincidences
         % (We add wings considering r_W/Tcoh the maximum possible distance in frequency)
-        
+
         I_band =  find( f0_grup + (k-1)*f0_band - r_W_cl/Tcoh <= gx_Toplist(:,1) &  f0_grup + (k)*f0_band +  r_W_cl/Tcoh >= gx_Toplist(:,1));
-        
+
         if ~isempty(I_band)
             x = gx_Toplist(I_band,:);
             % Calculate the distace between candidates
             [m_D,m_D5]=Distance_candidates_b(x,x,df0,df1,Tcoh,PixelFactor,r_W_cl);
-            
+
             % We get a matrix with a 1 for candidates that exist in a distance r_W_cl of each other and 0 for the rest.
             L_m_D=(m_D<r_W_cl); % & m_D5<rp_sig);
             ones_x = ones(length(x(:,1)),1);
-            
+
             % For matrix I_m each row correspond to candidate j and each column to candidate i.
             % If the condition is not satisfy we will set a 0, else the index i.
             I_m = ones_x * (1:1:size(ones_x,1)).*L_m_D;
@@ -372,7 +372,7 @@ if ~isempty(g_Toplist)
             end
         end
     end
-    
+
     %% CLOSING CLUSTERS
     N=1;
     x=g_Toplist;
@@ -381,7 +381,7 @@ if ~isempty(g_Toplist)
     I_Ci=[];
     % We extract the first partition*
     A=I_partial_cluster{1};
-    
+
     if I_N_Cluster>1;
         for i=1:I_N_Cluster;
             if isempty(I_Ci);
@@ -410,7 +410,7 @@ if ~isempty(g_Toplist)
         % if we only have one partition
         N_Cluster(A)=1;
     end
-    
+
     %% CLUSTER CENTRE CALCULATION
     j=1;
     id_clust=1;
@@ -454,7 +454,7 @@ if ~isempty(g_Toplist)
         end
         id_clust=id_clust+1;
     end
-    
+
     follow_up=[[Cluster.f0{:}]',[Cluster.alpha{:}]',[Cluster.delta{:}]',[Cluster.f1{:}]',[Cluster.sign_mean{:}]',[Cluster.s_harm{:}]',...
         [Cluster.sign_sum{:}]',[Cluster.length{:}]',[Cluster.parent_x{:}]',[Cluster.parent_y{:}]',[Cluster.id{:}]'];
 end
@@ -491,7 +491,7 @@ if ~isempty(follow_up)
     catch
         %'no lines file'
     end
-    
+
     %% WITHOUT CLEANUP
     follow_up = follow_up(follow_up(:,8)>=population_cluster_veto(1) & follow_up(:,9)>=population_cluster_veto(2) & follow_up(:,10)>=population_cluster_veto(3),:);
     follow_up = follow_up(follow_up(:,6)>significance_veto_cluster,:);
@@ -543,25 +543,25 @@ m_W2 = (2./(Y + X))/(Tcoh*1e-4)/PixelFactor; % Calculate distance the bins sky
 [X,Y]=meshgrid(x(:,4),y(:,4));
 m_D4 = (X-Y)/m_W4; % Distance in bins for the spindown between each candidate
 
-% Cartesianas Ecuatoriales (x, y)                   
+% Cartesianas Ecuatoriales (x, y)
 x_ecux = cos(x(:,3)).*cos(x(:,2));
 y_ecux = cos(x(:,3)).*sin(x(:,2));
 z_ecux = sin(x(:,3));
-                   
+
 x_ecuy = cos(y(:,3)).*cos(y(:,2));
 y_ecuy = cos(y(:,3)).*sin(y(:,2));
 z_ecuy = sin(y(:,3));
-                    
+
 % Cartesianas Ecuatoriales -> Cartesianas Eclipticas
 % Rotar un alngulo phi (ya definido arriba
 x_eclx = x_ecux;
 y_eclx = cos(phi) .* y_ecux + sin(phi) .* z_ecux;
 z_eclx = cos(phi) .* z_ecux - sin(phi) .* y_ecux;
-                             
+
 x_ecly = x_ecuy;
 y_ecly = cos(phi) .* y_ecuy + sin(phi) .* z_ecuy;
 z_ecly = cos(phi) .* z_ecuy - sin(phi) .* y_ecuy;
-                     
+
 % Calculamos distancia en el plano
 % SIN CONSIDERAR z_x, z_y
 [X_x, X_y] = meshgrid(x_eclx, x_ecly);
@@ -575,7 +575,7 @@ m_D5 = abs((X - Y)./(X + Y));
 m_D = sqrt(m_D1.^2+m_D2.^2+m_D4.^2); % the total distance
 
 % Calculamos la separacion en z en bines de distancia
-% Si se pasa de r_W, fuera. 
+% Si se pasa de r_W, fuera.
 
 [Z_x, Z_y] = meshgrid(z_eclx, z_ecly);
 dz = abs(Z_x - Z_y) ./ m_W2;
