@@ -157,7 +157,7 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 PKG_CHECK_MODULES([PYTHON3_EMBED],[python-${PYTHON_VERSION}-embed],[have_python3_embed=true],[have_python3_embed=false])
 if test "x$have_python3_embed" = xtrue; then
 
-    # separate out -l and -L LIBS 
+    # separate out -l and -L LIBS
     AC_SUBST([PYTHON3_EMBED_LIBADD],[])
     for flag in ${PYTHON3_EMBED_LIBS}; do
        case $flag in
