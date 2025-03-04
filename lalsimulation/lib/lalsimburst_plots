@@ -195,4 +195,3 @@ if 1:
 	btlwnb_example(fig.add_subplot(10, 2, 19), fig.add_subplot(10, 2, 20),   0.,  2., 0.008, 1., 0.)
 	fig.tight_layout()
 	fig.savefig("lalsimburst_btlwnbexamples.svg")
-
