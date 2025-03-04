@@ -191,11 +191,3 @@ void SFT2Periodogram( LALStatus  *status,
 #endif
 
 #endif     /* Close double-include protection _SFTBIN_H */
-
-
-
-
-
-
-
-
