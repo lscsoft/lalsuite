@@ -1221,7 +1221,7 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  *    adds NR-tuned tidal effects
  *    to IMRPhenomD phasing and twists the waveform
  *    to generate the corresponding precessing waveform.
- *    Two flavors of NRTidal models are available: original (_NRTidal, based on https://arxiv.org/pdf/1706.02969.pdf) and an improved version 2 (_NRTidalv2, based on https://arxiv.org/pdf/1905.06011.pdf). 
+ *    Two flavors of NRTidal models are available: original (_NRTidal, based on https://arxiv.org/pdf/1706.02969.pdf) and an improved version 2 (_NRTidalv2, based on https://arxiv.org/pdf/1905.06011.pdf).
  *  * IMRPhenomNSBH models single-spin, non-precessing neutron-star-black-hole
  *    binaries, based on the amplitude of IMRPhenomC and the phase of
  *    IMRPhenomD_NRTidalv2
@@ -1245,7 +1245,7 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  * f15615215a7e70488d32137a827d63192cbe3ef6 (February 2019).
  *
  * @review IMRPhneomPv2_NRTidalv2 reviewed by Haney, Ossokine, Pürrer. Concluded
- * January 2020, for details and final git hash see review wiki: 
+ * January 2020, for details and final git hash see review wiki:
  * https://git.ligo.org/waveforms/reviews/nrtidal_v2/-/wikis/home
  *
  * @review IMRPhenomHM review wiki page can be found here
@@ -1253,7 +1253,7 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  *
  * @review IMRPhenomNSBH review by Frank Ohme, Tim Dietrich, Shrobana Ghosh,
  * Andrew Matas, Jonathan Thompson, Edward Fauchon-Jones. The review concluded
- * on 3 February 2020. The review documentation, resources, and final git hash 
+ * on 3 February 2020. The review documentation, resources, and final git hash
  * can be found at https://git.ligo.org/waveforms/reviews/nsbh-models/wikis/home.
  *
  * @review IMRPhenomPv3 review:
