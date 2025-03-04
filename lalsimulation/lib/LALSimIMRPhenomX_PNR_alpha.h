@@ -62,7 +62,7 @@ extern "C"
         const IMRPhenomX_PNR_alpha_parameters *alphaParams,
         IMRPhenomXWaveformStruct *pWF,
         IMRPhenomXPrecessionStruct *pPrec);
-						  
+
     REAL8 IMRPhenomX_PNR_GetPNAlphaAtFreq(
         REAL8 Mf,
         IMRPhenomXWaveformStruct *pWF,
