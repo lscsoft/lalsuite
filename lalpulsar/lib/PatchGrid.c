@@ -405,12 +405,3 @@ void LALHOUGHFillPatchGrid( LALStatus      *status,
   /* normal exit */
   RETURN( status );
 }
-
-
-
-
-
-
-
-
-
