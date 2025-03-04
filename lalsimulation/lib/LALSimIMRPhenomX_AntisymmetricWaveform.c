@@ -139,7 +139,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
     {
       freqs->data[i - iStart] = i * deltaF;
     }
-    
+
     IMRPhenomXWaveformStruct *pWF;
     pWF = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
     status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, PHENOMXDEBUG);
@@ -379,7 +379,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 
       /****** antisymmetric amplitude ******/
       amp_AS = kappa->data[idx] * amp;
-      
+
 
       if(Mf < MfT)
       {
@@ -440,7 +440,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 
     REAL8 vRD = cbrt (LAL_PI * MfRD );
     const double kappaRD = GetKappa_at_frequency(vRD,delta,Chi,theta,eta,b);
-    
+
     for (size_t i = 0; i < freqs->length; i++)
     {
       REAL8 Mf = XLALSimPhenomUtilsHztoMf(freqs->data[i], M);
@@ -454,7 +454,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
         kappa->data[i] = kappaRD;
       }
     }
-    
+
     size_t width = 80;
     double df = 0.0;
     if(width > kappa->length - 1)
@@ -463,7 +463,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
     }
     size_t half_width = (size_t)floor((double)(width / 2.0));
 
-    
+
     for (size_t id = 0; id < kappa->length-width-1; id++)
     {
       double smoothed_ratio = 0.0;
@@ -592,11 +592,11 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
     phi_der_MfT *= inveta;
     phi_der_MfT += linb;
     phi_MfT  *= inveta;
-    phi_MfT  += linb*MfT + lina + phiref22;    
+    phi_MfT  += linb*MfT + lina + phiref22;
 
     *A0 = phi_der_MfT/2 - alpha_der_MfT;
     *phi_A0 = pPrec-> alpha_offset;
-    *phi_B0 = alpha_MfT - phi_MfT/2 + *A0 * MfT + *phi_A0; 
+    *phi_B0 = alpha_MfT - phi_MfT/2 + *A0 * MfT + *phi_A0;
 
     LALFree(alphaParams);
 
@@ -606,5 +606,3 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 #ifdef __cplusplus
 }
 #endif
-
-
