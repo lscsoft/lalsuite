@@ -3,7 +3,7 @@
 %
 % Remember to add the path where this file is located:
 % addpath /local_data/sintes/CVSDIR/waves/people/sintes/PULSAR/CODES/m_files/
-%   To run simply type  
+%   To run simply type
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -47,40 +47,40 @@ filepre = strcat(filepre,'_');
 
 for bandnumber=0:Nbands-1
 
-  bn=bandnumber+1;  
+  bn=bandnumber+1;
   steph0= (h0max(bn)-h0min(bn))/(nh0-1);
   h0vect = h0min(bn):steph0:h0max(bn);
- 
+
   basestring = strcat(filepre, int2str( bandnumber ) );
 
   mystring = strcat(basestring, '_nc');
   parstring = strcat(basestring, '_par');
 
   Ncount0 = load(mystring);
-  parvals = load(parstring);  
+  parvals = load(parstring);
 
   MC_FreqVals = parvals(1:length(Ncount0(:,1)),2);
   clear parvals
 
-  % use doppler wing to veto frequencies 
+  % use doppler wing to veto frequencies
   dopp = fmax(bn)*0.0001;
-  vetoindices = find((mod(MC_FreqVals,1) > dopp & mod(MC_FreqVals,1) < 0.25-dopp) | (mod(MC_FreqVals,1) > 0.25+dopp & mod(MC_FreqVals,1) < 0.50-dopp) | (mod(MC_FreqVals,1) > 0.50+dopp &mod(MC_FreqVals,1) < 0.75-dopp) | (mod(MC_FreqVals,1) > 0.75+dopp & mod(MC_FreqVals,1) < 1.00-dopp)); 
+  vetoindices = find((mod(MC_FreqVals,1) > dopp & mod(MC_FreqVals,1) < 0.25-dopp) | (mod(MC_FreqVals,1) > 0.25+dopp & mod(MC_FreqVals,1) < 0.50-dopp) | (mod(MC_FreqVals,1) > 0.50+dopp &mod(MC_FreqVals,1) < 0.75-dopp) | (mod(MC_FreqVals,1) > 0.75+dopp & mod(MC_FreqVals,1) < 1.00-dopp));
   clear MC_FreqVals
 
   nMonteCarlos=length(vetoindices);
 
- 
+
   fprintf(fid,'%d %d %d %d ', bn-1, fmin(bn), fmax(bn), Nmax(bn) );
-  
+
    for h0num=1:nh0
-     x=Ncount0(vetoindices, h0num+1);   
+     x=Ncount0(vetoindices, h0num+1);
      kkcount = find(x>Nmax(bn));
      CH(h0num) = length(kkcount)/nMonteCarlos;
      fprintf(fid,' %d %d ', h0vect(h0num), CH(h0num) );
    end
      fprintf(fid,' \n');
    CH
-   
+
 end
 
  fclose(fid);
