@@ -272,7 +272,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode22(
             XLAL_ERROR_NULL(XLAL_EINVAL);
         case -1: /* use highest available pN order */
         case 6:
-            re6 = (27027409.0/646800.0) - (856.0/105.0)*LAL_GAMMA 
+            re6 = (27027409.0/646800.0) - (856.0/105.0)*LAL_GAMMA
                     + (2.0/3.0)*pi2 - (1712.0/105.0)*log(2.0)
                     - ((278185.0/33264.0) - (41.0/96.0)*pi2)*nu
                     - (20261.0/2772.0)*nu2 + (114635.0/99792.0)*nu3;
@@ -291,7 +291,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode22(
             __attribute__ ((fallthrough));
 #endif
         case 4:
-            re4 = - ((2173.0/1512.0) + (1069.0/216.0)*nu 
+            re4 = - ((2173.0/1512.0) + (1069.0/216.0)*nu
                     - (2047.0/1512.0)*nu2);
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
@@ -597,7 +597,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode32(
             __attribute__ ((fallthrough));
 #endif
         case 4:
-            re4 = - ((193.0/90.0) - (145.0/18.0)*nu 
+            re4 = - ((193.0/90.0) - (145.0/18.0)*nu
                     + (73.0/18.0)*nu2);
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
@@ -672,7 +672,7 @@ COMPLEX16TimeSeries *XLALSimInspiralPNMode31(
         case -1: /* use highest available pN order */
         case 6:
         case 5:
-            re5 = ((607.0/198.0) - (136.0/99.0)*nu 
+            re5 = ((607.0/198.0) - (136.0/99.0)*nu
                     - (247.0/198.0)*nu2);
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
