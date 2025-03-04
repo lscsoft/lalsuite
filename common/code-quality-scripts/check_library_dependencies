@@ -125,7 +125,7 @@ def boot():
     """Generate `./configure` by running `./00boot`
     """
     # autoconf --trace only works if autoreconf has been run
-    print('calling ./00boot')
+    LOGGER.debug('calling ./00boot')
     check_call(
         ["./00boot"],
         cwd=os.path.curdir,
