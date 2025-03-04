@@ -1,4 +1,4 @@
-/*  
+/*
  *  Copyright (C) 2008 Bernd Machenschalk
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -12,28 +12,28 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
- * 
+ *
  */
 
 #ifndef _OPT_HOUGH_I686_SSE2_H
 #define _OPT_HOUGH_I686_SSE2_H
 
-#ifdef __APPLE__ 
-#define AD_FLOAT ".single " 
-#define AD_ASCII ".ascii " 
-#define AD_ALIGN16 ".align 4" 
-#define AD_ALIGN32 ".align 5" 
-#define AD_ALIGN64 ".align 6" 
-#else /* x86 gas */ 
-#define AD_FLOAT ".float " 
-#define AD_ASCII ".string " 
-#define AD_ALIGN16 ".align 16" 
-#define AD_ALIGN32 ".align 32" 
-#define AD_ALIGN64 ".align 64" 
-#endif 
+#ifdef __APPLE__
+#define AD_FLOAT ".single "
+#define AD_ASCII ".ascii "
+#define AD_ALIGN16 ".align 4"
+#define AD_ALIGN32 ".align 5"
+#define AD_ALIGN64 ".align 6"
+#else /* x86 gas */
+#define AD_FLOAT ".float "
+#define AD_ASCII ".string "
+#define AD_ALIGN16 ".align 16"
+#define AD_ALIGN32 ".align 32"
+#define AD_ALIGN64 ".align 64"
+#endif
 
 #define ADDPHMD2HD_WLR_LOOP(_XPIXEL,_YLOWER,_YUPPER,_XSIDEP1,_MAP,_WEIGHT)\
 __asm __volatile ( 				      \
