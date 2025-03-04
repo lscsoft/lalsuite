@@ -146,7 +146,7 @@ static void NRSur3dq8Remnant_Init_LALDATA(void) {
                 NRSur3dq8Remnant_DATAFILE);
     }
     #else
-    XLAL_ERROR_VOID(XLAL_FAILURE,  "Failure loading data from %s. HDF5 support is not enabled.\n", 
+    XLAL_ERROR_VOID(XLAL_FAILURE,  "Failure loading data from %s. HDF5 support is not enabled.\n",
         NRSur3dq8Remnant_DATAFILE);
     #endif
 
