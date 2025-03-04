@@ -26,9 +26,9 @@
  * ### Synopsis
  *
  *     lalfr-cat [file ...]
- * 
+ *
  * ### Description
- * 
+ *
  * The `lalfr-cat` utility cuts reads frame files sequentially, writing them to
  * the standard output.  The file operands are  processed  in  command-line
  * order.  If file is a single dash (`-`) or absent, `lalfr-cat` reads from the
@@ -48,7 +48,7 @@
  *
  * will output to standard output the contents of frame file `file1.gwf`, the
  * frame file received from standard input, and the contents of `file2.gwf`.
- * 
+ *
  * @sa @ref lalfr_split
  */
 
