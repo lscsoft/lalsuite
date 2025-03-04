@@ -414,7 +414,7 @@ static inline herr_t threadsafe_H5TBget_field_info(hid_t loc_id, const char *dse
 static inline herr_t threadsafe_H5TBget_table_info(hid_t loc_id, const char *dset_name, hsize_t *nfields, hsize_t *nrecords)
 {
 	LAL_HDF5_MUTEX_LOCK
-	herr_t retval = H5TBget_table_info(loc_id, dset_name, nfields, nrecords); 
+	herr_t retval = H5TBget_table_info(loc_id, dset_name, nfields, nrecords);
 	LAL_HDF5_MUTEX_UNLOCK
 	return retval;
 }
