@@ -124,4 +124,3 @@ void XLALSkymapApply(
 #endif
 
 #endif /* SKYMAP_H */
-
