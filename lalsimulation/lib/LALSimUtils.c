@@ -110,7 +110,7 @@ static REAL8FrequencySeries * create_interpolated_psd(double f0, double deltaF, 
 		/* safety checks are probably not necessary */
 		y0 = ix < 0.0 ? 0.0 : old->data->data[i];
 		y1 = i >= old->data->length - 1 ? 0.0 : old->data->data[i+1];
-		
+
 		if (y0 == 0.0 || y1 == 0.0)
 			new->data->data[k] = 0.0; /* invalid data */
 		else /* linear-in-log interpolation */
@@ -449,7 +449,7 @@ double XLALMeasureStandardSirenSNR(const REAL8FrequencySeries *psd, double f_min
  * rounded down.  This ends up double-counting the DC and a possible Nyquist
  * component, but it is assumed these terms have negligible contribution to the
  * sum and there is no special case to handle them separately (most likely,
- * the detector will have no sensitivity to those components anyway).  
+ * the detector will have no sensitivity to those components anyway).
  *
  * This routine will accept frequency series \f$\tilde{h}\f$ and \f$S_h\f$ that
  * have different frequency resolutions (i.e., different \f$\Delta f\f$).  In
@@ -620,7 +620,7 @@ double XLALMeasureSNR(const REAL8TimeSeries *h, const REAL8FrequencySeries *psd,
 	}
 	XLALDestroyREAL8TimeSeries(hpadded);
 	XLALDestroyREAL8FFTPlan(plan);
-	
+
 	snr = XLALMeasureSNRFD(htilde, psd, f_min, f_max);
 
 	XLALDestroyCOMPLEX16FrequencySeries(htilde);
