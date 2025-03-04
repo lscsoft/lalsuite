@@ -233,8 +233,3 @@ void LALHoughHistogram( LALStatus      *status,
   /* normal exit */
   RETURN( status );
 }
-
-
-
-
-
