@@ -9,12 +9,12 @@ Generation of a waveform goes through three basic steps:
 
 * Define set of intrinsic / extrinsic parameters along with proper units. Unitless inputs of a dictionary can be converted to :code:`GWSignal` parsable parameter dictionary by using the :code:`add_params_units` function.
 
-* Initiate an instance of the Generator class, in this case, the :code:`LALCompactBinaryCoalescenceGenerator`. 
+* Initiate an instance of the Generator class, in this case, the :code:`LALCompactBinaryCoalescenceGenerator`.
 
 * Generate time-domain waveform using the :code:`GenerateTDWaveform` function.
 
-Frequency domain waveforms can be generated using the `GenerateFDWaveform` function. In case a generator does not provide a method to generate time (frequency) domain 
-waveform; set :code:`condition = 1` in the dictionary of parameters. 
+Frequency domain waveforms can be generated using the `GenerateFDWaveform` function. In case a generator does not provide a method to generate time (frequency) domain
+waveform; set :code:`condition = 1` in the dictionary of parameters.
 
 .. code-block:: python
 
@@ -37,7 +37,7 @@ waveform; set :code:`condition = 1` in the dictionary of parameters.
 	meanPerAno = 0.*u.rad
 
 
-	parameters_dict = {'mass1' : 10*u.solMass, 
+	parameters_dict = {'mass1' : 10*u.solMass,
 	                   'mass2' : 10*u.solMass,
 	                   'deltaT' : deltaT,
 	                   'f22_start' : f_min,
@@ -59,7 +59,7 @@ waveform; set :code:`condition = 1` in the dictionary of parameters.
 
 	# Generate waveform
 	hp, hc = wfm.GenerateTDWaveform(parameters_dict, gen)
-	
+
 
 	# Plot the waveform hp and hc polarizationsy
 
@@ -69,4 +69,4 @@ waveform; set :code:`condition = 1` in the dictionary of parameters.
 	ax.plot(hc,label='hc')
 	ax.legend()
 
-.. image:: images/Usage_waveform_pic.png	
+.. image:: images/Usage_waveform_pic.png
