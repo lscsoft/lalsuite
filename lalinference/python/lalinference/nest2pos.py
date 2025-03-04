@@ -149,4 +149,3 @@ def draw_posterior_many_ROQ_runs(datas, Nlives, verbose=False):
     if verbose: print('Number of input samples: %s'%(str([len(x) for x in log_wts])))
     if verbose: print('Expected number of samples from each input file %s'%(str([int(f*len(p)) for f,p in zip(fracs,posts)])))
     return astropy.table.vstack(bigpos)
-
