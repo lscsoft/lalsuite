@@ -17,13 +17,13 @@
 *  MA  02110-1301  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: blindinj.c
  *
  * Author: Fairhurst, S
- * 
- * 
+ *
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -80,14 +80,14 @@
 
 /* global definitions */
 
-typedef enum 
-{ 
-  noResponse, 
-  unityResponse, 
-  LIGOdesign, 
-  actuationX, 
-  actuationY 
-} 
+typedef enum
+{
+  noResponse,
+  unityResponse,
+  LIGOdesign,
+  actuationX,
+  actuationY
+}
 ResponseFunction;
 
 typedef struct actuationparameters {
@@ -100,14 +100,14 @@ typedef struct actuationparameters {
   REAL4           length;
 } ActuationParameters;
 
-static ProcessParamsTable *next_process_param( 
-    const char *name, 
+static ProcessParamsTable *next_process_param(
+    const char *name,
     const char *type,
     const char *fmt, ... );
 
 static void destroyCoherentGW( CoherentGW *waveform );
 
-static REAL4TimeSeries *injectWaveform( 
+static REAL4TimeSeries *injectWaveform(
     LALStatus            *status,
     SimInspiralTable     *inspInj,
     SimRingdownTable     *ringdownevents,
@@ -156,8 +156,8 @@ REAL4Vector  *normalDev;         /* vector to store normally distributed vars*/
 
 /* functions */
 
-ProcessParamsTable *next_process_param( 
-    const char *name, 
+ProcessParamsTable *next_process_param(
+    const char *name,
     const char *type,
     const char *fmt, ... )
 {
@@ -214,7 +214,7 @@ static void destroyCoherentGW( CoherentGW *waveform )
   return;
 }
 
-static REAL4TimeSeries *injectWaveform( 
+static REAL4TimeSeries *injectWaveform(
     LALStatus            *status,
     SimInspiralTable     *inspInj,
     SimRingdownTable     *ringdownevents,
@@ -243,7 +243,7 @@ static REAL4TimeSeries *injectWaveform(
   /* set up the channel to which we add the injection */
   XLALReturnIFO( ifo, ifoNumber );
   snprintf( name, LALNameLength, "%s:INJECT", ifo );
-  chan = XLALCreateREAL4TimeSeries( name, &epoch, 0, 1./sampleRate, 
+  chan = XLALCreateREAL4TimeSeries( name, &epoch, 0, 1./sampleRate,
       &lalADCCountUnit, sampleRate * duration );
   if ( ! chan )
   {
@@ -251,9 +251,9 @@ static REAL4TimeSeries *injectWaveform(
   }
 
   memset( chan->data->data, 0, chan->data->length * sizeof(REAL4) );
- 
+
   thisRingdownEvent = ringdownevents;
-  
+
   /*
    *
    * Generate the Waveforms
@@ -268,11 +268,11 @@ static REAL4TimeSeries *injectWaveform(
 
   memset( &waveform, 0, sizeof(CoherentGW) );
 
-  LAL_CALL( LALGenerateInspiral(status, &waveform, inspInj, &ppnParams), 
+  LAL_CALL( LALGenerateInspiral(status, &waveform, inspInj, &ppnParams),
       status);
 
   /* add the ringdown */
-  wfm = XLALGenerateInspRing( &waveform, inspInj, thisRingdownEvent, 
+  wfm = XLALGenerateInspRing( &waveform, inspInj, thisRingdownEvent,
       injectSignalType );
 
   if ( !wfm )
@@ -281,7 +281,7 @@ static REAL4TimeSeries *injectWaveform(
     if (xlalErrno == XLAL_EFAILED)
     {
       fprintf( stderr, "Too much merger\n");
-      XLALDestroyREAL4TimeSeries( chan );     
+      XLALDestroyREAL4TimeSeries( chan );
       xlalErrno = XLAL_SUCCESS;
       return ( NULL );
     }
@@ -293,27 +293,27 @@ static REAL4TimeSeries *injectWaveform(
   /* write out the waveform */
   if ( ifoNumber == LAL_IFO_H1 && vrbflg )
   {
-    fprintf(  stdout, 
+    fprintf(  stdout,
         "Writing out A+, Ax, f, phi, shift for waveform "
         "to file named INSPIRAL_WAVEFORM.dat\n");
     snprintf( fileName, FILENAME_MAX, "INSPIRAL_WAVEFORM.dat");
     fp = fopen(fileName, "w");
     for ( i = 0; i < waveform.phi->data->length; i++ )
     {
-      if ( waveform.shift ) fprintf( fp, "%e\t %e\t %f\t %f\t %f\n", 
+      if ( waveform.shift ) fprintf( fp, "%e\t %e\t %f\t %f\t %f\n",
           waveform.a->data->data[2*i],
-          waveform.a->data->data[2*i+1], waveform.f->data->data[i], 
+          waveform.a->data->data[2*i+1], waveform.f->data->data[i],
           waveform.phi->data->data[i] , waveform.shift->data->data[i] );
 
-      else fprintf( fp, "%e\t %e\t %f\t %f\n", 
+      else fprintf( fp, "%e\t %e\t %f\t %f\n",
           waveform.a->data->data[2*i],
-          waveform.a->data->data[2*i+1], waveform.f->data->data[i], 
+          waveform.a->data->data[2*i+1], waveform.f->data->data[i],
           waveform.phi->data->data[i] );
     }
     fclose( fp );
   }
 
-  /* 
+  /*
    *
    * set up the response function
    *
@@ -371,15 +371,15 @@ static REAL4TimeSeries *injectWaveform(
   memset( &detector, 0, sizeof( DetectorResponse ) );
   detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
   XLALReturnDetector( detector.site, ifoNumber );
-  detector.transfer = XLALCreateCOMPLEX8FrequencySeries( chan->name, 
-      &(chan->epoch), 0, 1.0 / ( duration ), &strainPerCount, 
+  detector.transfer = XLALCreateCOMPLEX8FrequencySeries( chan->name,
+      &(chan->epoch), 0, 1.0 / ( duration ), &strainPerCount,
       ( sampleRate * duration / 2 + 1 ) );
 
   XLALUnitInvert( &(detector.transfer->sampleUnits), &(resp->sampleUnits) );
 
   /* invert the response function to get the transfer function */
-  unity = XLALCreateCOMPLEX8Vector( resp->data->length );  
-  for ( k = 0; k < unity->length; ++k ) 
+  unity = XLALCreateCOMPLEX8Vector( resp->data->length );
+  for ( k = 0; k < unity->length; ++k )
   {
     unity->data[k] = 1.0;
   }
@@ -392,7 +392,7 @@ static REAL4TimeSeries *injectWaveform(
   waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
 
   XLALINT8NSToGPS( &(waveform.a->epoch), waveformStartTime );
-  memcpy(&(waveform.f->epoch), &(waveform.a->epoch), 
+  memcpy(&(waveform.f->epoch), &(waveform.a->epoch),
       sizeof(LIGOTimeGPS) );
   memcpy(&(waveform.phi->epoch), &(waveform.a->epoch),
       sizeof(LIGOTimeGPS) );
@@ -405,7 +405,7 @@ static REAL4TimeSeries *injectWaveform(
   XLALDestroyCOMPLEX8FrequencySeries( detector.transfer );
   if ( detector.site ) LALFree( detector.site );
 
-  XLALDestroyCOMPLEX8FrequencySeries( resp ); 
+  XLALDestroyCOMPLEX8FrequencySeries( resp );
   return( chan );
 }
 
@@ -427,8 +427,8 @@ int main( int argc, char *argv[] )
   REAL4                 massPar     = 0;
   MassDistribution      mDist       = logComponentMass;
   InterferometerNumber  ifoNumber   = LAL_UNKNOWN_IFO;
-  REAL4                 desiredSnr  = 0;           
-  REAL4                 snrsqAt1Mpc = 0;           
+  REAL4                 desiredSnr  = 0;
+  REAL4                 snrsqAt1Mpc = 0;
   REAL4TimeSeries      *chan        = NULL;
   REAL4FFTPlan         *pfwd;
   COMPLEX8FrequencySeries *fftData;
@@ -462,7 +462,7 @@ int main( int argc, char *argv[] )
   int c;
 
 
-  /*taken from Calibration CVS file: 
+  /*taken from Calibration CVS file:
    * calibration/frequencydomain/runs/S5/H1/model/V3/H1DARMparams_849677446.m */
   actuationParams[LAL_IFO_H1].ETMXcal = -0.795e-9;
   actuationParams[LAL_IFO_H1].pendFX  = 0.767;
@@ -472,7 +472,7 @@ int main( int argc, char *argv[] )
   actuationParams[LAL_IFO_H1].pendQY  = 10.0;
   actuationParams[LAL_IFO_H1].length  = 4000.0;
 
-  /*taken from Calibration CVS file: 
+  /*taken from Calibration CVS file:
    * calibration/frequencydomain/runs/S5/H2/model/V3/H2DARMparams_849678155.m */
   actuationParams[LAL_IFO_H2].ETMXcal = -0.876e-9;
   actuationParams[LAL_IFO_H2].pendFX  = 0.749;
@@ -482,7 +482,7 @@ int main( int argc, char *argv[] )
   actuationParams[LAL_IFO_H2].pendQY  = 10.0;
   actuationParams[LAL_IFO_H2].length  = 2000.0;
 
-  /*taken from Calibration CVS file: 
+  /*taken from Calibration CVS file:
    * calibration/frequencydomain/runs/S5/L1/model/V3/L1DARMparams_841930071.m */
   actuationParams[LAL_IFO_L1].ETMXcal = -0.447e-9;
   actuationParams[LAL_IFO_L1].pendFX  = 0.766;
@@ -552,7 +552,7 @@ int main( int argc, char *argv[] )
         if ( gpsinput < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is prior to " 
+              "GPS start time is prior to "
               "Jan 01, 1994  00:00:00 UTC:\n"
               "(%ld specified)\n",
               long_options[option_index].name, gpsinput );
@@ -560,15 +560,15 @@ int main( int argc, char *argv[] )
         }
         gpsStartTime.gpsSeconds = gpsinput;
 
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "int", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "int",
               "%ld", gpsinput );
         break;
 
       case 's':
         randSeed = atoi( LALoptarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "int", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "int",
               "%d", randSeed );
         break;
 
@@ -594,13 +594,13 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, LALoptarg );
           exit( 1 );
         }
-        next_process_param( long_options[option_index].name, "string", "%s", 
+        next_process_param( long_options[option_index].name, "string", "%s",
             LALoptarg );
         break;
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "blind hardware injection generation routine\n" 
+        fprintf( stdout, "blind hardware injection generation routine\n"
             "Stephen Fairhurst\n");
         XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
@@ -662,15 +662,15 @@ int main( int argc, char *argv[] )
   /* create the sim_inspiral table */
   inspInjections = inj = (SimInspiralTable *)
     LALCalloc( 1, sizeof(SimInspiralTable) );
-  
+
   ringInjections = ringList = (SimRingdownTable *)
     LALCalloc( 1, sizeof(SimRingdownTable) );
-  
+
 
   /* set the geocentric end time of the injection */
   earliestEndTime = gpsStartTime;
   earliestEndTime = *XLALGPSAdd( &earliestEndTime, longestSignal );
-  inj = XLALRandomInspiralTime( inj, randParams, earliestEndTime, 
+  inj = XLALRandomInspiralTime( inj, randParams, earliestEndTime,
       timeWindow );
 
   /* set the distance of the injection to 1 Mpc */
@@ -679,10 +679,10 @@ int main( int argc, char *argv[] )
   /* set the masses */
   massPar = XLALUniformDeviate( randParams );
 
-  if ( vrbflg) fprintf(  stdout, 
-      "Random variable to determine inj type = %f\n", 
+  if ( vrbflg) fprintf(  stdout,
+      "Random variable to determine inj type = %f\n",
       massPar);
-  
+
   while ( numInjections == 0 )
   {
 
@@ -696,7 +696,7 @@ int main( int argc, char *argv[] )
           minNSMass, maxNSMass, minNSMass, maxNSMass, minTotalMass, maxTotalMass );
       inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
           maxNSSpin, minNSSpin, maxNSSpin, -1.0, 1.0, 0.0, 0.1, 0, uniformSpinDist, 0.0, 0.0, 0.0, 0.0);
-      desiredSnr = bnsSnrMean + bnsSnrStd * normalDev->data[0]; 
+      desiredSnr = bnsSnrMean + bnsSnrStd * normalDev->data[0];
     }
     else if ( massPar < (BNSfrac + BBHfrac) )
     {
@@ -705,7 +705,7 @@ int main( int argc, char *argv[] )
           minBHMass, maxBHMass, minBHMass, maxBHMass, minTotalMass, maxTotalMass );
       inj = XLALRandomInspiralSpins( inj, randParams, minBHSpin,
           maxBHSpin, minBHSpin, maxBHSpin , -1.0, 1.0, 0.0, 0.1, 0, uniformSpinDist, 0.0, 0.0, 0.0, 0.0);
-      desiredSnr = snrMean + snrStd * normalDev->data[0]; 
+      desiredSnr = snrMean + snrStd * normalDev->data[0];
     }
     else
     {
@@ -714,7 +714,7 @@ int main( int argc, char *argv[] )
           minNSMass, maxNSMass, minBHMass, maxBHMass, minTotalMass, maxTotalMass );
       inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
           maxNSSpin, minBHSpin, maxBHSpin , -1.0, 1.0, 0.0, 0.1, 0, uniformSpinDist, 0.0, 0.0, 0.0, 0.0);
-      desiredSnr = snrMean + snrStd * normalDev->data[0]; 
+      desiredSnr = snrMean + snrStd * normalDev->data[0];
     }
     XLALDestroyVector( normalDev );
 
@@ -748,7 +748,7 @@ int main( int argc, char *argv[] )
         "Livingston effective distance = %.2f Mpc\n",
         inj->mass1, inj->spin1x, inj->spin1y, inj->spin1z,
         inj->mass2, inj->spin2x, inj->spin2y, inj->spin2z,
-        inj->eff_dist_h, 
+        inj->eff_dist_h,
         inj->eff_dist_l );
 
     for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
@@ -758,14 +758,14 @@ int main( int argc, char *argv[] )
         ResponseFunction  responseType = unityResponse;
         REAL4             thisSnrsq = 0;
         UINT4             k;
-        
-        chan = injectWaveform( &status, inj, ringList, responseType, ifoNumber, 
+
+        chan = injectWaveform( &status, inj, ringList, responseType, ifoNumber,
             gpsStartTime);
 
         if ( ! chan )
         {
-          if ( vrbflg ) fprintf( stdout, 
-              "Unable to generate a realistic merger for this inspiral\n" 
+          if ( vrbflg ) fprintf( stdout,
+              "Unable to generate a realistic merger for this inspiral\n"
               "Trying again with different parameters\n" );
           break;
         }
@@ -780,8 +780,8 @@ int main( int argc, char *argv[] )
 
         /* fft the output */
         pfwd = XLALCreateForwardREAL4FFTPlan( chan->data->length, 0 );
-        fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name, 
-            &(chan->epoch), 0, 1.0/chan->deltaT, &lalDimensionlessUnit, 
+        fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name,
+            &(chan->epoch), 0, 1.0/chan->deltaT, &lalDimensionlessUnit,
             chan->data->length/2 + 1 );
         XLALREAL4TimeFreqFFT( fftData, chan, pfwd );
         XLALDestroyREAL4FFTPlan( pfwd );
@@ -811,12 +811,12 @@ int main( int argc, char *argv[] )
         {
           snrsqAt1Mpc += thisSnrsq;
         }
-        if ( vrbflg ) 
+        if ( vrbflg )
         {
           CHAR  ifo[LIGOMETA_IFO_MAX];
           XLALReturnIFO( ifo, ifoNumber );
-          fprintf(stdout, 
-              "For %s, the SNR at distance of 1 Mpc is %.2f\n", ifo, 
+          fprintf(stdout,
+              "For %s, the SNR at distance of 1 Mpc is %.2f\n", ifo,
               pow(thisSnrsq, 0.5));
         }
         XLALDestroyREAL4TimeSeries( chan );
@@ -829,8 +829,8 @@ int main( int argc, char *argv[] )
       desiredSnr *= 1.5;
       inj->distance = 1.0 * pow( snrsqAt1Mpc, 0.5 ) / desiredSnr;
       inj = XLALPopulateSimInspiralSiteInfo( inj );
-      if ( vrbflg ) fprintf( stdout, 
-          "Rescaling the distance to %.2f to give a combined snr of %.2f\n", 
+      if ( vrbflg ) fprintf( stdout,
+          "Rescaling the distance to %.2f to give a combined snr of %.2f\n",
           inj->distance, desiredSnr);
 
       /*
@@ -841,7 +841,7 @@ int main( int argc, char *argv[] )
 
       for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
-        if ( ifoNumber == LAL_IFO_H1 || ifoNumber == LAL_IFO_H2 || 
+        if ( ifoNumber == LAL_IFO_H1 || ifoNumber == LAL_IFO_H2 ||
             ifoNumber == LAL_IFO_L1 )
         {
           UINT4             k;
@@ -853,31 +853,31 @@ int main( int argc, char *argv[] )
           if ( injectionResponse == unityResponse )
           {
             snprintf( type, LIGOMETA_COMMENT_MAX, "STRAIN");
-            if ( vrbflg ) fprintf( stdout, 
+            if ( vrbflg ) fprintf( stdout,
                 "Generating h(t) injection for %s\n", ifo );
           }
-          if ( injectionResponse == actuationX ) 
+          if ( injectionResponse == actuationX )
           {
             snprintf( type, LIGOMETA_COMMENT_MAX, "ETMX");
-            if ( vrbflg ) fprintf( stdout, 
+            if ( vrbflg ) fprintf( stdout,
                 "Generating ETMX hardware injection for %s\n", ifo );
           }
-          if ( injectionResponse == actuationY ) 
+          if ( injectionResponse == actuationY )
           {
             snprintf( type, LIGOMETA_COMMENT_MAX, "ETMY");
-            if (vrbflg ) fprintf( stdout, 
+            if (vrbflg ) fprintf( stdout,
                 "Generating ETMY hardware injection for %s\n", ifo );
           }
-          
-          chan = injectWaveform( &status, inj, ringList, injectionResponse, 
+
+          chan = injectWaveform( &status, inj, ringList, injectionResponse,
               ifoNumber, gpsStartTime);
 
-          snprintf( fname, FILENAME_MAX, 
+          snprintf( fname, FILENAME_MAX,
               "%s-HARDWARE-INJECTION_%d_%s-%d-%d.txt",
               ifo, randSeed, type, gpsStartTime.gpsSeconds, duration );
           if ( vrbflg ) fprintf( stdout, "Writing waveform to %s\n", fname);
 
-          fp = fopen( fname, "w" ); 
+          fp = fopen( fname, "w" );
           for ( k = 0; k < chan->data->length; k++ )
           {
             if ( injectionResponse == unityResponse )
@@ -906,7 +906,7 @@ int main( int argc, char *argv[] )
    */
 
   /* create the output file name */
-  snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
+  snprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml",
       randSeed, gpsStartTime.gpsSeconds,  duration );
 
   if ( vrbflg ) fprintf( stdout, "Writing the injection details to %s\n",
@@ -944,7 +944,7 @@ int main( int argc, char *argv[] )
     XLALWriteLIGOLwXMLSimInspiralTable( xmlfp, inspInjections );
   XLALDestroySimInspiralTable( inspInjections );
 
-   
+
   /* write the sim_ringdown table */
   if ( ringInjections )
     XLALWriteLIGOLwXMLSimRingdownTable( xmlfp, ringInjections );
