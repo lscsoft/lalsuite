@@ -31,7 +31,7 @@ do { \
 
 void
 FUNC ( LALStatus  *stat, VTYPE **sequence, FILE *stream )
-{ 
+{
   VectorList head = empty; /* head of linked list of vectors */
   VectorList *here;     /* pointer to current position in list */
   TYPE *data;           /* pointer to vector data */
