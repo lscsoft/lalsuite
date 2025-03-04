@@ -55,10 +55,10 @@ repository. It can then be cloned using:
 ## Building from Source
 
 The recommended way to build LALSuite from source is in a `conda` environment.
-[A recipe file][condaenv] is available with all main dependencies. This can
+[A recipe file][condadevenv] is available with all main dependencies. This can
 serve as the base for custom recipes, or be used directly via:
 
-     $ conda env create -f common/conda/environment.yml
+     $ conda env create -f ./conda-dev-env.yml
 
 Pulling in dependencies may take a while depending on your internet connection.
 After the environment setup succeeded, you can activate it with:
@@ -171,7 +171,7 @@ the [Git LFS][gitlfs] conversion. Please note:
 
 Please visit the [LALSuite project page][project].
 
-[condaenv]:     https://git.ligo.org/lscsoft/lalsuite/-/blob/master/common/conda/environment.yml
+[condadevenv]:  https://git.ligo.org/lscsoft/lalsuite/-/blob/master/conda-dev-env.yml
 [condaforge]:   https://anaconda.org/conda-forge/lalsuite
 [contributing]: https://lscsoft.docs.ligo.org/lalsuite/lalsuite/lalsuite_contributing.html
 [doi]:          https://doi.org/10.7935/GT1W-FZ16

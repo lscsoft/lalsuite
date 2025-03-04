@@ -27,7 +27,7 @@ platform:debian:bookworm:
     - .platform-test
   variables:
     CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
-    ENVIRONMENT_FILE: "common/conda/environment.yml"
+    ENVIRONMENT_FILE: "./conda-dev-env.yml"
   before_script:
     - !reference [.build-init]
     # configure conda
