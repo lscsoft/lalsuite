@@ -104,7 +104,7 @@ int ring_inject_signal(
   CHAR                  fname[FILENAME_MAX];
   LIGOLwXMLStream       *xmlfp;
   Approximant injApproximant;
- 
+
   /* copy injectFile to injFile (to get rid of const qual) */
   strncpy( injFile, injectFile, sizeof( injFile ) - 1 );
   if(snprintf( name, sizeof( name ), "%s_INJ", series->name ) >= (int) sizeof( name )) abort();
@@ -150,7 +150,7 @@ int ring_inject_signal(
 
   /* units must be counts for inject; reset below if they were strain */
   series->sampleUnits = lalADCCountUnit;
- 
+
   /* inject the signals */
   verbose( "injecting signal(s) into time series\n" );
 
@@ -222,12 +222,12 @@ int ring_inject_signal(
     injectList = injectList->next;
     LALFree( thisInject );
   }
- 
+
   /* free memory */
   XLALDestroySimRingdownTable( ringList );
- 
+
   XLALDestroyCOMPLEX8Vector( response->data );
   LALFree( response );
- 
+
   return 0;
 }
