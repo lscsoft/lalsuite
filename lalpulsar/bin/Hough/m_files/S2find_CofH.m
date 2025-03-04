@@ -57,22 +57,22 @@ end
 
 for bandnumber=1:Nbands;
   bn=bandnumber+199;
-  
+
   basestring = strcat(MCfilepre, int2str( bn ) );
   ncstring = strcat(basestring, '_nc');
   h0string = strcat(basestring, '_h0');
 
   maxNC= nMax(bandnumber);
   UL=0.0;
-  
+
   fprintf(fid1,'%d %d ',  nFre(bandnumber), maxNC );
   fprintf(fid2,'%d %d ',  nFre(bandnumber), maxNC );
 
 
   if maxNC>0;
      Ncount = load(ncstring);
-     h0vect = load(h0string); 
-     
+     h0vect = load(h0string);
+
      %getting the confidence level for each h0 value
      for h0num=1:nh0
        x=Ncount(:, h0num+1);
@@ -87,13 +87,13 @@ for bandnumber=1:Nbands;
      h0max= h0vect(nh0)/CH(nh0);
      if( CH(nh0)> 0.955)
        small = find( CH<0.945);
-       if (length(small) ~= 0) 
+       if (length(small) ~= 0)
               h0min = h0vect(length(small));
        elseif (CH(1) < 0.95)
               h0min = h0vect(1);
        else
-              h0min = 0.95*h0vect(1); 
-       end 
+              h0min = 0.95*h0vect(1);
+       end
        large = find( CH > 0.955);
        h0max = h0vect(large(1));
      end
@@ -135,25 +135,24 @@ for bandnumber=1:Nbands;
          slope = (h02 - h01)/(CL2 -CL1);
          UL = h01 + slope * (0.95 - CL1);
       end
-      
+
       if (UL < h0min)
          h0min = 0.97 * UL;
       end
       if (UL > h0max)
          h0max = 1.03 * UL;
-      end  
+      end
       fprintf(fid2,'%d %d %d\n', h0min, h0max, UL );
- 
+
   else
     for h0num=1:nh0
-       fprintf(fid1,' 0.0 0.0 ' );   
+       fprintf(fid1,' 0.0 0.0 ' );
     end
     fprintf(fid2,' 0.0 0.0 0.0 \n' );
     fprintf(fid1,' \n');
   end
- 
+
 end
 
  fclose(fid1);
  fclose(fid2);
-
