@@ -364,7 +364,7 @@ int XLALFrStreamState(LALFrStream * stream)
  * @param stream Pointer to a \c LALFrStream structure.
  * @retval 0 The ::LAL_FR_STREAM_END bit is not set in @p stream.
  * @retval 1 The ::LAL_FR_STREAM_END bit is set in @p stream.
- */ 
+ */
 int XLALFrStreamEnd(LALFrStream * stream)
 {
     return stream->state & LAL_FR_STREAM_END;
@@ -379,7 +379,7 @@ int XLALFrStreamEnd(LALFrStream * stream)
  * @param stream Pointer to a \c LALFrStream structure.
  * @retval 0 The ::LAL_FR_STREAM_ERR bit is not set in @p stream.
  * @retval 1 The ::LAL_FR_STREAM_ERR bit is set in @p stream.
- */ 
+ */
 int XLALFrStreamError(LALFrStream * stream)
 {
     return stream->state & LAL_FR_STREAM_ERR;
@@ -392,7 +392,7 @@ int XLALFrStreamError(LALFrStream * stream)
  * value ::LAL_FR_STREAM_OK.
  * @param stream Pointer to a \c LALFrStream structure.
  * @retval 0 Success.
- */ 
+ */
 int XLALFrStreamClearErr(LALFrStream * stream)
 {
     stream->state = LAL_FR_STREAM_OK;
