@@ -35,7 +35,7 @@
 
 /* Include static functions */
 #include "LALSimInspiraldEnergyFlux.c"
-#include "LALSimIMREOBNewtonianMultipole.c" 
+#include "LALSimIMREOBNewtonianMultipole.c"
 #include "LALSimIMREOBNQCCorrection.c"
 
 #ifndef _LALSIMIMRFACTORIZEDWAVEFORM_C
@@ -273,7 +273,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   REAL8 m1Plus3eta, m1Plus3eta2, m1Plus3eta3;
 
   dM2 = 1. - 4.*eta;
-  
+
   /* Check that deltaM has a reasonable value */
   if ( dM2 < 0 )
   {
@@ -306,7 +306,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   coeffs->rho22v4   = -20555./10584. + (chiS*chiS + 2.*chiA*chiS*dM + chiA*chiA*dM2)/2.
        - (33025.*eta)/21168. + (19583.*eta2)/42336.;
   coeffs->rho22v5   = (-34.*a)/21.;
-  coeffs->rho22v6   = 1556919113./122245200. + (89.*a2)/252. - (48993925.*eta)/9779616. 
+  coeffs->rho22v6   = 1556919113./122245200. + (89.*a2)/252. - (48993925.*eta)/9779616.
        - (6292061.*eta2)/3259872. + (10620745.*eta3)/39118464.
        + (41.*eta*LAL_PI*LAL_PI)/192.;
   coeffs->rho22v6l  = - 428./105.;
@@ -337,14 +337,14 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
                         + (617.*eta2)/4704.;
     coeffs->rho21v5   = (-98635.*a)/75264. + (2031.*a*a2)/7168. - (1701.*a2*a3)/8192.;
     coeffs->rho21v6   = 7613184941./2607897600.+ (9032393.*a2)/1806336. + (3897.*a2*a2)/16384.
-                        - (15309.*a3*a3)/65536.; 
+                        - (15309.*a3*a3)/65536.;
     coeffs->rho21v6l  = - 107./105.;
     coeffs->rho21v7   = (-3859374457.*a)/1159065600. - (55169.*a3)/16384.
                         + (18603.*a2*a3)/65536. - (72171.*a2*a2*a3)/262144.;
     coeffs->rho21v7l  =  107.*a/140.;
     coeffs->rho21v8   = -1168617463883./911303737344.;
     coeffs->rho21v8l  = 6313./5880.;
-    coeffs->rho21v10  = -63735873771463./16569158860800.; 
+    coeffs->rho21v10  = -63735873771463./16569158860800.;
     coeffs->rho21v10l = 5029963./5927040.;
   }
 
@@ -393,8 +393,8 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
     coeffs->delta31vh6 = (61.*a)/20. + (13.*LAL_PI)/21.;
     coeffs->delta31vh7 = (-24.*a2)/5.;
     coeffs->delta31vh9 = -227827./81000. + (26.*LAL_PI*LAL_PI)/63.;
-    coeffs->delta31v5  = - 17.*eta/10.; 
- 
+    coeffs->delta31v5  = - 17.*eta/10.;
+
     coeffs->rho31v2  = -13./18. - (2.*eta)/9.;
     coeffs->rho31v3  = (chiA*(-4. + 11.*eta) + chiS*dM*(-4. + 13.*eta))/(6.*dM);
     coeffs->rho31v4  = 101./7128.
@@ -408,7 +408,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   }
 
   /* l = 4 */
-  
+
   coeffs->delta44vh3 = (112. + 219.*eta)/(-120.*m1Plus3eta);
   coeffs->delta44vh6 = (-464.*a)/75. + (25136.*LAL_PI)/3465.;
 
@@ -512,7 +512,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   /* l = 6 */
 
   coeffs->delta66vh3 = 43./70.;
-  
+
   coeffs->rho66v2 = (-106. + 602.*eta - 861.*eta2
                         + 273.*eta3)/(84.*(1. - 5.*eta + 5.*eta2));
   coeffs->rho66v3 = (-2.*a)/3.;
@@ -521,14 +521,14 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   if ( dM2 )
   {
     coeffs->delta65vh3 = 10./21.;
-    
+
     coeffs->rho65v2 = (-185. + 838.*eta - 910.*eta2
                         + 220.*eta3)/(144.*(dM2 + 3.*eta2));
     coeffs->rho65v3 = - 2.*a/9.;
   }
 
   coeffs->delta64vh3 = 43./105.;
-  
+
   coeffs->rho64v2 = (-86. + 462.*eta - 581.*eta2
                         + 133.*eta3)/(84.*(1. - 5.*eta + 5.*eta2));
   coeffs->rho64v3 = (-2.*a)/3.;
@@ -609,7 +609,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   }
 
   /* l = 8 */
-  
+
   coeffs->rho88v2 = (3482. - 26778.*eta + 64659.*eta2 - 53445.*eta3
                         + 12243.*eta2*eta2) / (2736.*(-1. + 7.*eta - 14.*eta2
                         + 7.*eta3));
@@ -667,7 +667,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
  * SHOULD ALREADY HAVE BEEN CALCULATED using XLALCalcFacWaveformCoefficients() prior
  * to calling this function.
  */
-UNUSED static int XLALSimIMREOBModifyFacWaveformCoefficients( 
+UNUSED static int XLALSimIMREOBModifyFacWaveformCoefficients(
                                        FacWaveformCoeffs * const coeffs, /**<< Structure containing coefficients */
                                        const REAL8 eta                   /**<< Symmetric mass ratio */
                                      )
@@ -722,7 +722,7 @@ nonKeplerianCoefficient(
  * The function returns XLAL_SUCCESS if everything works out properly,
  * otherwise XLAL_FAILURE will be returned.
  */
-UNUSED static int  XLALSimIMREOBGetFactorizedWaveform( 
+UNUSED static int  XLALSimIMREOBGetFactorizedWaveform(
                                 COMPLEX16   * restrict hlm,    /**<< The value of hlm (populated by the function) */
                                 REAL8Vector * restrict values, /**<< Vector containing dynamics r, phi, pr, pphi for a given point */
                                 const REAL8 v,                 /**<< Velocity (in geometric units) */
@@ -1094,6 +1094,6 @@ UNUSED static int  XLALSimIMREOBGetFactorizedWaveform(
   *hlm *= hNewton;
 
   return XLAL_SUCCESS;
-} 
+}
 
 #endif /*_LALSIMIMRFACTORIZEDWAVEFORM_C*/
