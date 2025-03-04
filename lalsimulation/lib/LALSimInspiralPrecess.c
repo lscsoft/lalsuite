@@ -183,7 +183,7 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
 			dalpha_0 = dalpha_1;
 			dalpha_1 = 0.5*(alpha->data->data[i+1] - alpha->data->data[i-1]);
 			// Two point numerical integration over the interval
-			gam->data->data[i] = 
+			gam->data->data[i] =
 				gam->data->data[i-1] +
 				cos(beta->data->data[i-1])*dalpha_0 +
 				cos(beta->data->data[i])*dalpha_1;
@@ -262,14 +262,14 @@ int XLALSimInspiralOrientationMatrixForL2(
 		/* Sum[conj[2, m + 1] h[2, m] c[2, m] (m + 1/2), {m, -2, 1}] */
 
 		I2 = sqrt(6.)*( conj(h20)*h2m2 + h20*conj(h22)    ) + 3*conj(h21)*h2m1;
-		I0 = 1/2.*(  
+		I0 = 1/2.*(
 						(2*(3) -  2*2)* conj(h22)*h22
 						+ (2*(3) -  2*2) *conj(h2m2)*h2m2
-						+ (2*(3) -  1*1)* conj(h21)*h21 
-						+ (2*(3) -  1*1) *conj(h2m1)*h2m1 
+						+ (2*(3) -  1*1)* conj(h21)*h21
+						+ (2*(3) -  1*1) *conj(h2m1)*h2m1
 						+ (2*(3) -  0 )* conj(h20)*h20
 				  );
-		Izz  =   ( (2*2)* conj(h22)*h22 
+		Izz  =   ( (2*2)* conj(h22)*h22
 						+ (  2*2) *conj(h2m2)*h2m2
 						+ (  1*1) *conj(h21)*h21
 						+ ( 1*1) *conj(h2m1)*h2m1
@@ -320,7 +320,7 @@ int XLALSimInspiralOrientationMatrixDirection(
 		gsl_eigen_symmv(m, eval, evec, w);
 		gsl_eigen_symmv_free(w);
 
-		gsl_eigen_symmv_sort (eval, evec, GSL_EIGEN_SORT_ABS_ASC);  
+		gsl_eigen_symmv_sort (eval, evec, GSL_EIGEN_SORT_ABS_ASC);
 
 		for (i=0; i<3; i++) {
 				vec[i] = gsl_matrix_get(evec,2,i);
