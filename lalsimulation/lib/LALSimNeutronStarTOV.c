@@ -262,6 +262,292 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     return 0;
 }
 
+
+//CUTER-dev
+
+struct tov_pt_ode_vars {
+    double r;   /* radial coordinate, m */
+    double m;   /* mass within r in geometric units, m */
+    double mb;
+    double H;   /* stellar perturbation in arbitrary units */
+    double b;   /* derivative of metric pertubation in arbitrary units */
+};
+
+#define TOV_PT_ODE_VARS_DIM (sizeof(struct tov_pt_ode_vars)/sizeof(double))
+
+
+/* Casts an array of doubles to a structure with named parameter. */
+static struct tov_pt_ode_vars *tov_pt_ode_vars_cast(const double *y)
+{
+    union {
+        const double *y;
+        struct tov_pt_ode_vars *v;
+    } u = {
+    y};
+    return u.v;
+}
+
+static int tov_pt_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_pt_ode_vars *variables){
+
+    double dedp =
+        XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos); // Central energy density derivative
+    double dhdp = 1.0 / (eps + p);
+    double dedh = dedp / dhdp;
+
+    double rval = sqrt(-3.0 * dh / (2.0 * LAL_PI * (eps + 3.0 * p)));
+    double mval = 4.0 * LAL_PI * rval * rval * rval * eps / 3.0;
+    double Hval = rval * rval;
+    double bval = 2.0 * rval;
+
+    /* series expansion for the initial core */
+    /* second factor of Eq. (7) of Lindblom (1992) */
+    rval *= 1.0 + 0.25 * dh * (eps - 3.0 * p  - 0.6 * dedh) / (eps + 3.0 * p);
+    /* second factor of Eq. (8) of Lindblom (1992) */
+    mval *= 1.0 + 0.6 * dh * dedh / eps;
+    double mbval = mval;
+
+    /* perform integration */
+    variables->r = rval;
+    variables->m = mval;
+    variables->mb = mbval;
+    variables->H = Hval;
+    variables->b = bval;
+
+    return 0;
+}
+
+/* ODE integrand for TOV equations with pseudo-enthalpy independent variable.
+ * Implements Eqs. (5) and (6) of Lindblom, Astrophys. J. 398, 569 (1992).
+ * Also uses Eqs. (7) and (8) [ibid] for inner boundary data, and
+ * Eqs. (18), (27), (28) of Damour & Nagar, Phys. Rev. D 80, 084035 (2009)
+ * [See also: Eqs. (11) & (12) Hinderer et al. Phys. Rev. D 81 123016 (2010)]
+ * for the metric perturbation used to obtain the Love numbers.*/
+static int tov_pt_ode(double h, const double *y, double *dy, void *params)
+{
+    struct tov_pt_ode_vars *vars = tov_pt_ode_vars_cast(y);
+    struct tov_pt_ode_vars *derivs = tov_pt_ode_vars_cast(dy);
+    struct eosDouble eosPT = *(struct eosDouble *)params;
+
+    LALSimNeutronStarEOS *eos1 = eosPT.eos_low;
+    LALSimNeutronStarEOS *eos2 = eosPT.eos_up;
+    double hpt = eosPT.hpt;
+
+    double p = 0.0, e = 0.0, dedp = 0.0, rho = 0.0;
+
+    if (h > hpt){
+        p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos2);
+        e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos2);
+        rho = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(h, eos2);
+        dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos2);
+    }else if (h == hpt){
+        if (eosPT.flag_up == 1){
+            p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos2);
+            e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos2);
+            rho = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(h, eos2);
+            dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos2);
+        } else if (eosPT.flag_up == 0){
+            p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos1);
+            e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos1);
+            rho = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(h, eos1);
+            dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos1);
+        }
+    }
+    else{
+        p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos1);
+        e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos1);
+        rho = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(h, eos1);
+        dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos1);
+    }
+
+    double r = vars->r;
+    double m = vars->m;
+    double H = vars->H;
+    double b = vars->b;
+
+    /* Eq. (18) of Damour & Nagar PRD 80 084035 (2009). */
+    double A = 1.0 / (1.0 - 2.0 * m / r);
+    /* Eq. (28) of Damour & Nagar PRD 80 084035 (2009). */
+    double C1 = 2.0 / r + A * (2.0 * m / (r * r) + 4.0 * LAL_PI * r * (p - e));
+    /* Eq. (29) of Damour & Nagar PRD 80 084035 (2009). */
+    double C0 =
+        A * (-(2) * (2 + 1) / (r * r) + 4.0 * LAL_PI * (e + p) * dedp +
+        4.0 * LAL_PI * (5.0 * e + 9.0 * p)) - pow(2.0 * (m +
+            4.0 * LAL_PI * r * r * r * p) / (r * (r - 2.0 * m)), 2.0);
+    double dr = -r * (r - 2.0 * m) / (m + 4.0 * LAL_PI * r * r * r * p);
+    double dm = 4.0 * LAL_PI * r * r * e * dr;
+    double dmb = 4.0 * LAL_PI * r * r * rho * sqrt(A) * dr;
+    double dH = b * dr;
+    double db = -(C0 * H + C1 * b) * dr; // CUTER-dev exactly Eq.(12) in Hindered 2008 https://arxiv.org/pdf/0911.3535
+
+    derivs->r = dr;
+    derivs->m = dm;
+    derivs->mb = dmb;
+    derivs->H = dH;
+    derivs->b = db;
+
+    return 0;
+}
+
+
+/**
+ * @brief Solve the stellar structure equations to obtain macroscopic
+ * neutron star parameters.
+ * @details
+ * Integrates the Tolman-Oppenheimer-Volkov stellar structure equations using the
+ * pseudo-enthalpy formalism introduced in:
+ * Lindblom (1992) "Determining the Nuclear Equation of State from Neutron-Star
+ * Masses and Radii", Astrophys. J. 398 569.
+ * TODO add ref to Love number EoSs
+ * @param[out] radius The radius of the star in m.
+ * @param[out] mass The mass of the star in kg.
+ * @param[out] baryon_mass The baryon mass of the star in kg.
+ * @param[out] love_number_k2 The k_2 tidal love number of the star.
+ * @param[out] love_number_k3 The k_3 tidal love number of the star.
+ * @param[out] love_number_k4 The k_4 tidal love number of the star.
+ * @param[in] central_pressure_si The central pressure of the star in Pa.
+ * @param eos1 Pointer to the Equation of State structure (below the phase transition).
+ * @param eos2 Pointer to the Equation of State structure (beyond the phase transition).
+ * @param pt_var Table with phase transition information
+ * @param[in] epsrel The relative error for the TOV solver routine
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ */
+int XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(double *radius, double *mass,
+    double *baryon_mass, double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
+    LALSimNeutronStarEOS * eos1,LALSimNeutronStarEOS * eos2, double *pt_var, double epsrel)
+{
+    /* Phase transition EoS */
+    struct eosDouble eosPT;
+    eosPT.eos_low = eos1;
+    eosPT.eos_up = eos2;
+    eosPT.hpt = pt_var[2];
+    eosPT.delta_eps = pt_var[4] - pt_var[3];
+    eosPT.flag_up = -1;
+    double hpt = pt_var[2];
+    double ppt_low = pt_var[5]; // geometrized units
+    double dpt_eps = pt_var[4]-pt_var[3];
+    printf("\n\n\nIn TOV info data hpt = %.6e \t Ppt = %.6e \n", hpt, ppt_low);
+
+    /* ode integration variables */
+    const double epsabs = 0.0;
+    double y[TOV_PT_ODE_VARS_DIM];
+    double dy[TOV_PT_ODE_VARS_DIM];
+    size_t i;
+    int s;
+    struct tov_pt_ode_vars *vars = tov_pt_ode_vars_cast(y);
+    /* Set up the actual ODE system to solve with tov_virial_ode */
+    gsl_odeiv_system sys = { tov_pt_ode, NULL, TOV_PT_ODE_VARS_DIM, &eosPT};
+    /* Set up the iterative method to solve the ODE, and the dimension of the ODE set */
+    gsl_odeiv_step *step =
+        gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_PT_ODE_VARS_DIM);
+    /* Set up the precision of the numerical method with relative error epsrel */
+    gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);
+    /* Set up evolution function to solve ODE with the dimension of the ODE set */
+    gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_PT_ODE_VARS_DIM);
+
+
+    /* central values */
+    /* note: will be updated with Lindblom's series expansion */
+    /* geometrisized units for variables in length (m) */
+    double pc = central_pressure_si * LAL_G_C4_SI;
+    double ec, hc; // central energy density and enthalpy
+    double h, dh, h0, h1; // Enthalpy step and boundaries for intergation
+
+    if (pc <= ppt_low){ // TODO is it ok to not make the case of Pc with two points at PT ?
+        printf("Hc < hpt\n");
+        ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos1);
+        hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos1);
+        // printf("\t\tCentral enthalpy hc = %.4e < hpt\n", hc);
+        dh = -1e-12 * hc; //TODO 1e-6 ?
+        h0 = hc + dh;
+        h1 = 0.0 - dh;
+        tov_pt_initial_condition(ec, pc, dh, eos1, vars); // Set up boundary condition
+
+        h = h0;
+        printf("Initial condition set.\n");
+        while (h > h1) {
+            printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+            if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
+        }
+        printf("Done with the loop if hc < hpt\n");
+
+    }else{
+        printf("Hc > hpt\n");
+        ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos2);
+        hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos2);
+        // printf("\t\tCentral Pc = %.6e \t hc = %.6e < hpt\n", pc, hc);
+        dh = -1e-12 * hc;
+        h0 = hc + dh;
+        h1 = 0.0 - dh;
+        tov_pt_initial_condition(ec, pc, dh, eos2, vars); // Set up boundary condition
+
+
+        // High density integration of the star
+        eosPT.flag_up = 1;
+        h = h0;
+        while (h > hpt) {
+            printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+            if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator \n");
+        }
+        // Upper PT point
+        h=hpt;
+        printf("Exact PT point (upper) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+        s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+        if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
+        printf("Values of b before correction %.6e\n", vars->b);
+        /* Phase transition correction of the tidal love number.
+        * Implements Eq.(41) of Pereira et al. 2020 ApJ 895 28
+        * Note: Eq.(14) of Postnikov et al. 2010 Phys. Rev. D 82, 024016
+        * takes an approximation for the denominator on the correction terms
+        */
+        double r3 = (vars->r)*(vars->r)*(vars->r);
+        double rho_bar = (vars->m + 4.0 * LAL_PI * r3 * ppt_low)/ (4.0 / 3.0 * LAL_PI * r3 ) ;
+        vars->b += - vars->H / vars->r * dpt_eps * 3.0 / rho_bar ;
+        printf("Values of b after correction %.6e\n", vars->b);
+        // Lower PT point
+        h=hpt;
+        eosPT.flag_up = 0;
+        s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+        if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
+        printf("Exact PT point (lower) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+        // Low density integration of the star
+        while (h > h1) {
+            printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+            if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
+        }
+    }
+    printf("Compute the compactness and the y for Lambda ...\n");
+    /* compute tidal Love numbers and compactness at the surface of the star */
+    double comp = vars->m / vars->r;      /* compactness */
+    double yy = vars->r * vars->b / vars->H; /* Eq. 13 of Hinderer et al. Phys. Rev. D 81 123016 */
+    printf("...done !!\n");
+
+    /*take one final Euler step to get to surface*/
+    for (int w = 0 ; w < 1 ; ++w){
+        tov_pt_ode(h, y, dy, &eosPT); // TODO should just be the non PT function called ?
+        for (i = 0; i < TOV_PT_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
+            y[i] += dy[i] * (0.0 - h1);
+    }
+
+    /* convert from geometric units to SI units */
+    *radius = vars->r;
+    *mass = vars->m * LAL_MSUN_SI / LAL_MRSUN_SI;
+    *baryon_mass = vars->mb * LAL_MSUN_SI / LAL_MRSUN_SI;
+    *love_number_k2 = tidal_Love_number_k2(comp, yy);
+    *love_number_k3 = tidal_Love_number_k3(comp, yy);
+    *love_number_k4 = tidal_Love_number_k4(comp, yy);
+
+    /* free ode memory */
+    gsl_odeiv_evolve_free(evolv);
+    gsl_odeiv_control_free(ctrl);
+    gsl_odeiv_step_free(step);
+
+    return 0;
+}
+
 /* For convenience, use a structure that provides a dictionary between
  * a vector of the ode variables and what they represent. */
 struct tov_virial_ode_vars {
@@ -504,16 +790,7 @@ struct tov_virial_pt_ode_vars {
 
 #define TOV_VIRIAL_PT_ODE_VARS_DIM (sizeof(struct tov_virial_pt_ode_vars)/sizeof(double))
 
-struct tov_pt_ode_vars {
-    double r;   /* radial coordinate, m */
-    double m;   /* mass within r in geometric units, m */
-    double mb;
-    double H;   /* stellar perturbation in arbitrary units */
-    double b;   /* derivative of metric pertubation in arbitrary units */
-};
-
-#define TOV_PT_ODE_VARS_DIM (sizeof(struct tov_pt_ode_vars)/sizeof(double))
-
+//CUTER-dev
 
 /* Casts an array of doubles to a structure with named parameter. */
 static struct tov_virial_pt_ode_vars *tov_virial_pt_ode_vars_cast(const double *y)
@@ -526,9 +803,7 @@ static struct tov_virial_pt_ode_vars *tov_virial_pt_ode_vars_cast(const double *
     return u.v;
 }
 
-
-
-static int tov_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_virial_pt_ode_vars *variables){
+static int tov_virial_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_virial_pt_ode_vars *variables){
 
     double dedp =
         XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos); // Central energy density derivative
@@ -654,7 +929,7 @@ static int tov_virial_ode_pt(double h, const double *y, double *dy, void *params
 
     derivs->r = dr;
     derivs->m = dm;
-    derivs->mb = dmb; // TODO something is wrong here
+    derivs->mb = dmb;
     derivs->H = dH;
     derivs->b = db;
     derivs->I1 = dI1;
@@ -703,6 +978,8 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(
     const double epsabs = 0.0;
     double y[TOV_VIRIAL_PT_ODE_VARS_DIM] = {0.0};
     double dy[TOV_VIRIAL_PT_ODE_VARS_DIM]= {0.0};
+    size_t i;
+    int s;
 
     struct eosDouble eosPT;
     eosPT.eos_low = eos1;
@@ -728,96 +1005,86 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(
     double ppt = pt_var[5]; // geometrized units
     double dpt_eps = pt_var[4]-pt_var[3];
 
-    printf("\n\n\nIn TOV info data hpt = %.6e \t Ppt = %.6e \n", hpt, ppt);
-
-
     /* central values */
     /* note: will be updated with Lindblom's series expansion */
     /* geometrisized units for variables in length (m) */
     double pc, ec, hc, dh, h0, h1;
-    double yy;
-    double c;
     double h;
-    size_t i;
-    int s;
+
 
     pc = central_pressure_si * LAL_G_C4_SI; // Central pressure from Pascal to geometrized units
-    printf("Pc = %.6e\n", pc);
+
     if (pc <= ppt){
-        printf("Hc < hpt\n");
-        ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos1); // Central energy density Geometrized unit !!!
-        hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos1); // Central enthalpy
-        printf("\t\tCentral enthalpy hc = %.4e < hpt\n", hc);
-        dh = -1e-12 * hc; //TODO play also with the relative error ! WAS before 1.e-12
+        // printf("Hc < hpt\n");
+        ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos1);
+        hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos1);
+        dh = -1e-12 * hc; //TODO play also with the relative error !
         h0 = hc + dh;
         h1 = 0.0 - dh;
 
         // Set up boundary condition
         h = h0;
-        tov_initial_condition(ec, pc, dh, eos1, vars);
-        // printf("Initial condition set.\n");
+        tov_virial_initial_condition(ec, pc, dh, eos1, vars);
         while (h > h1) {
             // printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
             if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
         }
-
-        // printf("Done with the loop if hc < hpt\n");
-
     }else{
-        printf("Hc > hpt\n");
-        ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos2); // Central energy density Geometrized unit !!!
-        hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos2); // Central enthalpy
-        printf("\t\tCentral Pc = %.6e \t hc = %.6e < hpt\n", pc, hc);
+        ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos2);
+        hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos2);
         dh = -1e-12 * hc;
         h0 = hc + dh;
         h1 = 0.0 - dh;
+        tov_virial_initial_condition(ec, pc, dh, eos2, vars);
 
         // Set up boundary condition
         eosPT.flag_up = 1;
         h = h0;
-        tov_initial_condition(ec, pc, dh, eos2, vars);
         while (h > hpt) {
+            // n_val = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpy(h, eos2)/1.674e-27; // in m^-3
+            // n_val *= 1e-45; //in /fm^3
+            // p_val = XLALSimNeutronStarEOSPressureOfPseudoEnthalpy(h, eos2); // in Pa
+            // p_val *=10; // in CGS
+            // p_val /= 1.6022e33; // in MeV/fm^3
+            // e_val = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpy(h, eos2); // in J/m^3
+            // e_val *= 6.242e12 ; // in MeV/m^3
+            // e_val /= 1e45; // in MeV/fm^3
+            // printf("%.6e \t %.6e \t %.6e \t %.6e\n", n_val, e_val, p_val, h);
             // printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
-            // int s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
             if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
         }
 
         // Upper PT point
         h=hpt;
-        printf("Extact PT point (upper) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
-        // int s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
         s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
         if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
 
-        // /* Phase transition correction, see Eq.14 of Postnikov et al. 2010 Phys. Rev. D 82, 024016 (https://arxiv.org/abs/1004.5098) !! Approximation taken for the denominator of the correction !! */
-        // double rho_mean = vars->m / (4.0 / 3.0 * LAL_PI * (vars->r) * (vars->r) * (vars->r) ) ;
-        /* Phase transition correction, see Eq.41 of Pereira et al. 2020 ApJ 895 28 (https://arxiv.org/pdf/2003.10781) */
+        /* Phase transition correction of the tidal love number.
+        * Implements Eq.(41) of Pereira et al. 2020 ApJ 895 28
+        * Note: Eq.(14) of Postnikov et al. 2010 Phys. Rev. D 82, 024016
+        * takes an approximation for the denominator on the correction terms
+        */
         double r3 = (vars->r) * (vars->r) * (vars->r);
         double rho_bar = (vars->m + 4.0 * LAL_PI * r3 * ppt)/ (4.0 / 3.0 * LAL_PI * r3 ) ;
-        double hprim_plus = vars->b;
-        // vars->b = hprim_plus - vars->H / vars->r * dpt_eps * 3.0 / rho_mean ;
-        vars->b = hprim_plus - vars->H / vars->r * dpt_eps * 3.0 / rho_bar ;
+        vars->b += - vars->H / vars->r * dpt_eps * 3.0 / rho_bar ;
 
         // Lower PT point
         h=hpt;
         eosPT.flag_up = 0;
-        printf("Extact PT point (lower) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
         s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
         if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
-
         while (h > h1) {
             // printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
-            // int s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
             if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
         }
     }
     printf("Compute the compactness and the y for Lambda ...\n");
     /* compute tidal Love numbers and compactness at the surface of the star */
-    c = vars->m / vars->r;      /* compactness */
-    yy = vars->r * vars->b / vars->H; /* Eq. 13 of Hinderer et al. Phys. Rev. D 81 123016 */
+    double comp = vars->m / vars->r;      /* compactness */
+    double yy = vars->r * vars->b / vars->H; /* Eq. 13 of Hinderer et al. Phys. Rev. D 81 123016 */
     printf("...done !!\n");
 
     /*take one final Euler step to get to surface*/
@@ -839,9 +1106,9 @@ int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(
     *radius = vars->r;
     *mass = vars->m * LAL_MSUN_SI / LAL_MRSUN_SI;
     *baryon_mass = vars->mb * LAL_MSUN_SI / LAL_MRSUN_SI;
-    *love_number_k2 = tidal_Love_number_k2(c, yy);
-    *love_number_k3 = tidal_Love_number_k3(c, yy);
-    *love_number_k4 = tidal_Love_number_k4(c, yy);
+    *love_number_k2 = tidal_Love_number_k2(comp, yy);
+    *love_number_k3 = tidal_Love_number_k3(comp, yy);
+    *love_number_k4 = tidal_Love_number_k4(comp, yy);
 
     /* free ode memory */
     gsl_odeiv_evolve_free(evolv);
@@ -858,6 +1125,18 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     const double epsrel = 1e-6;
     return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
 }
+
+//CUTER-dev
+int XLALSimNeutronStarPTODEIntegrate(
+    double *radius, double *mass, double *baryon_mass,
+    double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
+    LALSimNeutronStarEOS * eos1, LALSimNeutronStarEOS * eos2, double *pt_var)
+{
+    const double epsrel = 1e-6;
+    return XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(radius, mass, baryon_mass,
+    love_number_k2, love_number_k3, love_number_k4, central_pressure_si, eos1, eos2, pt_var, epsrel);
+}
+
 
 int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
