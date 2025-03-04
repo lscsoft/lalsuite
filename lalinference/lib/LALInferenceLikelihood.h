@@ -1,6 +1,6 @@
 /*
  *
- *  LALInferenceLikelihood.c:   Likelihood functions for LALInference codes        
+ *  LALInferenceLikelihood.c:   Likelihood functions for LALInference codes
  *  LALInferenceLikelihood.h:   header file
  *
  *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
@@ -87,15 +87,15 @@ extern const REAL8 CM[15][15];
 /** @{ */
 
 /***********************************************************//**
- * (log-) likelihood function.                                 
- * Returns the non-normalised logarithmic likelihood.          
+ * (log-) likelihood function.
+ * Returns the non-normalised logarithmic likelihood.
  *
- * Required (`currentParams') parameters are:                  
- *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
- *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
- *   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        
- *   - "distance"        (REAL8, Mpc, >0)                      
- *   - "time"            (REAL8, GPS sec.)                     
+ * Required (`currentParams') parameters are:
+ *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)
+ *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)
+ *   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)
+ *   - "distance"        (REAL8, Mpc, >0)
+ *   - "time"            (REAL8, GPS sec.)
  ***************************************************************/
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
@@ -126,34 +126,34 @@ COMPLEX16 LALInferenceComputeFrequencyDomainComplexOverlap(LALInferenceIFOData *
 REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data);
 
 /***********************************************************//**
- * Student-t (log-) likelihood function                        
- * as described in Roever/Meyer/Christensen (2011):            
- *   "Modelling coloured residual noise                        
- *   in gravitational-wave signal processing."                 
- *   Classical and Quantum Gravity, 28(1):015010.              
- *   http://dx.doi.org/10.1088/0264-9381/28/1/015010           
- *   http://arxiv.org/abs/0804.3853                            
- * Returns the non-normalised logarithmic likelihood.          
- * 
- * Required (`currentParams') parameters are:                  
- *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)       
- *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)  
- *   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)        
- *   - "distance"        (REAL8, Mpc, > 0)                     
- *   - "time"            (REAL8, GPS sec.)                     
- * 
- * This function is essentially the same as the                
- * "UndecomposedFreqDomainLogLikelihood()" function.           
- * The additional parameter to be supplied is the (REAL8)      
- * degrees-of-freedom parameter (nu) for each Ifo.             
- * The additional "df" argument gives the corresponding        
- * d.f. parameter for each element of the "*data" list.        
- * The names of "df" must match the "->name" slot of           
- * the elements of "data".                                     
- *                                                             
- * (TODO: allow for d.f. parameter to vary with frequency,     
- *        i.e., to be a set of vectors corresponding to        
- *        frequencies)                                         
+ * Student-t (log-) likelihood function
+ * as described in Roever/Meyer/Christensen (2011):
+ *   "Modelling coloured residual noise
+ *   in gravitational-wave signal processing."
+ *   Classical and Quantum Gravity, 28(1):015010.
+ *   http://dx.doi.org/10.1088/0264-9381/28/1/015010
+ *   http://arxiv.org/abs/0804.3853
+ * Returns the non-normalised logarithmic likelihood.
+ *
+ * Required (`currentParams') parameters are:
+ *   - "rightascension"  (REAL8, radian, 0 <= RA <= 2pi)
+ *   - "declination"     (REAL8, radian, -pi/2 <= dec <=pi/2)
+ *   - "polarisation"    (REAL8, radian, 0 <= psi <= ?)
+ *   - "distance"        (REAL8, Mpc, > 0)
+ *   - "time"            (REAL8, GPS sec.)
+ *
+ * This function is essentially the same as the
+ * "UndecomposedFreqDomainLogLikelihood()" function.
+ * The additional parameter to be supplied is the (REAL8)
+ * degrees-of-freedom parameter (nu) for each Ifo.
+ * The additional "df" argument gives the corresponding
+ * d.f. parameter for each element of the "*data" list.
+ * The names of "df" must match the "->name" slot of
+ * the elements of "data".
+ *
+ * (TODO: allow for d.f. parameter to vary with frequency,
+ *        i.e., to be a set of vectors corresponding to
+ *        frequencies)
  ***************************************************************/
 REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
