@@ -57,15 +57,15 @@ static double chirp_to_comp_jacobian(double mc,double q){
 
 static double mass_indicator(double mc, double q,LALInferenceVariables *priorParams){
   /*
-   * 
+   *
    * This function gets mchirp and q
    * Calculates component and total mass and check if all parameters
    * are within their priors.
-   * 
+   *
    * Return 1 or 0
-   * 
+   *
    * TODO: make it work with eta
-   * 
+   *
    * */
   double factor = mc * pow(1.0 +q, 0.2);
   double m1 = factor * pow(q, -0.6);
@@ -110,21 +110,21 @@ static double mass_indicator(double mc, double q,LALInferenceVariables *priorPar
 }
 
 static double integrand(double q,void *params){
-  
+
   /* Integrand for the dobule integral over Mc and q
-   * 
+   *
    * This is the jacobian within the support of the prior, zero otherwise
-   * 
+   *
    * */
   innerParams iData = *(innerParams *)params;
   double mc= iData.mc;
-  
+
   return chirp_to_comp_jacobian(mc,q)*mass_indicator(mc,q, iData.prior);
-  
+
 }
 
 static double inner_integral(double mc, void *params){
-  
+
   // q comes through params
   gsl_integration_workspace * w = gsl_integration_workspace_alloc (10000);
   double result, error;
@@ -138,10 +138,10 @@ static double inner_integral(double mc, void *params){
   outerParams oParams=*(outerParams *) params;
   iParams.mc=mc;
   iParams.prior= (LALInferenceVariables *) oParams.prior;
-  
+
   double q_min,q_max;
   if (LALInferenceCheckVariable(iParams.prior,"q_min")){
-    
+
     LALInferenceGetMinMaxPrior(iParams.prior, "q", &q_min, &q_max);
   }
   else{
@@ -150,17 +150,17 @@ static double inner_integral(double mc, void *params){
     }
   // TODO: make it work with eta
   int status = gsl_integration_qags (&F, q_min, q_max,epsabs, epsrel, wsSize,
-                        w, &result, &error); 
+                        w, &result, &error);
   if (status)
         XLAL_ERROR_REAL8(XLAL_EFUNC | XLAL_EDATA, "Bad data; GSL integration failed.");
 
   gsl_integration_workspace_free(w);
-  return result;  
+  return result;
   }
 
-  
+
 static double mass_outer_integral(LALInferenceVariables *priorArgs){
-  
+
   gsl_integration_workspace * w = gsl_integration_workspace_alloc (10000);
   double result, error;
   const double epsabs = 1e-4;
@@ -172,17 +172,17 @@ static double mass_outer_integral(LALInferenceVariables *priorArgs){
   outerParams oParams;
   F.params = &oParams;
   oParams.prior=priorArgs;
-  
+
   double mc_min,mc_max;
   if (LALInferenceCheckVariable(priorArgs,"chirpmass_min")){
-    
+
     LALInferenceGetMinMaxPrior(priorArgs, "chirpmass", &mc_min, &mc_max);
   }
   else{
     fprintf(stderr,"ERROR: chirpmass doesn't seem to be a valid param. Exiting\n");
     exit(1);
     }
-  
+
   /* Turn off the error handler - must check return values */
   gsl_error_handler_t *oldhandler=gsl_set_error_handler_off();
   /* this integrates on chirpmass */
@@ -191,7 +191,7 @@ static double mass_outer_integral(LALInferenceVariables *priorArgs){
   gsl_set_error_handler(oldhandler);
   /* Free workspace */
   gsl_integration_workspace_free(w);
-  
+
   /* Check for errors */
   if (status)
         XLAL_ERROR_REAL8(XLAL_EFUNC | XLAL_EDATA, "GSL integration failed in %s. GSL error:\n%s",__func__,gsl_strerror(status));
@@ -200,7 +200,7 @@ static double mass_outer_integral(LALInferenceVariables *priorArgs){
   }
 
 typedef REAL8 (*LALInferenceLoudnessPriorFunction) (double x,LALCosmologicalParameters *omega);
-  
+
 typedef struct {
   LALInferenceVariables *priorargs;
   LALInferenceLoudnessPriorFunction priorfunc;
@@ -218,15 +218,15 @@ static double logdistance_prior(double ld,LALCosmologicalParameters *omega){
 static double redshift_prior(double z,LALCosmologicalParameters *omega){
   return XLALUniformComovingVolumeDensity(z,omega);
 }
-  
+
 static double loudness_integrand(double x,void *params){
-  
+
   loudnessParams lParams=*(loudnessParams *) params;
   LALInferenceLoudnessPriorFunction priorf= lParams.priorfunc;
   LALCosmologicalParameters *omega=lParams.omega;
   return priorf(x,omega);
 }
-  
+
 static double loudness_volume(LALInferenceRunState *state){
 
 
@@ -263,16 +263,16 @@ static double loudness_volume(LALInferenceRunState *state){
   else XLAL_ERROR_REAL8(XLAL_EINVAL,"No known distance parameter found, unable to proceed\n");
 
   lParams.priorargs=priorArgs;
-  int status = gsl_integration_qags (&F, intmin, intmax, epsabs, epsrel, wsSize, w, &result, &error); 
-  
+  int status = gsl_integration_qags (&F, intmin, intmax, epsabs, epsrel, wsSize, w, &result, &error);
+
   if (status)
         XLAL_ERROR_REAL8(XLAL_EFUNC | XLAL_EDATA, "Bad data; GSL integration failed.");
 
   gsl_integration_workspace_free(w);
   return result;
-  
+
 }
-  
+
 double LALInferenceMassPriorVolume(LALInferenceRunState *state){
 
   LALInferenceVariables *priorArgs=state->priorArgs;
@@ -280,6 +280,6 @@ double LALInferenceMassPriorVolume(LALInferenceRunState *state){
 }
 
 double LALInferenceMassDistancePriorVolume(LALInferenceRunState *state){
-  
+
   return LALInferenceMassPriorVolume(state)*loudness_volume(state);
 }
