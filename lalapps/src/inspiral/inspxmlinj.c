@@ -17,13 +17,13 @@
 *  MA  02110-1301  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: inspxmlinj.c
  *
  * Author: Brown, D. A.
- * 
- * 
+ *
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -134,7 +134,7 @@ int main ( int argc, char *argv[] )
   lal_errhandler = LAL_ERR_EXIT;
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *) 
+  proctable.processTable = (ProcessTable *)
     calloc( 1, sizeof(ProcessTable) );
   XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
@@ -148,7 +148,7 @@ int main ( int argc, char *argv[] )
           lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
     }
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
 
   /* clear the waveform field */
@@ -202,15 +202,15 @@ int main ( int argc, char *argv[] )
           if ( gendsec < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS start time is prior to " 
+                "GPS start time is prior to "
                 "Jan 01, 1994  00:00:00 UTC:\n"
                 "(%ld specified)\n",
                 long_options[option_index].name, gendsec );
             exit( 1 );
           }
           injParams.geocent_end_time.gpsSeconds = (INT4) gendsec;
-          this_proc_param = this_proc_param->next = 
-            next_process_param( long_options[option_index].name, "int", 
+          this_proc_param = this_proc_param->next =
+            next_process_param( long_options[option_index].name, "int",
                 "%ld", gendsec );
         }
         break;
@@ -228,36 +228,36 @@ int main ( int argc, char *argv[] )
           if ( gendnansec > 999999999 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS start time nanoseconds is greater than unity:\n" 
-                "Must be <= 999999999 (%ld specified)\n", 
+                "GPS start time nanoseconds is greater than unity:\n"
+                "Must be <= 999999999 (%ld specified)\n",
                 long_options[option_index].name, gendnansec );
             exit( 1 );
           }
           injParams.geocent_end_time.gpsNanoSeconds = (INT4) gendnansec;
-          this_proc_param = this_proc_param->next = 
-            next_process_param( long_options[option_index].name, "int", 
+          this_proc_param = this_proc_param->next =
+            next_process_param( long_options[option_index].name, "int",
                 "%ld", gendnansec );
         }
         break;
 
       case 'c':
         injParams.mass1 = (REAL4) atof( LALoptarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "real_4", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "real_4",
               "%d", rand_seed );
         break;
 
       case 'd':
         injParams.mass2 = (REAL4) atof( LALoptarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "real_4", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "real_4",
               "%d", rand_seed );
         break;
 
       case 'e':
         injParams.distance = (REAL4) atof( LALoptarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "real_4", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "real_4",
               "%d", rand_seed );
         break;
 
@@ -275,30 +275,30 @@ int main ( int argc, char *argv[] )
 
       case 'i':
         injParams.inclination = (REAL4) atof( LALoptarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "real_4", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "real_4",
               "%d", rand_seed );
         break;
 
       case 'j':
         injParams.coa_phase= (REAL4) atof( LALoptarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "real_4", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "real_4",
               "%d", rand_seed );
         break;
 
       case 'k':
         injParams.polarization = (REAL4) atof( LALoptarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "real_4", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "real_4",
               "%d", rand_seed );
         break;
 
       case 'l':
-        snprintf( &(injParams.waveform), 
+        snprintf( &(injParams.waveform),
                   LIGOMETA_WAVEFORM_MAX, "%s", LALoptarg );
-        this_proc_param = this_proc_param->next = 
-          next_process_param( long_options[option_index].name, "string", 
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
               "%s", LALoptarg );
         break;
 
@@ -310,7 +310,7 @@ int main ( int argc, char *argv[] )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
                   PROGRAM_NAME );
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
@@ -340,8 +340,3 @@ int main ( int argc, char *argv[] )
     /* default to Tev's GeneratePPNInspiral as used in */
     snprintf( waveform, LIGOMETA_WAVEFORM_MAX, "GeneratePPNtwoPN" );
   }
-
-
-
-
-
