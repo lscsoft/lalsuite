@@ -147,4 +147,3 @@ int main( void )
   return XLAL_SUCCESS;
 
 } /* main() */
-
