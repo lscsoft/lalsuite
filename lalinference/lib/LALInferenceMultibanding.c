@@ -1,6 +1,6 @@
 //
 //  LALInferenceFVectorMultiBanding.c:
-//  
+//
 //
 //  Created by Serena Vinciguerra on 17/02/2015.
 //
@@ -40,7 +40,7 @@ static double LALInferenceTimeFrequencyRelation(double mc, double inPar, UINT4 f
 
 REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double f_min, double f_max, double deltaF0, double mc)
 {
-    
+
     if (0) printf("f_max %f", f_max);
     if (NBands==0){
         XLALPrintError("ERROR: ask for Multi Banding procedure with 0 bands!\n");
@@ -51,13 +51,13 @@ REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double f_min, double
 
     f_min=deltaF0*ceil(f_min/deltaF0);
     f_max=deltaF0*floor(f_max/deltaF0);
-    
+
 
     double fi = f_min;
     int n_max = floor(- log2(deltaF0*2.1));
     float t_nmax= 1./(pow(2.,n_max)*deltaF0) - 2.1;
     float f_nmax= LALInferenceTimeFrequencyRelation(mc_sec,-t_nmax,1);
-    
+
     int n_min = floor(- log2(deltaF0*(2.1 - LALInferenceTimeFrequencyRelation(mc_sec,f_min,0))));
     if (n_min < 0 ) n_min = 0;
     int max_NBands = 0;
@@ -69,22 +69,22 @@ REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double f_min, double
         printf("WORNING required number of bands bigger than the maximum allowed, new number of bands %i \n",max_NBands);
         NBands = max_NBands;
     }
-    
+
     REAL8Vector *F_inf = XLALCreateREAL8Vector(NBands);
     REAL8Vector *F_sup = XLALCreateREAL8Vector(NBands);
     REAL8Vector *deltaF = XLALCreateREAL8Vector(NBands);
     REAL8Vector *desired_df = XLALCreateREAL8Vector(NBands);
     REAL8Sequence *Frequencies=NULL;
-    
+
     if (F_sup== NULL || F_inf==NULL || deltaF ==NULL) {
         XLALPrintError(" ERROR F_inf/sup/deltaF MBfile == NULL.\n");
         printf(" ERROR new/sup/deltaF (MB file)== NULL.\n");
         exit(1);
     }
-    
+
     F_inf->data[0]=f_min;
     F_sup->data[NBands-1]=f_max;
-    
+
     int nC = 1;
     if (NBands == 1) n_max = n_min;
     deltaF->data[NBands - 1] = (pow(2.,n_max)*deltaF0);
@@ -92,9 +92,9 @@ REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double f_min, double
     F_sup->data[NBands - 1] = f_max;
     fi = f_max;
     int n_i = n_max;
-    
+
     for (int i=NBands - 1; i>=0; i--) {
-       
+
       if (i< NBands - 1){
         n_i = n_i - 1;
         if (n_i<0) n_i = 0 ;
@@ -114,7 +114,7 @@ REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double f_min, double
             nC++;
       }
     }
-    
+
     UINT4 NFreq = nC;
     Frequencies = XLALCreateREAL8Sequence(NFreq);
     Frequencies->data[nC - 1]= f_max;
@@ -134,5 +134,5 @@ REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double f_min, double
     XLALDestroyREAL8Vector(deltaF);
     XLALDestroyREAL8Vector(desired_df);
     return(Frequencies);
-    
+
 }
