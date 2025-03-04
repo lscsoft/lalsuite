@@ -71,7 +71,7 @@ static void  fill_IFO_Amp_vars_from_IFOname(REAL8 * stddev,REAL8* fbin, char* if
     else if(!strcmp(ifoname,"L1")){
         stddev[0]=0.144;
         stddev[1]=0.139;
-        stddev[2]=0.138; 
+        stddev[2]=0.138;
         fbin[1]=2000.0;
         fbin[2]=4000.0;
     }
@@ -110,7 +110,7 @@ void  fill_IFO_Pha_vars_from_IFOname(REAL8 * stddev,REAL8* fbin, char* ifoname){
         stddev[2]=4.2;   // 1k-2k
         stddev[3]=3.6;   // 2k -2.8k
         stddev[4]=3.6;   //2.8k-4k
-        stddev[5]=3.3;   // >4k 
+        stddev[5]=3.3;   // >4k
         fbin[1]=500.0;
         fbin[2]=1000.0;
         fbin[3]=2000.0;
@@ -123,7 +123,7 @@ void  fill_IFO_Pha_vars_from_IFOname(REAL8 * stddev,REAL8* fbin, char* ifoname){
         stddev[2]=6.87;   // 1k-2k
         stddev[3]=6.87;   // 2k -2.8k
         stddev[4]=360.0*7e-06;   //2.8k-4k
-        stddev[5]=360.0*7e-06;   // >4k 
+        stddev[5]=360.0*7e-06;   // >4k
         fbin[1]=500.0;
         fbin[2]=1000.0;
         fbin[3]=2000.0;
@@ -162,7 +162,7 @@ static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char
         }
     }
     *out=XLALCalloc(*N,sizeof(char *));
-    
+
     UINT4 found=0;
     /* For each IFO, fetch the other options if available */
     for(i=0;i<*N;i++)
@@ -172,7 +172,7 @@ static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char
         this=LALInferenceGetProcParamVal(commandLine,tmp);
         (*out)[i]=this?XLALStringDuplicate(this->value):NULL;
 	if (this) found++;
-     
+
     }
     if (found==*N)
       return(1);
@@ -189,7 +189,7 @@ void CreateRandomAmplitudeCalibrationErrors(REAL8 * ampcoeffs, int calib_seed_am
   	gsl_rng_env_setup();                // Setup environment
   	gsl_rng_default_seed = calib_seed_ampli;    // vary generation sequence
   	type = gsl_rng_default;             // set RNG type to default
-  	p = gsl_rng_alloc (type);  
+  	p = gsl_rng_alloc (type);
     int i,j;
     REAL8 ampErr[Npoints];
 
@@ -216,11 +216,11 @@ void CreateRandomAmplitudeCalibrationErrors(REAL8 * ampcoeffs, int calib_seed_am
         for(j=0;j<nbins;j++){
             if (logF[i]>=log10(amp_freq_bin[j]) && logF[i]<=log10(amp_freq_bin[j+1])) {
                 ampErr[i]=gsl_ran_gaussian(p, amp_stdev[j]);
-            }   
+            }
         }
     }
 
-    FitErrorRealisation(FitOrder,Npoints,ampErr,deltalogf,ampcoeffs);    
+    FitErrorRealisation(FitOrder,Npoints,ampErr,deltalogf,ampcoeffs);
     free(p);
 }
 
@@ -232,7 +232,7 @@ void CreateRandomPhaseCalibrationErrors(REAL8 * phacoeffs, int calib_seed_pha, c
   	gsl_rng_env_setup();                // Setup environment
   	gsl_rng_default_seed = calib_seed_pha;    // vary generation sequence
   	type = gsl_rng_default;             // set RNG type to default
-  	p = gsl_rng_alloc (type);  
+  	p = gsl_rng_alloc (type);
     int i,j;
     REAL8 phaErr[Npoints];
     /* 6 as Phase CE are given in six frequency bins */
@@ -259,11 +259,11 @@ void CreateRandomPhaseCalibrationErrors(REAL8 * phacoeffs, int calib_seed_pha, c
             if (logF[i]>=log10(pha_freq_bin[j]) && logF[i]<=log10(pha_freq_bin[j+1])) {
                 phaErr[i]=gsl_ran_gaussian(p, pha_stdev[j]);
                 phaErr[i]*=LAL_PI/180.0;
-            }   
+            }
         }
     }
 
-    FitErrorRealisation(FitOrder,Npoints,phaErr,deltalogf,phacoeffs);    
+    FitErrorRealisation(FitOrder,Npoints,phaErr,deltalogf,phacoeffs);
     free(p);
 }
 
@@ -289,14 +289,14 @@ void ApplyPhaseCalibrationErrors(COMPLEX16FrequencySeries *doff,REAL8 * Pcoeffs)
         phase+=ConvertCoefficientsToFunction(Pcoeffs,f);
       doff->data->data[ui]=crect(ampli*cos(phase),ampli*sin(phase));
       /* Note: I (salvo) checked that this way of introducing the phase errors does not introduced significant numerical differences w.r.t. expanding both exp(i cE) and datum in their real and imag part, as done in the commented line below and in the likelihood. */
-      //doff->data->data[ui]=crect(creal(datum)*cos(tmp)-cimag(datum)*sin(tmp),cos(tmp)*cimag(datum)+sin(tmp)*creal(datum));    
+      //doff->data->data[ui]=crect(creal(datum)*cos(tmp)-cimag(datum)*sin(tmp),cos(tmp)*cimag(datum)+sin(tmp)*creal(datum));
     }
-    
+
 }
 
 void ApplyAmplitudeCalibrationErrors(COMPLEX16FrequencySeries *doff,REAL8 * Acoeffs){
     /* Take a Complex16FrequencySeries d(f) and a set of amplitude error coefficients.
-     * Return d(f)*calamp(f)  */    
+     * Return d(f)*calamp(f)  */
     REAL8 f=0.0;
     /* Amplitude and phase of the WF (in polar coordinates) */
     REAL8 ampli;
@@ -306,13 +306,13 @@ void ApplyAmplitudeCalibrationErrors(COMPLEX16FrequencySeries *doff,REAL8 * Acoe
     for (ui=0;ui<doff->data->length;ui++){
         f=ui*df;
         datum=doff->data->data[ui];
-        
+
         if (Acoeffs[Npoints+3]==random_linearCE_bit)
           ampli= 1. + ConvertRandTransitionSlopeToFunction(Acoeffs,f);
         else
           ampli= 1. + ConvertCoefficientsToFunction(Acoeffs,f);
 
-        doff->data->data[ui]=crect(creal(datum)*ampli,cimag(datum)*ampli);     
+        doff->data->data[ui]=crect(creal(datum)*ampli,cimag(datum)*ampli);
     }
 }
 
@@ -381,9 +381,9 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
 
     //ProcessParamsTable *ppt=NULL;
 
-    if(!LALInferenceGetProcParamVal(commandLine,"--AddCalibrationErrors")) 
+    if(!LALInferenceGetProcParamVal(commandLine,"--AddCalibrationErrors"))
     {
-      fprintf(stdout,"No --AddCalibrationErrors option given. Not applying calibration errors in injection...\n"); 
+      fprintf(stdout,"No --AddCalibrationErrors option given. Not applying calibration errors in injection...\n");
       return;
     }
 
@@ -394,7 +394,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
     }
     int dataseed=atoi(LALInferenceGetProcParamVal(commandLine,"--dataseed")->value);
     RandomParams *datarandparam=XLALCreateRandomParams(dataseed);
-    
+
     int calib_seed_ampli=0.0;
     int calib_seed_phase=0.0;
     REAL4 tmpampli,tmpphase;
@@ -403,7 +403,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
     calib_seed_ampli=floor(1E6*tmpampli);
     calib_seed_phase=floor(1E6*tmpphase);
     fprintf(stdout,"Using calibseedAmp %d and calibseedPha %d\n",calib_seed_ampli,calib_seed_phase);
-  
+
     LALInferenceIFOData * tmpdata=IFOdata;
     int num_ifos=0;
     int i;
@@ -414,7 +414,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
       tmpdata=tmpdata->next;
     }
     tmpdata=IFOdata;
-    int this_ifo=0;  
+    int this_ifo=0;
     REAL8 phaseCoeffs[num_ifos][Npoints*2];
     REAL8 ampCoeffs[num_ifos][Npoints*2];
     while (tmpdata!=NULL) {
@@ -441,8 +441,8 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
         }
     }
     else if (LALInferenceGetProcParamVal(commandLine,"--ConstantCE")){
-      /* NOTE: If we want to apply constant CE we simply have to set ampCoeffs and phaseCoeffs in such a way that the 0th element is non null, while the others are zero.     */ 
-        
+      /* NOTE: If we want to apply constant CE we simply have to set ampCoeffs and phaseCoeffs in such a way that the 0th element is non null, while the others are zero.     */
+
 	char **plateau=NULL;
         char plateau_option[] = "constant_calamp";
 	char **pplateau=NULL;
@@ -474,7 +474,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
       char **plateau=NULL;
       char plateau_option[] = "calamp_plateau";
       char **knee=NULL;
-      char knee_option[] = "calamp_knee";     
+      char knee_option[] = "calamp_knee";
       char **slope=NULL;
       char slope_option[] = "calamp_slope";
       char **IFOnames=NULL;
@@ -494,15 +494,15 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
 	fprintf(stderr,"Must provide a --IFO-calamp_slope option for each IFO if --RandomLinearCE is given\n");
 	exit(1);
       }
-      
+
       fprintf(stdout,"Applying quasi constant amplitude calibration errors. \n");
       i=0;
       tmpdata=IFOdata;
       while (tmpdata!=NULL){
-        /* Store variables for random jitter in the first (Npoints-1) positions of ampCoeffs. 
+        /* Store variables for random jitter in the first (Npoints-1) positions of ampCoeffs.
          * Store constant plateau, knee position and slope in the next 3 positions.
          * Store random_linearCE_bit (-300) in the last position to make the code recognize our choice  */
-         
+
         /* Fill random part. Will take 10% of it later on */
         CreateRandomAmplitudeCalibrationErrors(ampCoeffs[i],calib_seed_ampli,tmpdata->name);
         LALUniformDeviate(&status,&tmpampli,datarandparam);
@@ -524,7 +524,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
       char **pplateau=NULL;
       char pplateau_option[] = "calpha_plateau";
       char **pknee=NULL;
-      char pknee_option[] = "calpha_knee";     
+      char pknee_option[] = "calpha_knee";
       char **pslope=NULL;
       char pslope_option[] = "calpha_slope";
 
@@ -543,19 +543,19 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
 	fprintf(stderr,"Must provide a --IFO-calpha_slope option for each IFO if --RandomLinearCE is given\n");
 	exit(1);
       }
-      
+
       fprintf(stdout,"Applying quasi constant phase calibration errors. \n");
-      
+
       i=0;
       tmpdata=IFOdata;
       while (tmpdata!=NULL){
-        /* Store variables for random jitter in the first (Npoints-1) positions of phaCoeffs. 
+        /* Store variables for random jitter in the first (Npoints-1) positions of phaCoeffs.
          * Store constant plateau, knee position and slope in the next 3 positions.
          * Store random_linearCE_bit (-300) in the last position to make the code recognize our choice  */
-         
+
         /* Fill random part. Will take 10% of it later on */
         CreateRandomPhaseCalibrationErrors(phaseCoeffs[i],calib_seed_phase,tmpdata->name);
-        
+
         LALUniformDeviate(&status,&tmpphase,datarandparam);
         calib_seed_phase+=floor(1E6*tmpphase);
         /* Consant plateau, knee, slope*/
@@ -604,21 +604,21 @@ void PrintCEtoFile(REAL8* Acoeffs,REAL8* Pcoeffs,LALInferenceIFOData* IFOdata, P
         fprintf(stderr,"The min and max frequency in LALInspiralCalibrationErrors.c are inside the range [flow,fmin] of the integral overlap. Exiting...\n");
         exit(1);
     }
-    
+
     ProcessParamsTable *ppt_order=NULL;
     ppt_order=LALInferenceGetProcParamVal(commandLine, "--outfile");
     char *outfile=ppt_order->value;
-    
+
     FILE *calibout;
     char caliboutname[2048];
     sprintf(caliboutname,"%s_CE_%s.dat",outfile, IFOdata->name);
     calibout=fopen(caliboutname,"w");
-    
+
     for(ui=f_low_idx;ui<f_high_idx;ui++){
       f=ui*df;
       if (Acoeffs[3+Npoints]==random_linearCE_bit)
         fprintf(calibout,"%lf \t%10.10e \t%10.10e\n",f,ConvertRandTransitionSlopeToFunction(Acoeffs,f),ConvertRandTransitionSlopeToFunction(Pcoeffs,f));
-      else 
+      else
         fprintf(calibout,"%lf \t%10.10e \t%10.10e\n",f,ConvertCoefficientsToFunction(Acoeffs,f),ConvertCoefficientsToFunction(Pcoeffs,f));
     }
     fclose(calibout);
@@ -626,73 +626,73 @@ void PrintCEtoFile(REAL8* Acoeffs,REAL8* Pcoeffs,LALInferenceIFOData* IFOdata, P
 
 void FitErrorRealisation(INT4	R,	INT4 N,	REAL8    *y,REAL8 dlogf,REAL8	*D)
 {
-	
+
   int i=0; int j=0;
   /*********************************************************************
    *
    * Savitsky-Golay Filter
    * - Based on least square fitting of a polynomial of Rth order
    * - Smoothens function by extrapolating from m neighbouring points
-   * - See Abraham Savitsky and Marcel J. E. Golay 
+   * - See Abraham Savitsky and Marcel J. E. Golay
    * 		"Smoothing and differentiation of data by simplified least squares procedures"
-   * 
-   ********************************************************************/ 
-	
+   *
+   ********************************************************************/
+
 	/*********************************************************************
-	 * 
+	 *
 	 * LAL error handling
-	 * 
-	 *********************************************************************/	
-  
+	 *
+	 *********************************************************************/
+
   //INITSTATUS( status, "LALSavitskyGolayFilter", LALCALIBRATIONERRORSC);
-  //ATTATCHSTATUSPTR(status);	 
-	
+  //ATTATCHSTATUSPTR(status);
+
 	/*********************************************************************
-	 * 
+	 *
 	 * Read input
-	 * 
-	 *********************************************************************/	   
-	
+	 *
+	 *********************************************************************/
+
   /* LOAD IN TIMESERIES PARAMETERS */
   INT4 M = (N-1)/2;
-  //printf("Input parameters: R = %d | M = %d | N = %d | dt = %e \n", R, M, N, dt);	
-	
+  //printf("Input parameters: R = %d | M = %d | N = %d | dt = %e \n", R, M, N, dt);
+
   /*********************************************************************
    *
    * Create Temporary Variables
-   * 
-   ********************************************************************/  
-  
+   *
+   ********************************************************************/
+
   //printf("Initialising Variables \n");
-  
+
   /* COUNTERS */
   int k;
-  
+
   /* factorial of D (used for derivatives) */
   INT4 factorial = 1;
-  
+
   /* MATRICES AND VECTORS */
 	gsl_matrix *m     	= gsl_matrix_calloc (R+1, 2*M+1);   /* m_ij = j^i */
 	gsl_matrix *U				= gsl_matrix_calloc (R+1, R+1);		/* U_ii = deltaT^i */
 	gsl_vector *a				= gsl_vector_calloc (R+1);			/* a_j, for y(t_i) = Sum_{j=0}^{R} a_j t_i^j */
-	gsl_matrix *c				= gsl_matrix_calloc (R+1, 2*M+1);		/* c_ij = U_-1 (m m^T)^-1 m, in a_j = c_ji y_i */ 
+	gsl_matrix *c				= gsl_matrix_calloc (R+1, 2*M+1);		/* c_ij = U_-1 (m m^T)^-1 m, in a_j = c_ji y_i */
 	gsl_vector *ym			= gsl_vector_calloc (2*M+1);	/* y_m = [y_-M, ... , y_M] */
 	gsl_matrix *tmr			= gsl_matrix_calloc (R+1, 2*M+1);		/* t_m^r = U*m */
-	
+
 	/* COMBINED MATRICES AND VECTORS */
 	gsl_matrix *mT			= gsl_matrix_calloc (2*M+1, R+1);		/* m^T */
 	gsl_matrix *mmT			= gsl_matrix_calloc (R+1, R+1);		/* mm^T */
 	gsl_matrix *InvmmT	= gsl_matrix_calloc (R+1, R+1);		/* (mm^T)^-1 */
 	gsl_matrix *InvmmTm	= gsl_matrix_calloc (R+1, 2*M+1);		/* (mm^T)^-1 m */
 	gsl_matrix *InvU		= gsl_matrix_calloc (R+1, R+1);		/* U^-1 */
-	
+
   /*********************************************************************
    *
    * Filling matrices
-   * 
-   ********************************************************************/ 
+   *
+   ********************************************************************/
 	//printf("Filling parameters \n");
-	
+
   /* m_ij = j^i */
   //printf("Filling parameters -  m %dx%d\n", m->size1, m->size2);
   for(i=0;i<(R+1);i++)
@@ -702,32 +702,32 @@ void FitErrorRealisation(INT4	R,	INT4 N,	REAL8    *y,REAL8 dlogf,REAL8	*D)
 			gsl_matrix_set(m, i, j, pow((j-M), i));
 		}
 	}
-	
+
   //printf("m %dx%d\n", m->size1, m->size2);
 	//for(i=0;i<((R+1)*(2*M+1));i++)
 	//{
 	//printf("%e", gsl_matrix_get(m, i/(2*M+1), i%(2*M+1)));
 	//if(i%(2*M+1)==(2*M)) printf("\n");
 	//else printf("\t");
-	//}  
-	//printf("\n");	 
-	
+	//}
+	//printf("\n");
+
   /* U_ii = deltaT^i */
   //printf("Filling parameters -  U %dx%d \n", U->size1, U->size2);
   for(i=0;i<(R+1);i++)
   {
 		gsl_matrix_set(U, i, i, pow(dlogf,i));
-	} 
-	
+	}
+
   //printf("U %dx%d\n", U->size1, U->size2);
 	//for(i=0;i<((R+1)*(R+1));i++)
 	//{
 	//printf("%e", gsl_matrix_get(U, i/(R+1), i%(R+1)));
 	//if(i%(R+1)==(R)) printf("\n");
 	//else printf("\t");
-	//}  
-	//printf("\n");	 	
-	
+	//}
+	//printf("\n");
+
 	/* m^T */
 	//printf("Filling parameters -  mT %dx%d\n", mT->size1, mT->size2);
 	for(i=0;i<(R+1); i++)
@@ -737,135 +737,135 @@ void FitErrorRealisation(INT4	R,	INT4 N,	REAL8    *y,REAL8 dlogf,REAL8	*D)
 			gsl_matrix_set(mT, j, i, gsl_matrix_get(m, i, j));
 		}
 	}
-	
+
   //printf("mT %dx%d\n", mT->size1, mT->size2);
 	//for(i=0;i<((2*M+1)*(R+1));i++)
 	//{
 	//printf("%e", gsl_matrix_get(mT, i/(R+1), i%(R+1)));
 	//if(i%(R+1)==(R)) printf("\n");
 	//else printf("\t");
-	//}  
-	//printf("\n");	 	
-	
+	//}
+	//printf("\n");
+
 	/* mm^T */
 	//printf("Filling parameters -  mmT %dx%d\n", mmT->size1, mmT->size2);
 	gsl_blas_dgemm (CblasNoTrans, CblasNoTrans,
 									1.0, m, mT,
-									0.0, mmT);	
-	
+									0.0, mmT);
+
   //printf("mmT %dx%d\n", mmT->size1, mmT->size2);
 	//for(i=0;i<((R+1)*(R+1));i++)
 	//{
 	//printf("%e", gsl_matrix_get(mmT, i/(R+1), i%(R+1)));
 	//if(i%(R+1)==(R)) printf("\n");
 	//else printf("\t");
-	//}  
-	//printf("\n");							
-	
+	//}
+	//printf("\n");
+
 	/* (mm^T)^-1 */
 	//printf("Filling parameters -  InvmmT %dx%d\n", InvmmT->size1, InvmmT->size2);
 	InvertMatrixSVD(mmT, InvmmT, R+1);
-	
+
 	/* U^-1*/
 	//printf("Filling parameters -  InvU %dx%d\n", InvU->size1, InvU->size2);
 	//InvertMatrixSVD(U, InvU, R+1);
-	
+
 	for(i=0;i<(R+1);i++)
 	{
 		//printf("%e | %e \n", 1.0/gsl_matrix_get(U, i, i), gsl_matrix_get(InvU, i, i));
 		gsl_matrix_set(InvU, i, i, 1.0/gsl_matrix_get(U, i, i));
 	}
-	
+
 	/* (mm^T)^-1 m */
 	//printf("Filling parameters -  InvmmTm %dx%d \n", InvmmTm->size1, InvmmTm->size2 );
 	gsl_blas_dgemm (CblasNoTrans, CblasNoTrans,
 									1.0, InvmmT, m,
-									0.0, InvmmTm);	
-	
+									0.0, InvmmTm);
+
   //printf("InvmmTm \n");
 	//for(i=0;i<((R+1)*(2*M+1));i++)
 	//{
 	//printf("%e", gsl_matrix_get(InvmmTm, i/(2*M+1), i%(2*M+1)));
 	//if(i%(2*M+1)==(2*M)) printf("\n");
 	//else printf("\t");
-	//}  
-	//printf("\n");	
-	
+	//}
+	//printf("\n");
+
 	/* c_ij = U_-1 (m m^T)^-1 m */
 	//printf("Filling parameters -  c \n");
 	gsl_blas_dgemm (CblasNoTrans, CblasNoTrans,
 									1.0, InvU, InvmmTm,
 									0.0, c);
-	
+
   //printf("c \n");
 	//for(i=0;i<((c->size1)*(c->size2));i++)
 	//{
 	//printf("%e", gsl_matrix_get(c, i/(c->size2), i%(c->size2)));
 	//if(i%(c->size2)==(c->size2-1)) printf("\n");
 	//else printf("\t");
-	//}  
-	//printf("\n");	
-	
+	//}
+	//printf("\n");
+
 	/* t_m^r = U*m */
 	//printf("%dx%d -> (%dx%d)x(%dx%d)\n", tmr->size1, tmr->size2, U->size1, U->size2, m->size1, m->size2);
 	//printf("Filling parameters -  tmr \n");
 	gsl_blas_dgemm (CblasNoTrans, CblasNoTrans,
 									1.0, U, m,
-									0.0, tmr);	
-	
-	
+									0.0, tmr);
+
+
 	/*********************************************************************
    *
    * Set polynomial prefactors and smooth function
-   * 
-   ********************************************************************/ 
-  
+   *
+   ********************************************************************/
+
   //printf("Smoothing \n");
 	/* READ DATA POINTS INTO VECTOR */
 	for(j=0;j<2*M+1;j++)
 	{
-		gsl_vector_set(ym, j, y[j]);		
+		gsl_vector_set(ym, j, y[j]);
 	}
-	
+
 	/* a = c*y */
-	gsl_blas_dgemv( CblasNoTrans, 
-								 1.0, c, ym, 
+	gsl_blas_dgemv( CblasNoTrans,
+								 1.0, c, ym,
 								 0.0, a );
-	
+
 	for(k=0; k<R; k++)
 	{
 		D[k] = factorial*gsl_vector_get(a, k);
 	}
-	
+
 	gsl_vector_set_zero (ym);
 	gsl_vector_set_zero (a);
-	
+
   /*********************************************************************
    *
    * Output to file
-   * 
-   ********************************************************************/  
+   *
+   ********************************************************************/
   //printf("Write to file \n");
   //FILE *smoothOut;
   //smoothOut = fopen("smoothOut.dat", "w");
-  
+
   //for(k=0;k<N;k++)
   //{
 	//fprintf(smoothOut, "%e\t%e\n", k*dt, Output[k]);
 	//}
 	//fclose(smoothOut);
-	
+
   /*********************************************************************
    *
    * Clean Up
-   *  
-   ********************************************************************/  
-	
+   *
+   ********************************************************************/
+
 	//printf("Cleaning up \n");
 	gsl_matrix_free(m);
 	gsl_matrix_free(U);
 	gsl_vector_free(a);
-	gsl_matrix_free(c);  
+	gsl_matrix_free(c);
 	gsl_vector_free(ym);
 	gsl_matrix_free(tmr);
 	gsl_matrix_free(mT);
@@ -873,19 +873,19 @@ void FitErrorRealisation(INT4	R,	INT4 N,	REAL8    *y,REAL8 dlogf,REAL8	*D)
 	gsl_matrix_free(InvmmT);
 	gsl_matrix_free(InvmmTm);
 	gsl_matrix_free(InvU);
-	
+
 	//DETATCHSTATUSPTR(status);
 	//RETURN(status);
 }
 
 void InvertMatrixSVD (gsl_matrix *A,gsl_matrix	*InvA,	int	N)
-{ 
-	
+{
+
   /*********************************************************************
    *
    *  CREATING TEMPORARY VARIABLES
-   * 
-   ********************************************************************/  	
+   *
+   ********************************************************************/
   int i=0;
   // Initialise matrices A, U, S and V
   gsl_matrix *InvS  = gsl_matrix_calloc (N, N); // inverse S
@@ -894,37 +894,37 @@ void InvertMatrixSVD (gsl_matrix *A,gsl_matrix	*InvA,	int	N)
   gsl_matrix *C     = gsl_matrix_calloc (N, N); // temporary storage
   gsl_vector *s     = gsl_vector_alloc (N);     // eigenvalues AA^T
   gsl_matrix *II= gsl_matrix_calloc (N,N); // testing idenity
-	
+
   //printf("INPUT \n");
 	//for(i=0;i<(N*N);i++)
 	//{
 	//printf("%e", gsl_matrix_get(A, i/N, i%N));
 	//if(i%N==(N-1)) printf("\n");
 	//else printf("\t");
-	//}  
+	//}
 	//printf("\n");
-  
+
   /*********************************************************************
    *
    *  COMPUTING INVERSE
    * 		- PERFORM SVD
    * 		- CALCULATE INVERSE
-   * 
-   ********************************************************************/ 
-	
+   *
+   ********************************************************************/
+
 	// Prepare U for SVD
 	gsl_matrix_memcpy(U, A);
-	
+
 	// Perform SVD
-	gsl_linalg_SV_decomp_jacobi(U, V, s);  
-	
+	gsl_linalg_SV_decomp_jacobi(U, V, s);
+
 	// Compute Inverse S
 	for (i = 0; i<N; i++)
 	{
 		gsl_vector_set( s, i, 1./gsl_vector_get( s, i) );
 		gsl_matrix_set( InvS, i, i, gsl_vector_get( s, i) );
 	}
-	
+
 	//printf("EIGENVECTORS \n");
 	//for(i=0;i<N;i++)
 	//{
@@ -933,39 +933,39 @@ void InvertMatrixSVD (gsl_matrix *A,gsl_matrix	*InvA,	int	N)
 	//else printf("\t");
 	//}
 	//printf("\n");
-	
+
 	// Tranpose U
 	gsl_matrix_transpose(U);
-	
+
 	// Multiply V and InvS
 	gsl_blas_dgemm (CblasNoTrans, CblasNoTrans,
 									1.0, V, InvS,
 									0.0, C);
-	
+
 	gsl_blas_dgemm (CblasNoTrans, CblasNoTrans,
 									1.0, C, U,
-									0.0, InvA);                             
-  
+									0.0, InvA);
+
   //printf("INVERSE \n");
 	//for(i=0;i<(N*N);i++)
 	//{
 	//printf("%e", gsl_matrix_get(InvA, i/N, i%N));
 	//if(i%N==(N-1)) printf("\n");
 	//else printf("\t");
-	//}  
-	//printf("\n");  
-  
+	//}
+	//printf("\n");
+
   /*********************************************************************
    *
    *  TESTING ACCURACY
    * 		- A * INVA = 1
-   * 
-   ********************************************************************/  
-  
+   *
+   ********************************************************************/
+
   gsl_blas_dgemm (CblasNoTrans, CblasNoTrans,
 									1.0, A, InvA,
-									0.0, II);      
-	
+									0.0, II);
+
 	//printf("UNIT\n");
 	//for(i=0;i<(N*N);i++)
 	//{
@@ -974,13 +974,13 @@ void InvertMatrixSVD (gsl_matrix *A,gsl_matrix	*InvA,	int	N)
 	//else printf("\t");
 	//}
 	//printf("\n");
-  
+
   /*********************************************************************
    *
    *  CLEANING UP
-   * 
-   ********************************************************************/  
-	
+   *
+   ********************************************************************/
+
 	/* MATRICES */
   //gsl_matrix_free(A);
   gsl_matrix_free(U);
@@ -990,21 +990,21 @@ void InvertMatrixSVD (gsl_matrix *A,gsl_matrix	*InvA,	int	N)
   gsl_matrix_free(C);
   gsl_matrix_free(II);
   gsl_vector_free(s);
-  
+
   /*********************************************************************
    *
    *  Detach Error handling
-   * 
+   *
    ********************************************************************/
-  
+
   return;
 }
 
 REAL8 ConvertCoefficientsToFunction(REAL8 *coeff, REAL8 f)
 {
-  /* Takes a set of N coefficients c_i and return 
+  /* Takes a set of N coefficients c_i and return
    * c[0]+ c[1]*logf ..+c[N-1]*logf^(N-1).
-   * To simulate constant CE, call with only c[0] non zero */ 
+   * To simulate constant CE, call with only c[0] non zero */
 
   REAL8 output = 0.0;
   int i;
@@ -1013,11 +1013,11 @@ REAL8 ConvertCoefficientsToFunction(REAL8 *coeff, REAL8 f)
   REAL8 deltalogf=(log10(freq_max)-log10(freq_min))/(REAL8)(Npoints-1);
   for (i=0; i<Npoints; i++) {
     logFreqs[i]=log10(freq_min)+deltalogf*i;
-  } 
+  }
   if (Npoints%2==0) fprintf(stderr,"The number of points used for the fit must be odd, in ConvertCoefficientsToFunction. Exiting\n");
 
-  REAL8 cen = logFreqs[(Npoints-1)/2]; 
-  REAL8 logF = log10(f)-cen; // FIT USED CEN AS CENTRAL POINT!	
+  REAL8 cen = logFreqs[(Npoints-1)/2];
+  REAL8 logF = log10(f)-cen; // FIT USED CEN AS CENTRAL POINT!
 
   for(i=0;i<FitOrder;i++)
   {
@@ -1030,7 +1030,7 @@ REAL8 ConvertCoefficientsToFunction(REAL8 *coeff, REAL8 f)
 static REAL8 ConvertRandTransitionSlopeToFunction(REAL8 *coeff,REAL8 f)
 {
   /* Takes an array of 3 numbers and return a calibraation error realization which is:
-   * 
+   *
    * flat (coeff[0]) + fluctuation (given by ~10% of the S6 1-sigma) for freq< coeff[1]
    * increasing with constant slope coeff[2] for freq>coeff[1]
    *  */
@@ -1039,7 +1039,7 @@ static REAL8 ConvertRandTransitionSlopeToFunction(REAL8 *coeff,REAL8 f)
   REAL8 slope=coeff[Npoints+2];
   if (f<heavi)
     output+=(ConvertCoefficientsToFunction(coeff,f)/10.);
-  if (f>= heavi) 
+  if (f>= heavi)
     output = slope*(f-heavi)+(output+(ConvertCoefficientsToFunction(coeff,heavi)/10.));
 	return output;
 }
