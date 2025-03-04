@@ -1,24 +1,24 @@
 /*
  * simburst_to_frame.c
- * 
+ *
  * Copyright 2013 Salvatore Vitale <salvatore.vitale@ligo.org>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
- * 
- * 
+ *
+ *
  */
 
 
@@ -81,7 +81,7 @@ static void write_log(SimBurst **injs, TimeSlide * time_slide_table_head,struct 
 
 static void print_usage(void)
 {
-	fprintf(stderr, 
+	fprintf(stderr,
 " lalapps_simburst_to_mdc --simburst-file simburst.xml --ifos [IFO1,IFO2,...IFON] [options]\n" \
 "\n" \
 "Description:\n"\
@@ -143,7 +143,7 @@ static struct options parse_command_line(int *argc, char **argv[])
   case 1731:
     options.pad=atof(optarg);
     break;
-      
+
 	case 0:
 		/* option sets a flag */
 		break;
@@ -159,8 +159,8 @@ static struct options parse_command_line(int *argc, char **argv[])
 		print_usage();
 		exit(1);
 	} while(c != -1);
-    
-    
+
+
     /* check some of the input parameters for consistency */
     if (options.simburst_file==NULL){
         fprintf(stderr,"Must provide a sim burst file with --simburst-file\n");
@@ -204,18 +204,18 @@ int main(int argc, char **argv)
 	/*
 	 * Command line and process params table.
 	 */
-     
+
 	options = parse_command_line(&argc, &argv);
-	
+
     injs=XLALSimBurstTableFromLIGOLw(options.simburst_file);
     cutinjs=injs;
-    
+
     time_slide_table_head=XLALTimeSlideTableFromLIGOLw(options.simburst_file);
-    
+
     double xml_gps_start;
     double xml_gps_end;
     UINT4 lost_before=0;
-        
+
 	double mdc_gps_start=0;
 	int mdc_duration=0;
     double pad=options.pad;
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
 
     LIGOTimeGPS epoch;
     char channame[256];
-    
+
     INT4 detectorFlags;
 	LALFrameH *frame=NULL;
 	CHAR fname[256];
@@ -235,43 +235,43 @@ int main(int argc, char **argv)
     UINT4 events=0;
     UINT4 i;
     inj=injs;
-    
+
     /* if user did not provide pad, default to 10seconds */
     if (pad==-1)
         pad=10.;
-    
+
     xml_gps_start=inj->time_geocent_gps.gpsSeconds+1.0e-9 * inj->time_geocent_gps.gpsNanoSeconds;
     while (inj){
         xml_gps_end=inj->time_geocent_gps.gpsSeconds+1.0e-9 * inj->time_geocent_gps.gpsNanoSeconds;
         events++;
         inj=inj->next;
     }
-    
+
     if (options.mdc_gps_start==-1)
         mdc_gps_start=floor(xml_gps_start-pad);
     else
         mdc_gps_start=options.mdc_gps_start;
-        
-    XLALGPSSet(&epoch,mdc_gps_start,0); 
-    
+
+    XLALGPSSet(&epoch,mdc_gps_start,0);
+
     if (options.mdc_duration!=-1)
         mdc_duration=options.mdc_duration;
     else
         // Accomodate all the events in the xml table. Allow 1 pad per side
         mdc_duration=(int) (2.*pad + (xml_gps_end-xml_gps_start));
-    
+
     /* Check mdc_duration is larger than 2*pad */
     if (2.*pad >= (double) mdc_duration){
         fprintf(stderr,"ERROR: The duration of the frame (%d secs) is smaller than twice the pad (%.2f secs). Consider increasing mdc-duration or reducing pad\n",mdc_duration,2.*pad);
         exit(1);
-    }    
-    
+    }
+
     mdc_max_time=xml_gps_start+mdc_duration-2.0*pad;
     mdc_min_time=mdc_gps_start+1.0*pad;
-    
+
     inj=injs;
     i=0;
-    
+
     /* Now loop over the table, and only keep times smaller than mdc_max_time */
     while(inj){
         trigtime=inj->time_geocent_gps.gpsSeconds+1.0e-9 * inj->time_geocent_gps.gpsNanoSeconds;
@@ -297,12 +297,12 @@ int main(int argc, char **argv)
             continue;
             }
         }
-        
+
         /* Next event is going to be out of range. Set next to NULL*/
         inj->next=NULL;
         break;
     }
-    
+
     if (i==0){
         fprintf(stderr,"ERROR: The frame will not contain any injections. Check the gps-start, duration, and pad\n");
         exit(1);
@@ -313,15 +313,15 @@ int main(int argc, char **argv)
         if (lost_before>0)
             fprintf(stdout,"WARNING: The frame will miss the first %d injections of the XML file, to follow duration and padding request!!\n\n",lost_before);
     }
-    
-    
+
+
     /* point injs to cutinjs, i.e. to the first row with time >mdc_min_time */
     injs=cutinjs;
     inj=injs;
-    
+
     CHAR frameType[256];
     sprintf(frameType,"%s",inj->waveform);
-    
+
     /* Create a string with the first char of the IFO name to use as prefix for the frame name */
     char IFOs[10]="";
     i=0;
@@ -329,24 +329,24 @@ int main(int argc, char **argv)
          sprintf(IFOs,"%s%c",IFOs,options.ifonames[i][0]);
          i++;
     }
-    
+
     snprintf( fname, 256, "%s-%s-%d-%d.gwf", IFOs,frameType, (int) mdc_gps_start, mdc_duration );
-    
+
     /* set detector flags */
 	detectorFlags = LAL_GEO_600_DETECTOR_BIT | LAL_LHO_4K_DETECTOR_BIT |
 			LAL_LHO_2K_DETECTOR_BIT | LAL_LLO_4K_DETECTOR_BIT |
 			LAL_TAMA_300_DETECTOR_BIT | LAL_VIRGO_DETECTOR_BIT;
-		
+
 	seglen = mdc_duration*srate;
 	frame = XLALFrameNew( &epoch, mdc_duration, "LIGO", 0, 1,detectorFlags );
-	
+
 	for (i=0;i<options.nIFO;i++){
-		
+
         if (options.channames)
             sprintf(channame,"%s:%s",options.ifonames[i],options.channames[i]);
         else
             sprintf(channame,"%s:Science",options.ifonames[i]);
-        
+
 		REAL8TimeSeries *soft=NULL;
 		soft = XLALCreateREAL8TimeSeries(channame,&epoch,0.0,deltaT,&lalStrainUnit,	seglen);
 		memset(soft->data->data,0.0,soft->data->length*sizeof(REAL8));
@@ -361,19 +361,19 @@ int main(int argc, char **argv)
 		XLALFrameAddREAL8TimeSeriesSimData( frame, soft );
 		XLALDestroyREAL8TimeSeries(soft);
 	}
-    
+
 	XLALFrameWrite( frame, fname);
 	XLALFrameFree(frame);
-    
+
     write_log(&injs, time_slide_table_head, &options, fname);
-    
+
     if(options.ifonames)
         XLALFree(options.ifonames);
 	return 0;
 }
 
 static void write_log(SimBurst **injs, TimeSlide * time_slide_table_head,struct options *options,char* fname){
-        
+
     SimBurst *inj=&(*injs[0]);
     (void) time_slide_table_head;
     char log_filename[256];
@@ -389,37 +389,37 @@ static void write_log(SimBurst **injs, TimeSlide * time_slide_table_head,struct 
     SkyPosition currentEqu, currentGeo;
     LIGOTimeGPS injtime;
     REAL8 gmst,timedelay;
-    char IFOnames[5][4]={"GEO","H1","H2","L1","V1"};    
+    char IFOnames[5][4]={"GEO","H1","H2","L1","V1"};
     int nifos=5;
     int i=0;
-    
+
     currentEqu.system = COORDINATESYSTEM_EQUATORIAL;
     currentGeo.system = COORDINATESYSTEM_GEOGRAPHIC;
 
 
     while(inj){
-        
-    
+
+
     q=inj->q;
     f=inj->frequency;
     hrss=inj->hrss;
     ra=inj->ra;
     dec=inj->dec;
     psi=inj->psi;
-    geoc_time=inj->time_geocent_gps.gpsSeconds + 1.e-9* inj->time_geocent_gps.gpsNanoSeconds;  
+    geoc_time=inj->time_geocent_gps.gpsSeconds + 1.e-9* inj->time_geocent_gps.gpsNanoSeconds;
     XLALGPSSet(&injtime,inj->time_geocent_gps.gpsSeconds ,inj->time_geocent_gps.gpsNanoSeconds);
-    
+
     currentEqu.latitude = dec;
     currentEqu.longitude = ra;
     double mdc_gps_start=options->mdc_gps_start;
-    
+
     LALEquatorialToGeographic(&status, &currentGeo, &currentEqu, &injtime);
-    
+
     char wf[4];
     if (!strcmp("SineGaussian",inj->waveform))
         strcpy(wf,"SG");
     else if (!strcmp("SineGaussianF",inj->waveform))
-        strcpy(wf,"SGF");   
+        strcpy(wf,"SGF");
     else if (!strcmp("Gaussian",inj->waveform))
         strcpy(wf,"GA");
     else if (!strcmp("GaussianF",inj->waveform))
@@ -432,8 +432,8 @@ static void write_log(SimBurst **injs, TimeSlide * time_slide_table_head,struct 
         fprintf(stderr,"Uknown waveform value %s. Exiting\n",inj->waveform);
         exit(1);
     }
-	
-    char WFname[256]; 
+
+    char WFname[256];
     sprintf(WFname,"%s%dQ%dd%d",wf,(int) f,(int) floor(q),(int) (10.*(q-floor(q))));
     fprintf(log_file,"%s\
     -100 \
@@ -450,7 +450,7 @@ static void write_log(SimBurst **injs, TimeSlide * time_slide_table_head,struct 
     -100\
     -100\
     -100 ",WFname,hrss, cos(LAL_PI_2 - currentGeo.latitude),currentGeo.longitude,psi,(int) (mdc_gps_start), geoc_time,WFname);
-    
+
     i=0;
     while (i<nifos){
         LALDetector* detector=XLALCalloc(1,sizeof(LALDetector));
@@ -460,23 +460,23 @@ static void write_log(SimBurst **injs, TimeSlide * time_slide_table_head,struct 
              memcpy(detector,&lalCachedDetectors[LALDetectorIndexLLODIFF],sizeof(LALDetector));
         else if (!strcmp(IFOnames[i],"V1"))
             memcpy(detector,&lalCachedDetectors[LALDetectorIndexVIRGODIFF],sizeof(LALDetector));
-        else if(!strcmp(IFOnames[i],"GEO")) 
+        else if(!strcmp(IFOnames[i],"GEO"))
             memcpy(detector,&lalCachedDetectors[LALDetectorIndexGEO600DIFF],sizeof(LALDetector));
         gmst=XLALGreenwichMeanSiderealTime(&injtime);
         XLALComputeDetAMResponse(&Fplus, &Fcross,(const REAL4(*)[3]) detector->response, ra, dec, psi, gmst);
         timedelay = XLALTimeDelayFromEarthCenter(detector->location,ra, dec, &injtime);
-    
+
         fprintf(log_file, "%s %10.10f %.10e %.10e ", IFOnames[i], geoc_time+timedelay,Fplus,Fcross);
-    
+
         i++;
         XLALFree(detector);
-    }    
-    
+    }
+
     fprintf(log_file, "\n");
     inj=inj->next;
     }
-    
-    fclose(log_file);    
+
+    fclose(log_file);
 
 }
 
