@@ -35,7 +35,7 @@
  * mode numbers @p l and @p m, and polar angle @p theta.  If the parameter
  * @p theta is not given, the utility prints a table of the values of
  * the spin-weighted spheroidal wave function.
- * 
+ *
  * ### Options
  *
  * <DL>
