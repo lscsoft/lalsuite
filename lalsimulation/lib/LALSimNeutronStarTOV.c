@@ -243,7 +243,7 @@ static struct tov_virial_ode_vars *tov_virial_ode_vars_cast(const double *y)
  * Also uses Eqs. (7) and (8) [ibid] for inner boundary data, and
  * Eqs. (18), (27), (28) of Damour & Nagar, Phys. Rev. D 80, 084035 (2009)
  * [See also: Eqs. (11) & (12) Hinderer et al. Phys. Rev. D 81 123016 (2010)]
- * for the metric perturbation used to obtain the Love number. 
+ * for the metric perturbation used to obtain the Love number.
  * For the Virial portion, implements equations provided by A. Nikolaidis, N. Stergioulas, H. Markakis. */
 static int tov_virial_ode(double h, const double *y, double *dy, void *params)
 {
@@ -283,7 +283,7 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
     double dI2 = r * pow(alpha, (-1.5)) * pow(beta, (2.0)) * dr;
     double dJ1 = 4.0 * LAL_PI * r * r * pow(alpha, (-0.5)) * 3.0 * p * dr;
     double dJ2 = pow(alpha, (-0.5)) * (pow(alpha, (-1.0)) * pow((beta * r), (2.0)) - 0.5 * pow((sqrt(alpha) - 1.0), (2.0))) * dr;
-    
+
 
     derivs->r = dr;
     derivs->m = dm;
@@ -319,7 +319,7 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
  * @retval <0 Failure.
  */
 int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *mass,
-    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6, 
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos, double epsrel)
 {
@@ -381,7 +381,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     double I2_0 = - 16.0 * LAL_PI * LAL_PI * r0 * r0 * r0 * r0 * pc * pc * dh - 6.0 * LAL_PI * r0 * r0 * pc * dh * dh;
     double J1_0 = - 12.0 * LAL_PI * r0 * r0 * r0 * pc * dh - 3.0 * r0 * dh * dh * dh;
     double J2_0 = - 16.0 * LAL_PI * LAL_PI * r0 * r0 * r0 * r0 * r0 * pc * pc * dh + 8.0 * LAL_PI * LAL_PI * r0 * r0 * r0 * r0 * r0 * pc * pc * dh * dh;
-    
+
 
     /* perform integration */
     vars->r = r0;
@@ -433,7 +433,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     return 0;
 }
 
-int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass, 
+int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos)
 {
     const double epsrel = 1e-6;
@@ -441,7 +441,7 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
 }
 
 int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
-    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6, 
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos)
 {
