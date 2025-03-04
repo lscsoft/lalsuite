@@ -33,4 +33,3 @@ REAL4 CompDetectorVmax( const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap
 REAL4 CompDetectorVmax2( const LIGOTimeGPSVector *timestamps, const LALDetector det, EphemerisData *edat );
 
 #endif
-
