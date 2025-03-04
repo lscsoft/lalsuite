@@ -1,5 +1,5 @@
 clear
- 
+
 t0=10^(17.5);  %age of the universe
 zeq=10^(3.94);
 aeq=(zeq)^(-4/3) * 2^(-1/3); %value of a at zeq
@@ -43,5 +43,3 @@ ylabel('Rate[Hz]')
 title('One year at LIGO design (A=10^{-21}s^{-1/3}, f_h=150)','FontSize',14)
 xlabel('G\mu','FontSize',14)
 ylabel('Rate [Hz]','FontSize',14)
-
-
