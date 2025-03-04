@@ -443,16 +443,3 @@ void LALHOUGHConstructPLUT( LALStatus       *status,
 #endif
 
 #endif     /* Close double-include protection _LUT_H */
-
-
-
-
-
-
-
-
-
-
-
-
-
