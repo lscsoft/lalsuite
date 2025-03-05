@@ -24,7 +24,7 @@ Build-Depends:
  python3-numpy,
  python3-pil,
  python3-pytest,
- python3-scipy,
+ python3-scipy (>= @MIN_SCIPY_VERSION@~),
  python3-tqdm,
  rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
@@ -88,7 +88,7 @@ Depends:
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  python3-lscsoft-glue,
  python3-matplotlib,
- python3-scipy,
+ python3-scipy (>= @MIN_SCIPY_VERSION@~),
  python3-tqdm,
 Description: Python 3 bindings foar LALBurst
  The LVK Algorithm Burst Library for gravitational wave data analysis.
@@ -108,7 +108,7 @@ Depends:
  python3-matplotlib,
  python3-numpy,
  python3-pil,
- python3-scipy,
+ python3-scipy (>= @MIN_SCIPY_VERSION@~),
  python3-tqdm,
 Description: LVK Algorithm Library Burst
  The LVK Algorithm Burst Library for gravitational wave data analysis.
