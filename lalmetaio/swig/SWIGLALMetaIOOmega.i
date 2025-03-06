@@ -49,7 +49,7 @@ void tagSnglInspiralTable_end_time_ns_set(SnglInspiralTable *self, int val) {
   /// <ul><li>
 
   /// Export .end integer and nanosecond parts as .end_time and
-  /// .end_time_ns for compatibility with glue
+  /// .end_time_ns for compatibility with python-ligo-lw
   int end_time;
   int end_time_ns;
 
