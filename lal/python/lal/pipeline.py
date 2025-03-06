@@ -26,7 +26,7 @@ __date__ = git_version.date
 
 from collections import OrderedDict
 import configparser
-import ligo.segments
+import igwn_segments as segments
 import itertools
 import math
 import os
@@ -1988,7 +1988,7 @@ class LsyncCache(object):
       times = [ int(s) for s in times[1:-1].split(' ') ]
 
       # group the integers by two and turn those tuples into segments
-      segments = [ ligo.segments.segment(a) for a in self.group(times, 2) ]
+      segs = [ segments.segment(a) for a in self.group(times, 2) ]
 
       # initialize if necessary for this site
       if site not in gwfDict:
@@ -2005,7 +2005,7 @@ class LsyncCache(object):
           % str(key)
         raise RuntimeError(msg)
 
-      gwfDict[site][frameType][key] = ligo.segments.segmentlist(segments)
+      gwfDict[site][frameType][key] = segments.segmentlist(segs)
     f.close()
 
     cache['gwf'] = gwfDict
@@ -2025,10 +2025,10 @@ class LsyncCache(object):
       return []
 
     # segment representing the search interval
-    search = ligo.segments.segment(gpsStart, gpsEnd)
+    search = segments.segment(gpsStart, gpsEnd)
 
     # segment list representing the search interval
-    searchlist = ligo.segments.segmentlist([search])
+    searchlist = segments.segmentlist([search])
 
     # dict of LFNs returned that match the metadata query
     lfnDict = {}
@@ -2051,7 +2051,7 @@ class LsyncCache(object):
 
           # loop through the times and create paths
           for t in times:
-            if search.intersects(ligo.segments.segment(t, t + dur)):
+            if search.intersects(segments.segment(t, t + dur)):
               lfn =  "%s-%s-%d-%d.gwf" % (site, frameType, t, dur)
               lfnDict[lfn] = None
 
