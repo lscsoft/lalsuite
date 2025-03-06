@@ -20,7 +20,6 @@ Build-Depends:
  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  python3-lalburst (>= @MIN_LALBURST_VERSION@~),
- python3-lscsoft-glue,
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-pytest,
  rsync,
@@ -87,7 +86,6 @@ Depends:
  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  python3-lalburst (>= @MIN_LALBURST_VERSION@~),
- python3-lscsoft-glue,
  python3-tqdm,
 Description: Python 3 bindings for LALInspiral
  The LVK Algorithm Inspiral Library for gravitational wave data analysis.
