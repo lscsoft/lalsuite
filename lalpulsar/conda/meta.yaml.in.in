@@ -189,7 +189,6 @@ outputs:
         - h5py
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - numpy
-        - lscsoft-glue >=1.54.1
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}

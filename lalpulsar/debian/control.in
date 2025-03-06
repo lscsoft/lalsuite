@@ -24,7 +24,6 @@ Build-Depends:
  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  python3-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
- python3-lscsoft-glue (>= @MIN_GLUE_VERSION@),
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-pytest,
  python3-sympy,
@@ -94,7 +93,6 @@ Depends:
  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  python3-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
- python3-lscsoft-glue (>= @MIN_GLUE_VERSION@),
 Description: Python 3 bindings for LALPulsar.
  The LVK Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Pulsar library.
