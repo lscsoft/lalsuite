@@ -11,7 +11,7 @@ from optparse import OptionParser
 
 from configparser import ConfigParser
 
-from glue import pipeline
+from lal import pipeline
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 from lalinference.lalinference_pipe_utils import mkdirs
