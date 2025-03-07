@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2021 Evan Goetz
+*  Copyright (C) 2021-2025 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ int main( int argc, char **argv )
   REAL8 f0 = 0, deltaF = 0;
   CHAR outbase[256], outfile0[512];
 
-  CHAR *SFTpattA = NULL, *SFTpattB = NULL, *outputDir = NULL, *outputBname = NULL;
+  CHAR *SFTpattA = NULL, *SFTpattB = NULL, *outputDir = NULL, *outputBname = NULL, *header = NULL;
   INT4 startGPS = 0, endGPS = 0;
   REAL8 f_min = 0.0, f_max = 0.0, timebaseline = 0;
 
@@ -67,6 +67,7 @@ int main( int argc, char **argv )
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputBname,  "outputBname",  STRING, 'o', OPTIONAL, "Base name of output files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &timebaseline, "timeBaseline", REAL8,  't', REQUIRED, "The time baseline of sfts" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &allow_skipping, "allow_skipping", BOOLEAN, 'x', OPTIONAL, "Allow to exit without an error if no SFTs are found" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &header,       "header",       STRING, 'H', OPTIONAL, "Header line in the output file; if not provided then no header line will be made" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   BOOLEAN should_exit = 0;
   XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -137,6 +138,11 @@ int main( int argc, char **argv )
   COHOUT = fopen( outfile0, "w" );
   fopenerr = errno;
   XLAL_CHECK_MAIN( COHOUT != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile0, strerror( fopenerr ) );
+
+  // Write header line to files, if provided
+  if ( XLALUserVarWasSet( &header ) ) {
+    fprintf( COHOUT, "# %s\n", header );
+  }
 
   UINT4 nAve = 0;
 
