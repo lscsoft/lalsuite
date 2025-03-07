@@ -36,29 +36,34 @@ import stat
 import sys
 import time
 from hashlib import md5
-import warnings
-
-warnings.warn(
-	"all functionality within this module exists to support deprecated pipeline "
-	"generation programs, and will be removed from gstlal in the future",
-	DeprecationWarning,
-)
 
 
 class CondorError(Exception):
   """Error thrown by Condor Jobs"""
   def __init__(self, args=None):
     self.args = args
+
+
 class CondorJobError(CondorError):
   pass
+
+
 class CondorSubmitError(CondorError):
   pass
+
+
 class CondorDAGError(CondorError):
   pass
+
+
 class CondorDAGJobError(CondorError):
   pass
+
+
 class CondorDAGNodeError(CondorError):
   pass
+
+
 class SegmentError(Exception):
   def __init__(self, args=None):
     self.args = args
@@ -419,15 +424,15 @@ class CondorJob(object):
       raise CondorSubmitError("Cannot open file " + self.__sub_file_path)
 
     if self.__universe == 'grid':
-      if self.__grid_type == None:
+      if self.__grid_type is None:
         raise CondorSubmitError('No grid type specified.')
       elif self.__grid_type == 'gt2':
-        if self.__grid_server == None:
+        if self.__grid_server is None:
           raise CondorSubmitError('No server specified for grid resource.')
       elif self.__grid_type == 'gt4':
-        if self.__grid_server == None:
+        if self.__grid_server is None:
           raise CondorSubmitError('No server specified for grid resource.')
-        if self.__grid_scheduler == None:
+        if self.__grid_scheduler is None:
           raise CondorSubmitError('No scheduler specified for grid resource.')
       else:
         raise CondorSubmitError('Unsupported grid resource.')
@@ -477,7 +482,6 @@ class CondorJob(object):
     subfile.write( 'queue ' + str(self.__queue) + '\n' )
 
     subfile.close()
-
 
 
 class CondorDAGJob(CondorJob):
@@ -581,7 +585,7 @@ class CondorDAGManJob(object):
     """
     self.__dag = dag
     self.__notification = None
-    self.__dag_directory= dir
+    self.__dag_directory = dir
 
   def create_node(self):
     """
@@ -668,7 +672,7 @@ class CondorDAGNode(object):
     self.__input_files = []
     self.__checkpoint_files = []
     self.__vds_group = None
-    if isinstance(job,CondorDAGJob) and job.get_universe()=='standard':
+    if isinstance(job, CondorDAGJob) and job.get_universe() == 'standard':
       self.__grid_start = 'none'
     else:
       self.__grid_start = None
@@ -1007,14 +1011,14 @@ class CondorDAGNode(object):
     Write the DAG entry for this node's category to the DAG file descriptor.
     @param fh: descriptor of open DAG file.
     """
-    fh.write( 'CATEGORY ' + self.__name + ' ' + self.__category +  '\n' )
+    fh.write('CATEGORY ' + self.__name + ' ' + self.__category + '\n')
 
   def write_priority(self,fh):
     """
     Write the DAG entry for this node's priority to the DAG file descriptor.
     @param fh: descriptor of open DAG file.
     """
-    fh.write( 'PRIORITY ' + self.__name + ' ' + self.__priority +  '\n' )
+    fh.write('PRIORITY ' + self.__name + ' ' + self.__priority + '\n')
 
   def write_vars(self,fh):
     """
@@ -1326,7 +1330,7 @@ class CondorDAG(object):
     @param category: tuple containing type of jobs to set a maxjobs limit for
         and the maximum number of jobs of that type to run at once.
     """
-    fh.write( 'MAXJOBS ' + str(category[0]) + ' ' + str(category[1]) +  '\n' )
+    fh.write('MAXJOBS ' + str(category[0]) + ' ' + str(category[1]) + '\n')
 
   def write_sub_files(self):
     """
@@ -1682,11 +1686,11 @@ class AnalysisNode(object):
         a, b, c, d = lfn.split('.')[0].split('-')
         t_start = int(c)
         t_end = int(c) + int(d)
-        if (t_start <= (self.get_data_end()+self.get_pad_data()+int(d)+1) \
-          and t_end >= (self.get_data_start()-self.get_pad_data()-int(d)-1)):
+        if (t_start <= (self.get_data_end() + self.get_pad_data() + int(d) + 1)
+          and t_end >= (self.get_data_start() - self.get_pad_data() - int(d) - 1)):
           self.add_input_file(lfn)
       # set the frame type based on the LFNs returned by datafind
-      self.add_var_opt('frame-type',b)
+      self.add_var_opt('frame-type', b)
     else:
       raise CondorDAGNodeError("Unknown LFN cache format")
 
@@ -1695,7 +1699,7 @@ class AnalysisNode(object):
     Determine the path to the correct calibration cache file to use.
     """
     if self.__ifo and self.__start > 0:
-        cal_path = self.job().get_config('calibration','path')
+        cal_path = self.job().get_config('calibration', 'path')
 
         # check if this is S2: split calibration epochs
         if ( self.__LHO2k.match(self.__ifo) and
@@ -1738,6 +1742,103 @@ class AnalysisNode(object):
     return self.__calibration_cache
 
 
+class AnalysisChunk(object):
+  """
+  An AnalysisChunk is the unit of data that a node works with, usually some
+  subset of a ScienceSegment.
+  """
+  def __init__(self, start, end, trig_start=0, trig_end=0):
+    """
+    @param start: GPS start time of the chunk.
+    @param end: GPS end time of the chunk.
+    @param trig_start: GPS time at which to start generating triggers
+    @param trig_end: GPS time at which to stop generating triggers
+    """
+    self.__start = start
+    self.__end = end
+    self.__length = end - start
+    self.__trig_start = trig_start
+    self.__trig_end = trig_end
+
+  def __repr__(self):
+    if self.__trig_start and self.__trig_end:
+      return '<AnalysisChunk: start %d, end %d, trig_start %d, trig_end %d>' % (
+        self.__start, self.__end, self.__trig_start, self.__trig_end)
+    elif self.__trig_start and not self.__trig_end:
+      return '<AnalysisChunk: start %d, end %d, trig_start %d>' % (
+        self.__start, self.__end, self.__trig_start)
+    elif not self.__trig_start and self.__trig_end:
+      return '<AnalysisChunk: start %d, end %d, trig_end %d>' % (
+        self.__start, self.__end, self.__trig_end)
+    else:
+      return '<AnalysisChunk: start %d, end %d>' % (self.__start, self.__end)
+
+  def __len__(self):
+    """
+    Returns the length of data for which this AnalysisChunk will produce
+    triggers (in seconds).
+    """
+    if self.__trig_start and self.__trig_end:
+      x = self.__trig_end - self.__trig_start
+    elif self.__trig_start and not self.__trig_end:
+      x = self.__end - self.__trig_start
+    elif not self.__trig_start and self.__trig_end:
+      x = self.__trig_end - self.__start
+    else:
+      x = self.__end - self.__start
+
+    if x < 0:
+      raise SegmentError(self + 'has negative length')
+    else:
+      return x
+
+  def start(self):
+    """
+    Returns the GPS start time of the chunk.
+    """
+    return self.__start
+
+  def end(self):
+    """
+    Returns the GPS end time of the chunk.
+    """
+    return self.__end
+
+  def dur(self):
+    """
+    Returns the length (duration) of the chunk in seconds.
+    """
+    return self.__length
+
+  def trig_start(self):
+    """
+    Return the first GPS time at which triggers for this chunk should be
+    generated.
+    """
+    return self.__trig_start
+
+  def trig_end(self):
+    """
+    Return the last GPS time at which triggers for this chunk should be
+    generated.
+    """
+    return self.__trig_end
+
+  def set_trig_start(self,start):
+    """
+    Set the first GPS time at which triggers for this chunk should be
+    generated.
+    """
+    self.__trig_start = start
+
+  def set_trig_end(self,end):
+    """
+    Set the last GPS time at which triggers for this chunk should be
+    generated.
+    """
+    self.__trig_end = end
+
+
 class ScienceSegment(object):
   """
   A ScienceSegment is a period of time where the experimenters determine
@@ -1776,7 +1877,7 @@ class ScienceSegment(object):
 
   def __repr__(self):
     return '<ScienceSegment: id %d, start %d, end %d, dur %d, unused %d>' % (
-    self.id(),self.start(),self.end(),self.dur(),self.__unused)
+        self.id(),self.start(),self.end(),self.dur(),self.__unused)
 
   def __cmp__(self,other):
     """
@@ -1809,12 +1910,12 @@ class ScienceSegment(object):
     increment = length - overlap
     while time_left >= length:
       end = start + length
-      if (not play) or (play and (((end-sl-excl_play-729273613) % 6370) <
-        (600+length-2*excl_play))):
+      if (not play) or (play and (((end - sl - excl_play - 729273613) % 6370)
+        < (600 + length - 2 * excl_play))):
         if (play == 2):
         # calculate the start of the playground preceeding the chunk end
           play_start = 729273613 + 6370 * \
-           math.floor((end-sl-excl_play-729273613) / 6370)
+           math.floor((end - sl - excl_play - 729273613) / 6370)
           play_end = play_start + 600
           trig_start = 0
           trig_end = 0
@@ -1827,14 +1928,14 @@ class ScienceSegment(object):
               trig_start = int(play_start)
             if play_end < end:
               trig_end = int(play_end)
-          self.__chunks.append(AnalysisChunk(start,end,trig_start,trig_end))
+          self.__chunks.append(AnalysisChunk(start, end, trig_start, trig_end))
         else:
-          self.__chunks.append(AnalysisChunk(start,end))
+          self.__chunks.append(AnalysisChunk(start, end))
       start += increment
       time_left -= increment
     self.__unused = time_left - overlap
 
-  def add_chunk(self,start,end,trig_start=0,trig_end=0):
+  def add_chunk(self, start, end, trig_start=0, trig_end=0):
     """
     Add an AnalysisChunk to the list associated with this ScienceSegment.
     @param start: GPS start time of chunk.
@@ -1842,7 +1943,7 @@ class ScienceSegment(object):
     @param trig_start: GPS start time for triggers from chunk
     @param trig_end: trig_end
     """
-    self.__chunks.append(AnalysisChunk(start,end,trig_start,trig_end))
+    self.__chunks.append(AnalysisChunk(start, end, trig_start, trig_end))
 
   def unused(self):
     """
@@ -1910,6 +2011,518 @@ class ScienceSegment(object):
     return self.__df_node
 
 
+class ScienceData(object):
+  """
+  An object that can contain all the science data used in an analysis. Can
+  contain multiple ScienceSegments and has a method to generate these from
+  a text file produces by the LIGOtools segwizard program.
+  """
+  def __init__(self):
+    self.__sci_segs = []
+    self.__filename = None
+
+  def __getitem__(self,i):
+    """
+    Allows direct access to or iteration over the ScienceSegments associated
+    with the ScienceData.
+    """
+    return self.__sci_segs[i]
+
+  def __repr__(self):
+    return '<ScienceData: file %s>' % self.__filename
+
+  def __len__(self):
+    """
+    Returns the number of ScienceSegments associated with the ScienceData.
+    """
+    return len(self.__sci_segs)
+
+  def read(self,filename,min_length,slide_sec=0,buffer=0):
+    """
+    Parse the science segments from the segwizard output contained in file.
+    @param filename: input text file containing a list of science segments generated by
+    segwizard.
+    @param min_length: only append science segments that are longer than min_length.
+    @param slide_sec: Slide each ScienceSegment by::
+
+      delta > 0:
+        [s, e] -> [s+delta, e].
+      delta < 0:
+        [s, e] -> [s, e-delta].
+
+    @param buffer: shrink the ScienceSegment::
+
+      [s, e] -> [s+buffer, e-buffer]
+    """
+    self.__filename = filename
+    octothorpe = re.compile(r'\A#')
+    for line in open(filename):
+      if not octothorpe.match(line) and int(line.split()[3]) >= min_length:
+        (id, st, en, du) = list(map(int, line.split()))
+
+        # slide the data if doing a background estimation
+        if slide_sec > 0:
+          st += slide_sec
+        elif slide_sec < 0:
+          en += slide_sec
+        du -= abs(slide_sec)
+
+        # add a buffer
+        if buffer > 0:
+          st += buffer
+          en -= buffer
+          du -= 2 * abs(buffer)
+
+        x = ScienceSegment(tuple([id, st, en, du]))
+        self.__sci_segs.append(x)
+
+  def append_from_tuple(self, seg_tuple):
+    x = ScienceSegment(seg_tuple)
+    self.__sci_segs.append(x)
+
+  def tama_read(self, filename):
+    """
+    Parse the science segments from a tama list of locked segments contained in
+                file.
+    @param filename: input text file containing a list of tama segments.
+    """
+    self.__filename = filename
+    for line in open(filename):
+      columns = line.split()
+      id = int(columns[0])
+      start = int(math.ceil(float(columns[3])))
+      end = int(math.floor(float(columns[4])))
+      dur = end - start
+
+      x = ScienceSegment(tuple([id, start, end, dur]))
+      self.__sci_segs.append(x)
+
+  def make_chunks(self, length, overlap=0, play=0, sl=0, excl_play=0, pad_data=0):
+    """
+    Divide each ScienceSegment contained in this object into AnalysisChunks.
+    @param length: length of chunk in seconds.
+    @param overlap: overlap between segments.
+    @param play: if true, only generate chunks that overlap with S2 playground
+    data.
+    @param sl: slide by sl seconds before determining playground data.
+    @param excl_play: exclude the first excl_play second from the start and end
+    of the chunk when computing if the chunk overlaps with playground.
+    @param pad_data: exclude the first and last pad_data seconds of the segment
+    when generating chunks
+    """
+    for seg in self.__sci_segs:
+      seg.make_chunks(length,overlap,play,sl,excl_play,pad_data)
+
+  def make_chunks_from_unused(self,length,trig_overlap,play=0,min_length=0,
+    sl=0,excl_play=0,pad_data=0):
+    """
+    Create an extra chunk that uses up the unused data in the science segment.
+    @param length: length of chunk in seconds.
+    @param trig_overlap: length of time start generating triggers before the
+    start of the unused data.
+    @param play:
+                - 1 : only generate chunks that overlap with S2 playground data.
+                - 2 : as 1 plus compute trig start and end times to coincide
+                        with the start/end of the playground
+    @param min_length: the unused data must be greater than min_length to make a
+    chunk.
+    @param sl: slide by sl seconds before determining playground data.
+    @param excl_play: exclude the first excl_play second from the start and end
+    of the chunk when computing if the chunk overlaps with playground.
+    @param pad_data: exclude the first and last pad_data seconds of the segment
+    when generating chunks
+
+    """
+    for seg in self.__sci_segs:
+      # if there is unused data longer than the minimum chunk length
+      if seg.unused() > min_length:
+        end = seg.end() - pad_data
+        start = end - length
+        if (not play) or (play and (((end - sl - excl_play - 729273613) % 6370)
+          < (600 + length - 2 * excl_play))):
+          trig_start = end - seg.unused() - trig_overlap
+          if (play == 2):
+            # calculate the start of the playground preceeding the chunk end
+            play_start = 729273613 + 6370 * \
+              math.floor((end - sl - excl_play - 729273613) / 6370)
+            play_end = play_start + 600
+            trig_end = 0
+            if ( (play_end - 6370) > start ):
+              print("Two playground segments in this chunk")
+              print("  Code to handle this case has not been implemented")
+              sys.exit(1)
+            else:
+              if play_start > trig_start:
+                trig_start = int(play_start)
+              if (play_end < end):
+                trig_end = int(play_end)
+              if (trig_end == 0) or (trig_end > trig_start):
+                seg.add_chunk(start, end, trig_start, trig_end)
+          else:
+            seg.add_chunk(start, end, trig_start)
+        seg.set_unused(0)
+
+  def make_short_chunks_from_unused(
+    self,min_length,overlap=0,play=0,sl=0,excl_play=0):
+    """
+    Create a chunk that uses up the unused data in the science segment
+    @param min_length: the unused data must be greater than min_length to make a
+    chunk.
+    @param overlap: overlap between chunks in seconds.
+    @param play: if true, only generate chunks that overlap with S2 playground data.
+    @param sl: slide by sl seconds before determining playground data.
+    @param excl_play: exclude the first excl_play second from the start and end
+    of the chunk when computing if the chunk overlaps with playground.
+    """
+    for seg in self.__sci_segs:
+      if seg.unused() > min_length:
+        start = seg.end() - seg.unused() - overlap
+        end = seg.end()
+        length = start - end
+        if (not play) or (play and (((end - sl - excl_play - 729273613) % 6370)
+          < (600 + length - 2 * excl_play))):
+          seg.add_chunk(start, end, start)
+        seg.set_unused(0)
+
+  def make_optimised_chunks(self, min_length, max_length, pad_data=0):
+    """
+    Splits ScienceSegments up into chunks, of a given maximum length.
+    The length of the last two chunks are chosen so that the data
+    utilisation is optimised.
+    @param min_length: minimum chunk length.
+    @param max_length: maximum chunk length.
+    @param pad_data: exclude the first and last pad_data seconds of the
+    segment when generating chunks
+    """
+    for seg in self.__sci_segs:
+      # pad data if requested
+      seg_start = seg.start() + pad_data
+      seg_end = seg.end() - pad_data
+
+      if seg.unused() > max_length:
+        # get number of max_length chunks
+        N = (seg_end - seg_start) / max_length
+
+        # split into chunks of max_length
+        for i in range(N - 1):
+          start = seg_start + (i * max_length)
+          stop = start + max_length
+          seg.add_chunk(start, stop)
+
+        # optimise data usage for last 2 chunks
+        start = seg_start + ((N - 1) * max_length)
+        middle = (start + seg_end) / 2
+        seg.add_chunk(start, middle)
+        seg.add_chunk(middle, seg_end)
+        seg.set_unused(0)
+      elif seg.unused() > min_length:
+        # utilise as single chunk
+        seg.add_chunk(seg_start, seg_end)
+      else:
+        # no chunk of usable length
+        seg.set_unused(0)
+
+  def intersection(self, other):
+    """
+    Replaces the ScienceSegments contained in this instance of ScienceData
+    with the intersection of those in the instance other. Returns the number
+    of segments in the intersection.
+    @param other: ScienceData to use to generate the intersection
+    """
+
+    # initialize list of output segments
+    ostart = -1
+    outlist = []
+    iseg2 = -1
+    start2 = -1
+    stop2 = -1
+
+    for seg1 in self:
+      start1 = seg1.start()
+      stop1 = seg1.end()
+      id = seg1.id()
+
+      # loop over segments from the second list which overlap this segment
+      while start2 < stop1:
+        if stop2 > start1:
+          # these overlap
+
+          # find the overlapping range
+          if start1 < start2:
+            ostart = start2
+          else:
+            ostart = start1
+          if stop1 > stop2:
+            ostop = stop2
+          else:
+            ostop = stop1
+
+          x = ScienceSegment(tuple([id, ostart, ostop, ostop - ostart]))
+          outlist.append(x)
+
+          if stop2 > stop1:
+            break
+
+        # step forward
+        iseg2 += 1
+        if iseg2 < len(other):
+          seg2 = other[iseg2]
+          start2 = seg2.start()
+          stop2 = seg2.end()
+        else:
+          # pseudo-segment in the far future
+          start2 = 2000000000
+          stop2 = 2000000000
+
+    # save the intersection and return the length
+    self.__sci_segs = outlist
+    return len(self)
+
+  def union(self, other):
+    """
+    Replaces the ScienceSegments contained in this instance of ScienceData
+    with the union of those in the instance other. Returns the number of
+    ScienceSegments in the union.
+    @param other: ScienceData to use to generate the intersection
+    """
+
+    # we only deal with the case of two lists here
+    length1 = len(self)
+    length2 = len(other)
+
+    # initialize list of output segments
+    ostart = -1
+    seglist = []
+
+    i1 = -1
+    i2 = -1
+    start1 = -1
+    start2 = -1
+    id = -1
+
+    while 1:
+      # if necessary, get a segment from list 1
+      if start1 == -1:
+        i1 += 1
+        if i1 < length1:
+          start1 = self[i1].start()
+          stop1 = self[i1].end()
+          id = self[i1].id()
+        elif i2 == length2:
+          break
+
+      # if necessary, get a segment from list 2
+      if start2 == -1:
+        i2 += 1
+        if i2 < length2:
+          start2 = other[i2].start()
+          stop2 = other[i2].end()
+        elif i1 == length1:
+          break
+
+      # pick the earlier segment from the two lists
+      if start1 > -1 and ( start2 == -1 or start1 <= start2):
+        ustart = start1
+        ustop = stop1
+        # mark this segment has having been consumed
+        start1 = -1
+      elif start2 > -1:
+        ustart = start2
+        ustop = stop2
+        # mark this segment has having been consumed
+        start2 = -1
+      else:
+        break
+
+      # if the output segment is blank, initialize it; otherwise, see
+      # whether the new segment extends it or is disjoint
+      if ostart == -1:
+        ostart = ustart
+        ostop = ustop
+      elif ustart <= ostop:
+        if ustop > ostop:
+          # this extends the output segment
+          ostop = ustop
+        else:
+          # This lies entirely within the current output segment
+          pass
+      else:
+         # flush the current output segment, and replace it with the
+         # new segment
+         x = ScienceSegment(tuple([id, ostart, ostop, ostop - ostart]))
+         seglist.append(x)
+         ostart = ustart
+         ostop = ustop
+
+    # flush out the final output segment (if any)
+    if ostart != -1:
+      x = ScienceSegment(tuple([id, ostart, ostop, ostop - ostart]))
+      seglist.append(x)
+
+    self.__sci_segs = seglist
+    return len(self)
+
+  def coalesce(self):
+    """
+    Coalesces any adjacent ScienceSegments. Returns the number of
+    ScienceSegments in the coalesced list.
+    """
+
+    # check for an empty list
+    if len(self) == 0:
+      return 0
+
+    # sort the list of science segments
+    self.__sci_segs.sort()
+
+    # coalesce the list, checking each segment for validity as we go
+    outlist = []
+    ostop = -1
+
+    for seg in self:
+      start = seg.start()
+      stop = seg.end()
+      id = seg.id()
+      if start > ostop:
+        # disconnected, so flush out the existing segment (if any)
+        if ostop >= 0:
+          # the following line produces a flake8 issue with ostart; see https://git.ligo.org/lscsoft/glue/-/issues/37
+          x = ScienceSegment(tuple([id, ostart, ostop, ostop - ostart]))   # noqa: F821
+          outlist.append(x)
+        ostart = start  # noqa: F841
+        ostop = stop  # noqa: F841
+      elif stop > ostop:
+        # extend the current segment
+        ostop = stop
+
+    # flush out the final segment (if any)
+    if ostop >= 0:
+      x = ScienceSegment(tuple([id, ostart, ostop, ostop - ostart]))
+      outlist.append(x)
+
+    self.__sci_segs = outlist
+    return len(self)
+
+  def invert(self):
+    """
+    Inverts the ScienceSegments in the class (i.e. set NOT).  Returns the
+    number of ScienceSegments after inversion.
+    """
+
+    # check for an empty list
+    if len(self) == 0:
+      # return a segment representing all time
+      self.__sci_segs = ScienceSegment(tuple([0,0,1999999999,1999999999]))
+
+    # go through the list checking for validity as we go
+    outlist = []
+    ostart = 0
+    for seg in self:
+      start = seg.start()
+      stop = seg.end()
+      if start < 0 or stop < start or start < ostart:
+        raise SegmentError("Invalid list")
+      if start > 0:
+        x = ScienceSegment(tuple([0, ostart, start, start - ostart]))
+        outlist.append(x)
+      ostart = stop
+
+    if ostart < 1999999999:
+      x = ScienceSegment(tuple([0, ostart, 1999999999, 1999999999 - ostart]))
+      outlist.append(x)
+
+    self.__sci_segs = outlist
+    return len(self)
+
+  def play(self):
+    """
+    Keep only times in ScienceSegments which are in the playground
+    """
+
+    # initialize list of output segments
+    ostart = -1
+    outlist = []
+    begin_s2 = 729273613
+    play_space = 6370
+    play_len = 600
+
+    for seg in self:
+      start = seg.start()
+      stop = seg.end()
+      id = seg.id()
+
+      # select first playground segment which ends after start of seg
+      play_start = begin_s2 + play_space * ( 1
+        + int((start - begin_s2 - play_len) / play_space) )
+
+      while play_start < stop:
+        if play_start > start:
+          ostart = play_start
+        else:
+          ostart = start
+
+        play_stop = play_start + play_len
+
+        if play_stop < stop:
+          ostop = play_stop
+        else:
+          ostop = stop
+
+        x = ScienceSegment(tuple([id, ostart, ostop, ostop - ostart]))
+        outlist.append(x)
+
+        # step forward
+        play_start = play_start + play_space
+
+    # save the playground segs and return the length
+    self.__sci_segs = outlist
+    return len(self)
+
+  def intersect_3(self, second, third):
+    """
+    Intersection routine for three inputs.  Built out of the intersect,
+    coalesce and play routines
+    """
+    self.intersection(second)
+    self.intersection(third)
+    self.coalesce()
+    return len(self)
+
+  def intersect_4(self, second, third, fourth):
+    """
+     Intersection routine for four inputs.
+    """
+    self.intersection(second)
+    self.intersection(third)
+    self.intersection(fourth)
+    self.coalesce()
+    return len(self)
+
+  def split(self, dt):
+    """
+      Split the segments in the list is subsegments at least as long as dt
+    """
+    outlist = []
+    for seg in self:
+      start = seg.start()
+      stop = seg.end()
+      id = seg.id()
+
+      while start < stop:
+        tmpstop = start + dt
+        if tmpstop > stop:
+          tmpstop = stop
+        elif tmpstop + dt > stop:
+          tmpstop = int( (start + stop) / 2 )
+        x = ScienceSegment(tuple([id, start, tmpstop, tmpstop - start]))
+        outlist.append(x)
+        start = tmpstop
+
+    # save the split list and return length
+    self.__sci_segs = outlist
+    return len(self)
+
+
 class LsyncCache(object):
   def __init__(self,path):
     # location of the cache file
@@ -1917,7 +2530,7 @@ class LsyncCache(object):
 
     # dictionary where the keys are data types like 'gwf', 'sft', 'xml'
     # and the values are dictionaries
-    self.cache = {'gwf': None, 'sft' : None, 'xml' : None}
+    self.cache = {'gwf': None, 'sft': None, 'xml': None}
 
     # for each type create a dictionary where keys are sites and values
     # are dictionaries
@@ -2052,7 +2665,7 @@ class LsyncCache(object):
           # loop through the times and create paths
           for t in times:
             if search.intersects(segments.segment(t, t + dur)):
-              lfn =  "%s-%s-%d-%d.gwf" % (site, frameType, t, dur)
+              lfn = "%s-%s-%d-%d.gwf" % (site, frameType, t, dur)
               lfnDict[lfn] = None
 
     # sort the LFNs to deliver URLs in GPS order
@@ -2154,17 +2767,17 @@ class LSCDataFindNode(CondorDAGNode, AnalysisNode):
     once the ifo, start and end times have been set.
     """
     if self.__start and self.__end and self.__observatory and self.__type:
-      self.__output = os.path.join(self.__job.get_cache_dir(), self.__observatory + '-' + self.__type +'_CACHE' + '-' + str(self.__start) + '-' + str(self.__end - self.__start) + '.lcf')
+      self.__output = os.path.join(self.__job.get_cache_dir(), self.__observatory + '-' + self.__type + '_CACHE' + '-' + str(self.__start) + '-' + str(self.__end - self.__start) + '.lcf')
       self.set_output(self.__output)
 
-  def set_start(self,time,pad = None):
+  def set_start(self, time, pad=None):
     """
     Set the start time of the datafind query.
     @param time: GPS start time of query.
     @param pad: pad
     """
     if pad:
-      self.add_var_opt('gps-start-time', int(time)-int(pad))
+      self.add_var_opt('gps-start-time', int(time) - int(pad))
     else:
       self.add_var_opt('gps-start-time', int(time))
     self.__start = time
@@ -2224,7 +2837,7 @@ class LSCDataFindNode(CondorDAGNode, AnalysisNode):
     return self.__type
 
   def get_output_cache(self):
-    return  self.__output
+    return self.__output
 
   def get_output(self):
     """
@@ -2299,108 +2912,6 @@ class LigolwCutNode(CondorDAGNode, AnalysisNode):
     """
     CondorDAGNode.__init__(self,job)
     AnalysisNode.__init__(self)
-
-
-class LDBDCJob(CondorDAGJob, AnalysisJob):
-  """
-  A ldbdc job can be used to insert data or fetch data from the database.
-  """
-  def __init__(self,log_dir,cp):
-    """
-    cp = ConfigParser object from which options are read.
-    """
-    self.__executable = cp.get('condor','ldbdc')
-    self.__universe = 'local'
-    CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    AnalysisJob.__init__(self,cp)
-
-    self.add_condor_cmd('getenv','True')
-
-    self.set_stdout_file(os.path.join( log_dir, 'ldbdc-$(cluster)-$(process).out') )
-    self.set_stderr_file(os.path.join( log_dir, 'ldbdc-$(cluster)-$(process).err') )
-    self.set_sub_file('ldbdc.sub')
-
-
-class LDBDCNode(CondorDAGNode, AnalysisNode):
-  """
-  Runs an instance of ldbdc in a Condor DAG.
-  """
-  def __init__(self,job):
-    """
-    @param job: A CondorDAGJob that can run an instance of ligolw_add
-    """
-    CondorDAGNode.__init__(self,job)
-    AnalysisNode.__init__(self)
-    self.__server = None
-    self.__identity = None
-    self.__insert = None
-    self.__pfn = None
-    self.__query = None
-
-  def set_server(self, server):
-    """
-    Set the server name.
-    """
-    self.add_var_opt('server',server)
-    self.__server = server
-
-  def get_server(self, server):
-    """
-    Get the server name.
-    """
-    return self.__server
-
-  def set_identity(self, identity):
-    """
-    Set the identity name.
-    """
-    self.add_var_opt('identity',identity)
-    self.__identity = identity
-
-  def get_identity(self, identity):
-    """
-    Get the identity name.
-    """
-    return self.__identity
-
-  def set_insert(self, insert):
-    """
-    Set the insert name.
-    """
-    self.add_var_opt('insert',insert)
-    self.__insert = insert
-
-  def get_insert(self, insert):
-    """
-    Get the insert name.
-    """
-    return self.__insert
-
-  def set_pfn(self, pfn):
-    """
-    Set the pfn name.
-    """
-    self.add_var_opt('pfn',pfn)
-    self.__pfn = pfn
-
-  def get_pfn(self, pfn):
-    """
-    Get the pfn name.
-    """
-    return self.__pfn
-
-  def set_query(self, query):
-    """
-    Set the query name.
-    """
-    self.add_var_opt('query',query)
-    self.__query = query
-
-  def get_query(self, query):
-    """
-    Get the query name.
-    """
-    return self.__query
 
 
 class NoopJob(CondorDAGJob, AnalysisJob):
@@ -2564,7 +3075,7 @@ class LigolwSqliteNode(SqliteNode):
     super(LigolwSqliteNode,self).__init__(job)
     self.__input_cache = None
     self.__xml_output = None
-    self.__xml_input   = None
+    self.__xml_input = None
 
   def set_input_cache(self, input_cache):
     """
@@ -2609,6 +3120,7 @@ class LigolwSqliteNode(SqliteNode):
     else:
       raise ValueError("no output xml file or database specified")
 
+
 class DeepCopyableConfigParser(configparser.ConfigParser):
     """
     The standard SafeConfigParser no longer supports deepcopy() as of python
@@ -2618,6 +3130,7 @@ class DeepCopyableConfigParser(configparser.ConfigParser):
     def __deepcopy__(self, memo):
         # http://stackoverflow.com/questions/23416370
         # /manually-building-a-deep-copy-of-a-configparser-in-python-2-7
+        from io import StringIO
         config_string = StringIO()
         self.write(config_string)
         config_string.seek(0)
