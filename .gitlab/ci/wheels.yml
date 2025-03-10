@@ -26,13 +26,11 @@
   # access it, e.g. try to find LAL data files there
   - rm -rf wheel/build/
   # install wheel
-  - ${PYTHON} -m venv test
-  - source test/bin/activate
-  - python -m pip install --upgrade pip
-  - python -m pip install solar_system_ephemerides
-  - python -m pip install wheelhouse/*
+  - !reference [.pip-venv]
+  - pip install solar_system_ephemerides
+  - pip install wheelhouse/*
   # check metadata
-  - python -m pip show lalsuite
+  - pip show lalsuite
   # Skip pip check for now. See https://github.com/scipy/scipy/issues/21436
   # - python -m pip check lalsuite
   # test loading Python modules and finding data files
@@ -62,12 +60,12 @@
     - export PYTHON="/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')/bin/python"
     # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
     # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
-    - ${PYTHON} -m pip install --upgrade pip
-    - ${PYTHON} -m pip install
+    - !reference [.pip-venv]
+    - pip install
           'numpy>=2.0.0'
           setuptools
           wheel
-    - ${PYTHON} -m pip list installed
+    - pip list installed
     # Build wheel
     - ./00boot
     - SSE="solar_system_ephemerides/ephemerides"
@@ -99,16 +97,14 @@
     # Enter virtualenv so that we have a controlled version of Numpy.
     # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
     # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
-    - ${PYTHON} -m venv env
-    - source env/bin/activate
-    - python -m pip install --upgrade pip
-    - python -m pip install
+    - !reference [.pip-venv]
+    - pip install
           delocate
           'numpy>=2.0.1'
           pip
           setuptools
           wheel
-    - python -m pip list installed
+    - pip list installed
     # Build wheel
     - ./00boot
     - SSE="solar_system_ephemerides/ephemerides"
@@ -243,7 +239,7 @@ wheel:pypi:
   image: python
   script:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
-    - pip install --upgrade pip
+    - !reference [.pip-venv]
     - pip install twine
     - |
       if [ "X${EXECUTE_DEPLOY_ACTIONS}" != "Xyes" ]; then

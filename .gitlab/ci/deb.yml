@@ -53,13 +53,12 @@
          --prepend-path=/usr/lib/ccache --set-envvar=CCACHE_DIR=${CCACHE_DIR}
          -us -uc -r
          --lintian-opts --color=always --allow-root
+    # create a codeclimate report from the lintian report
+    - !reference [.pip-venv]
+    - pip install "lintian-codeclimate>=0.1.1"
     - |
-      # create a codeclimate report from the lintian report
       lintian --allow-root --fail-on none --info --color never ../${PACKAGE}_*.changes > lintian.out
-      python3 -m venv .env
-      .env/bin/python3 -m pip install -q -U pip
-      .env/bin/python3 -m pip install -q "lintian-codeclimate>=0.1.1"
-      .env/bin/python3 -m lintian_codeclimate lintian.out -d . -o $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
+      python3 -m lintian_codeclimate lintian.out -d . -o $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
       sed -i \
         -e "s|debian\/control|debian/control.in|g" \
         -e "s|debian\/|$PACKAGE/debian/|g" \
