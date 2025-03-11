@@ -477,7 +477,7 @@ int main( int argc, char *argv[] )
     }
 
     if ( XLALMultiSFTVectorAdd( inputSFTs, fakeMultiSFTs ) != XLAL_SUCCESS ) {
-      LogPrintf( LOG_CRITICAL, "%s: XLALCWMakeFakeMultiData() failed with errno=%d\n", __func__, xlalErrno );
+      LogPrintf( LOG_CRITICAL, "%s: XLALMultiSFTVectorAdd() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
 
