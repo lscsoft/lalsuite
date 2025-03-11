@@ -380,7 +380,13 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
 //     return ;
 // }
 
-
+// // // static PHILEOS eos_alloc_multiple(double *nbdat, double *edat, double *pdat,
+// // //    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol){
+// // //        //Find the phase transitionSSS
+// // //         // Divide the original EoS into N+1 parts (N is the number of phase transition)
+// // //     // Allocate N*eos objects with the different parts separated by the phase transition
+// // //     // Create the multi EoS object called PHILEOS
+// // // }
 static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
 {

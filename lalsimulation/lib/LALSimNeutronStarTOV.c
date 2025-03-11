@@ -334,25 +334,25 @@ static int tov_pt_ode(double h, const double *y, double *dy, void *params)
 
     double p = 0.0, e = 0.0, dedp = 0.0, rho = 0.0;
 
-    if (h > hpt){
+    if (h > hpt){ // the point has h larger than the phase transition
         p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos2);
         e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos2);
         rho = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(h, eos2);
         dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos2);
-    }else if (h == hpt){
+    }else if (h == hpt){ // the point has h exactly at the phase transition but from the upper part of the eos
         if (eosPT.flag_up == 1){
             p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos2);
             e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos2);
             rho = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(h, eos2);
             dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos2);
-        } else if (eosPT.flag_up == 0){
+        } else if (eosPT.flag_up == 0){ // the point has h exactly at the phase transition but from the lower part of the eos
             p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos1);
             e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos1);
             rho = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(h, eos1);
             dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos1);
         }
     }
-    else{
+    else{ // the point has h smaller than the phase transition
         p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos1);
         e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos1);
         rho = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(h, eos1);
@@ -414,7 +414,7 @@ static int tov_pt_ode(double h, const double *y, double *dy, void *params)
  */
 int XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(double *radius, double *mass,
     double *baryon_mass, double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    LALSimNeutronStarEOS * eos1,LALSimNeutronStarEOS * eos2, double *pt_var, double epsrel)
+    LALSimNeutronStarEOS * eos1, LALSimNeutronStarEOS * eos2, double *pt_var, double epsrel)
 {
     /* Phase transition EoS */
     struct eosDouble eosPT;
@@ -422,7 +422,7 @@ int XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(double *radius, double *mas
     eosPT.eos_up = eos2;
     eosPT.hpt = pt_var[2];
     eosPT.delta_eps = pt_var[4] - pt_var[3];
-    eosPT.flag_up = -1;
+    eosPT.flag_up = -1; // Flag up = 0 we are in the low density EoS, flag up = 1, we are in the high density EoS
     double hpt = pt_var[2];
     double ppt_low = pt_var[5]; // geometrized units
     double dpt_eps = pt_var[4]-pt_var[3];

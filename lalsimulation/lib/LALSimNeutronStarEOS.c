@@ -59,7 +59,7 @@ typedef union tagLALSimNeutronStarEOSData {
 
 
 /* Contents of the equation of state structure. */
-struct tagLALSimNeutronStarEOS {
+struct tagLALSimNeutronStarEOS { // PHILDAVIS here info on the eos structure
     char name[LALNameLength];
     double pmax;
     double hmax;

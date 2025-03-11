@@ -61,9 +61,10 @@ extern const char * const lalSimNeutronStarEOSNames[111];
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
 //CUTER-dev // TODO why can I not name this LAL blabla ??
-struct eosDouble{
+struct eosDouble{ // PHILDAVIS here !
   LALSimNeutronStarEOS * eos_low;
   LALSimNeutronStarEOS * eos_up;
+  // Add an int for the number of Phase transitions TODO
   double hpt;
   double delta_eps;
   int flag_up;
