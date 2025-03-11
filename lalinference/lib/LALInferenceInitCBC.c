@@ -1338,7 +1338,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     Dinitial=atof(ppt->value);
     distanceVary = LALINFERENCE_PARAM_FIXED;
   }
-  
+
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", log(Dinitial), log(Dmin), log(Dmax), distanceVary) ;
   if(LALInferenceGetProcParamVal(commandLine,"--margdist")||LALInferenceGetProcParamVal(commandLine,"--margdist-comoving"))
   {
@@ -1353,7 +1353,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
           cosmology=1;
       LALInferenceAddINT4Variable(model->params,"MARGDIST_COSMOLOGY",cosmology, LALINFERENCE_PARAM_FIXED);
   }
-  
+
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 
@@ -1454,7 +1454,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     XLAL_TRY(eos=XLALSimNeutronStarEOSByName(ppt->value), errnum);
     if(errnum!=XLAL_SUCCESS)
         XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
-    
+
     XLAL_TRY(model->eos_fam = XLALCreateSimNeutronStarFamily(eos),errnum);
     if(errnum!=XLAL_SUCCESS)
         XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
@@ -1464,20 +1464,20 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   } else if((ppt=LALInferenceGetProcParamVal(commandLine,"--BinaryLove"))){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambdaS", zero, lambdaSMin, lambdaSMax, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "BLuni", 0.5, 0.0, 1.0, LALINFERENCE_PARAM_LINEAR);
-  }    
-  
-  
+  }
+
+
 
     if(LALInferenceGetProcParamVal(commandLine,"--dQuadMon12")){
-        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon1", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
-        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon2", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
+        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon1", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon2", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR);
 	}else if(LALInferenceGetProcParamVal(commandLine,"--dQuadMonSA")){
-        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonS", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
-        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonA", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
+        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonS", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonA", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR);
 		}
 
   if((!!LALInferenceGetProcParamVal(commandLine,"--dQuadMon12") + !!LALInferenceGetProcParamVal(commandLine,"--dQuadMonSA")) > 1 )
-  {    
+  {
 	XLALPrintError("Error: cannot use more than one of --dQuadMon12 and --dQuadMonSA.\n");
 	XLAL_ERROR_NULL(XLAL_EINVAL);
   }
@@ -2359,7 +2359,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
     if (LALInferenceGetProcParamVal(commandLine,"--qnmtest-parameters")) {
         check_qnmtest_params = 1;
     }
-    
+
     if (check_grtest_params + check_ppe_params + check_qnmtest_params >= 2) {
         fprintf(stderr,"--grtest-parameters, --ppe-parameters and --qnmtest-parameters are not simultaneously supported. Please choose one. Aborting\n");
         exit(-1);
@@ -2499,7 +2499,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
           }
         }
     }
-    
+
     ppt=LALInferenceGetProcParamVal(commandLine,"--generic-fd-correction");
     if (ppt)
     {
@@ -2518,7 +2518,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
         if (ppt) correction_ncycles_taper = atof(ppt->value);
         LALInferenceAddVariable(model->params,"correction_ncycles_taper", &correction_ncycles_taper, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     }
-  
+
     ppt=LALInferenceGetProcParamVal(commandLine,"--ppe-parameters");
     if (ppt)
     {

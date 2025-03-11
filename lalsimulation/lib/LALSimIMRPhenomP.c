@@ -1015,8 +1015,8 @@ static int PhenomPCore(
          double ampTidal = amp_tidal->data[i];
          double window = planck_taper->data[i];
 
-        /* 
-         Compute the tidal phase correction and add the 3.5PN SS and SSS contributions which 
+        /*
+         Compute the tidal phase correction and add the 3.5PN SS and SSS contributions which
          are not incorporated in the TaylorF2 baseline
         */
          REAL8 phaseTidal =  phi_tidal->data[i] + pn_fac*(SS_3p5PN + SSS_3p5PN)*pow(f,2./3.);
@@ -1107,7 +1107,7 @@ static int PhenomPCore(
     /* Generate the waveform */
     if (IMRPhenomP_version == IMRPhenomPv2NRTidal_V) {
       if (NRTidal_version == NRTidal_V) {
-        
+
         double window = planck_taper_fixed->data[i];
         REAL8 phaseTidal = phi_tidal_fixed->data[i];
         per_thread_errcode = PhenomPCoreOneFrequency_withTides(f, window, phaseTidal, 0.0, distance, M, phic,
@@ -1120,9 +1120,9 @@ static int PhenomPCore(
         REAL8 phaseTidal =  phi_tidal_fixed->data[i] + pn_fac*(SS_3p5PN_n + SSS_3p5PN_n)*pow(f,2./3.);
         per_thread_errcode = PhenomPCoreOneFrequency_withTides(f, window, phaseTidal, ampTidal, distance, M, phic,
                               pAmp, pPhi, pn,
-                              &hPhenom, &phasing, &amp_prefactors, &phi_prefactors); 
-                              
-        }                        
+                              &hPhenom, &phasing, &amp_prefactors, &phi_prefactors);
+
+        }
       } else {
       per_thread_errcode = PhenomPCoreOneFrequency(f, eta, distance, M, phic,
                               pAmp, pPhi, PCparams, pn,
@@ -1921,4 +1921,3 @@ static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
       *x = X;
   }
 }
-

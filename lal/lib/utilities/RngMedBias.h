@@ -111,11 +111,3 @@ void LALRngMedBias (LALStatus   *status,
 #endif
 
 #endif     /* Close double-include protection _RNGMEDBIAS_H */
-
-
-
-
-
-
-
-

@@ -1,4 +1,4 @@
-/* 
+/*
  *  LALInferencePriorTest.c: Testing the Nested Sampling routines in LALInferencePrior.c
  *
  *  Copyright (C) 2011 Ben Aylott, Ilya Mandel, Chiara Mingarelli, Vivien Raymond, Christian Roever, Marc van der Sluys, John Veitch, Will Vousden
@@ -203,7 +203,7 @@ int LALInferenceCyclicReflectiveBoundTest(void)
 	outcome &= errnum == XLAL_EFAULT;
 	if (!outcome)
 		TEST_FAIL("Null reference check failed.");
-	
+
 	// Check some (meaningful) minima/maxima.
 	a_min = -LAL_PI;
 	a_max = LAL_PI;
@@ -271,7 +271,7 @@ int LALInferenceCyclicReflectiveBoundTest(void)
 	outcome &= compareFloats(a_2, a_min + a_delta / 3, EPSILON);
 	if (!outcome)
 		TEST_FAIL("Circular values outside range should be correctly modded into range.");
-	
+
 	// Outside range (linear).
 	outcome = 1;
 	b = b_min - 10 * b_delta / 3;
@@ -474,7 +474,7 @@ int LALInferenceInspiralPriorTest(void)
 	LALInferenceAddVariable(params, "chirpmass", &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	/*LALInferenceAddVariable(params, "q", &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);*/
 	LALInferenceAddVariable(params, "eta", &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	
+
 	REAL8 min, max;
 	min = 1.0; max = 100.0;
 	LALInferenceAddMinMaxPrior(priorArgs, "distance", &min, &max, LALINFERENCE_REAL8_t);
@@ -560,9 +560,9 @@ int LALInferenceInspiralPriorTest(void)
 }
 
 /******************************************
- * 
+ *
  * Old tests
- * 
+ *
  ******************************************/
 
 //Test LALInferencePriorFunction
@@ -582,7 +582,7 @@ REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALInferenceVariables
   (void) runState; /* avoid warning about unused parameter */
   REAL8 eta, iota, phi, ra, dec, psi;
   REAL8 logdensity;
-  
+
   // UNUSED!!: REAL8 mc   = *(REAL8*) LALInferenceGetVariable(params, "chirpmass");		/* solar masses*/
   eta  = *(REAL8*) LALInferenceGetVariable(params, "eta");		/* dim-less    */
   iota = *(REAL8*) LALInferenceGetVariable(params, "inclination");		/* radian      */
@@ -593,12 +593,12 @@ REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALInferenceVariables
   psi  = *(REAL8*) LALInferenceGetVariable(params, "polarisation"); 	/* radian      */
   // UNUSED!!: REAL8  dist = *(REAL8*) LALInferenceGetVariable(params, "distance");		/* Mpc         */
 
-  if(eta>0.0 && eta<=0.25 && iota>=0.0 && iota<=LAL_PI && phi>=0.0 && phi<=LAL_TWOPI 
-     && ra>=0.0 && ra<=LAL_TWOPI && dec>=-LAL_PI_2 && dec<=LAL_PI_2 && psi>=0.0 && psi<=LAL_PI)	
+  if(eta>0.0 && eta<=0.25 && iota>=0.0 && iota<=LAL_PI && phi>=0.0 && phi<=LAL_TWOPI
+     && ra>=0.0 && ra<=LAL_TWOPI && dec>=-LAL_PI_2 && dec<=LAL_PI_2 && psi>=0.0 && psi<=LAL_PI)
     logdensity = 0.0;
   else
     logdensity = -HUGE_VAL;
-  //TODO: should be properly normalized; pass in range via priorArgs?	
+  //TODO: should be properly normalized; pass in range via priorArgs?
 
   return(logdensity);
 }
@@ -616,10 +616,10 @@ REAL8 ASinOmegaTPrior(LALInferenceRunState *runState, LALInferenceVariables *par
   (void) runState; /* avoid warning about unused parameter */
   REAL8 A, Omega;
   REAL8 logdensity;
-  
+
   A     = *(REAL8*) LALInferenceGetVariable(params, "A");				/* dim-less	   */
   Omega = *(REAL8*) LALInferenceGetVariable(params, "Omega");			/* rad/sec     */
-  
+
   if ((A>0.0) & (Omega>0))
     logdensity = 0.0;
   else

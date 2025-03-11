@@ -21,7 +21,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <string.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
@@ -60,7 +60,7 @@ typedef struct tagLALSimInspiralTestGRParam
 
 #ifdef SWIG
 SWIGLAL(INOUT_STRUCTS(LALSimInspiralTestGRParam**, parameter));
-#endif 
+#endif
 
 LALSimInspiralTestGRParam *XLALSimInspiralCreateTestGRParam(const char *name, double value);
 int XLALSimInspiralAddTestGRParam(LALSimInspiralTestGRParam **parameter, const char *name, const double value);

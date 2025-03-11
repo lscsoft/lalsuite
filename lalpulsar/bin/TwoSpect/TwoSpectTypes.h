@@ -253,4 +253,3 @@ typedef struct {
 } TwoSpectTemplateVector;
 
 #endif
-

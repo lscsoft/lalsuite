@@ -176,7 +176,7 @@ void coh_PTF_bank_veto_coh_setup(
   struct bankCohTemplateOverlaps *bankCohOverlaps;
 
   /* If they don't already exist, calculate the eigenvectors for each bank
-   * template. This will be different from the search template */ 
+   * template. This will be different from the search template */
   for (j = 0 ; j < params->BVsubBankSize+1 ; j++)
   {
     if (! Bankeigenvecs[j])
@@ -201,7 +201,7 @@ void coh_PTF_bank_veto_coh_setup(
   }
 
   /* If they don't already exist, calculate the coherent overlaps between
-   * bank veto templates and the search template */ 
+   * bank veto templates and the search template */
 
   if (! *bankCohOverlapsP)
   {
@@ -253,7 +253,7 @@ UINT4 coh_PTF_initialize_auto_veto(
   }
   verbose("Generated auto veto filters at %ld \n",
           timeval_subtract(&startTime));
-  
+
   *autoTempOverlapsP = autoTempOverlaps;
   return timeStepPoints;
 }
@@ -300,7 +300,7 @@ void coh_PTF_auto_veto_coh_setup(
   struct bankCohTemplateOverlaps *autoCohOverlaps;
 
   /* Calculate the eigenvectors/values for the auto_veto. For non-spin these
-   * are identical to the values used for the search template */ 
+   * are identical to the values used for the search template */
   if (! *AutoeigenvecsP)
   {
     Autoeigenvecs = gsl_matrix_alloc(csVecLengthTwo,csVecLengthTwo);
@@ -510,9 +510,9 @@ void coh_PTF_chi_square_sngl_setup(
     if (params->haveTrig[k])
     {
       /* FIXME: For sngl detector Plus and Cross ranges/bins are identical, do
-       * not need to calculate both */ 
+       * not need to calculate both */
       /* NOTE: I do not think any substantial slow down will be experienced here
-       * The filters are *not* calculated for both + and x at least */ 
+       * The filters are *not* calculated for both + and x at least */
       if (! frequencyRangesPlus[k])
       {
         frequencyRangesPlus[k] = (REAL4 *)
@@ -578,7 +578,7 @@ void coh_PTF_chi_square_sngl_setup(
   {
     XLALDestroyCOMPLEX8VectorSequence(tempqVec);
   }
-  
+
 }
 
 
@@ -619,7 +619,7 @@ UINT4                    numPoints)
   REAL4 minchi = 0.;
   REAL4 maxkappa = 1.;
   REAL4 minkappa = 1.;
- 
+
   for ( i=0 ; i < subBankSize ; i++ )
   {
     bankFcTmplts[i].PTFQtilde =
@@ -690,7 +690,7 @@ UINT4       vecLengthTwo
         timeOffsetPoints,Bankeigenvecs[subBankSize],Bankeigenvals[subBankSize],
         numPoints,position,vecLength,vecLengthTwo,LAL_NUM_IFO);
   }
-  
+
   /* The normalization factors are already calculated, they are the eigenvalues*/
   halfNumPoints = params->numAnalPoints;
 
@@ -747,7 +747,7 @@ UINT4       vecLengthTwo
         BankVeto+=pow(BankVetoTemp[uj],2)/(1-normFac);
 
       }
-  
+
     }
     else
     {
@@ -794,7 +794,7 @@ UINT4       vecLengthTwo
           }
         }
         BankVeto+=pow(BankVetoTemp[uj],2)/(1-normFac);
-     
+
       }
     }
   }
@@ -806,7 +806,7 @@ UINT4       vecLengthTwo
 
   return BankVeto;
 }
- 
+
 /* FIXME: Consider merging function with bank_veto calculation?? */
 REAL4 coh_PTF_calculate_auto_veto(
 UINT4           numPoints,
@@ -981,7 +981,7 @@ void coh_PTF_free_veto_memory(
 )
 {
   UINT4 ui,ifoNumber;
- 
+
   if ( bankNormOverlaps )
   {
     for ( ui = 0 ; ui < params->BVsubBankSize ; ui++ )
@@ -1005,7 +1005,7 @@ void coh_PTF_free_veto_memory(
         XLALDestroyCOMPLEX8VectorSequence( bankFcTmplts[ui].PTFQtilde );
     }
     LALFree( bankFcTmplts );
-  } 
+  }
 
   if (dataOverlaps)
   {
@@ -1072,7 +1072,7 @@ void coh_PTF_calculate_coherent_bank_overlaps(
 
   UINT4 uk,uj,ul;
   gsl_matrix *rotReOverlaps = cohBankOverlaps.rotReOverlaps;
-  gsl_matrix *rotImOverlaps = cohBankOverlaps.rotImOverlaps;  
+  gsl_matrix *rotImOverlaps = cohBankOverlaps.rotImOverlaps;
 
   gsl_matrix *reOverlaps = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
   gsl_matrix *imOverlaps = gsl_matrix_alloc(vecLengthTwo,vecLengthTwo);
@@ -1146,7 +1146,7 @@ void coh_PTF_calculate_coherent_bank_overlaps(
       gsl_matrix_set(imOverlaps,uj,uk,imOverlapsA[uj*vecLengthTwo+uk]);
     }
   }
- 
+
   /* And rotate by both set of eigenvectors */
 
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1,reOverlaps,eigenvecs,0.,tempM);
@@ -1194,7 +1194,7 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
   REAL4 a2[LAL_NUM_IFO];
   REAL4 b2[LAL_NUM_IFO];
 
-  PTFQtilde = fcTmplt->PTFQtilde->data;  
+  PTFQtilde = fcTmplt->PTFQtilde->data;
   len = 0;
   deltaF = 0;
   for ( k = 0; k < LAL_NUM_IFO; k++)
@@ -1299,7 +1299,7 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
     else
     {
       overlapCont = ( crealf(PTFQtilde[i]) * crealf(PTFQtilde[i]) +
-                      cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) ) * 
+                      cimagf(PTFQtilde[i]) * cimagf(PTFQtilde[i]) ) *
                       invspec[detectorNum]->data->data[i] ;
       v1 += overlapCont;
       v2 = v1;
@@ -1397,7 +1397,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
       for( k = 0; k < LAL_NUM_IFO; k++)
       {
         if ( params->haveTrig[k] )
-        { 
+        {
           a2[k] = 1;
           b2[k] = 1;
         }
@@ -1419,11 +1419,11 @@ void coh_PTF_calculate_standard_chisq_power_bins(
       for( k = 0; k < LAL_NUM_IFO; k++)
       {
         if ( params->haveTrig[k] )
-        {       
+        {
           a2[k] = Fplus[k]*gsl_matrix_get(eigenvecs,0,0) + Fcross[k]*gsl_matrix_get(eigenvecs,1,0);
           b2[k] = Fplus[k]*gsl_matrix_get(eigenvecs,0,1) + Fcross[k]*gsl_matrix_get(eigenvecs,1,1);
         }
-      } 
+      }
     }
     for( k = 0; k < LAL_NUM_IFO; k++)
     {
@@ -1499,7 +1499,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   {
     v1 = v2 = 0;
     if (detectorNum == LAL_NUM_IFO)
-    { 
+    {
       for( k = 0; k < LAL_NUM_IFO; k++)
       {
         if ( params->haveTrig[k] )
@@ -1513,7 +1513,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     }
     else
     {
-      currOverlapContPlus = (overlapCont[detectorNum])[i]; 
+      currOverlapContPlus = (overlapCont[detectorNum])[i];
       v1 = currOverlapContPlus * 4 * deltaF;
       v2 = v1;
     }
@@ -1551,14 +1551,14 @@ void coh_PTF_calculate_standard_chisq_power_bins(
 REAL4 coh_PTF_calculate_chi_square(
 struct coh_PTF_params   *params,
 UINT4           position,
-struct bankDataOverlaps *chisqOverlaps,    
+struct bankDataOverlaps *chisqOverlaps,
 COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
 REAL8Array      *PTFM[LAL_NUM_IFO+1],
 REAL4           Fplus[LAL_NUM_IFO],
 REAL4           Fcross[LAL_NUM_IFO],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
 gsl_matrix *eigenvecs,
-gsl_vector *eigenvals,   
+gsl_vector *eigenvals,
 REAL4 *powerBinsPlus,
 REAL4 *powerBinsCross,
 UINT4 detectorNum,
@@ -1605,7 +1605,7 @@ UINT4 vecLengthTwo
   {
     SNRexp += v1full[i]*v1full[i];
     SNRexp += v2full[i]*v2full[i];
-  } 
+  }
   SNRexp = pow(SNRexp,0.5);
 
   for (i = 0; i < numChiSquareBins; i++ )

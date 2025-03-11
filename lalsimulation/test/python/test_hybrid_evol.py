@@ -118,4 +118,3 @@ def test_inf_v2(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fref, tilt1_inf, tilt2_
 if __name__ == '__main__':
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-hybrid_evol.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
-

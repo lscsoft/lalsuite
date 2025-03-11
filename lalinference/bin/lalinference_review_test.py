@@ -360,4 +360,3 @@ if args.pptest:
             if args.condor_submit:
                 condor_submit_dag = ['condor_submit_dag', os.path.join(args.output, 'pptest', engine, approximant, 'run/priortest.dag')]
                 subprocess.call(condor_submit_dag)
-

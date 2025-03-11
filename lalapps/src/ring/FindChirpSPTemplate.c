@@ -267,7 +267,7 @@ LALFindChirpSPTemplate (
 
   /* Eq. (6.23) in arXiv:0810.5336 */
   pn_beta = (113./12.- 19./3. * eta) * chis + 113./12. * mass_delta * chia;
-  
+
   /* See Eq. (6.24) in arXiv:0810.5336 */
   /* 9b,c,d in arXiv:astro-ph/0504538 */
   pn_sigma = eta * (721./48. *S1z*S2z-247./48.*S1z*S2z);
@@ -380,7 +380,7 @@ LALFindChirpSPTemplate (
         fLow = (REAL4) f;
         break;
       }
-    }   
+    }
     /* If nothing passed then fail */
     if ( fLow < 0)
     {

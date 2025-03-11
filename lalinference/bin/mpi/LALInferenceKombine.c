@@ -407,8 +407,8 @@ int main(int argc, char *argv[]){
     if (run_state)
         LALInferenceInjectInspiralSignal(data, run_state->commandLine);
 
-    /* Simulate calibration errors. 
-    * NOTE: this must be called after both ReadData and (if relevant) 
+    /* Simulate calibration errors.
+    * NOTE: this must be called after both ReadData and (if relevant)
     * injectInspiralTD/FD are called! */
     LALInferenceApplyCalibrationErrors(data, proc_params);
 

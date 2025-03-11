@@ -1,10 +1,10 @@
-% 
+%
 %
 %  Matlab script to count the number of templates used in a 1 Hz band
 %  for the full sky search
 %  This will change for the different frequency bands.
- 
-% Remember to add the path where this file is located: 
+
+% Remember to add the path where this file is located:
 % addpath /scratch/sintes/CVSDIR/waves/people/sintes/PULSAR/CODES/m_files/
 %   To run simply type Count1HzTemplates
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -24,7 +24,7 @@ bandnumber =0;  % the band of interest
 
 OutDir = strcat(Directory,Detector);
 Ntemplates =0;
-  
+
   for skypatch = 1:NskyPatches;
      ThisDir = strcat(DirName, int2str( skypatch ));
      ThisDir = strcat(OutDir,ThisDir);
@@ -36,5 +36,5 @@ Ntemplates =0;
      partialSum = sum( output(:,2));
      Ntemplates =Ntemplates + partialSum;
   end
-  
+
 Ntemplates

@@ -647,8 +647,8 @@ int IMRPhenomXHMMultiBandOneMode(
   IMRPhenomXAmpCoefficients   *pAmp22   = (IMRPhenomXAmpCoefficients *) XLALMalloc(sizeof(IMRPhenomXAmpCoefficients));
   IMRPhenomXPhaseCoefficients *pPhase22 = (IMRPhenomXPhaseCoefficients *) XLALMalloc(sizeof(IMRPhenomXPhaseCoefficients));
   IMRPhenomXGetPhaseCoefficients(pWF, pPhase22);
-    
-    
+
+
   /* Setup for NRTidal testing */
   NRTidal_version_type NRTidal_version;
   /* Set tidal version */
@@ -844,22 +844,22 @@ int IMRPhenomXHMMultiBandOneMode(
     REAL8 lina = 0;
     IMRPhenomX_Phase_22_ConnectionCoefficients(pWF,pPhase22);
     double linb=IMRPhenomX_TimeShift_22(pPhase22, pWF);
-      
+
     REAL8Sequence *phi_tidal = NULL;
     REAL8Sequence *amp_tidal = NULL;
     REAL8Sequence *planck_taper = NULL;
-    
+
     /* Set matter parameters (set to zero in pWF if NRTidal additions are not turned on) */
     REAL8 lambda1 = pWF->lambda1;
     REAL8 lambda2 = pWF->lambda2;
-  
+
     REAL8 f_final=Mfmax/pWF->M_sec;
-    
+
     double phiTfRef = 0.;
-        
+
     // correct for time and phase shifts due to tidal phase
     if(NRTidal_version!=NoNRT_V){
-      REAL8 f_merger; 
+      REAL8 f_merger;
       REAL8 f_merger_tmp;
       switch (NRTidal_version) {
           case NRTidalv3_V:
@@ -884,7 +884,7 @@ int IMRPhenomXHMMultiBandOneMode(
     }
      // Calculate IMRPhenomX phase at reference frequency
     REAL8 phiref22 = -1./pWF->eta*IMRPhenomX_Phase_22(pWF->MfRef, &powers_of_MfRef, pPhase22, pWF)- phiTfRef - linb*pWF->MfRef - lina + 2.0*pWF->phi0 + LAL_PI_4;
-      
+
     if (NRTidal_version!=NoNRT_V) {
         int ret = 0;
         UINT4 L_fCut = coarseFreqs->length;
@@ -896,10 +896,10 @@ int IMRPhenomXHMMultiBandOneMode(
         XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
       }
       if (NRTidal_version==NoNRT_V) {
-          
+
      for(UINT4 kk = 0; kk < (coarseFreqs)->length; kk++)
      {
-      
+
      REAL8 Mff = coarseFreqs->data[kk]*pWF->M_sec;
       IMRPhenomX_UsefulPowers powers_of_f;
       IMRPhenomX_Initialize_Powers(&powers_of_f,Mff);
@@ -908,16 +908,16 @@ int IMRPhenomXHMMultiBandOneMode(
      }
                                     }
       else{
-          
+
           REAL8 pfaN = 3./(128.*pWF->m1*pWF->m2);
-          
+
           for(UINT4 kk = 0; kk < (coarseFreqs)->length; kk++)
           {
-          
+
           REAL8 phaseTidal = phi_tidal->data[kk];
           double ampTidal = amp_tidal->data[kk];
           double window = planck_taper->data[kk];
-          
+
           REAL8 Mff = coarseFreqs->data[kk]*pWF->M_sec;
           IMRPhenomX_UsefulPowers powers_of_f;
           IMRPhenomX_Initialize_Powers(&powers_of_f,Mff);
@@ -933,20 +933,20 @@ int IMRPhenomXHMMultiBandOneMode(
             /* Reconstruct waveform with NRTidal terms included: h(f) = [A(f) + A_tidal(f)] * Exp{I [phi(f) - phi_tidal(f)]} * window(f) */
           REAL8 amp=IMRPhenomX_Amplitude_22(Mff, &powers_of_f, pAmp22, pWF);
           amplitude->data->data[kk] = (amp + 2*sqrt(1./5.)*powers_of_lalpi.sqrt * ampTidal) * window * pWF->amp0;
-          
+
           phase->data->data[kk] =1./pWF->eta*IMRPhenomX_Phase_22(Mff, &powers_of_f, pPhase22, pWF) + linb*Mff + lina + phiref22 - phaseTidal;
-        
+
           }
           //end of loop
-      
+
         }
-      
-     
+
+
           XLALDestroyREAL8Sequence(phi_tidal);
           XLALDestroyREAL8Sequence(amp_tidal);
           XLALDestroyREAL8Sequence(planck_taper);
-          
-      
+
+
   }
   /** Higher modes **/
   else{
@@ -1151,7 +1151,7 @@ int IMRPhenomXHMMultiBandOneMode(
   else{
     minus1l = +1;
   }
-    
+
   for(UINT4 idx = 0; idx < count; idx++){
         /* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
         ((*htildelm)->data->data)[idx + offset] = minus1l * fineAmp[idx] * expphi[idx];
@@ -1444,7 +1444,7 @@ int IMRPhenomXHMMultiBandOneModeMixing(
   IMRPhenomXPhaseCoefficients *pPhase22 = (IMRPhenomXPhaseCoefficients *) XLALMalloc(sizeof(IMRPhenomXPhaseCoefficients));
   IMRPhenomXGetPhaseCoefficients(pWF, pPhase22);
   //IMRPhenomX_Phase_22_ConnectionCoefficients(pWF,pPhase22);//ceci where should this go? discontinuity
-  
+
   /* Allocate and initialize the PhenomXHM lm amplitude coefficients struct */
   IMRPhenomXHMAmpCoefficients *pAmp = (IMRPhenomXHMAmpCoefficients*)XLALMalloc(sizeof(IMRPhenomXHMAmpCoefficients));
   IMRPhenomXHMPhaseCoefficients *pPhase = (IMRPhenomXHMPhaseCoefficients*)XLALMalloc(sizeof(IMRPhenomXHMPhaseCoefficients));
@@ -1672,7 +1672,7 @@ int IMRPhenomXHMMultiBandOneModeMixing(
   REAL8FrequencySeries *amplitude, *phase;
   REAL8FrequencySeries *phaseSS, *amplitudeSS;
 
-  
+
   if(lencoarseS > ampinterpolorder){
     IMRPhenomXHM_Phase(&phase, coarseFreqsS, pWF, pAmp22, pPhase22, pWFHM, pAmp, pPhase);
     IMRPhenomXHM_Amplitude(&amplitude, coarseFreqsS, pWF, pAmp22, pPhase22, pWFHM, pAmp, pPhase);

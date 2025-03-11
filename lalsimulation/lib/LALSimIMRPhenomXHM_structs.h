@@ -41,7 +41,7 @@ extern "C" {
 
 #define N_MAX_COEFFICIENTS_AMPLITUDE_INS 3    //Maximun number of collocation points in the inspiral
 #define N_MAX_COEFFICIENTS_AMPLITUDE_INTER 8  //Maximun number of collocation points in the intermediate. New release 4 coll points + 2x2 boundaries
-#define N_MAX_COEFFICIENTS_AMPLITUDE_RING 6   //Maximun number of coefficients in the ringdown. We only use 3 degrees of freedom, but we have the double to store fits of 3 coefficients or 3 collocation points 
+#define N_MAX_COEFFICIENTS_AMPLITUDE_RING 6   //Maximun number of coefficients in the ringdown. We only use 3 degrees of freedom, but we have the double to store fits of 3 coefficients or 3 collocation points
 #define N_MAX_COEFFICIENTS_AMPLITUDE_RDAUX 4  //Maximun number of coefficients in the ringdown auxiliar region for mode-mixing. Default 2 collocation points + point & derivative right boundary
 
 // Data structure to hold QNM frequencies
@@ -64,7 +64,7 @@ typedef struct tagIMRPhenomXHMWaveformStruct
         INT4  IMRPhenomXHMInspiralAmpVersion;
         INT4  IMRPhenomXHMIntermediateAmpVersion;
         INT4  IMRPhenomXHMRingdownAmpVersion;
-        
+
         INT4  IMRPhenomXHMInspiralPhaseVersion;
         INT4  IMRPhenomXHMIntermediatePhaseVersion;
         INT4  IMRPhenomXHMRingdownPhaseVersion;
@@ -80,19 +80,19 @@ typedef struct tagIMRPhenomXHMWaveformStruct
         INT4  IMRPhenomXHMInspiralAmpFreqsVersion;
         INT4  IMRPhenomXHMIntermediateAmpFreqsVersion;
         INT4  IMRPhenomXHMRingdownAmpFreqsVersion;
-        
+
         INT4  IMRPhenomXHMInspiralPhaseFreqsVersion;
         INT4  IMRPhenomXHMIntermediatePhaseFreqsVersion;
         INT4  IMRPhenomXHMRingdownPhaseFreqsVersion;
 
-        
+
 
         INT4 IMRPhenomXHMReleaseVersion;
-        
+
         /* Parameters that define deviation of the tuned coprecessing mode PhenomXCP from PhenomX (500) */
         REAL8 MU1;   // MR Amplitude
-        REAL8 MU2;   // MR Amplitude: modifies gamma2 
-        REAL8 MU3;   // MR Amplitude: modifies gamma3 
+        REAL8 MU2;   // MR Amplitude: modifies gamma2
+        REAL8 MU3;   // MR Amplitude: modifies gamma3
         REAL8 MU4;   // MR Amplitude: would modify appearance of fRing in MR amplitude
         REAL8 NU0;   // MR Phase
         REAL8 NU4;   // MR Phase

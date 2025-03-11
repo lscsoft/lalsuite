@@ -39,7 +39,7 @@ static int check_zero(REAL8TimeSeries **target){
 
 
 /* If the spectrum of low freauency is too influential to the waveform, the waveform becomes only taking
- * positve value although it unlikes the wave form of Cherenkov Burst. This test return 0 if the wave 
+ * positve value although it unlikes the wave form of Cherenkov Burst. This test return 0 if the wave
  * only gets positive value. */
 static int check_positive(REAL8TimeSeries **target){
 	unsigned i;

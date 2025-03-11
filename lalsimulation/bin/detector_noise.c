@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 			size_t j;
 			fprintf(stdout, "# time (s)\tNOISE (strain)\n");
 			n = duration * srate;
-			for (j = 0; j < n; ++j) { 
+			for (j = 0; j < n; ++j) {
 				LIGOTimeGPS t = tstart;
 				fprintf(stdout, "%s\t%.18e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j/srate)), 0.0);
 			}

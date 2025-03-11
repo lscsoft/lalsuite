@@ -317,7 +317,7 @@ static REAL8 dEp6(REAL8 v, expnCoeffs *ak)
    energy = ep6(v, ak);
    y = sqrt(1.+energy);
    Energy = sqrt(1. + 2.* ak->eta * (y - 1.)) - 1.;
-   
+
    denom = 1. + (ak->ePa1 + ak->ePa2 + ak->ePa3) * x + ak->ePa1*ak->ePa3*x*x;
    denom = denom * denom;
 
@@ -1057,4 +1057,3 @@ XLALInspiralChooseModel(
 
   return 0;
 }
-

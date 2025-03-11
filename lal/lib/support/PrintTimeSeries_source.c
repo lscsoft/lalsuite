@@ -9,8 +9,8 @@
 #define FUNC CONCAT3(LAL,TYPECODE,PrintTimeSeries)
 
 
-void FUNC ( STYPE *series, const CHAR *filename ) 
-{ 
+void FUNC ( STYPE *series, const CHAR *filename )
+{
   REAL8 t;
   TYPE *data;
   FILE *fp;
@@ -45,7 +45,7 @@ void FUNC ( STYPE *series, const CHAR *filename )
     t = i * series->deltaT;
     data = &(series->data->data[i]);
     fprintf(fp,FMT,t,ARG);
-  }	
+  }
 
   LALFclose(fp);
 

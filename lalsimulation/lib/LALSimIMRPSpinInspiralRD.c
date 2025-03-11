@@ -673,7 +673,7 @@ static INT4 XLALSimSpinInspiralTest(UNUSED double t, const double values[], doub
   else if (isnan(omega)) {
     /* omega is nan */
     return LALSIMINSPIRAL_PST4_TEST_OMEGANAN;
-  } 
+  }
   else if ( params->fEnd > 0. && params->fStart > params->fEnd && omega < params->fEnd) {
     /* freq. below bound in backward integration */
     return LALSIMINSPIRAL_PST4_TEST_FREQBOUND;

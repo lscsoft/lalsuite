@@ -36,12 +36,12 @@
 #include "LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.h"
 
 /**
- * Tanh window function 
+ * Tanh window function
  * w^{+/-}_{f0,sigma}(f) = 0.5 * (1 +/- tanh(4*(f-f0)/sigma))
  * Auxiliary function used by SEOBNRv4_ROM_NRTidalv2_NSBH.
  */
 REAL8 TanhWindow(
-       const REAL8 f, /**< frequency at which to evaluate window function */ 
+       const REAL8 f, /**< frequency at which to evaluate window function */
        const int sign, /**< sign (+1 or -1), used to determine whether window is "on" or "off"*/
        const REAL8 f0, /**< central frequency of window function */
        const REAL8 sigma) /**< width of window function */
@@ -55,11 +55,11 @@ REAL8 TanhWindow(
 
 
 /**
- * Returns ringdown frequency in units of the total mass using 
+ * Returns ringdown frequency in units of the total mass using
  * fits from gr-qc/0512160/. Auxiliary function used by SEOBNRv4_ROM_NRTidalv2_NSBH.
- */ 
+ */
 REAL8 CalcRDFrequency(
-      REAL8 MF, /**< Final mass (in solar masses) */ 
+      REAL8 MF, /**< Final mass (in solar masses) */
       REAL8 chiF, /**< Final spin (dimensionless */
       REAL8 Mtot) /**< Iniital toal mass (in solar masses */
 {
@@ -72,7 +72,7 @@ REAL8 CalcRDFrequency(
 
 /**
  * @addtogroup LALSimIMRTIDAL_c
- * 
+ *
  * @{
  *
  * @name SEOBNRv4_ROM_NRTidalv2_NSBH
@@ -84,7 +84,7 @@ REAL8 CalcRDFrequency(
  * SEOBNRv4_ROM_NRTidalv2_NSBH is a frequency domain model that applies amplitude corrections due to tidal disruption to the SEOBNRv4ROM model. It is based on the SEOBNRv4_ROM_NRTidalv2.
  *
  * @note Parameter ranges:
- *  * 1 <= q = m1/m2 <= 100 
+ *  * 1 <= q = m1/m2 <= 100
  *  * m2 <= 3 Msun
  *  * lambda1 = 0
  *  * 0 <= lambda2 <= 5000
@@ -92,7 +92,7 @@ REAL8 CalcRDFrequency(
  *
  *  @note A warning is issued when
  *  * chi2 is not 0 (model was fit to NR simulations with chi2=0, but checked against existing simulations with chi2=-0.2)
- *  * m1 < 1 Msun 
+ *  * m1 < 1 Msun
  *
  *  chi2 = neutron star spin
  *
@@ -105,9 +105,9 @@ REAL8 CalcRDFrequency(
  */
 
  /**
-  * Compute amplitude correction to SEOBNRv4_ROM_NRTidalv2 in LAL format at specified 
+  * Compute amplitude correction to SEOBNRv4_ROM_NRTidalv2 in LAL format at specified
   * frequencies for the SEOBNRv4_ROM_NRTidalv2_NSBH model, incorporating tidal disruption
-  * effects. 
+  * effects.
   *
   * XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries returns a frequency series with
   * real numbers between 0 and 1, which corrects the amplitude of SEOBNRv4_ROM_NRTidalv2.
@@ -154,12 +154,12 @@ int XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries(
 
     // Construct correction functions
 
-    // Compute non-disrupitve correction 
+    // Compute non-disrupitve correction
     // parameters determined by fit to NR data
-    REAL8 x1=-0.09236597801342522; 
-    REAL8 x2=-0.1773927624795226; 
+    REAL8 x1=-0.09236597801342522;
+    REAL8 x2=-0.1773927624795226;
     REAL8 xND_C=-0.4865330927898738;
-    REAL8 xND_chi=-0.03143937714260868; 
+    REAL8 xND_chi=-0.03143937714260868;
     REAL8 xNDprime_C=0.4933764101669873;
     REAL8 xNDprime_chi=0.05691547067814197;
     REAL8 d1=0.01871545791809104;
@@ -175,7 +175,7 @@ int XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries(
     REAL8 f0_ND=fRD;
     REAL8 sigma_ND=dND+sigma_tide;
 
-    // Compute and apply disrupitve correction 
+    // Compute and apply disrupitve correction
     // parameters determined by fit to NR data
     REAL8 a1=1.2728043573489636;
     REAL8 a2=0.1853261083544252;
@@ -192,8 +192,8 @@ int XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries(
 
 
     REAL8 xD=MbTorus + xD_C*CNS + xD_nu*pow(nu,0.5) + xD_chi*chi1;
-    REAL8 xDprime=MbTorus + xDprime_C*CNS + xDprime_nu*pow(nu,0.5) 
-                   + xDprime_chi1*chi1 + xDprime_chi2*pow(chi1,2) 
+    REAL8 xDprime=MbTorus + xDprime_C*CNS + xDprime_nu*pow(nu,0.5)
+                   + xDprime_chi1*chi1 + xDprime_chi2*pow(chi1,2)
                    + xDprime_chi3*pow(chi1,3);
 
     REAL8 eins=a1+b1*xD;
@@ -202,7 +202,7 @@ int XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries(
     REAL8 f0_D=eins*fTidal;
     REAL8 sigma_D=sigma_tide2;
 
-    
+
     REAL8 f0=0;
     REAL8 sigma=0;
     REAL8 eRD=0;
@@ -210,7 +210,7 @@ int XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries(
         f0=f0_ND;
         sigma=sigma_ND;
         eRD=eTide;
-    } 
+    }
     else if (fTidal<fRD && MbTorus>0){ // Case 2 (disruptive)
         f0=f0_D;
         sigma=sigma_D;
@@ -222,21 +222,20 @@ int XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries(
         eRD=0;
     }
     else if (fTidal>=fRD && MbTorus>0){ // Case 4 (mildly disruptive with remnant torus)
-        f0 = eins*fRD; 
+        f0 = eins*fRD;
         sigma=sigma_ND;
         eRD=eTide;
     }
-   
+
 
    // Apply window corrections
    for (UINT8 ii=0;ii<(*fHz).length;ii++){
        (*amp_tidal).data[ii] = TanhWindow((*fHz).data[ii]/fmtotSI,-1,f0,sigma)
                                 + eRD*TanhWindow((*fHz).data[ii]/fmtotSI,+1,f0,sigma);
    }
-   
+
    return XLAL_SUCCESS;
 }
 
 /** @} */
 /** @} */
-

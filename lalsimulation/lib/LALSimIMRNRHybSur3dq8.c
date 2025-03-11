@@ -119,12 +119,12 @@ static void NRHybSur3dq8_Init_LALDATA(void) {
 
     char *path = XLAL_FILE_RESOLVE_PATH(NRHybSur3dq8_DATAFILE);
     if (path==NULL){
-        XLAL_ERROR_VOID(XLAL_EIO, 
+        XLAL_ERROR_VOID(XLAL_EIO,
         "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
         "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
         "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
         "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
-        "https://git.ligo.org/lscsoft/lalsuite-extra\n", 
+        "https://git.ligo.org/lscsoft/lalsuite-extra\n",
         NRHybSur3dq8_DATAFILE);
     }
 

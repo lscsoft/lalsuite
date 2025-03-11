@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Craig Robinson 
+*  Copyright (C) 2010 Craig Robinson
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ int XLALHcapNumericalDerivative(
   /* The error in a derivative as measured by GSL */
   REAL8 absErr;
 
-  /* Set up pointers for GSL */ 
+  /* Set up pointers for GSL */
   params.values  = values;
   params.ak      = ak;
   params.tmpVec  = XLALCreateREAL8Vector( values->length );
@@ -81,7 +81,7 @@ int XLALHcapNumericalDerivative(
   for ( i = 0; i < values->length; i++ )
   {
     params->varyParam = i;
-    XLAL_CALLGSL( gslStatus = gsl_deriv_central( &F, values->data[i], 
+    XLAL_CALLGSL( gslStatus = gsl_deriv_central( &F, values->data[i],
                       STEP_SIZE, dvalues->data[i], absErr ) );
 
     if ( gslStatus != GSL_SUCCESS )
@@ -104,7 +104,7 @@ static double GSLHamiltonianWrapper( double x, void *params )
   REAL8Vector *tmpVec = dParams->tmpVec;
 
   /* Use a temporary vector to avoid corrupting the main function */
-  memcpy( tmpVec->data, dParams->values->data, 
+  memcpy( tmpVec->data, dParams->values->data,
               tmpVec->length * sizeof(REAL8) );
 
   /* Set the relevant entry in the vector to the correct value */

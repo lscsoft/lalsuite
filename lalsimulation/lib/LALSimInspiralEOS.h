@@ -52,7 +52,7 @@ typedef enum tagLALEquationOfState {
 
 /*
 typedef enum
-{   
+{
     LAL_SIM_INSPIRAL_EOS_NONE = 0,
     LAL_SIM_INSPIRAL_EOS_MS1 = 1,
     LAL_SIM_INSPIRAL_EOS_H4 = 2,

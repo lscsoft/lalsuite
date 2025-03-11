@@ -232,7 +232,7 @@ struct tm *XLALFillUTC( struct tm *utc /**< [In] UTC time in a broken down time 
   wday = ((wday % 7) + 7) % 7;
 
   /* Return 1 if 'year' + 1900 is a leap year.  */
-  int leapyear = 
+  int leapyear =
     /* Don't add 'year' to 1900, as that might overflow.
        Also, work even if 'year' is negative.  */
     ((year & 3) == 0

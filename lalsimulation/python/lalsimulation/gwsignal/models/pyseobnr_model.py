@@ -435,4 +435,3 @@ class SEOBNRv5PHM(CompactBinaryCoalescenceGenerator):
 
     def generate_td_modes(self, **parameters):
         return self._generate_modes(**parameters)
-

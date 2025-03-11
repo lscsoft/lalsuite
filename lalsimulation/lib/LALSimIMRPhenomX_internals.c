@@ -166,7 +166,7 @@ int IMRPhenomXSetWaveformVariables(
 	wf->IMRPhenomXPNRUseTunedCoprec33 = XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedCoprec(LALParams) * (wf->IMRPhenomXPNRUseTunedCoprec);
 
     wf->PhenomXOnlyReturnPhase = XLALSimInspiralWaveformParamsLookupPhenomXOnlyReturnPhase(LALParams);
-	
+
 	// Get toggle for forcing inspiral phase and phase derivative alignment with XHM/AS
 	INT4 PNRForceXHMAlignment = XLALSimInspiralWaveformParamsLookupPhenomXPNRForceXHMAlignment(LALParams);
 	wf->IMRPhenomXPNRForceXHMAlignment = PNRForceXHMAlignment;
@@ -317,20 +317,20 @@ int IMRPhenomXSetWaveformVariables(
 
 	/* Set matter parameters */
 	REAL8 lambda1_In = 0, lambda2_In = 0, quadparam1_In = 1, quadparam2_In = 1; // Tidal deformabilities and quadrupole spin-induced deformation parameters
-    
+
 	if(XLALSimInspiralWaveformParamsLookupPhenomXTidalFlag(LALParams)!=0)
 	{
-	  
+
       lambda1_In = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
       lambda2_In = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
       if( lambda1_In < 0 || lambda2_In < 0 )
                 XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for NRTidalv2 and NRTidalv3", lambda1_In, lambda2_In);
-      
+
       int retcode;
-      
+
       retcode = XLALSimInspiralSetQuadMonParamsFromLambdas(LALParams);
 	  XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to set quadparams from Universal relation.\n");
-   
+
 	  quadparam1_In = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon1(LALParams);
 	  quadparam2_In = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon2(LALParams);
 	}
@@ -384,7 +384,7 @@ int IMRPhenomXSetWaveformVariables(
 		//XLALPrintError("Unphyiscal spins: must be in the range [-1,1].\n");
 		XLAL_ERROR(XLAL_EDOM, "Unphysical spins requested: must obey the Kerr bound [-1,1].\n");
 	}
-	
+
 	// Symmetric mass ratio
 	REAL8 delta = fabs((m1 - m2) / (m1+m2));
 	REAL8 eta   = fabs(0.25 * (1.0 - delta*delta) ); // use fabs to prevent negative sign due to roundoff
@@ -548,7 +548,7 @@ int IMRPhenomXSetWaveformVariables(
 	// NOTE: These are only default values
 	wf->Mfinal    = XLALSimIMRPhenomXFinalMass2017(wf->eta,wf->chi1L,wf->chi2L);
 	wf->afinal    = XLALSimIMRPhenomXFinalSpin2017(wf->eta,wf->chi1L,wf->chi2L);
-	
+
 	/* (500) Set default values of physically specific final spin parameters for use with PNR/XCP */
 	wf->afinal_nonprec = wf->afinal;     // NOTE: This is only a default value; see LALSimIMRPhenomX_precession.c
 	wf->afinal_prec    = wf->afinal;     // NOTE: This is only a default value; see LALSimIMRPhenomX_precession.c
@@ -620,7 +620,7 @@ int IMRPhenomXSetWaveformVariables(
 	{
 		printf("\n\n **** Sanity checks complete. Waveform struct has been initialized. **** \n\n");
 	}
-	
+
 	/* Set nonprecessing value of select precession quantities (PNRUseTunedCoprec)*/
 	wf->chiTot_perp = 0.0;
 	wf->chi_p = 0.0;
@@ -696,7 +696,7 @@ int IMRPhenomXGetAmplitudeCoefficients(
 	// Phenomenological ringdown coefficients: note that \gamma2 = \lambda in arXiv:2001.11412 and \gamma3 = \sigma in arXiv:2001.11412
 	pAmp->gamma2        = IMRPhenomX_Ringdown_Amp_22_gamma2(pWF->eta,pWF->STotR,pWF->dchi,pWF->delta,pWF->IMRPhenomXRingdownAmpVersion);
 	pAmp->gamma3        = IMRPhenomX_Ringdown_Amp_22_gamma3(pWF->eta,pWF->STotR,pWF->dchi,pWF->delta,pWF->IMRPhenomXRingdownAmpVersion);
-	
+
 	/* Apply modifications in the style of PhenomDCP: https://arxiv.org/pdf/2107.08876.pdf (500)*/
 	// pAmp->gamma2 = pAmp->gamma2  +  ( pWF->PNR_DEV_PARAMETER * pWF->MU2 );
 	pAmp->gamma3 = pAmp->gamma3  +  ( pWF->PNR_DEV_PARAMETER * pWF->MU2 );
@@ -707,7 +707,7 @@ int IMRPhenomXGetAmplitudeCoefficients(
 	// Value of v1RD at fAmpRDMin is used to calcualte gamma1 \propto the amplitude of the deformed Lorentzian
 	pAmp->v1RD          = IMRPhenomX_Ringdown_Amp_22_v1(pWF->eta,pWF->STotR,pWF->dchi,pWF->delta,pWF->IMRPhenomXRingdownAmpVersion);
 	F1                  = pAmp->fAmpRDMin;
-	
+
 	/* Apply modifications in the style of PhenomDCP: https://arxiv.org/pdf/2107.08876.pdf -- here we modify the ringdown amplitude (500)*/
 	pAmp->v1RD = pAmp->v1RD  +  ( pWF->PNR_DEV_PARAMETER * pWF->MU1 );
 
@@ -1071,7 +1071,7 @@ int IMRPhenomXGetPhaseCoefficients(
 	pPhase->c3 = 0.0;
 	pPhase->c4 = 0.0;
 	pPhase->cL = 0.0;
-    
+
     pPhase->c2PN_tidal   = 0.;
     pPhase->c3PN_tidal   = 0.;
     pPhase->c3p5PN_tidal = 0.;
@@ -1082,7 +1082,7 @@ int IMRPhenomXGetPhaseCoefficients(
 	pPhase->sigma3 = 0.0;
 	pPhase->sigma4 = 0.0;
 	pPhase->sigma5 = 0.0;
-    
+
 
 	/*
 		The general strategy is to initialize a linear system of equations:
@@ -1311,11 +1311,11 @@ int IMRPhenomXGetPhaseCoefficients(
 	pPhase->c4  = gsl_vector_get(x,3); // x[3]; 	// a4
 	pPhase->cRD = gsl_vector_get(x,4);
 	pPhase->cL  = -(pWF->dphase0 * pPhase->cRD); // ~ x[4] // cL = - a_{RD} * dphase0
-	
+
 	/* Apply NR tuning for precessing cases (500) */
 	pPhase->cL = pPhase->cL + ( pWF->PNR_DEV_PARAMETER * pWF->NU4 );
 	// pPhase->c0 = pPhase->c0 + ( pWF->PNR_DEV_PARAMETER * pWF->NU0 );
-	
+
 	if(debug)
 	{
 		printf("\n");
@@ -2632,7 +2632,7 @@ double IMRPhenomX_TimeShift_22(IMRPhenomXPhaseCoefficients *pPhase, IMRPhenomXWa
     // here we correct the time-alignment of the waveform by first aligning the peak of psi4, and then adding a correction to align the peak of strain instead
     REAL8 psi4tostrain=XLALSimIMRPhenomXPsi4ToStrain(pWF->eta, pWF->STotR, pWF->dchi);
     tshift = linb-dphi22Ref -2.*LAL_PI*(500+psi4tostrain);
-	
+
 	// Apply PNR deviation (500)
 	tshift = tshift + ( pWF->PNR_DEV_PARAMETER * pWF->NU0 );
 
@@ -2735,16 +2735,16 @@ double IMRPhenomX_Amplitude_22(double ff, IMRPhenomX_UsefulPowers *powers_of_f, 
 INT4 check_input_mode_array(LALDict *lalParams)
 {
 	UINT4 flagTrue = 0;
-	
+
   if(lalParams == NULL) return XLAL_SUCCESS;
-  
+
   LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
-  
+
   if(ModeArray!=NULL)
   {
     INT4 larray[5] = {2, 2, 3, 3, 4};
     INT4 marray[5] = {2, 1, 3, 2, 4};
-    
+
     for(INT4 ell=2; ell<=LAL_SIM_L_MAX_MODE_ARRAY; ell++)
 		{
 			for(INT4 emm=0; emm<=ell; emm++)
@@ -2764,30 +2764,30 @@ INT4 check_input_mode_array(LALDict *lalParams)
 						XLALDestroyValue(ModeArray);
 						return XLAL_FAILURE;
 					}
-					flagTrue = 0;					
-				}				
+					flagTrue = 0;
+				}
 			}//End loop over emm
 		}//End loop over ell
   }//End of if block
-	
+
   XLALDestroyValue(ModeArray);
-	
+
   return XLAL_SUCCESS;
 }
 
 /* Function to compute full model phase. This function is designed to be used in in initialization routines, and not for evaluating the phase at many frequencies. */
 INT4 IMRPhenomX_FullPhase_22(double *phase, double *dphase, double Mf, IMRPhenomXPhaseCoefficients *pPhase, IMRPhenomXWaveformStruct *pWF){
-	
-	
-    /* 
+
+
+    /*
     Function to compute full XAS phase at a single frequency point.
 	See IMRPhenomXASGenerateFD for reference.
     */
-	
+
 	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
 	/*            Define useful powers               */
 	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
-	
+
 	// Status indicator
 	INT4 status;
 
@@ -2795,20 +2795,20 @@ INT4 IMRPhenomX_FullPhase_22(double *phase, double *dphase, double Mf, IMRPhenom
 	IMRPhenomX_UsefulPowers powers_of_Mf;
     status = IMRPhenomX_Initialize_Powers(&powers_of_Mf, Mf);
 	XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for Mf.\n");
-	
+
 	/* Initialize a struct containing useful powers of Mf at fRef */
 	IMRPhenomX_UsefulPowers powers_of_MfRef;
 	status = IMRPhenomX_Initialize_Powers(&powers_of_MfRef,pWF->MfRef);
 	XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for MfRef.\n");
-	
+
 	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
 	/*           Define needed constants             */
 	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
-	
+
 	/* 1/eta is used to re-scale the pre-phase quantity */
 	REAL8 inveta    = (1.0 / pWF->eta);
 
-	/* We keep this phase shift to ease comparison with 
+	/* We keep this phase shift to ease comparison with
 	original phase routines */
 	REAL8 lina = 0;
 
@@ -2816,52 +2816,52 @@ INT4 IMRPhenomX_FullPhase_22(double *phase, double *dphase, double Mf, IMRPhenom
 	and store them to pWF. This step is to make
 	sure that teh coefficients are up-to-date */
 	IMRPhenomX_Phase_22_ConnectionCoefficients(pWF,pPhase);
-	
+
 	/* Compute the timeshift that PhenomXAS uses to align waveforms
 	with the hybrids used to make their model */
 	double linb=IMRPhenomX_TimeShift_22(pPhase, pWF);
-	
+
 	/* Calculate phase at reference frequency: phifRef = 2.0*phi0 + LAL_PI_4 + PhenomXPhase(fRef) */
 	double phifRef = -(inveta * IMRPhenomX_Phase_22(pWF->MfRef, &powers_of_MfRef, pPhase, pWF) + linb*pWF->MfRef + lina) + 2.0*pWF->phi0 + LAL_PI_4;
-	
-	/* ~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+ 
+
+	/* ~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+
 	Note that we do not store the value of phifRef to pWF as is done in
 	IMRPhenomXASGenerateFD. We choose to not do so in order to avoid
 	potential confusion (e.g. if this function is called within a
 	workflow that assumes the value defined in IMRPhenomXASGenerateFD).
 	Note that this concern may not be valid.
 	~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+ */
-	
+
 	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
 	/*        Compute the full model phase           */
 	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
-	
-	/* Use previously made function to compute what we call 
+
+	/* Use previously made function to compute what we call
 	here the pre-phase, becuase it's not actually a phase! */
 	double pre_phase = IMRPhenomX_Phase_22(Mf,&powers_of_Mf,pPhase,pWF);
-	
-	/* Given the pre-phase, we need to scale and shift according to the 
+
+	/* Given the pre-phase, we need to scale and shift according to the
 	XAS construction */
 	*phase   = pre_phase * inveta;
 	*phase  += linb*Mf + lina + phifRef;
-	
+
 	/* Repeat the excercise above for the phase derivative:
 	"dphase" is (d/df)phase at Mf */
 	double pre_dphase = IMRPhenomX_dPhase_22(Mf,&powers_of_Mf,pPhase,pWF);
     *dphase  = pre_dphase * inveta;
     *dphase += linb;
-	
+
 	//
 	return status;
 }
 
 
 NRTidal_version_type IMRPhenomX_SetTidalVersion(LALDict *lalParams){
-    
+
     int tidal_version=XLALSimInspiralWaveformParamsLookupPhenomXTidalFlag(lalParams);
-    
+
     NRTidal_version_type version;
-    
+
     switch(tidal_version){
           case 0:
               version=NoNRT_V;
@@ -2888,52 +2888,52 @@ void IMRPhenomXGetTidalPhaseCoefficients(
     IMRPhenomXWaveformStruct *pWF,
     IMRPhenomXPhaseCoefficients *pPhase,
     NRTidal_version_type NRTidal_version){
-    
+
 
     REAL8 quadparam1 = pWF->quadparam1;
     REAL8 quadparam2 = pWF->quadparam2;
     /* declare HO 3.5PN spin-spin and spin-cubed terms added separately in Pv2_NRTidalv2 */
     REAL8 SS_3p5PN = 0., SSS_3p5PN = 0.;
-    
+
     /* New variables needed for the NRTidalv2 model */
     REAL8 X_A = pWF->m1; // Already scaled by Mtot
     REAL8 X_B = pWF->m2; // Ibid.
-        
+
     REAL8 chi1L_sq = pWF->chi1L2;
     REAL8 chi2L_sq = pWF->chi2L2;
-      
+
      pPhase->c2PN_tidal=((XLALSimInspiralTaylorF2Phasing_4PNQM2SOCoeff(X_A) + XLALSimInspiralTaylorF2Phasing_4PNQM2SCoeff(X_A)) * (quadparam1 - 1.) * chi1L_sq
        + (XLALSimInspiralTaylorF2Phasing_4PNQM2SOCoeff(X_B) + XLALSimInspiralTaylorF2Phasing_4PNQM2SCoeff(X_B)) * (quadparam2 - 1.) * chi2L_sq);
      pPhase->c3PN_tidal=(XLALSimInspiralTaylorF2Phasing_6PNQM2SCoeff(X_A) * (quadparam1 - 1.) * chi1L_sq
      + XLALSimInspiralTaylorF2Phasing_6PNQM2SCoeff(X_B) * (quadparam2 - 1.) * chi2L_sq);
-      
+
       if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
      /* Get the PN SS-tail and SSS terms */
        XLALSimInspiralGetHOSpinTerms(&SS_3p5PN, &SSS_3p5PN, X_A, X_B, pWF->chi1L, pWF->chi2L, quadparam1, quadparam2);
        pPhase->c3p5PN_tidal=(SS_3p5PN + SSS_3p5PN);
       }
-    
+
 }
 
 REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWaveformStruct *pWF, IMRPhenomXPhaseCoefficients *pPhase, NRTidal_version_type NRTidal_version){
 
     REAL8 X_A = pWF->m1; // Already scaled by Mtot
     REAL8 X_B = pWF->m2;
-    
+
     REAL8 Mf=powers_of_Mf->itself;
-    
+
     REAL8 phaseTidal=0.;
-    
+
     REAL8 pfaN=3./(128.*X_A*X_B);
-    
+
     REAL8 c2pn=pPhase->c2PN_tidal, c3pn=pPhase->c3PN_tidal, c3p5pn=pPhase->c3p5PN_tidal;
-    
+
     /* 2PN terms */
     phaseTidal += pfaN * c2pn* powers_of_lalpi.m_one_third * powers_of_Mf->m_one_third;
-    
+
     /* 3PN terms */
     phaseTidal += pfaN * c3pn* powers_of_lalpi.one_third * powers_of_Mf->one_third;
-    
+
     if (NRTidal_version == NRTidalv2_V)
     {
         REAL8 NRTidalv2_coeffs[9];
@@ -2953,14 +2953,14 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
         const REAL8 d2      = NRTidalv2_coeffs[8];
 
         REAL8 kappa2T = pWF->kappa2T;
-        
+
         REAL8 NRphase=-((cNewt*kappa2T*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n1*powers_of_lalpi.two_thirds + Mf*n3over2*LAL_PI + powers_of_Mf->four_thirds*n2*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n5over2*powers_of_lalpi.five_thirds + pow(Mf,2)*n3*powers_of_lalpi.two))/((1 + d1*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d3over2*Mf*LAL_PI + d2*powers_of_Mf->four_thirds*powers_of_lalpi.four_thirds)*X_A*X_B));
-        
+
         phaseTidal+=NRphase;
-        
+
         /* Get the PN SS-tail and SSS terms */
         phaseTidal += pfaN * c3p5pn * powers_of_lalpi.two_thirds * powers_of_Mf->two_thirds;
-    
+
     }
 	else if (NRTidal_version == NRTidalv3_V)
     {
@@ -2974,15 +2974,15 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 lambda2 = pWF->lambda2;
 
 		REAL8 mtot = pWF->Mtot;
-	
+
 		REAL8 NRTidalv3_coeffs[20];
     	XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2, PN_coeffs);
 
-		REAL8 s1 = NRTidalv3_coeffs[0]; 
-		REAL8 s2 = NRTidalv3_coeffs[1]; 
-		REAL8 s3 = NRTidalv3_coeffs[2]; 
- 		
- 		
+		REAL8 s1 = NRTidalv3_coeffs[0];
+		REAL8 s2 = NRTidalv3_coeffs[1];
+		REAL8 s3 = NRTidalv3_coeffs[2];
+
+
 		REAL8 s2s3 = s2*s3;
 		REAL8 s2Mf = -s2*Mf*LAL_PI*2.0;
 		REAL8 exps2s3 = cosh(s2s3) + sinh(s2s3);
@@ -3001,7 +3001,7 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 n_5over2A = NRTidalv3_coeffs[6];
 		REAL8 n_3A = NRTidalv3_coeffs[7];
 		REAL8 d_1A = NRTidalv3_coeffs[8];
-		
+
 		REAL8 n_5over2B = NRTidalv3_coeffs[9];
 		REAL8 n_3B = NRTidalv3_coeffs[10];
 		REAL8 d_1B = NRTidalv3_coeffs[11];
@@ -3029,11 +3029,11 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 n_3over2B = NRTidalv3_coeffs[17];
 		REAL8 n_2B = NRTidalv3_coeffs[18];
 		REAL8 d_3over2B = NRTidalv3_coeffs[19];
-        
+
 		/* Rewriting Eq. (30) and (32) in arXiv:2311.07456 in terms of Mf instead of x */
         REAL8 NRphasetermA=-((c_NewtA*dynkappaA*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1A*powers_of_lalpi.two_thirds + Mf*n_3over2A*LAL_PI + powers_of_Mf->four_thirds*n_2A*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2A*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3A*powers_of_lalpi.two))/((1 + d_1A*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2A*Mf*LAL_PI)));
         REAL8 NRphasetermB=-((c_NewtB*dynkappaB*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1B*powers_of_lalpi.two_thirds + Mf*n_3over2B*LAL_PI + powers_of_Mf->four_thirds*n_2B*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2B*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3B*powers_of_lalpi.two))/((1 + d_1B*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2B*Mf*LAL_PI)));
-		
+
 		REAL8 NRphaseNRT = NRphasetermA + NRphasetermB;
 
 		REAL8 PNtidalphaseA = -((c_NewtA*kappaA*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*c_1A*powers_of_lalpi.two_thirds + Mf*c_3over2A*LAL_PI + powers_of_Mf->four_thirds*c_2A*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*c_5over2A*powers_of_lalpi.five_thirds )));
@@ -3062,12 +3062,12 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		exp_fn = cosh(exp_arg) + sinh(exp_arg);
 		plancktaperfn = 1/(exp_fn + 1.0);
 		}
-		
+
 		/* Eq. (45) in arXiv:2311.07456 */
 		REAL8 NRphase = NRphaseNRT*(1-  plancktaperfn) + PNtidalphase*plancktaperfn;
 
 		phaseTidal+=NRphase;
-        
+
         /* Get the PN SS-tail and SSS terms */
         phaseTidal += pfaN * c3p5pn * powers_of_lalpi.two_thirds * powers_of_Mf->two_thirds;
     }
@@ -3082,29 +3082,29 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 }
 
 REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWaveformStruct *pWF, IMRPhenomXPhaseCoefficients *pPhase, NRTidal_version_type NRTidal_version){
-    
+
     REAL8 X_A = pWF->m1; // Already scaled by Mtot
     REAL8 X_B = pWF->m2;
-    
+
     REAL8 Mf_ten_thirds=powers_of_Mf->eight_thirds*powers_of_Mf->two_thirds;
     REAL8 pi_ten_thirds=powers_of_lalpi.eight_thirds*powers_of_lalpi.two_thirds;
     REAL8 Mf=powers_of_Mf->itself;
-    
+
     REAL8 c2pn=pPhase->c2PN_tidal, c3pn=pPhase->c3PN_tidal, c3p5pn=pPhase->c3p5PN_tidal;
-    
+
     REAL8 NRTuned_dphase=0.;
-    
+
     REAL8 pfaN=3./(128.*X_A*X_B);
-    
+
     REAL8 threePN_dphase=(pfaN*(-c2pn + c3pn*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds))/(3.*powers_of_Mf->four_thirds*powers_of_lalpi.one_third);
-    
+
     REAL8 dphase=threePN_dphase;
-    
-    
+
+
     if(NRTidal_version==NRTidalv2_V){
-        
+
         dphase+=(2.*c3p5pn*pfaN*powers_of_lalpi.two_thirds)/(3.*powers_of_Mf->one_third);
-        
+
         REAL8 NRTidalv2_coeffs[9];
 
         int errcode;
@@ -3122,12 +3122,12 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
         const REAL8 d2      = NRTidalv2_coeffs[8];
 
         REAL8 kappa2T = pWF->kappa2T;
-    
+
         NRTuned_dphase=((cNewt*kappa2T*powers_of_Mf->two_thirds*powers_of_lalpi.five_thirds*(-5 - powers_of_Mf->two_thirds*(3*d1 + 7*n1)*powers_of_lalpi.two_thirds - 2*Mf*(d3over2 + 4*n3over2)*LAL_PI - powers_of_Mf->four_thirds*(d2 + 5*d1*n1 + 9*n2)*powers_of_lalpi.four_thirds - 2*powers_of_Mf->five_thirds*(2*d3over2*n1 + 3*d1*n3over2 + 5*n5over2)*powers_of_lalpi.five_thirds - pow(Mf,2)*(3*d2*n1 + 7*d1*n2 + 11*n3 + 5*d3over2*n3over2)*powers_of_lalpi.two - 2*powers_of_Mf->seven_thirds*(3*d3over2*n2 + 2*d2*n3over2 + 4*d1*n5over2)*powers_of_lalpi.seven_thirds - powers_of_Mf->eight_thirds*(5*d2*n2 + 9*d1*n3 + 7*d3over2*n5over2)*powers_of_lalpi.eight_thirds - 2*pow(Mf,3)*(4*d3over2*n3 + 3*d2*n5over2)*powers_of_lalpi.three - 7*d2*Mf_ten_thirds*n3*pi_ten_thirds))/(3.*pow(1 + d1*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d3over2*Mf*LAL_PI + d2*powers_of_Mf->four_thirds*powers_of_lalpi.four_thirds,2)*X_A*X_B));
-        
+
     }
 	else if(NRTidal_version==NRTidalv3_V){
-        
+
         dphase+=(2.*c3p5pn*pfaN*powers_of_lalpi.two_thirds)/(3.*powers_of_Mf->one_third);
 
          /* local variable declaration */
@@ -3140,14 +3140,14 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 lambda2 = pWF->lambda2;
 
 		REAL8 mtot = pWF->Mtot;
-	
+
 		REAL8 NRTidalv3_coeffs[20];
     	XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2, PN_coeffs);
 
-		REAL8 s1 = NRTidalv3_coeffs[0]; 
-		REAL8 s2 = NRTidalv3_coeffs[1]; 
-		REAL8 s3 = NRTidalv3_coeffs[2]; 
- 		
+		REAL8 s1 = NRTidalv3_coeffs[0];
+		REAL8 s2 = NRTidalv3_coeffs[1];
+		REAL8 s3 = NRTidalv3_coeffs[2];
+
 		REAL8 s2s3 = s2*s3;
 		REAL8 s2Mf = -s2*Mf*LAL_PI*2.0;
 		REAL8 exps2s3 = cosh(s2s3) + sinh(s2s3);
@@ -3166,7 +3166,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 n_5over2A = NRTidalv3_coeffs[6];
 		REAL8 n_3A = NRTidalv3_coeffs[7];
 		REAL8 d_1A = NRTidalv3_coeffs[8];
-		
+
 		REAL8 n_5over2B = NRTidalv3_coeffs[9];
 		REAL8 n_3B = NRTidalv3_coeffs[10];
 		REAL8 d_1B = NRTidalv3_coeffs[11];
@@ -3205,7 +3205,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 PNtidalphaseB = -((c_NewtB*kappaB*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*c_1B*powers_of_lalpi.two_thirds + Mf*c_3over2B*LAL_PI + powers_of_Mf->four_thirds*c_2B*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*c_5over2B*powers_of_lalpi.five_thirds )));
 
 		REAL8 PNtidalphase = PNtidalphaseA + PNtidalphaseB;
-        
+
 		//DERIVATIVES
 
 		REAL8 s2s3b = -s2*s3;
@@ -3216,7 +3216,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 dynk2barfunc_deriv = (s1-1.0)*(2.0*LAL_PI)*s2*exps2Mfb*exps2s3b*(1/((1 + exps2Mfb*exps2s3b)*(1 + exps2Mfb*exps2s3b))) -2.0*LAL_PI*((s1) - 1.0)*s2*exps2s3/((1.0 + exps2s3)*(1.0 + exps2s3));
 
 		REAL8 NRTuned_dphaseA1=-((c_NewtA*kappaA*dynk2barfunc_deriv*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1A*powers_of_lalpi.two_thirds + Mf*n_3over2A*LAL_PI + powers_of_Mf->four_thirds*n_2A*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2A*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3A*powers_of_lalpi.two))/((1 + d_1A*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2A*Mf*LAL_PI)));
-        REAL8 NRTuned_dphaseB1=-((c_NewtB*kappaB*dynk2barfunc_deriv*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1B*powers_of_lalpi.two_thirds + Mf*n_3over2B*LAL_PI + powers_of_Mf->four_thirds*n_2B*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2B*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3B*powers_of_lalpi.two))/((1 + d_1B*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2B*Mf*LAL_PI))); 
+        REAL8 NRTuned_dphaseB1=-((c_NewtB*kappaB*dynk2barfunc_deriv*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1B*powers_of_lalpi.two_thirds + Mf*n_3over2B*LAL_PI + powers_of_Mf->four_thirds*n_2B*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2B*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3B*powers_of_lalpi.two))/((1 + d_1B*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2B*Mf*LAL_PI)));
 
 		REAL8 NRTuned_dphaseA2=((c_NewtA*kappaA*dynk2barfunc*powers_of_Mf->two_thirds*powers_of_lalpi.five_thirds*(-5 - powers_of_Mf->two_thirds*(3*d_1A + 7*n_1A)*powers_of_lalpi.two_thirds - 2*Mf*(d_3over2A + 4*n_3over2A)*LAL_PI - powers_of_Mf->four_thirds*(5*d_1A*n_1A + 9*n_2A)*powers_of_lalpi.four_thirds - 2*powers_of_Mf->five_thirds*(2*d_3over2A*n_1A + 3*d_1A*n_3over2A + 5*n_5over2A)*powers_of_lalpi.five_thirds - pow(Mf,2)*(7*d_1A*n_2A + 11*n_3A + 5*d_3over2A*n_3over2A)*powers_of_lalpi.two - 2*powers_of_Mf->seven_thirds*(3*d_3over2A*n_2A + 4*d_1A*n_5over2A)*powers_of_lalpi.seven_thirds - powers_of_Mf->eight_thirds*(9*d_1A*n_3A + 7*d_3over2A*n_5over2A)*powers_of_lalpi.eight_thirds - 2*pow(Mf,3)*(4*d_3over2A*n_3A)*powers_of_lalpi.three))/(3.*pow(1 + d_1A*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2A*Mf*LAL_PI, 2)));
         REAL8 NRTuned_dphaseB2=((c_NewtB*kappaB*dynk2barfunc*powers_of_Mf->two_thirds*powers_of_lalpi.five_thirds*(-5 - powers_of_Mf->two_thirds*(3*d_1B + 7*n_1B)*powers_of_lalpi.two_thirds - 2*Mf*(d_3over2B + 4*n_3over2B)*LAL_PI - powers_of_Mf->four_thirds*(5*d_1B*n_1B + 9*n_2B)*powers_of_lalpi.four_thirds - 2*powers_of_Mf->five_thirds*(2*d_3over2B*n_1B + 3*d_1B*n_3over2B + 5*n_5over2B)*powers_of_lalpi.five_thirds - pow(Mf,2)*(7*d_1B*n_2B + 11*n_3B + 5*d_3over2B*n_3over2B)*powers_of_lalpi.two - 2*powers_of_Mf->seven_thirds*(3*d_3over2B*n_2B + 4*d_1B*n_5over2B)*powers_of_lalpi.seven_thirds - powers_of_Mf->eight_thirds*(9*d_1B*n_3B + 7*d_3over2B*n_5over2B)*powers_of_lalpi.eight_thirds - 2*pow(Mf,3)*(4*d_3over2B*n_3B)*powers_of_lalpi.three))/(3.*pow(1 + d_1B*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2B*Mf*LAL_PI, 2)));
@@ -3266,14 +3266,14 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		}
 
 		NRTuned_dphase = NRTuned_dphaseNRT*(1.0 - plancktaperfn) + PNTuned_dphase*plancktaperfn - (NRphaseNRT - PNtidalphase)*dPlancktaper;
-    }	
+    }
     else
     {
       XLAL_ERROR( XLAL_EINVAL, "Error in IMRPhenomX_TidalPhaseDerivative: Unsupported NRTidal_version. This function currently only supports NRTidalv2 and NRTidalv3.\n");
     }
-    
+
       dphase+=NRTuned_dphase;
-    
+
     return(dphase);
-    
+
 }

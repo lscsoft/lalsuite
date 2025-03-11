@@ -329,4 +329,3 @@ LALGetInspiralParams( LALStatus                  *,
 #endif
 
 #endif /* _GENERATEPPNINSPIRAL_H */
-

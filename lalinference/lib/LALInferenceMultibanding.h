@@ -1,6 +1,6 @@
 //
 //  LALInferenceFVectorMultiBanding.h
-//  
+//
 //
 //  Created by John Veitch and Serena Vinciguerra on 24/02/2015.
 //

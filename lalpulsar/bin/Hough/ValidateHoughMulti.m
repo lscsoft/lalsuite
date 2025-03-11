@@ -1,6 +1,6 @@
-## Reads a list of templates and number counts produced 
-## by the Hough driver (DriveHoughMulti.c) and validates 
-## the number counts by doing the Hough search for each 
+## Reads a list of templates and number counts produced
+## by the Hough driver (DriveHoughMulti.c) and validates
+## the number counts by doing the Hough search for each
 ## template in the list
 
 
@@ -47,7 +47,7 @@ cmdline = sprintf("./ValidateHoughMulti --sftDir=%s \
 --Freq=%.12g --fdot=%.12g --AlphaWeight=%.12g --DeltaWeight=%.12g",\
 		  DataFiles, fStart, fBand, AlphaVector(index), \
 		  DeltaVector(index), FreqVector(index), \
-		  fdotVector(index), AlphaWeight, DeltaWeight); 
+		  fdotVector(index), AlphaWeight, DeltaWeight);
 
 
 [output,status] = system(cmdline);
@@ -56,6 +56,4 @@ load tempout;
 
 diff(index) = N1(index) - tempout(1);
 
-endfor 
-
-
+endfor

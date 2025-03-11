@@ -321,4 +321,3 @@ if __name__ == '__main__':
         skypp=True
 
     output_html(options.outdir, ks_pvalues, Ninj ,skypp=skypp )
-

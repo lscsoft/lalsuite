@@ -26,7 +26,7 @@
  * ### Synopsis
  *
  *     lalfr-split [file [name]]
- *     
+ *
  * ### Description
  *
  * The `lalfr-split` utility reads the given `file` containing multiple frames

@@ -129,55 +129,55 @@ extern "C"
         IMRPhenomXWaveformStruct *pWF,
 	IMRPhenomXPrecessionStruct *pPrec
     );
-  
-    /* Compute window function which controls use of PNR coprecessing deviations. */  
+
+    /* Compute window function which controls use of PNR coprecessing deviations. */
     REAL8 IMRPhenomX_PNR_CoprecWindow(
         IMRPhenomXWaveformStruct *pWF
     );
-  
-    /* Compute XAS phase and phase derivative a reference frequency "f_inspiral_align" */  
+
+    /* Compute XAS phase and phase derivative a reference frequency "f_inspiral_align" */
     INT4 IMRPhenomX_PNR_SetPhaseAlignmentParams(
         IMRPhenomXWaveformStruct *pWF,
         IMRPhenomXPrecessionStruct *pPrec
     );
-    
+
     /* Align the PNR CoPrec phase and phase derivative at
-    "f_inspiral_align" by changing the effective value of 
-    phifRef and linb */  
+    "f_inspiral_align" by changing the effective value of
+    phifRef and linb */
     void IMRPhenomX_PNR_EnforceXASPhaseAlignment(
         double* linb,
         IMRPhenomXWaveformStruct *pWF,
         IMRPhenomXPhaseCoefficients *pPhase
     );
-    
-    /* Compute  XHM phase and phase derivative a reference frequency "f_inspiral_align" */  
+
+    /* Compute  XHM phase and phase derivative a reference frequency "f_inspiral_align" */
     INT4 IMRPhenomXHM_PNR_SetPhaseAlignmentParams(
         INT4 ell,
         INT4 emm,
         IMRPhenomXWaveformStruct *pWF,
         IMRPhenomXPrecessionStruct *pPrec,
-        LALDict *lalParams 
+        LALDict *lalParams
     );
-    
+
     /* Align the PNR HM CoPrec phase and phase derivative at
-    "f_inspiral_align" by providing the needed phase and time shifts*/  
+    "f_inspiral_align" by providing the needed phase and time shifts*/
     void IMRPhenomXHM_PNR_EnforceXHMPhaseAlignment(
         double* lina,
         double* linb,
         INT4 ell,
         INT4 emm,
         IMRPhenomXWaveformStruct *pWF,
-        LALDict *lalParams 
+        LALDict *lalParams
     );
-    
+
     /* Function to get and or store coprec params
-    into pWF and pPrec */  
+    into pWF and pPrec */
     INT4 IMRPhenomX_PNR_GetAndSetCoPrecParams(
         IMRPhenomXWaveformStruct *pWF,
         IMRPhenomXPrecessionStruct *pPrec,
-        LALDict *lalParams 
+        LALDict *lalParams
     );
-    
+
 #ifdef __cplusplus
 }
 #endif

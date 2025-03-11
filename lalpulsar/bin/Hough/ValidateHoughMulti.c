@@ -607,4 +607,3 @@ void ComputeFoft( LALStatus   *status,
   /* normal exit */
   RETURN( status );
 }
-

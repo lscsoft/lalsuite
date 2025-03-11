@@ -343,7 +343,7 @@ LALFindChirpInjectSignals (
       /* Give a little more breathing space to aid band-passing */
       XLALGPSSetREAL8( &(signalvec.epoch), (waveformStartTime * 1.0e-9) - 0.25 + timeDelay );
       UINT4 signalvecLength=waveform.phi->data->length + (UINT4)ceil((0.5+timeDelay)/waveform.phi->deltaT);
-      
+
 
       /* set the parameters for the signal time series */
       signalvec.deltaT = chan->deltaT;
@@ -372,7 +372,7 @@ LALFindChirpInjectSignals (
       LALSimulateCoherentGW( status->statusPtr,
           &signalvec, &waveform, &detector );
       CHECKSTATUSPTR( status );
-      
+
       /* Taper the signal */
       {
 

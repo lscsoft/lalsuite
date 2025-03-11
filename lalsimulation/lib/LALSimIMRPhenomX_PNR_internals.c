@@ -118,7 +118,7 @@ extern "C"
     }
 
     pPrec->costheta_singleSpin = costheta;
-    pPrec->theta_antisymmetric = theta_antisymmetric; 
+    pPrec->theta_antisymmetric = theta_antisymmetric;
 
     /* compute an approximate final spin using single-spin mapping FIXME: add documentation */
     REAL8 chi1L = chi_mag * costheta;
@@ -162,7 +162,7 @@ extern "C"
       printf("chi_singleSpin_antisymmetric       : %e\n", pPrec->chi_singleSpin_antisymmetric);
       printf("costheta_singleSpin                : %e\n", pPrec->costheta_singleSpin);
       /* printf("theta_singleSpin_antisymmetric  : %e\n", pPrec->theta_singleSpin_antisymmetric); */
-      printf("theta_antisymmetric  : %e\n", pPrec->theta_antisymmetric); 
+      printf("theta_antisymmetric  : %e\n", pPrec->theta_antisymmetric);
       printf("costheta_final_singleSpin          : %e\n\n", pPrec->costheta_final_singleSpin);
     #endif
 
@@ -1099,7 +1099,7 @@ extern "C"
       window_q_value = 0;
     } else {
       window_q_value = 1;
-    } 
+    }
 
     // Window spin magnitude
     double window_chi_value;
@@ -1110,15 +1110,15 @@ extern "C"
     } else {
       window_chi_value = 1;
     }
-    
+
     /* the final window is the product of the individiual windows */
     double angles_window  = window_q_value * window_chi_value;
 
     return angles_window;
 
   }
-    
-  
+
+
   /* Compute window function which controls use of PNR coprecessing deviations. NOTE that it only makes sense to use this function inside of LALSimIMRPhenomX_precession.c */
   REAL8 IMRPhenomX_PNR_CoprecWindow(
     IMRPhenomXWaveformStruct *pWF
@@ -1129,16 +1129,16 @@ extern "C"
     // Set window parameters based on selected model version
     double window_q_boundary;
     double width_window_q;
-      
+
     // Location of boundaries
     window_q_boundary     = 10.0; // LEGACY VALUE --->  8.0;
     // Width of the transition AFTER the boundary location
     width_window_q        = 10.0; // LEGACY VALUE --->  0.50;
-      
+
     // // Location of boundaries
     // double window_theta_boundary = 150.0*LAL_PI/180.0;
-    // double window_a1_boundary    = 0.8; 
-    
+    // double window_a1_boundary    = 0.8;
+
     // // Width of the transition AFTER the boundary location
     // double width_window_theta = 0.50;
     // double width_window_a1    = 0.02;
@@ -1260,7 +1260,7 @@ extern "C"
     // // Printing for development
     // printf("##>> XAS_phase_at_f_inspiral_align = %f\n",pWF->XAS_phase_at_f_inspiral_align);
     // printf("##>> XAS_dphase_at_f_inspiral_align = %f\n",pWF->XAS_dphase_at_f_inspiral_align);
-    
+
 
     LALFree(pPhaseAS);
 
@@ -1450,7 +1450,7 @@ INT4 IMRPhenomX_PNR_GetAndSetCoPrecParams(
   // Same as above but for 33
   pPrec->IMRPhenomXPNRUseTunedCoprec33 = XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedCoprec33(lalParams) * PNRUseTunedCoprec;
   pWF->IMRPhenomXPNRUseTunedCoprec33 = pPrec->IMRPhenomXPNRUseTunedCoprec33;
-  
+
   // Throw error if preferred value of PNRUseTunedCoprec33 is not found
   if ( pPrec->IMRPhenomXPNRUseTunedCoprec33 ) {
     XLAL_ERROR(XLAL_EFUNC,"Error: Coprecessing tuning for l=|m|=3 must be off.\n");
@@ -1463,7 +1463,7 @@ INT4 IMRPhenomX_PNR_GetAndSetCoPrecParams(
   // Get toggle for forcing inspiral phase and phase derivative alignment with XHM/AS
   INT4 PNRForceXHMAlignment = XLALSimInspiralWaveformParamsLookupPhenomXPNRForceXHMAlignment(lalParams);
   pWF->IMRPhenomXPNRForceXHMAlignment = PNRForceXHMAlignment;
-  
+
   // Throw error if preferred value of PNRForceXHMAlignment is not found
   if ( PNRForceXHMAlignment ) {
     XLAL_ERROR(XLAL_EFUNC,"Error: PNRForceXHMAlignment must be off.\n");

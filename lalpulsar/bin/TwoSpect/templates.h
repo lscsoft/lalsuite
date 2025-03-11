@@ -43,4 +43,3 @@ REAL8 sincxoverxsqminusone( const REAL8 x );
 REAL8 sqsincxoverxsqminusone( const REAL8 x );
 
 #endif
-

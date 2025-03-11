@@ -61,7 +61,7 @@ static double causal_Nparams(double p, double esec[], double psec[], double usec
 
 /**
  * @brief Reads dynamic analytic eos parameters to make an eos.
- * @details Reads an array of eos parameters to construct either the causal 
+ * @details Reads an array of eos parameters to construct either the causal
  * analytic eos or non-causal analytic polytrope generically outlined in PRD 97,
  * 123019 (2018). The models are dynamic because the stitching pressures are
  * also parameter choices.

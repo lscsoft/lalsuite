@@ -2181,7 +2181,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   if(LALInferenceGetProcParamVal(commandLine,"--inj-fref")) {
     fref = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-fref")->value);
   }
-  
+
   if (approximant == TaylorF2)
       f_max = 0.0; /* this will stop at ISCO */
   else{
@@ -2229,9 +2229,9 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     exit(1);
     }
     UINT4 j;
-    for(j=0; j<hptilde->data->length; j++){     
-      fprintf(file, "%10.10g %10.10g %10.10g %10.10g %10.10g\n", deltaF*j, 
-        creal(hptilde->data->data[j]), cimag(hptilde->data->data[j]), 
+    for(j=0; j<hptilde->data->length; j++){
+      fprintf(file, "%10.10g %10.10g %10.10g %10.10g %10.10g\n", deltaF*j,
+        creal(hptilde->data->data[j]), cimag(hptilde->data->data[j]),
         creal(hctilde->data->data[j]), cimag(hctilde->data->data[j]));
     }
     fclose(file);
@@ -2423,8 +2423,8 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
   LALInferenceAddVariable(vars, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
-  /* Those will work even if the user is working with the detector-frame variables because SKY_FRAME is set 
-  to zero while calculating the injected logL in LALInferencePrintInjectionSample */  
+  /* Those will work even if the user is working with the detector-frame variables because SKY_FRAME is set
+  to zero while calculating the injected logL in LALInferencePrintInjectionSample */
   LALInferenceAddVariable(vars, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
@@ -2436,17 +2436,17 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
 
 	REAL8 thetaJN,phiJL,theta1,theta2,phi12,chi1,chi2;
 	/* Convert cartesian spin coordinates to system-frame variables*/
-	
+
 	/* This fref is --inj-fref, which has been set previously by LALInferencePrintInjectionSample
-	I don't call it inj_fref since LALInferenceTemplate looks for fref, and that is what will be called to calculate 
+	I don't call it inj_fref since LALInferenceTemplate looks for fref, and that is what will be called to calculate
 	the logL at injval
 	*/
 	REAL8 fref=100.0;
 	if (LALInferenceCheckVariable(vars,"f_ref"))
 		fref= *(REAL8*)  LALInferenceGetVariable(vars,"f_ref");
-	
+
 	XLALSimInspiralTransformPrecessingWvf2PE(&thetaJN,&phiJL,&theta1,&theta2,&phi12,&chi1,&chi2,theEventTable->inclination,theEventTable->spin1x,theEventTable->spin1y,theEventTable->spin1z,  theEventTable->spin2x, theEventTable->spin2y, theEventTable->spin2z,m1,m2,fref,phase);
-	
+
 	if (LALInferenceCheckVariable(vars,"a_spin1"))
 		LALInferenceAddVariable(vars,"a_spin1", &chi1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 	if (LALInferenceCheckVariable(vars,"a_spin2"))
@@ -2533,7 +2533,7 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
 		LALInferenceRemoveVariable(injparams,"cosalpha");
 	if (LALInferenceCheckVariable(injparams,"azimuth"))
 		LALInferenceRemoveVariable(injparams,"azimuth");
-	
+
     /* Fill named variables */
     LALInferenceInjectionToVariables(theEventTable, injparams);
 
@@ -2550,7 +2550,7 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
 	REAL8 logZnoise=LALInferenceNullLogLikelihood(runState->data);
     REAL8 tmp2=injL-logZnoise;
     LALInferenceAddVariable(injparams,"deltalogL",(void *)&tmp2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-    
+
     LALInferenceIFOData *data=runState->data;
     while(data) {
         char tmpName[320];
@@ -2559,7 +2559,7 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
         LALInferenceAddVariable(injparams, tmpName, &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
         data=data->next;
     }
-	
+
     /* Save to file */
     outfile=fopen(fname,"w");
     if(!outfile) {fprintf(stderr,"ERROR: Unable to open file %s for injection saving\n",fname); exit(1);}

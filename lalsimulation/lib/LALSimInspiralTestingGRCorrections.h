@@ -35,7 +35,7 @@ extern "C" {
 #include <lal/LALSimInspiral.h>
 
 
-/* Main function for waveform generation. Accepts a GR waveform htilde, binary parameters, testing-GR parameters, and paremeters 
+/* Main function for waveform generation. Accepts a GR waveform htilde, binary parameters, testing-GR parameters, and paremeters
  * that determine how the correction will be tapered. Calls PNCorrections to compute non-GR corrections to phase, then
  * PhaseCorrectionsPhasing to smoothly taper the correction to the baseline GR waveform.
  */
@@ -75,7 +75,7 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
                                            );
 
 /* Main function for waveform generation for signals with dynamical scalarization. Accepts a GR waveform htilde, binary parameters,
- * testing-GR parameters, and paremeters that determine how the corrections will be tapered. Calls PNCorrections to compute 
+ * testing-GR parameters, and paremeters that determine how the corrections will be tapered. Calls PNCorrections to compute
  * non-GR corrections to phase, then PhaseCorrectionsPhasing to smoothly taper the correction to the baseline GR waveform.
  */
 

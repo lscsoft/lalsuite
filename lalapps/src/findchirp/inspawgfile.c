@@ -510,7 +510,7 @@ main(int argc, char **argv)
       if ( lalDebugLevel & LALINFO )
       {
         LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"
-            "\tWaveform terminared at %e Hz\n", 
+            "\tWaveform terminared at %e Hz\n",
             *argv, __FILE__, __LINE__,
             "$Id$", ppnParams.fStop );
       }
@@ -579,12 +579,12 @@ main(int argc, char **argv)
       winParams.length=length;
 
       /* assign temporary memory for the frequency data */
-      fseries = (REAL4FrequencySeries *) 
+      fseries = (REAL4FrequencySeries *)
           LALMalloc (sizeof(REAL4FrequencySeries));
       strncpy( fseries->name, "anonymous", LALNameLength );
       fseries->data = NULL;
-      SUB( LALCreateVector (&stat, &fseries->data, 
-                  length/2 + 1), &stat ); 
+      SUB( LALCreateVector (&stat, &fseries->data,
+                  length/2 + 1), &stat );
 
       /* create the dft params */
       SUB( LALCreateRealDFTParams(&stat , &dftparams, &winParams, 1),

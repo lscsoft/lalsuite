@@ -24,7 +24,7 @@
 
 void
 SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
-{ 
+{
   BufferList *head = NULL;  /* pointer to head of linked list of buffers */
   BufferList *here = NULL;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
@@ -416,7 +416,7 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
 
 void
 VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
-{ 
+{
   BufferList *head = NULL;  /* pointer to head of linked list of buffers */
   BufferList *here = NULL;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
@@ -892,7 +892,7 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 
 void
 AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
-{ 
+{
   BufferList *head;  /* pointer to head of linked list of buffers */
   BufferList *here;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
@@ -1442,7 +1442,7 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 
 void
 FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
-{ 
+{
   BufferList *head;  /* pointer to head of linked list of buffers */
   BufferList *here;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */

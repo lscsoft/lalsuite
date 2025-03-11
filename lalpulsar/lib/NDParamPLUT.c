@@ -184,18 +184,3 @@ void LALNDHOUGHParamPLUT( LALStatus  *status,
   /* normal exit */
   RETURN( status );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

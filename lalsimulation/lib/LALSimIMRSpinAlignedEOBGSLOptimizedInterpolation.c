@@ -68,7 +68,7 @@ SEOBNRv2OptimizedInterpolatorNoAmpPhase (REAL8Array * yin, REAL8 tinit,
 
   /* needed for the integration */
   size_t dim = 4;
-  
+
   interp = gsl_spline_alloc (gsl_interp_cspline, num_input_times);
   accel = gsl_interp_accel_alloc ();
 

@@ -137,7 +137,7 @@
 #define INVALID_EPOCH { .gpsSeconds = LAL_INT4_MAX, .gpsNanoSeconds = LAL_INT4_MAX }
 
 /*
- * Timezones for certain detectors. 
+ * Timezones for certain detectors.
  *
  * PSTPDT: Pacific Time
  * PST (standard): UTC-8
@@ -665,7 +665,7 @@ struct params parseargs(int argc, char **argv)
         fprintf(stderr, "error: unspecified right ascension\n");
         fail = 1;
     }
-    
+
     if (dec_string)
         p.dec = strtodec(dec_string, degrees);
     else {

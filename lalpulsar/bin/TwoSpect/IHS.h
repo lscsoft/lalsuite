@@ -46,6 +46,3 @@ REAL4 ihsFOM( const INT4Vector *locs, const INT4 fomnorm );
 REAL8 ihs2h0( const REAL8 ihsval, const UserInput_t *params );
 
 #endif
-
-
-

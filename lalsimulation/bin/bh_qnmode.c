@@ -38,7 +38,7 @@
  *
  * The utility uses Leaver's conventions (G = c = 2M = 1) if the option
  * `--leaver` is used
- * 
+ *
  * ### Options
  *
  * <DL>
@@ -149,7 +149,7 @@ int output_mode_table(void)
 	int asign;
 	size_t numa = XLAL_NUM_ELEM(avec);
 	size_t i;
-	
+
 	fprintf(stdout, "# quasinormal mode table for l=%d m=%d s=%d ", l, m, s);
 	if (leaver)
 		fprintf(stdout, "(Leaver's conventions)\n");
@@ -218,7 +218,7 @@ int output_mode(void)
 		fprintf(stdout, "frequency f = %g Hz\n", f);
 		fprintf(stdout, "quality Q = %g\n", Q);
 	}
-	
+
 	return 0;
 }
 

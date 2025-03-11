@@ -353,8 +353,8 @@ int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs,
 					REAL8Vector *deltaPhases,
 					COMPLEX16FrequencySeries *calFactor);
 
- /** Modified version of LALInferenceSplineCalibrationFactor to compute the 
- *	calibration factors for the specific frequency nodes used for 
+ /** Modified version of LALInferenceSplineCalibrationFactor to compute the
+ *	calibration factors for the specific frequency nodes used for
  *	Reduced Order Quadrature likelihoods.
  */
 
@@ -673,8 +673,8 @@ tagLALInferenceROQData
 
   struct tagLALInferenceROQSplineWeightsLinear *weights_linear;
 
- 
-  /* Deprecated functions that should be removed at some point */ 
+
+  /* Deprecated functions that should be removed at some point */
   gsl_matrix_complex *weights; /** weights for the likelihood: NOTE: needs to be stored from data read from command line */
   gsl_matrix_complex *mmweights; /** weights for calculating <h|h> if not using analytical formula */
   double int_f_7_over_3; /** /int_{fmin}^{fmax} df f^(-7/3)/psd...for <h|h> part of the likelihood */
@@ -689,10 +689,10 @@ tagLALInferenceROQData
 typedef struct
 tagLALInferenceROQSplineWeightsLinear
 {
-  
- 
+
+
   gsl_spline *spline_real_weight_linear;
-  gsl_spline *spline_imag_weight_linear; 
+  gsl_spline *spline_imag_weight_linear;
   gsl_interp_accel *acc_real_weight_linear;
   gsl_interp_accel *acc_imag_weight_linear;
 
@@ -716,10 +716,10 @@ tagLALInferenceROQModel
   REAL8Sequence * frequencyNodesQuadratic;
   REAL8 trigtime;
   REAL8 ROQnullLikelihood;
-  
+
   FILE *nodesFileLinear;
   FILE *nodesFileQuadratic;
-   
+
   /* Deprecated functions that should be removed at some point */
   gsl_vector_complex *hplus; /** waveform at frequency nodes. */
   gsl_vector_complex *hcross;

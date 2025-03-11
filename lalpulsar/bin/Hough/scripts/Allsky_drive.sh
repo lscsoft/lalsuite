@@ -66,7 +66,7 @@ tempoutdir=/scratch/tmp/$iam/$1.run
 # set a trap so if the job ends some cleanup is done
 trap "/bin/rm -rf ${tempoutdir}; exit 0" 0 1 2 9 15
 
-# make the temporary directory where we work 
+# make the temporary directory where we work
 mkdir -p $tempoutdir
 
 # make the temporary output directory
@@ -89,7 +89,7 @@ echo finished copying stuff
 startfreq=200.0
 
 # the 1Hz frequency band analyzed by the i^{th} node is "startfreq+i"
-freq=`add $1 $startfreq` 
+freq=`add $1 $startfreq`
 echo frequency analysed is 1Hz band starting from $freq
 
 # now run the driver
@@ -101,5 +101,4 @@ echo finished running driver
 mkdir -p $workdir/$det
 rsync -a $tempoutdir/$det $workdir
 
-echo done!  
-
+echo done!

@@ -1444,4 +1444,3 @@ this isn't defined for either of the two pulsars currently using this model */
   }
 
 }
-

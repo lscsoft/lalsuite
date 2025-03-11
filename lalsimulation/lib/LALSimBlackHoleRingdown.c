@@ -711,7 +711,7 @@ REAL8 XLALSimAngMomKerrISCO ( REAL8 rISCO ) {
  * for EOBNRv2 and EOBNRv2HM, Eqs. 29a and 29b of Pan et al. PRD84, 124052;
  * for SEOBNRv1 Eq. 8 of Tichy and Marronetti PRD78, 081501 and
  * Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40;
- * for SEOBNRv2 the formulas in Barausse and Rezzolla ApJ704, L40 were refitted 
+ * for SEOBNRv2 the formulas in Barausse and Rezzolla ApJ704, L40 were refitted
  * to the set of NR wfs used in the calibration of SEOBNRv2;
  * for SEOBNRv4 same mass formula as for SEOBNRv2 and final spin
  * formula from Astrophys.J. 825 (2016) no.2, L19
@@ -770,7 +770,7 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
         REAL8 InvQ = 1./q;
         REAL8 OnePlusInvQ = 1. + InvQ;
         REAL8 InvQ2 = InvQ * InvQ;
-            
+
         atl = (a1 + a2 * InvQ2) / (OnePlusInvQ * OnePlusInvQ);
         tmpVar = (a1 + a2 * InvQ2) / (1. + InvQ2);
         rISCO = XLALSimRadiusKerrISCO( atl );
@@ -778,7 +778,7 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
         if ( approximant == SEOBNRv5_ROM ) {
             /* Final mass formula from Jimenez Forteza et al. https://arxiv.org/abs/1611.00332 */
             /* Rescaled by the total mass to be consitent with SEOBNRv4 */
-            
+
             *finalMass = XLALbbh_final_mass_non_precessing_UIB2016(mass1, mass2, a1, a2) / (mass1 + mass2);
         }
         else {
@@ -2645,9 +2645,9 @@ int main(void)
 /**
  * These functions generate the quasinormal mode frequencies for a black
  * hole ringdown, as implemented in the SEOBNRv5HM model.
- * 
+ *
  * At present, this function works for the 22, 21, 33, 44, 55, 32
- * and 43 modes, and includes only the n=0 overtone. 
+ * and 43 modes, and includes only the n=0 overtone.
  * The final frequencies are computed using the qnm python
  * package https://arxiv.org/abs/1908.10377, as also done in SEOBNRv5HM.
  */
@@ -2815,7 +2815,7 @@ INT4 XLALSimIMREOBGenerateQNMFreqV5fromFinal(COMPLEX16Vector * modefreqs,
             imomegaqnm = imomegaqnm33;
         } else if (abs(m) == 2) {
            reomegaqnm = reomegaqnm32;
-            imomegaqnm = imomegaqnm32;           
+            imomegaqnm = imomegaqnm32;
         } else {
             XLALPrintError("Unsupported combination of l, m (%d, %d)\n", l, m);
             XLAL_ERROR(XLAL_EINVAL);

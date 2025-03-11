@@ -1006,7 +1006,7 @@ static int SEOBNRv4ROMCore(
 
   // Evaluate reference phase for setting phiRef correctly
   double phase_change = gsl_spline_eval(spline_phi, fRef_geom, acc_phi) - 2*phiRef;
-  
+
   int ret = XLAL_SUCCESS;
   // Assemble waveform from aplitude and phase
   if (NRTidal_version == NRTidalv2_V) {
@@ -1656,12 +1656,12 @@ UNUSED static void SEOBNRv4ROM_Init_LALDATA(void)
 #define datafile ROMDataHDF5
   char *path = XLAL_FILE_RESOLVE_PATH(datafile);
   if (path==NULL)
-    XLAL_ERROR_VOID(XLAL_EIO, 
+    XLAL_ERROR_VOID(XLAL_EIO,
       "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
       "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
       "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
       "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
-      "https://git.ligo.org/lscsoft/lalsuite-extra\n", 
+      "https://git.ligo.org/lscsoft/lalsuite-extra\n",
       datafile);
   char *dir = dirname(path);
   int ret = SEOBNRv4ROM_Init(dir);

@@ -1,24 +1,24 @@
 /*
  * siminspiral_to_frame.c
- * 
+ *
  * Copyright 2014 Salvatore Vitale <svitale@ligo.org>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
- * 
- * 
+ *
+ *
  */
 
 
@@ -73,7 +73,7 @@ static struct options options_defaults(void)
 	defaults.mdc_duration=-1;
 	defaults.siminspiral_file=NULL;
     defaults.pad=-1;
-   defaults.time_step=0.0; 
+   defaults.time_step=0.0;
     return defaults;
 }
 
@@ -82,7 +82,7 @@ static void write_log(SimInspiralTable **injs, struct options *options,char* fna
 
 static void print_usage(void)
 {
-	fprintf(stderr, 
+	fprintf(stderr,
 " lalapps_siminspiral_to_frame --siminspiral-file siminspiral.xml --ifos [IFO1,IFO2,...IFON] [options]\n" \
 "\n" \
 "Description:\n"\
@@ -144,7 +144,7 @@ static struct options parse_command_line(int *argc, char **argv[])
   case 1731:
     options.pad=atof(optarg);
     break;
-      
+
 	case 0:
 		/* option sets a flag */
 		break;
@@ -160,8 +160,8 @@ static struct options parse_command_line(int *argc, char **argv[])
 		print_usage();
 		exit(1);
 	} while(c != -1);
-    
-    
+
+
     /* check some of the input parameters for consistency */
     if (options.siminspiral_file==NULL){
         fprintf(stderr,"Must provide a sim inspiral file with --siminspiral-file\n");
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 	/*
 	 * Command line and process params table.
 	 */
-     
+
 	options = parse_command_line(&argc, &argv);
 
   // two copies of the injection file. Will *modify* cutinjs to remove those injections outside the desired time lapse
@@ -238,7 +238,7 @@ int main(int argc, char **argv)
   /* if user did not provide pad, default to 60seconds */
   if (pad==-1)
       pad=60.;
-    
+
   xml_gps_start=inj->geocent_end_time.gpsSeconds+1.0e-9 * inj->geocent_end_time.gpsNanoSeconds;
   xml_gps_end=inj->geocent_end_time.gpsSeconds+1.0e-9 * inj->geocent_end_time.gpsNanoSeconds;
 
@@ -449,7 +449,7 @@ static void write_log(SimInspiralTable **injs, struct options *options,char* fna
     SkyPosition currentEqu, currentGeo;
     LIGOTimeGPS injtime;
     REAL8 gmst,timedelay;
-    char IFOnames[5][4]={"GEO","H1","H2","L1","V1"};    
+    char IFOnames[5][4]={"GEO","H1","H2","L1","V1"};
     int nifos=5;
     int i=0;
 
@@ -474,7 +474,7 @@ static void write_log(SimInspiralTable **injs, struct options *options,char* fna
 
       char wf[256];
       sprintf(wf,"%s",inj->waveform);
-    
+
       char WFname[512];
       sprintf(WFname,"%s_m1_%.1fm2_%.1f",wf,mass1,mass2);
       fprintf(log_file,"%s\
@@ -502,14 +502,14 @@ static void write_log(SimInspiralTable **injs, struct options *options,char* fna
              memcpy(detector,&lalCachedDetectors[LALDetectorIndexLLODIFF],sizeof(LALDetector));
         else if (!strcmp(IFOnames[i],"V1"))
             memcpy(detector,&lalCachedDetectors[LALDetectorIndexVIRGODIFF],sizeof(LALDetector));
-        else if(!strcmp(IFOnames[i],"GEO")) 
+        else if(!strcmp(IFOnames[i],"GEO"))
             memcpy(detector,&lalCachedDetectors[LALDetectorIndexGEO600DIFF],sizeof(LALDetector));
         gmst=XLALGreenwichMeanSiderealTime(&injtime);
         XLALComputeDetAMResponse(&Fplus, &Fcross,(const REAL4(*)[3])detector->response, ra, dec, psi, gmst);
         timedelay = XLALTimeDelayFromEarthCenter(detector->location,ra, dec, &injtime);
-    
+
         fprintf(log_file, "%s %10.10f %.10e %.10e ", IFOnames[i], geoc_time+timedelay,Fplus,Fcross);
-    
+
         i++;
         XLALFree(detector);
       }

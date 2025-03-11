@@ -6,7 +6,7 @@
  * refers to the end of the waveform. in the former case, this routine will
  * return the explicit value of f_ref, which will be f_min.
  */
- 
+
 #define FIX_REFERENCE_FREQUENCY(f_ref, f_min, approximant) \
     if (f_ref == 0) \
         switch (approximant) { \
@@ -38,4 +38,3 @@
         default:  \
             break;  \
         }
-

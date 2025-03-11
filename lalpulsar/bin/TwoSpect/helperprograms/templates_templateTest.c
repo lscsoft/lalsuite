@@ -1772,7 +1772,3 @@ int twospect_sin_cos_2PI_LUT( REAL8 *sin2pix, REAL8 *cos2pix, REAL8 x )
 
   return XLAL_SUCCESS;
 } /* twospect_sin_cos_2PI_LUT() */
-
-
-
-

@@ -61,7 +61,7 @@ gps = 795169179;
 injgeocent_peak_time=[inj1.geocent_peak_time;inj2.geocent_peak_time;inj3.geocent_peak_time;inj4.geocent_peak_time;inj5.geocent_peak_time;inj6.geocent_peak_time; inj7.geocent_peak_time;inj8.geocent_peak_time;inj9.geocent_peak_time;inj10.geocent_peak_time];
 
 injgeocent_peak_time_ns=[inj1.geocent_peak_time_ns;inj2.geocent_peak_time_ns;inj3.geocent_peak_time_ns; inj4.geocent_peak_time_ns;inj5.geocent_peak_time_ns;inj6.geocent_peak_time_ns; inj7.geocent_peak_time_ns;inj8.geocent_peak_time_ns;inj9.geocent_peak_time_ns; inj10.geocent_peak_time_ns];
-  
+
 injhpeak=[inj1.hpeak;inj2.hpeak;inj3.hpeak;inj4.hpeak;inj5.hpeak;inj6.hpeak;inj7.hpeak;inj8.hpeak;inj9.hpeak;inj10.hpeak];
 
 figure
@@ -173,11 +173,3 @@ plot(ct,c,'rd')
 title('Errors in amplitudes vs differences in trigger peak time: H1 (blue),  H2 (green), L1 (red)','FontSize',12)
 xlabel('Difference ti-td in seconds','FontSize',12)
 ylabel('Relative difference in amplitude','FontSize',12)
-
-
-
-
-
- 
- 
- 

@@ -167,20 +167,20 @@ int main( int argc, char *argv[] )
   REAL8                         deltaF          = fSampling / numPoints;
 
   REAL4                          statValue;
- 
+
   /* vars required to make freq series */
   LIGOTimeGPS                   epoch = { 0, 0 };
-  LIGOTimeGPS                   gpsStartTime = {0, 0}; 
+  LIGOTimeGPS                   gpsStartTime = {0, 0};
   REAL8                         f0 = 0.;
   REAL8                         offset = 0.;
   INT8                          waveformStartTime = 0;
 
   /* files contain PSD info */
-  CHAR                         *injectionFile = NULL;         
-  CHAR                         *outputFile    = NULL;         
-  CHAR                         *specFileH1    = NULL;         
-  CHAR                         *specFileH2    = NULL;         
-  CHAR                         *specFileL1    = NULL;         
+  CHAR                         *injectionFile = NULL;
+  CHAR                         *outputFile    = NULL;
+  CHAR                         *specFileH1    = NULL;
+  CHAR                         *specFileH2    = NULL;
+  CHAR                         *specFileL1    = NULL;
 
   COMPLEX8Vector               *unity = NULL;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
@@ -218,7 +218,7 @@ int main( int argc, char *argv[] )
   LIGOLwXMLStream      *xmlStream;
   ProcessTable         *proctable;
   ProcessParamsTable   *procparams;
-  CHAR                  fname[256];         
+  CHAR                  fname[256];
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   ProcessParamsTable   *this_proc_param = NULL;
 
@@ -264,7 +264,7 @@ int main( int argc, char *argv[] )
     {0, 0, 0, 0}
   };
   int c;
-  
+
   /*
    *
    * parse command line arguments
@@ -343,7 +343,7 @@ int main( int argc, char *argv[] )
         memcpy( outputFile, LALoptarg, LALoptarg_len );
         ADD_PROCESS_PARAM( "string", "%s", LALoptarg );
         break;
-    
+
       case 'g':
         fLow = (INT4) atof( LALoptarg );
         if ( fLow < 40 )
@@ -384,7 +384,7 @@ int main( int argc, char *argv[] )
         fprintf( stderr, USAGE );
         exit( 1 );
     }
-  }  
+  }
 
   if ( LALoptind < argc )
   {
@@ -430,8 +430,8 @@ int main( int argc, char *argv[] )
   if ( ligosrd && (specFileH1 || specFileH2 || specFileL1 ))
   {
     fprintf( stdout, "WARNING: using LIGOI SRD power spectral density \n" );
-  } 
- 
+  }
+
   if ( vrbflg ){
     fprintf( stdout, "injection file is %s\n", injectionFile );
     fprintf( stdout, "output file is %s\n", outputFile );
@@ -453,21 +453,21 @@ int main( int argc, char *argv[] )
   }
 
   if (!ligosrd){
-    /* read in H1 spectrum */ 
+    /* read in H1 spectrum */
     LAL_CALL( LALDReadFrequencySeries(&status, specH1, specFileH1), &status );
     if ( vrbflg ){
        fprintf( stdout, "read in H1 spec file\n" );
        fflush( stdout );
-    } 
+    }
 
-    /* read in H2 spectrum */ 
+    /* read in H2 spectrum */
     LAL_CALL( LALDReadFrequencySeries(&status, specH2, specFileH2), &status );
     if ( vrbflg ){
        fprintf( stdout, "read in H2 spec file\n" );
        fflush( stdout );
     }
 
-    /* read in L1 spectrum */ 
+    /* read in L1 spectrum */
     LAL_CALL( LALDReadFrequencySeries(&status, specL1, specFileL1), &status );
     if ( vrbflg ){
        fprintf( stdout, "read in L1 spec file\n" );
@@ -475,7 +475,7 @@ int main( int argc, char *argv[] )
      }
   }
 
-  chan = XLALCreateREAL4TimeSeries( "", &epoch, f0, deltaT, 
+  chan = XLALCreateREAL4TimeSeries( "", &epoch, f0, deltaT,
                                      &lalADCCountUnit, numPoints );
   if ( !chan ){
     XLALPrintError("failure allocating chan");
@@ -487,16 +487,16 @@ int main( int argc, char *argv[] )
    * set up the response function
    *
    */
-  resp = XLALCreateCOMPLEX8FrequencySeries( chan->name, 
+  resp = XLALCreateCOMPLEX8FrequencySeries( chan->name,
      &chan->epoch, f0, deltaF, &strainPerCount, (numPoints / 2 + 1) );
   if ( !resp ){
     XLALPrintError("failure allocating response function");
     exit(1);
   }
 
-  /* create vector that will contain detector.transfer info, since this 
-   * is constant I calculate it once outside of all the loops and pass it 
-   * in to detector.transfer when required 
+  /* create vector that will contain detector.transfer info, since this
+   * is constant I calculate it once outside of all the loops and pass it
+   * in to detector.transfer when required
    */
   detTransDummy = XLALCreateCOMPLEX8FrequencySeries( chan->name, &chan->epoch,
                   f0, deltaF, &strainPerCount, (numPoints / 2 + 1) );
@@ -569,7 +569,7 @@ int main( int argc, char *argv[] )
      if (vrbflg) fprintf( stdout, "ppnParams.tc %e\n ", ppnParams.tc);
 
     statValue = 0.;
-  
+
     /* calc lower index for integration */
     kLow = ceil(fLow / deltaF);
     if ( vrbflg ) {
@@ -590,16 +590,16 @@ int main( int argc, char *argv[] )
         memset( &detector, 0, sizeof( DetectorResponse ) );
         detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
 
-        if (injoverhead){ 
+        if (injoverhead){
            if ( vrbflg ) fprintf( stdout, "WARNING: perform overhead injections\n");
            /* setting detector.site to NULL causes SimulateCoherentGW to
-            * perform overhead injections */  
-           detector.site = NULL; 
+            * perform overhead injections */
+           detector.site = NULL;
         }
         else {
-           /* if not overhead, set detector.site using ifonumber */  
+           /* if not overhead, set detector.site using ifonumber */
            XLALReturnDetector( detector.site, ifoNumber );
-        } 
+        }
 
         switch ( ifoNumber )
         {
@@ -630,8 +630,8 @@ int main( int argc, char *argv[] )
         chan->epoch = gpsStartTime;
 
 
-       if (vrbflg) fprintf(stdout, "offset start time of injection by %f seconds \n", offset ); 
-       
+       if (vrbflg) fprintf(stdout, "offset start time of injection by %f seconds \n", offset );
+
        /* is this okay? copying in detector transfer which so far only contains response info  */
        detector.transfer = detTransDummy;
 
@@ -641,13 +641,13 @@ int main( int argc, char *argv[] )
        XLALINT8NSToGPS( &(waveform.a->epoch), waveformStartTime );
        memcpy(&(waveform.f->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
        memcpy(&(waveform.phi->epoch), &(waveform.a->epoch), sizeof(LIGOTimeGPS) );
- 
-       /* perform the injection */
-       LAL_CALL( LALSimulateCoherentGW(&status, chan, &waveform, &detector ), &status); 
 
-       if (writechan){ 
+       /* perform the injection */
+       LAL_CALL( LALSimulateCoherentGW(&status, chan, &waveform, &detector ), &status);
+
+       if (writechan){
           /* write out channel data */
-          if (vrbflg) fprintf(stdout, "writing channel data to file... \n" ); 
+          if (vrbflg) fprintf(stdout, "writing channel data to file... \n" );
           switch ( ifoNumber )
           {
           case 1:
@@ -668,17 +668,17 @@ int main( int argc, char *argv[] )
          default:
              fprintf( stderr, "Error: ifoNumber %d does not correspond to H1, H2 or L1: \n", ifoNumber );
              exit( 1 );
-         }  
-      } 
+         }
+      }
 
       pfwd = XLALCreateForwardREAL4FFTPlan( chan->data->length, 0 );
-      fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name, &chan->epoch, f0, deltaF, 
+      fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name, &chan->epoch, f0, deltaF,
                                                    &lalDimensionlessUnit, (numPoints / 2 + 1) );
       if ( !fftData ){
         XLALPrintError("failure allocating fftData");
         exit(1);
       }
-   
+
       XLALREAL4TimeFreqFFT( fftData, chan, pfwd );
 
       XLALDestroyREAL4FFTPlan( pfwd );
@@ -686,7 +686,7 @@ int main( int argc, char *argv[] )
 
        /* compute the SNR */
        thisSnrsq = 0;
-       /* avoid f=0 part of psd */  
+       /* avoid f=0 part of psd */
 
        if (ligosrd){
           if (vrbflg) fprintf( stdout, "using LIGOI PSD \n");
@@ -695,11 +695,11 @@ int main( int argc, char *argv[] )
            REAL8 freq;
            REAL8 sim_psd_value;
            freq = fftData->deltaF * k;
-           LALLIGOIPsd( NULL, &sim_psd_value, freq ); 
+           LALLIGOIPsd( NULL, &sim_psd_value, freq );
 
-           thisSnrsq += ((crealf(fftData->data->data[k]) * dynRange) * 
+           thisSnrsq += ((crealf(fftData->data->data[k]) * dynRange) *
                       (crealf(fftData->data->data[k]) * dynRange)) / sim_psd_value;
-           thisSnrsq += ((cimagf(fftData->data->data[k]) * dynRange) * 
+           thisSnrsq += ((cimagf(fftData->data->data[k]) * dynRange) *
                       (cimagf(fftData->data->data[k]) * dynRange)) / sim_psd_value;
            }
        }
@@ -707,21 +707,21 @@ int main( int argc, char *argv[] )
           if (vrbflg) fprintf( stdout, "using input spectra \n");
           for ( k = kLow; k < kHi; k++ )
           {
-           thisSnrsq += ((crealf(fftData->data->data[k]) * dynRange) * 
+           thisSnrsq += ((crealf(fftData->data->data[k]) * dynRange) *
               (crealf(fftData->data->data[k]) * dynRange))  /
               (thisSpec->data->data[k] * dynRange * dynRange);
-           thisSnrsq += ((cimagf(fftData->data->data[k]) * dynRange) * 
+           thisSnrsq += ((cimagf(fftData->data->data[k]) * dynRange) *
               (cimagf(fftData->data->data[k]) * dynRange)) /
               (thisSpec->data->data[k] * dynRange * dynRange);
-        } 
+        }
       }
 
        thisSnrsq *= 4*fftData->deltaF;
        thisSnr    = pow(thisSnrsq, 0.5);
        /* Note indexing on snrVec, ifoNumber runs from 1..3 to get source correct,
-        * we must index snrVec 0..2 
-        */ 
-       snrVec[ifoNumber-1] = thisSnr; 
+        * we must index snrVec 0..2
+        */
+       snrVec[ifoNumber-1] = thisSnr;
        XLALDestroyCOMPLEX8FrequencySeries(fftData);
 
        if ( vrbflg ){
@@ -731,14 +731,14 @@ int main( int argc, char *argv[] )
        }
 
        /* sum thisSnrsq to eventually get combined snr*/
-       statValue += thisSnrsq; 
+       statValue += thisSnrsq;
 
        /* free some memory */
        if (detector.transfer) detector.transfer = NULL;
        if ( detector.site ) {LALFree( detector.site); detector.site = NULL;}
      }
      /* end loop over ifo */
-  
+
     destroyCoherentGW( &waveform );
 
     /* store inverse eff snrs in eff_dist columns */
@@ -785,7 +785,7 @@ int main( int argc, char *argv[] )
   free( proctable );
   /* Just being pedantic here ... */
   proctable = NULL;
- 
+
   /* free the unused process param entry */
   this_proc_param = procparams;
   procparams = procparams->next;
@@ -810,9 +810,9 @@ int main( int argc, char *argv[] )
   if ( coireflg ){
      if ( vrbflg ) fprintf( stdout, "sngl_inspiral... " );
      XLALWriteLIGOLwXMLSnglInspiralTable( xmlStream, snglHead );
-  } 
+  }
 
-  /* close the xml file */ 
+  /* close the xml file */
   XLALCloseLIGOLwXMLFile( xmlStream );
 
   /* Freeing memory */
@@ -830,7 +830,7 @@ int main( int argc, char *argv[] )
   specFileH2 = NULL;
   free( specFileL1 );
   specFileL1 = NULL;
-  free( injectionFile ); 
+  free( injectionFile );
   injectionFile = NULL;
 
   /* free the process params */
@@ -840,7 +840,7 @@ int main( int argc, char *argv[] )
   XLALDestroySimInspiralTable( injectionHead );
 
   /*check for memory leaks */
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
-  exit( 0 ); 
+  exit( 0 );
 }

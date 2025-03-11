@@ -208,12 +208,12 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
   {
       LALInferenceAddVariable(runState->algorithmParams, "cpu_time", &execution_time, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
   }
-  
+
   XLALH5FileClose(group);
   XLALH5FileClose(h5file);
   printf("done restoring\n");
   return(retcode);
-  
+
 }
 
 /** Sync the live points to the differential evolution buffer */
@@ -707,7 +707,7 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
   }
   double zero=0.0;
   LALInferenceAddVariable(runState->algorithmParams,"cpu_time",&zero,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-  
+
   return;
 
 }
@@ -805,10 +805,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Check if the output file has hdf5 extension */
   if(strstr(outfile,".h5") || strstr(outfile,".hdf")) HDFOUTPUT=1;
   else HDFOUTPUT=0;
-  
+
   double logvolume=0.0;
   if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
-    /* If a cbc run, calculate the mass-distance volume and store it to file*/ 
+    /* If a cbc run, calculate the mass-distance volume and store it to file*/
     /* Do it before algorithm starts so that we can kill the run and still get this */
     int errnum=0;
     XLAL_TRY(logvolume=log(LALInferenceMassDistancePriorVolume(runState)), errnum);
@@ -1058,7 +1058,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     logZ=incrementEvidenceSamples(runState->GSLrandom, Nlive-i, logLikelihoods[i], s);
     if(runState->logsample) runState->logsample(runState->algorithmParams,runState->livePoints[i]);
   }
-  
+
     LALInferenceVariables **output_array=NULL;
     UINT4 N_output_array=0;
     if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
@@ -1083,22 +1083,22 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 				fprintf(fpout,"\n");
 		}
         fclose(fpout);
-    
+
         char bayesfile[FILENAME_MAX+10];
         sprintf(bayesfile,"%s_B.txt",outfile);
         fpout=fopen(bayesfile,"w");
         fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
         fclose(fpout);
-    
-        
-     
+
+
+
     }
     /* Write HDF5 file */
     if(HDFOUTPUT)
     {
 
       LALH5File *h5file=XLALH5FileOpen(outfile, "w");
-      // Create group heirarchy 
+      // Create group heirarchy
       char runID[2048];
       if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--runid")))
         snprintf(runID,sizeof(runID),"%s_%s","lalinference_nest",ppt->value);
@@ -1147,7 +1147,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       }
       XLALFree(output_array);
     }
-  
+
   /* Free memory */
   XLALFree(logtarray); XLALFree(logwarray); XLALFree(logZarray);
 }

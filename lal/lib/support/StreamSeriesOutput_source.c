@@ -16,7 +16,7 @@
 
 void
 SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
-{ 
+{
   UINT4 length; /* length of data sequence */
   TYPE *data;   /* pointer to data in sequence */
 
@@ -101,7 +101,7 @@ SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
 
 void
 VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
-{ 
+{
   UINT4 length;       /* length of data sequence */
   UINT4 vectorLength; /* length of each element in sequence */
   TYPE *data; /* pointer to data in sequence */
@@ -206,7 +206,7 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
 
 void
 AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
-{ 
+{
   UINT4 length;   /* length of data sequence */
   UINT4 arrayDim; /* length of each element in sequence */
   UINT4 *dimData; /* pointer to dimLength data */
@@ -324,7 +324,7 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
 
 void
 FFUNC ( LALStatus *stat, FILE *stream, FTYPE *series )
-{ 
+{
   UINT4 length; /* length of data sequence */
   TYPE *data;   /* pointer to data in sequence */
 

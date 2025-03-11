@@ -91,7 +91,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
  * given in https://arxiv.org/abs/1905.06011 ; DCC link: https://dcc.ligo.org/P1900148
  *  * IMRPhenomXAS_NRTidalv2 model for the 22 mode of non-precessing binary neutron stars
  *  * IMRPhenomXP_NRTidalv2 model for the 22 mode (in the coprecessing frame) of precessing binary neutron stars
- *  * IMRPhenomXAS_NRTidalv3 and IMRPhenomXP_NRTidalv3 based on https://arxiv.org/abs/2311.07456. 
+ *  * IMRPhenomXAS_NRTidalv3 and IMRPhenomXP_NRTidalv3 based on https://arxiv.org/abs/2311.07456.
  *
  * @review IMRPhenomXAS & IMRPhenomXHM reviewed by Maria Haney, Patricia Schmidt,
  * Roberto Cotesta, Anuradha Samajdar, Jonathan Thompson, N.V. Krishnendu.
@@ -518,7 +518,7 @@ int IMRPhenomXASGenerateFD(
 
   /* Set tidal version */
   NRTidal_version_type NRTidal_version;
-  
+
   NRTidal_version=IMRPhenomX_SetTidalVersion(lalParams);
 
   if(debug)
@@ -547,11 +547,11 @@ int IMRPhenomXASGenerateFD(
   REAL8Sequence *freqs = NULL;
 
   /* Initialize tidal corrections (following tidal code modified from LALSimIMRPhenomP.c) */
-      
+
   REAL8Sequence *phi_tidal = NULL;
   REAL8Sequence *amp_tidal = NULL;
   REAL8Sequence *planck_taper = NULL;
-      
+
 
   /* Set matter parameters (set to zero in pWF if NRTidal additions are not turned on) */
   REAL8 lambda1 = pWF->lambda1;
@@ -710,13 +710,13 @@ int IMRPhenomXASGenerateFD(
   }
   // extra contribution to phi(fRef) due to tidal corrections
   double phiTfRef = 0.;
-    
+
   REAL8 f_final=freqs->data[freqs->length-1];
-  
+
   // correct for time and phase shifts due to tidal phase
   if(NRTidal_version!=NoNRT_V){
-      
-      REAL8 f_merger; 
+
+      REAL8 f_merger;
       REAL8 f_merger_tmp;
       switch (NRTidal_version) {
           case NRTidalv3_V:
@@ -730,7 +730,7 @@ int IMRPhenomXASGenerateFD(
 
         if(f_merger<f_final)
             f_final = f_merger;
-        
+
         IMRPhenomX_UsefulPowers powers_of_ffinal;
         REAL8 Mf_final = f_final*pWF->M_sec;
         status = IMRPhenomX_Initialize_Powers(&powers_of_ffinal,Mf_final);
@@ -739,9 +739,9 @@ int IMRPhenomXASGenerateFD(
         REAL8 tshift = -dphi_fmerger; //This was adapted from the PhenomPv2 implementation; the resulting BBH limit can then have a time-shift in its phase
         linb+=tshift;
         phiTfRef = -IMRPhenomX_TidalPhase(&powers_of_MfRef, pWF, pPhase22, NRTidal_version);
-        
+
     }
-    
+
   /* 1/eta is used to re-scale phase */
   REAL8 inveta    = (1.0 / pWF->eta);
 
@@ -750,7 +750,7 @@ int IMRPhenomXASGenerateFD(
 
   // Define pWF->phifRef and phifRef separately, as "phifRef" may ultimately differ superficially
   pWF->phifRef = phifRef;
-  
+
 
   /*
       Here we declare explicit REAL8 variables for main loop in order to avoid numerous
@@ -868,7 +868,7 @@ int IMRPhenomXASGenerateFD(
         /* Add NRTidal phase, if selected, code adapted from LALSimIMRPhenomP.c */
 
       if (NRTidal_version!=NoNRT_V) {
-          
+
           REAL8 phaseTidal = phi_tidal->data[idx];
           double ampTidal = amp_tidal->data[idx];
           double window = planck_taper->data[idx];
@@ -887,8 +887,8 @@ int IMRPhenomXASGenerateFD(
           }
             /* Reconstruct waveform with NRTidal terms included: h(f) = [A(f) + A_tidal(f)] * Exp{I [phi(f) - phi_tidal(f)]} * window(f) */
           ((*htilde22)->data->data)[jdx] = pWF->amp0 * (pWF->ampNorm * powers_of_Mf.m_seven_sixths * amp + 2*sqrt(1./5.)*powers_of_lalpi.sqrt * ampTidal) * cexp(I * (phi - phaseTidal))* window;
-          
-      } 
+
+      }
       else if (NRTidal_version == NoNRT_V) {
 	/* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
   	((*htilde22)->data->data)[jdx] = Amp0 * powers_of_Mf.m_seven_sixths * amp * cexp(I * phi);
@@ -905,19 +905,19 @@ int IMRPhenomXASGenerateFD(
         /* Mf > Mf_max, so return 0 */
         ((*htilde22)->data->data)[jdx] = 0.0 + I*0.0;
     }
-    
+
   }
 
   // Free allocated memory
   LALFree(pAmp22);
   LALFree(pPhase22);
   XLALDestroyREAL8Sequence(freqs);
-    
+
   // Free allocated memory for tidal extension
   XLALDestroyREAL8Sequence(phi_tidal);
   XLALDestroyREAL8Sequence(amp_tidal);
   XLALDestroyREAL8Sequence(planck_taper);
-    
+
   if(lalParams_In == 1)
   {
     XLALDestroyDict(lalParams);
@@ -1153,7 +1153,7 @@ int XLALSimIMRPhenomXPGenerateFD(
   /* Initialize IMR PhenomX Waveform struct and check that it initialized correctly */
   IMRPhenomXWaveformStruct *pWF;
   pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-  // this function will use the original input to swap the order of tidal parameters, if necessary to enforce m1>m2 
+  // this function will use the original input to swap the order of tidal parameters, if necessary to enforce m1>m2
   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI_init, m2_SI_init, chi1z_init, chi2z_init, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, debug);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
@@ -1181,7 +1181,7 @@ int XLALSimIMRPhenomXPGenerateFD(
   /* Initialize IMR PhenomX Precession struct and check that it generated successfully */
   IMRPhenomXPrecessionStruct *pPrec;
   pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
-  
+
   /* If user chose SpinTaylor angles, set bounds for interpolation of angles */
   int pflag = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
   if(pflag==310||pflag==311||pflag==320||pflag==321)
@@ -1284,12 +1284,12 @@ int XLALSimIMRPhenomXPGenerateFD(
 )
  {
    UINT4 status = 0;
-   
+
    const REAL8 m1_SI_init = m1_SI;
    const REAL8 m2_SI_init = m2_SI;
    const REAL8 chi1z_init = chi1z;
    const REAL8 chi2z_init = chi2z;
-   
+
    /*
   Set initial values of masses and z-components of spins to pass to IMRPhenomXSetWaveformVariables() so it can swap the
   matter parameters (and masses and spins) appropriately if m1 < m2, since the masses and spin vectors will also be
@@ -1370,7 +1370,7 @@ int XLALSimIMRPhenomXPGenerateFD(
    /* Initialize IMR PhenomX Precession struct and check that it generated successfully */
    IMRPhenomXPrecessionStruct *pPrec;
    pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
-   
+
   /* If user chose SpinTaylor angles, set bounds for interpolation of angles */
   int pflag = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
   if(pflag==310||pflag==311||pflag==320||pflag==321)
@@ -1547,7 +1547,7 @@ int XLALSimIMRPhenomXPGenerateFD(
         }
         else /* don't attach MR tuning to beta */
         {
-          betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, pWF, pPrec); 
+          betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, pWF, pPrec);
         }
       }
       /* inside transition region */
@@ -1556,11 +1556,11 @@ int XLALSimIMRPhenomXPGenerateFD(
         /* First check to see if we attach the MR tuning to beta */
         if (attach_MR_beta) /* yes we do! */
         {
-          betaPNR_ref = IMRPhenomX_PNR_GenerateMergedPNRBetaAtMf(Mf_ref, betaParams, pWF, pPrec, pWF_SingleSpin, pPrec_SingleSpin); 
+          betaPNR_ref = IMRPhenomX_PNR_GenerateMergedPNRBetaAtMf(Mf_ref, betaParams, pWF, pPrec, pWF_SingleSpin, pPrec_SingleSpin);
         }
         else /* don't attach MR tuning to beta */
         {
-          betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, pWF, pPrec);  
+          betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, pWF, pPrec);
         }
       }
       /* fully in outside calibration region */
@@ -1568,7 +1568,7 @@ int XLALSimIMRPhenomXPGenerateFD(
       {
         betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, pWF, pPrec);
       }
-      
+
       status = IMRPhenomX_PNR_RemapThetaJSF(betaPNR_ref, pWF, pPrec, lalParams);
       XLAL_CHECK(
         XLAL_SUCCESS == status,
@@ -1632,7 +1632,7 @@ int XLALSimIMRPhenomXPGenerateFD(
   LALDict *lalParams                 /**< LAL Dictionary struct */
 )
 {
-    
+
    UINT4 status = 0;
 
    status = XLALIMRPhenomXPCheckMassesAndSpins(&m1_SI,&m2_SI,&chi1x,&chi1y,&chi1z,&chi2x,&chi2y,&chi2z);
@@ -1702,11 +1702,11 @@ int XLALSimIMRPhenomXPGenerateFD(
 
    REAL8 v        = 0.0;
    vector vangles = {0.,0.,0.};
-   
+
    *alpha_of_f = XLALCreateREAL8Sequence(freqs->length);
    *gamma_of_f = XLALCreateREAL8Sequence(freqs->length);
    *cosbeta_of_f = XLALCreateREAL8Sequence(freqs->length);
-   
+
    for(UINT4 i = 0; i < freqs->length; i++)
    {
      // Input list of *gravitational-wave* frequencies not *orbital* frequencies*
@@ -1806,12 +1806,12 @@ int XLALSimIMRPhenomXPGenerateFD(
    /* Initialize IMR PhenomX Precession struct and check that it generated successfully */
    IMRPhenomXPrecessionStruct *pPrec;
    pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
-   
+
    /* The precessing prescription needs to be NNLO */
    if (XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux) > 200 ){
        XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(lalParams_aux, 102);
    }
-   
+
 
    status = IMRPhenomXGetAndSetPrecessionVariables(
               pWF,
@@ -1837,7 +1837,7 @@ int XLALSimIMRPhenomXPGenerateFD(
 
    /* PN Orbital angular momenta */
    REAL8 L = 0.0;
-   
+
    *alpha_of_f = XLALCreateREAL8Sequence(freqs->length);
    *gamma_of_f = XLALCreateREAL8Sequence(freqs->length);
    *cosbeta_of_f = XLALCreateREAL8Sequence(freqs->length);
@@ -1927,7 +1927,7 @@ int IMRPhenomXPGenerateFD(
   /* Set matter parameters (set to zero in pWF if NRTidal additions are not turned on) */
   REAL8 lambda1 = pWF->lambda1;
   REAL8 lambda2 = pWF->lambda2;
-    
+
   /* New variables needed for the NRTidalv2 model */
   REAL8 X_A = pWF->m1; // Already scaled by Mtot
   REAL8 X_B = pWF->m2; // Ibid.
@@ -2027,12 +2027,12 @@ int IMRPhenomXPGenerateFD(
     REAL8Sequence *alpha = NULL;
     REAL8Sequence *gamma = NULL;
     REAL8Sequence *cosbeta = NULL;
-    
+
     if(pPrec->precessing_tag==3){
-        
+
         status = IMRPhenomXPSpinTaylorAnglesIMR(&alpha,&cosbeta,&gamma,freqs,pWF,pPrec,lalParams);
         XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXPSpinTaylorAnglesIMR failed.");
-        
+
     }
 
 
@@ -2053,7 +2053,7 @@ int IMRPhenomXPGenerateFD(
   status   = IMRPhenomXGetPhaseCoefficients(pWF,pPhase22);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetPhaseCoefficients failed.\n");
     if(NRTidal_version!=NoNRT_V) IMRPhenomXGetTidalPhaseCoefficients(pWF,pPhase22,NRTidal_version);
-    
+
   #if PHENOMXPDEBUG == 1
     printf("\n\n **** Phase struct initialized. **** \n\n");
   #endif
@@ -2080,12 +2080,12 @@ int IMRPhenomXPGenerateFD(
   double linb = IMRPhenomX_TimeShift_22(pPhase22, pWF);
    // extra contribution to phi(fRef) due to tidal corrections
   double phiTfRef = 0.;
-  
+
   // correct for time and phase shifts due to tidal phase
   REAL8 f_final=freqs->data[freqs->length-1];
-    
+
   if(NRTidal_version!=NoNRT_V){
-      REAL8 f_merger; 
+      REAL8 f_merger;
       REAL8 f_merger_tmp;
       switch (NRTidal_version) {
           case NRTidalv3_V:
@@ -2095,11 +2095,11 @@ int IMRPhenomXPGenerateFD(
               f_merger_tmp = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
               break;
       }
-      
+
       f_merger = f_merger_tmp;
       if(f_merger<f_final)
           f_final = f_merger;
-      
+
       IMRPhenomX_UsefulPowers powers_of_ffinal;
       REAL8 Mf_final = f_final*pWF->M_sec;
       status = IMRPhenomX_Initialize_Powers(&powers_of_ffinal,Mf_final);
@@ -2110,7 +2110,7 @@ int IMRPhenomXPGenerateFD(
       // tidal phase will be subtracted from the BBH phase
       phiTfRef = -IMRPhenomX_TidalPhase(&powers_of_MfRef, pWF, pPhase22, NRTidal_version);
   }
-    
+
 
   /* Inverse of the symmetric mass ratio */
   REAL8 inveta    = (1.0 / pWF->eta);
@@ -2200,7 +2200,7 @@ int IMRPhenomXPGenerateFD(
   REAL8 Amp0          = pWF->amp0 * pWF->ampNorm;
 
 
-  
+
   /* initial_status used to track  */
   UINT4 initial_status = XLAL_SUCCESS;
 
@@ -2287,7 +2287,7 @@ int IMRPhenomXPGenerateFD(
     COMPLEX16 hcoprec     = 0.0;  /* Co-precessing waveform */
     COMPLEX16 hcoprec_antiSym  = 0.0;  /* Co-precessing anti-symmetric waveform */
     COMPLEX16 hplus       = 0.0;  /* h_+ */
-    COMPLEX16 hcross      = 0.0;  /* h_x */ 
+    COMPLEX16 hcross      = 0.0;  /* h_x */
 
     /* We do not want to generate the waveform at frequencies > f_max (default = 0.3 Mf) */
     if(Mf <= (pWF->f_max_prime * pWF->M_sec))
@@ -2345,7 +2345,7 @@ int IMRPhenomXPGenerateFD(
       /* Add NRTidal phase, if selected, code adapted from LALSimIMRPhenomP.c; the following is unused in generating IMRPhenomXP_NRTidalv2/3 waveforms using GeneratorLegacy.c */
 
       if (NRTidal_version == NRTidal_V || NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
-          
+
           REAL8 phaseTidal = phi_tidal->data[idx];
           double ampTidal = amp_tidal->data[idx];
           double window = planck_taper->data[idx];
@@ -2361,16 +2361,16 @@ int IMRPhenomXPGenerateFD(
           if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
               phaseTidal += pfaN * pPhase22->c3p5PN_tidal * powers_of_lalpi.two_thirds * powers_of_Mf.two_thirds;
           }
-          
+
           /* Waveform in co-precessing frame with NRTidal terms included: h(f) = [A(f) + A_tidal(f)] * Exp{I [phi(f) - phi_tidal(f)]} * window(f) */
           hcoprec = pWF->amp0 * (pWF->ampNorm * powers_of_Mf.m_seven_sixths * amp + 2*sqrt(1/5.)*powers_of_lalpi.sqrt * ampTidal) * cexp(I * (phi - phaseTidal)) * window;
         }
-      
+
       else if (NRTidal_version == NoNRT_V) {
           /* Waveform in co-precessing frame: h(f) = A(f) * Exp[I phi(f)] */
         hcoprec = Amp0 * powers_of_Mf.m_seven_sixths * amp * cexp(I * phi);
       }
-      
+
       else {
             XLAL_PRINT_INFO("Warning: Only NRTidal, NRTidalv2, NRTidalv3, and NoNRT NRTidal_version values allowed and NRTidal is not implemented completely in IMRPhenomX*.");
             }
@@ -2393,8 +2393,8 @@ int IMRPhenomXPGenerateFD(
             pPrec->betaPNR = betaPNR->data[idx];
             pPrec->gammaPNR = gammaPNR->data[idx];
           }
-          
-  
+
+
         if(pPrec->precessing_tag==3)
            IMRPhenomXPTwistUp22_NumericalAngles(hcoprec, alpha->data[idx], cosbeta->data[idx], gamma->data[idx], pPrec, &hplus, &hcross);
        else
@@ -2416,8 +2416,8 @@ int IMRPhenomXPGenerateFD(
               phi_antiSym = phi + phi_B0;
             }
 
-            COMPLEX16 hplus_antiSym       = 0.0; 
-            COMPLEX16 hcross_antiSym      = 0.0; 
+            COMPLEX16 hplus_antiSym       = 0.0;
+            COMPLEX16 hcross_antiSym      = 0.0;
             amp_antiSym = cabs(hcoprec)*kappa->data[idx];
             hcoprec_antiSym = amp_antiSym* cexp(I * phi_antiSym);
             pPrec->PolarizationSymmetry = -1;
@@ -2445,23 +2445,23 @@ int IMRPhenomXPGenerateFD(
 XLALDestroyREAL8Sequence(alpha);
 XLALDestroyREAL8Sequence(cosbeta);
 XLALDestroyREAL8Sequence(gamma);
-        
-            
+
+
     if(pPrec->precessing_tag==3)
     {
         LALFree(pPrec->alpha_params);
         LALFree(pPrec->beta_params);
-        
+
         gsl_spline_free(pPrec->alpha_spline);
         gsl_spline_free(pPrec->cosbeta_spline);
         gsl_spline_free(pPrec->gamma_spline);
-      
+
         gsl_interp_accel_free(pPrec->alpha_acc);
         gsl_interp_accel_free(pPrec->gamma_acc);
         gsl_interp_accel_free(pPrec->cosbeta_acc);
-        
+
     }
-        
+
 
   /*
       Loop over h+ and hx and rotate waveform by 2 \zeta.
@@ -2493,7 +2493,7 @@ XLALDestroyREAL8Sequence(gamma);
   LALFree(pAmp22);
   LALFree(pPhase22);
   XLALDestroyREAL8Sequence(freqs);
-  
+
   // Free allocated memory for tidal extension
   XLALDestroyREAL8Sequence(phi_tidal);
   XLALDestroyREAL8Sequence(amp_tidal);

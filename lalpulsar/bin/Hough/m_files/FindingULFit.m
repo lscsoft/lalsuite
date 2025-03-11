@@ -38,7 +38,7 @@ for k=1:9
   %figure
   %plot((fmax(v(indices))+fmin(v(indices)))/2, UL(v(indices))./x(v(indices)), '.')
 end
- 
+
  plot( (fmax+fmin)/2, hmax, 'c-')
  hold on
 plot( (fmax+fmin)/2, UL, 'b-o')
@@ -50,7 +50,7 @@ ylabel('Hough coarse 95 % UL')
 legend('not converged','MC-measured','predicted')
 plot( (fmax+fmin)/2, hmax, 'c-')
 
- 
+
  figure
  plot( (fmax+fmin)/2, hmax, 'c-')
  hold on
@@ -61,4 +61,3 @@ grid
 xlabel('Frequency (Hz)')
 ylabel('Hough coarse 95 % UL')
 legend('not converged','MC-measured','predicted')
-

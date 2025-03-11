@@ -60,8 +60,8 @@ int ROM_check_canonical_file_basename(LALH5File *file, const char file_name[], c
   LALH5Generic gfile = {.file = file};
   int len = XLALH5AttributeQueryStringValue(NULL, 0, gfile, attribute) + 1;
   char *canonical_file_basename = XLALMalloc(len);
-  XLALH5FileQueryStringAttributeValue(canonical_file_basename, len, file, attribute); 
-  
+  XLALH5FileQueryStringAttributeValue(canonical_file_basename, len, file, attribute);
+
   if (strcmp(canonical_file_basename, file_name) != 0) {
     XLAL_ERROR(XLAL_EIO, "Expected CANONICAL_FILE_BASENAME %s, but got %s.",
     file_name, canonical_file_basename);

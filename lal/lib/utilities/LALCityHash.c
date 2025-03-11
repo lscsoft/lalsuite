@@ -185,7 +185,7 @@ static UINT4 Hash32Len13to24(const char *s, size_t len) {
   UINT4 e = Fetch32(s);
   UINT4 f = Fetch32(s + len - 4);
   UINT4 h = len;
-  
+
   return fmix(Mur(f, Mur(e, Mur(d, Mur(c, Mur(b, Mur(a, h)))))));
 }
 
@@ -214,7 +214,7 @@ UINT4 XLALCityHash32(const char *s, size_t len) {
     (len <= 4 ? Hash32Len0to4(s, len) : Hash32Len5to12(s, len)) :
     Hash32Len13to24(s, len);
   }
-  
+
   // len > 24
   UINT4 h = len, g = c1 * len, f = g;
   UINT4 a0 = Rotate32(Fetch32(s + len - 4) * c1, 17) * c2;
@@ -396,7 +396,7 @@ UINT8 XLALCityHash64(const char *s, size_t len) {
   } else if (len <= 64) {
     return HashLen33to64(s, len);
   }
-  
+
   // For strings over 64 bytes we hash the end first, and then as we
   // loop we keep 56 bytes of state: v, w, x, y, and z.
   UINT8 x = Fetch64(s + len - 40);
@@ -405,7 +405,7 @@ UINT8 XLALCityHash64(const char *s, size_t len) {
   UINT16 v = WeakHashLen32WithSeeds(s + len - 64, len, z);
   UINT16 w = WeakHashLen32WithSeeds(s + len - 32, y + k1, x);
   x = x * k1 + Fetch64(s);
-  
+
   // Decrease len to the nearest multiple of 64, and operate on 64-byte chunks.
   len = (len - 1) & ~((size_t)63);
   do {

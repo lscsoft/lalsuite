@@ -1,14 +1,14 @@
 Reference to standard GW parameters
 ====================================
 
-In this section we walk through the parameters that are considered to be standard and their units as implemented in :code:`GWSignal`. 
+In this section we walk through the parameters that are considered to be standard and their units as implemented in :code:`GWSignal`.
 
 Masses & spins
 ------------------
 
 Masses should be specified using any parameters of the following list::
 
-		mass_parameters = ["mass1", "mass2","total_mass","chirp_mass","mass_difference", 
+		mass_parameters = ["mass1", "mass2","total_mass","chirp_mass","mass_difference",
 		                   "reduced_mass","mass_ratio","sym_mass_ratio"]
 
 They need to be such that the tuple :math:`(m_1,m_2)` is unambiguously specified. Those parameters that are dimensionless should be given the :code:`u.dimensionless_unscaled` unit to be accepted by :code:`GWSignal`. Spins can also be used in cartesian or spherical coordinates with names::
@@ -27,7 +27,7 @@ Those parameters extrinsic to the binary::
 	extrinsic_params = ["distance", "inclination",  "longAscNodes", "meanPerAno"]
 
 
- 
+
 Waveform generation parameters
 --------------------------------
 
@@ -45,7 +45,7 @@ Other parameters include :code:`eccentricity` but also array-like parameters::
 
 	arr_params = ["ModeArray","ModeArrayJframe"]
 
-and the parameter condition, that switches he conditioning routines on/off, and which can take the values :math:`1` or :math:`0`. 
+and the parameter condition, that switches he conditioning routines on/off, and which can take the values :math:`1` or :math:`0`.
 
 Tidal parameters
 --------------------------------
@@ -74,4 +74,4 @@ Standard parameters used in testing gr and related fields::
 		                "alphaPPE5","betaPPE5","alphaPPE6","betaPPE6","alphaPPE7","betaPPE7",
 		                "liv","log10lambda_eff","LIV_A_sign","nonGR_alpha"]
 
-You can check the definitions `here <https://arxiv.org/abs/1703.01076>`__ 
+You can check the definitions `here <https://arxiv.org/abs/1703.01076>`__

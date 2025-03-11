@@ -105,7 +105,7 @@ LALInferenceTemplateFunction LALInferenceInitBurstTemplate(LALInferenceRunState 
   ProcessParamsTable *commandLine=runState->commandLine;
   /* Print command line arguments if help requested */
   LALInferenceTemplateFunction templt = &LALInferenceTemplateXLALSimInspiralChooseWaveform;
-  
+
   ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
   if(ppt) {
     if(XLALSimBurstImplementedFDApproximants(XLALGetBurstApproximantFromString(ppt->value))){
@@ -220,8 +220,8 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
   {
     return(LALInferenceInitModelReviewBurstEvidence_bimod(state));
   }
- 
- 
+
+
   fprintf(stderr,"Using LALInferenceBurstVariables!\n");
 
   LALStatus status;
@@ -231,11 +231,11 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
 	REAL8 endtime_from_inj=-1;
   ProcessParamsTable *ppt=NULL;
 	memset(&status,0,sizeof(LALStatus));
-	INT4 event=0;	
+	INT4 event=0;
 	INT4 i=0;
   BurstApproximant approx = (BurstApproximant) 0;
   char *pinned_params=NULL;
-  
+
   LALInferenceModel *model = XLALMalloc(sizeof(LALInferenceModel));
   model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
   memset(model->params, 0, sizeof(LALInferenceVariables));
@@ -296,7 +296,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
       else if(endtime_from_inj>0)
     endtime=endtime_from_inj;
   }
-        
+
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
     pinned_params=ppt->value;
     LALInferenceVariables tempParams;
@@ -315,7 +315,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
       else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",name);}
     }
   }
-    
+
   /* Over-ride approximant if user specifies */
   ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
   if(ppt){
@@ -337,18 +337,18 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
 
     /* Handle, if present, requests for calibration parameters. */
     LALInferenceInitCalibrationVariables(state, model->params);
-  
-    REAL8 psiMin=0.0,psiMax=LAL_PI; 
-    REAL8 raMin=0.0,raMax=LAL_TWOPI; 
-    REAL8 decMin=-LAL_PI/2.0,decMax=LAL_PI/2.0; 
+
+    REAL8 psiMin=0.0,psiMax=LAL_PI;
+    REAL8 raMin=0.0,raMax=LAL_TWOPI;
+    REAL8 decMin=-LAL_PI/2.0,decMax=LAL_PI/2.0;
     REAL8 qMin=3., qMax=100.0;
     REAL8 ffMin=40., ffMax=1024.0;
-    REAL8 durMin=1.0e-4; // min and max value of duration for gaussian templates 
+    REAL8 durMin=1.0e-4; // min and max value of duration for gaussian templates
     REAL8 durMax=.5;
     REAL8 hrssMin=1.e-23, hrssMax=1.0e-15;
     REAL8 loghrssMin=log(hrssMin),loghrssMax=log(hrssMax);
     REAL8 dt=0.1;
-    REAL8 timeMin=endtime-dt; 
+    REAL8 timeMin=endtime-dt;
     REAL8 timeMax=endtime+dt;
     REAL8 zero=0.0;
     gsl_rng *GSLrandom=state->GSLrandom;
@@ -357,7 +357,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
     if (ppt) dt=atof(ppt->value);
     timeMin=endtime-dt; timeMax=endtime+dt;
-    timeParam = timeMin + (timeMax-timeMin)*gsl_rng_uniform(GSLrandom); 
+    timeParam = timeMin + (timeMax-timeMin)*gsl_rng_uniform(GSLrandom);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
 
     /* Option to use the detector-aligned frame */
@@ -394,7 +394,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
       exit(1);
     }
 
-    ppt=LALInferenceGetProcParamVal(commandLine,"--approx");    
+    ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
     if (!strcmp("SineGaussian",ppt->value) || !strcmp("SineGaussianF",ppt->value)|| !strcmp("DampedSinusoid",ppt->value) || !strcmp("DampedSinusoidF",ppt->value)){
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "frequency",  zero, ffMin, ffMax,   LALINFERENCE_PARAM_LINEAR);
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "quality",  zero,qMin, qMax,   LALINFERENCE_PARAM_LINEAR);
@@ -403,16 +403,16 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     else if (!strcmp("Gaussian",ppt->value) || !strcmp("GaussianF",ppt->value)){
       LALInferenceRegisterUniformVariableREAL8(state, model->params,"duration", zero, durMin,durMax, LALINFERENCE_PARAM_LINEAR);
     }
-    
+
     if (LALInferenceGetProcParamVal(commandLine,"--use-hrss")){
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "hrss",  zero,hrssMin, hrssMax,   LALINFERENCE_PARAM_LINEAR);
     }
     else
       LALInferenceRegisterUniformVariableREAL8(state, model->params, "loghrss",  zero,loghrssMin, loghrssMax,   LALINFERENCE_PARAM_LINEAR);
-    
+
     LALInferenceRegisterUniformVariableREAL8(state,model->params, "polar_angle", zero,0.0,2*LAL_PI ,LALINFERENCE_PARAM_CIRCULAR);
     LALInferenceAddVariable(model->params, "LAL_APPROXIMANT", &approx,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-    
+
   /* Store a variable in case we are using a FastSG likelihood */
   ppt=LALInferenceGetProcParamVal(commandLine,"--fastSineGaussianLikelihood");
   UINT4 using_sgf=0;
@@ -503,9 +503,9 @@ LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_unimod(LALInferenceR
   model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
 
   i=0;
-  
+
   struct varSettings {const char *name; REAL8 val, min, max;};
- 
+
   struct varSettings setup[]=
   {
     {.name="time", .val=0.001, .min=-0.006410, .max=0.008410},
@@ -519,7 +519,7 @@ LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_unimod(LALInferenceR
     {.name="polar_eccentricity",.val=0.3,.min=0.0760747287,.max=0.4239252713},
     {.name="END", .val=0., .min=0., .max=0.}
   };
-  
+
   while(strcmp("END",setup[i].name))
   {
     LALInferenceParamVaryType type=LALINFERENCE_PARAM_CIRCULAR;
@@ -556,9 +556,9 @@ LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_bimod(LALInferenceRu
   model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
   model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
   i=0;
-  
+
   struct varSettings {const char *name; REAL8 val, min, max;};
- 
+
   struct varSettings setup[]=
   {
     {.name="time", .val=0.0061, .min= -0.006410, .max=0.020266},
@@ -582,4 +582,3 @@ LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_bimod(LALInferenceRu
   }
   return(model);
 }
-

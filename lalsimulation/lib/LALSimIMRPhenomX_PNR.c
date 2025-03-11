@@ -860,7 +860,7 @@ extern "C"
 	  for (size_t i = 0; i < freqs->length; i++)
 	    {
 	      Mf = XLALSimIMRPhenomXUtilsHztoMf(freqs->data[i], M);
-	      
+
 	      /* generate alpha, generate beta with no MR tuning */
 	      alphaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRAlphaAtMf(Mf, alphaParams, pWF, pPrec);
 	      betaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf, pWF, pPrec);
@@ -900,13 +900,13 @@ extern "C"
       for (size_t i = 0; i < freqs->length; i++)
             {
               Mf = XLALSimIMRPhenomXUtilsHztoMf(freqs->data[i], M);
-		
+
               /* generate MSA alpha, generate beta with no MR tuning */
               alphaPNR->data[i] = IMRPhenomX_PNR_GetPNAlphaAtFreq(Mf, pWF, pPrec);
               betaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf, pWF, pPrec);
             }
     }
-    
+
     /* If gamma is a NULL pointer, we assume that we don't want to
      * compute it. This allows us to skip computing gamma for the
      * interpolation code to reduce redundant steps */
@@ -924,7 +924,7 @@ extern "C"
   }
 
     /**
-   * Internal helper function to generate PNR alpha for the 
+   * Internal helper function to generate PNR alpha for the
    * antisymmetric waveform.
    */
   int IMRPhenomX_PNR_GeneratePNRAlphaForAntisymmetry(
@@ -970,7 +970,7 @@ extern "C"
       for (size_t i = 0; i < freqs->length; i++)
       {
         Mf = XLALSimIMRPhenomXUtilsHztoMf(freqs->data[i], M);
-        
+
         /* generate alpha */
         alphaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRAlphaAtMf(Mf, alphaParams, pWF, pPrec);
       }

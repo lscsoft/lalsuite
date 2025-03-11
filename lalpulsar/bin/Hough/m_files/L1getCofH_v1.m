@@ -1,7 +1,7 @@
 %
 %
 %  Matlab script to get C(h_0)
-%  
+%
 % Remember to add the path where this file is located:
 % addpath /scratch/sintes/CVSDIR/waves/people/sintes/PULSAR/CODES/m_files/
 %   To run simply type  getCofH
@@ -73,8 +73,8 @@ filepre = strcat(filepath,'/dat/MC_');
 filepre = strcat(filepre,Detector);
 filepre = strcat(filepre,'_');
 
-  nh0=10; 
-  
+  nh0=10;
+
 for bandnumber=0:Nbands-1
   filepre2 = strcat(filepre, int2str( bandnumber ) );
 
@@ -91,10 +91,8 @@ for bandnumber=0:Nbands-1
    bn=bandnumber+1;
    fprintf(fid,'%d %d %d %d %d %d %d %d %d %d %d %d %d %d\n',bn-1, ...
            BandList(bn,1),BandList(bn, 2), Nmax(bn), CH);
-end 
- 
+end
+
  fclose(fid);
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-

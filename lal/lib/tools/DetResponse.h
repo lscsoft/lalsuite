@@ -264,7 +264,7 @@ int XLALComputeDetAMResponseExtraModesSeries(
   const double psi,
   const LIGOTimeGPS *start,
   const double deltaT,
-  const int n  
+  const int n
 );
 
 /** @} */

@@ -114,9 +114,9 @@ XLALInspiralStationaryPhaseApprox2 (
    if (signalvec->data == NULL)
      XLAL_ERROR(XLAL_EFAULT);
    if (params == NULL)
-     XLAL_ERROR(XLAL_EFAULT);  
+     XLAL_ERROR(XLAL_EFAULT);
    if (signalvec->length<=2)
-     XLAL_ERROR(XLAL_EBADLEN);  
+     XLAL_ERROR(XLAL_EBADLEN);
 
    /* chose the required phasing function */
    switch (params->order)
@@ -144,7 +144,7 @@ XLALInspiralStationaryPhaseApprox2 (
 		   XLALInspiralTaylorF2Phasing = XLALInspiralTaylorF2Phasing7PN;
 		   break;
            default:
-	     XLAL_ERROR(XLAL_ETYPE);  
+	     XLAL_ERROR(XLAL_ETYPE);
 
    }
 
@@ -155,8 +155,8 @@ XLALInspiralStationaryPhaseApprox2 (
    if ( XLALInspiralSetup(&ak, params) == XLAL_FAILURE )
      XLAL_ERROR(XLAL_EFUNC);
 
-   
-   /* Set up the functions required for the chosen signal 
+
+   /* Set up the functions required for the chosen signal
       approximation scheme */
    if ( XLALInspiralChooseModel(&func, &ak, params) == XLAL_FAILURE)
      XLAL_ERROR(XLAL_EFUNC);
@@ -174,7 +174,7 @@ XLALInspiralStationaryPhaseApprox2 (
     * This code doesn't support non-zero start-time. i.e. params->startTime
     * should be necessarily zero.
     */
-   shft = 2.L*LAL_PI * (ak.tn + params->nStartPad/params->tSampling + 
+   shft = 2.L*LAL_PI * (ak.tn + params->nStartPad/params->tSampling +
 			params->startTime);
    phi =  params->startPhase + LAL_PI/4.L;
    amp0 = params->signalAmplitude * ak.totalmass * pow(LAL_PI/12.L, 0.5L) * df;
@@ -210,9 +210,9 @@ XLALInspiralStationaryPhaseApprox2 (
        amp = amp0 * pow(-func.dEnergy(v,&ak)/func.flux(v,&ak),0.5L) * v;
        signalvec->data[i] = (REAL4) (amp * cos(psi));
        signalvec->data[n-i] = (REAL4) (-amp * sin(psi));
-       
+
        }
-   
+
    }
    params->fFinal = fn;
 
@@ -220,13 +220,13 @@ XLALInspiralStationaryPhaseApprox2 (
 }
 
 
-static REAL8 XLALInspiralTaylorF2Phasing0PN (REAL8 v, expnCoeffs *ak) 
+static REAL8 XLALInspiralTaylorF2Phasing0PN (REAL8 v, expnCoeffs *ak)
 {
    return ak->pfaN/pow(v,5.);
 }
 
 
-static REAL8 XLALInspiralTaylorF2Phasing2PN (REAL8 v, expnCoeffs *ak) 
+static REAL8 XLALInspiralTaylorF2Phasing2PN (REAL8 v, expnCoeffs *ak)
 {
    REAL8 x;
    x = v*v;
@@ -234,7 +234,7 @@ static REAL8 XLALInspiralTaylorF2Phasing2PN (REAL8 v, expnCoeffs *ak)
 }
 
 
-static REAL8 XLALInspiralTaylorF2Phasing3PN (REAL8 v, expnCoeffs *ak) 
+static REAL8 XLALInspiralTaylorF2Phasing3PN (REAL8 v, expnCoeffs *ak)
 {
    REAL8 x;
    x = v*v;
@@ -242,7 +242,7 @@ static REAL8 XLALInspiralTaylorF2Phasing3PN (REAL8 v, expnCoeffs *ak)
 }
 
 
-static REAL8 XLALInspiralTaylorF2Phasing4PN (REAL8 v, expnCoeffs *ak) 
+static REAL8 XLALInspiralTaylorF2Phasing4PN (REAL8 v, expnCoeffs *ak)
 {
    REAL8 x;
    x = v*v;
@@ -250,7 +250,7 @@ static REAL8 XLALInspiralTaylorF2Phasing4PN (REAL8 v, expnCoeffs *ak)
 }
 
 
-static REAL8 XLALInspiralTaylorF2Phasing5PN (REAL8 v, expnCoeffs *ak) 
+static REAL8 XLALInspiralTaylorF2Phasing5PN (REAL8 v, expnCoeffs *ak)
 {
    REAL8 x, y;
    x = v*v;
@@ -260,7 +260,7 @@ static REAL8 XLALInspiralTaylorF2Phasing5PN (REAL8 v, expnCoeffs *ak)
 }
 
 
-static REAL8 XLALInspiralTaylorF2Phasing6PN (REAL8 v, expnCoeffs *ak) 
+static REAL8 XLALInspiralTaylorF2Phasing6PN (REAL8 v, expnCoeffs *ak)
 {
    REAL8 x, y, z;
    x = v*v;

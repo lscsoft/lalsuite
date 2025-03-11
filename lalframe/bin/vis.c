@@ -54,7 +54,7 @@
  * computing the power spectrum) which will remove filter transients.  Note
  * that data will be read for the entire interval
  * [`tstart-padding`,`tstart+deltat+padding`) and must be available.
- * 
+ *
  *
  * ### Options
  *
@@ -91,11 +91,11 @@
  * <DT>`-P padding`, `--pad=padding`</DT>
  * <DD>Read padding additional seconds of data before and after the requested
  * interval.  This data is then dropped after all requested filtering has been
- * performed in order to remove filter transients.</DD> 
+ * performed in order to remove filter transients.</DD>
  * <DT>`-R srate`, `--resample=srate`</DT>
  * <DD>Resample the data to sampling rate `srate` Hertz.  An additional amount
  * of data, which will be discarded after the filtering, should be specified
- * with the `-P` option or the `--pad` option to remove filter transients.</DD> 
+ * with the `-P` option or the `--pad` option to remove filter transients.</DD>
  * <DT>`-S resolution`, `--spectrum=resolution`</DT>
  * <DD>Compute the power spectrum of the data at the requested `resolution` in
  * Hertz.  Depending on the output format, either the amplitude spectral
@@ -162,10 +162,10 @@
  * the `--spectrum` option is used, the first column will be the frequency of
  * each sample of the spectrum and the second column will be the value of the
  * power spectral density at that frequency.
- * 
+ *
  *
  * ### Environment
- * 
+ *
  * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
  * `lalfr-vis`.  Common values are: `LAL_DEBUG_LEVEL=0` which suppresses error
  * messages, `LAL_DEBUG_LEVEL=1`  which prints error messages alone,
@@ -178,9 +178,9 @@
  * The `lalfr-vis` utility exits 0 on success, and >0 if an error occurs.
  *
  * ### Examples
- * 
+ *
  * The command:
- * 
+ *
  *     lalfr-vis -c H1:LSC-STRAIN -g "H-*.gwf" -s 1000000000 -t 16 -o out.wav
  *
  * will read 16 seconds beginning at GPS time 1000000000 of `H1:LSC-STRAIN`

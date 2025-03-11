@@ -41,12 +41,12 @@
 #include "LALSimIMRSEOBNRv4ROM_NRTidal.h"
 
 /**
- * Function to internally add 2PN and 3PN spin-spin terms 
+ * Function to internally add 2PN and 3PN spin-spin terms
  * to be able to include spin-induced quadrupole moments
  * in those terms; the BBH terms are excluded
  * From LALSimInspiralPNCoefficients.c:XLALSimInspiralPNPhasing_F2()
  * Compute 2.0PN SS, QM, and self-spin
- * See Eq. (6.24) in arXiv:0810.5336 
+ * See Eq. (6.24) in arXiv:0810.5336
  * 9b,c,d in arXiv:astro-ph/0504538
  */
 void Self_spin_phase_contributions(
@@ -77,7 +77,7 @@ void Self_spin_phase_contributions(
   pn_ss3 += 5.L/84.L*(9407.L+ 8218.L * m2M - 2016.L * m2Msq) * qm_def2 * m2Msq * chi2sq;
 
   const REAL8 pfaN = 3.L/(128.L * eta);
-  // The leading order term pfa->v[0] is positive and so the 
+  // The leading order term pfa->v[0] is positive and so the
   // self-spin corrections should be added to a postive phasing.
 
 
@@ -181,7 +181,7 @@ int SEOBNRv4ROM_NRTidal_Core(
     // if uniform sampling and fHigh > NRTIDAL_FMAX then resize htilde
     // so that it goes up to the user fHigh but is filled with zeros
     // beyond NRTIDAL_FMAX (this does not apply to NSBH)
-    if (fHigh > NRTIDAL_FMAX && NRTidal_version != NRTidalv2NSBH_V) 
+    if (fHigh > NRTIDAL_FMAX && NRTidal_version != NRTidalv2NSBH_V)
       {
 	// resize
 	// n_full is the next power of 2 +1.
@@ -307,7 +307,7 @@ int SEOBNRv4ROM_NRTidal_Core(
   // Get SEOBNRv4 ringdown frequency for 22 mode
   // Note: IMRPhenomPv2_NRTidal also uses the BBH ringdown frequency and then just sets it
   // to the last frequency in the grid
-   
+
   double fHz_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0, 0, chi1, 0, 0, chi2, SEOBNRv4);
 
   gsl_spline_init(spline_phi, gsl_vector_const_ptr(f_vec, 0), gsl_vector_const_ptr(phi_vec, 0), freqs->length);
@@ -338,7 +338,7 @@ int SEOBNRv4ROM_NRTidal_Core(
   XLALDestroyREAL8Sequence(phi_tidal);
   XLALDestroyREAL8Sequence(amp_tidal);
   XLALDestroyREAL8Sequence(planck_taper);
-  
+
 
   return XLAL_SUCCESS;
 }

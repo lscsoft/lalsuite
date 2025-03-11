@@ -52,7 +52,7 @@ def latex_results(dics,baseFolder):
     for key,value in dics[0].items():
         if key == "gps":
             continue
-        if index == 0: 
+        if index == 0:
             table.append("%s"%key)
             index = 1
         else:
@@ -81,11 +81,11 @@ def latex_results(dics,baseFolder):
 
     baseFolderSplit = baseFolder.split("/")
     dataType = baseFolderSplit[-3]
-    waveformType = baseFolderSplit[-1]    
+    waveformType = baseFolderSplit[-1]
 
     table.append("   \label{tab:%s_%s}\n"%(dataType,waveformType))
     table.append("   \caption{%s %s}\n"%(dataType,waveformType))
-    table.append("\end{table}\n")  
+    table.append("\end{table}\n")
 
     latex_table = "".join(table)
     return latex_table
@@ -319,19 +319,19 @@ def run_compare(params):
                     os.mkdir(params["outputFolder"])
 
                 for comparedic in comparedics:
-                   
+
                     htmlPage = compare_page(params,comparedic)
 
                     f = open(os.path.join(params["outputFolder"],"%s.html"%(str(comparedic["dic1"]["gps"]))),"w")
                     f.write(htmlPage)
-                    f.close()    
+                    f.close()
 
                 if not comparedics == []:
                     htmlPage = summary_page(params,comparedics)
                     f = open(os.path.join(params["outputFolder"],"summary.html"),"w")
                     f.write(htmlPage)
                     f.close()
-                
+
 
 if __name__=="__main__":
 
@@ -348,4 +348,3 @@ if __name__=="__main__":
 
     params["baseFolder"] = "/home/mcoughlin/public_html/PE/ET/multinest"
     run_compare(params)
-

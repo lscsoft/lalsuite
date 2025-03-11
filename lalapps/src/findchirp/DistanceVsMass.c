@@ -20,7 +20,7 @@
 /*
  * Given the noise amplitude/power spectral density as a two-column
  * ascii file this code returns the distance in Mpc as a function of the
- * total mass to binaries with equal masses and an rms orientation 
+ * total mass to binaries with equal masses and an rms orientation
  * and produce an SNR of 5 when integrated up to the LSO at R=6M
  * or the light ring at R=2.8 M.
  *
@@ -34,10 +34,10 @@ int main (int argc, char **argv)
 	double totalMass, eta, fOld, x, sevenBy3=7./3.;
 	double pwrSpec, LO;
 	double freq;
-	double rhorms, rmsD, idealD, Crms, integral;  
+	double rhorms, rmsD, idealD, Crms, integral;
         int    ampSpec;
 	double lso_radius=6., light_ring_radius=2.8, MTSUN_SI=4.925e-6, pi=3.14159, MPC_SI=3.e22, C_SI=3.e8;
-   
+
 
 	if (argc!=3)
 	{
@@ -76,7 +76,7 @@ int main (int argc, char **argv)
 		exit(1);
 	}
 	fOld = freq;
-	
+
 	while (scanf("%le %le\n", &freq, &x) != EOF)
 	{
 		if (ampSpec)
@@ -87,7 +87,7 @@ int main (int argc, char **argv)
 			pwrSpec = x;
 
 		integral += (freq-fOld) * pow(freq, -sevenBy3)/pwrSpec;
-			
+
 		/* Compute the total mass of a binary whose last orbit is the current frequency */
 	        totalMass = 1./(pow(LO, 1.5) * pi * freq);
 		/* Normalisation to covert integral above to a distance */

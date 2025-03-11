@@ -20,7 +20,7 @@
 #include <lal/LALCosmologyCalculator.h>
 
 #include <stdio.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <gsl/gsl_const_mksa.h>
@@ -38,7 +38,7 @@
  */
 
 double XLALLuminosityDistance(
-            LALCosmologicalParameters *omega, 
+            LALCosmologicalParameters *omega,
             double z)
 {
     double x=1.0+z;
@@ -51,7 +51,7 @@ double XLALLuminosityDistance(
  */
 
 double XLALAngularDistance(
-            LALCosmologicalParameters *omega, 
+            LALCosmologicalParameters *omega,
             double z)
 {
     double x=1.0+z;
@@ -64,7 +64,7 @@ double XLALAngularDistance(
  */
 
 double XLALComovingLOSDistance(
-            LALCosmologicalParameters *omega, 
+            LALCosmologicalParameters *omega,
             double z)
 {
     double dH = XLALHubbleDistance(omega);
@@ -75,27 +75,27 @@ double XLALComovingLOSDistance(
  * Eq. 16 in Hogg 1999 ( http://arxiv.org/abs/astro-ph/9905116 )
  */
 double XLALComovingTransverseDistance(
-            LALCosmologicalParameters *omega, 
+            LALCosmologicalParameters *omega,
             double z)
 {
     double ok = omega->ok;
     double dH = XLALHubbleDistance(omega);
     double dC = XLALComovingLOSDistance(omega,z);
-    
-    if (fabs(ok)<1e-7) 
+
+    if (fabs(ok)<1e-7)
     {
-        
+
         return dC;
     }
     else if (ok>1e-7)
     {
         return dH*sinh(sqrt(ok)*dC/dH)/sqrt(ok);
     }
-    else if (ok<1e-7) 
+    else if (ok<1e-7)
     {
         return dH*sin(sqrt(fabs(ok))*dC/dH)/sqrt(fabs(ok));
     }
-    else 
+    else
     {
         fprintf(stderr,"Something funny happened. Aborting.\n");
         exit(-1);
@@ -135,7 +135,7 @@ double XLALHubbleParameter(double z,
     double w1=p->w1;
     double w2=p->w2;
     E = sqrt(om*x*x*x+ok*x*x+ol*pow(x,3.*(1.0+w0+w1+w2))*exp(-3.0*((w1+w2)*z/x + w2*z*z/(2.0*x*x))));
-    return  1.0/E; 
+    return  1.0/E;
 }
 /**
  * Computes the integral of inverse of the Hubble parameter at redshift z.
@@ -150,15 +150,15 @@ double XLALIntegrateHubbleParameter(LALCosmologicalParameters *omega, double z)
     double epsrel = 1e-5;
     size_t limit = 1024;
     int key = 1;
-    
+
     gsl_function F;
     F.function = &XLALHubbleParameter;
     F.params  = omega;
-    
-    gsl_integration_workspace * w 
+
+    gsl_integration_workspace * w
     = gsl_integration_workspace_alloc (1024);
 
-    gsl_integration_qag (&F, 0.0, z, epsabs, epsrel, 
+    gsl_integration_qag (&F, 0.0, z, epsabs, epsrel,
                     limit, key, w, &result, &error);
 
     gsl_integration_workspace_free (w);
@@ -170,11 +170,11 @@ double XLALIntegrateHubbleParameter(LALCosmologicalParameters *omega, double z)
  * Details of the derivation of these formulae can be found in Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 )
  */
 double XLALUniformComovingVolumeDistribution(
-            LALCosmologicalParameters *omega, 
+            LALCosmologicalParameters *omega,
             double z,
             double zmax)
 {
-    double norm = XLALIntegrateComovingVolumeDensity(omega, zmax);          
+    double norm = XLALIntegrateComovingVolumeDensity(omega, zmax);
     double unnorm_density = XLALUniformComovingVolumeDensity(z,(void *)omega);
     return unnorm_density/norm;
 }
@@ -183,11 +183,11 @@ double XLALUniformComovingVolumeDistribution(
  * This function computes the value of a uniform probability density distribution over the comoving volume at redshift z.
  */
 
-double XLALUniformComovingVolumeDensity( 
+double XLALUniformComovingVolumeDensity(
             double z,
             void *omega)
 {
-    
+
     LALCosmologicalParameters *p = (LALCosmologicalParameters *)omega;
 
     double x = 1.0+z;
@@ -213,9 +213,9 @@ double XLALComovingVolumeElement(
                                 double z,
                                 void *omega)
 {
-    
+
     LALCosmologicalParameters *p = (LALCosmologicalParameters *)omega;
-    
+
     double dm = XLALComovingTransverseDistance(omega,z);
     double E = XLALHubbleParameter(z,omega);
     double dVdz = 4.0*M_PI*dm*dm*E*XLALHubbleDistance(p);
@@ -234,22 +234,22 @@ double XLALIntegrateComovingVolume(LALCosmologicalParameters *omega, double z)
     double epsrel = 1e-5;
     size_t limit = 1024;
     int key = 1;
-    
+
     gsl_function F;
     F.function = &XLALComovingVolumeElement;
     F.params  = omega;
-    
+
     gsl_integration_workspace * w
     = gsl_integration_workspace_alloc (1024);
-    
+
     if (z<0.0) gsl_integration_qagiu (&F, 0.0, epsabs, epsrel,
                                       limit, w, &result, &error);
-    
+
     else gsl_integration_qag (&F, 0.0, z, epsabs, epsrel,
                               limit, key, w, &result, &error);
-    
+
     gsl_integration_workspace_free (w);
-    
+
     return result;
 }
 
@@ -269,18 +269,18 @@ double XLALIntegrateComovingVolumeDensity(LALCosmologicalParameters *omega, doub
     double epsrel = 1e-5;
     size_t limit = 1024;
     int key = 1;
-    
+
     gsl_function F;
     F.function = &XLALUniformComovingVolumeDensity;
     F.params  = omega;
-    
-    gsl_integration_workspace * w 
+
+    gsl_integration_workspace * w
     = gsl_integration_workspace_alloc (1024);
 
-    if (z<0.0) gsl_integration_qagiu (&F, 0.0, epsabs, epsrel, 
+    if (z<0.0) gsl_integration_qagiu (&F, 0.0, epsabs, epsrel,
                     limit, w, &result, &error);
-    
-    else gsl_integration_qag (&F, 0.0, z, epsabs, epsrel, 
+
+    else gsl_integration_qag (&F, 0.0, z, epsabs, epsrel,
                     limit, key, w, &result, &error);
 
     gsl_integration_workspace_free (w);
@@ -432,18 +432,18 @@ double XLALIntegrateRateWeightedComovingVolumeDensity(LALCosmologicalParametersA
     double epsrel = 1e-5;
     size_t limit = 1024;
     int key = 1;
-    
+
     gsl_function F;
     F.function = &XLALRateWeightedUniformComovingVolumeDensity;
     F.params  = p;
-    
-    gsl_integration_workspace * w 
+
+    gsl_integration_workspace * w
     = gsl_integration_workspace_alloc (1024);
 
-    if (z<0.0) gsl_integration_qagiu (&F, 0.0, epsabs, epsrel, 
+    if (z<0.0) gsl_integration_qagiu (&F, 0.0, epsabs, epsrel,
                     limit, w, &result, &error);
-    
-    else gsl_integration_qag (&F, 0.0, z, epsabs, epsrel, 
+
+    else gsl_integration_qag (&F, 0.0, z, epsabs, epsrel,
                     limit, key, w, &result, &error);
 
     gsl_integration_workspace_free (w);
@@ -456,7 +456,7 @@ double XLALIntegrateRateWeightedComovingVolumeDensity(LALCosmologicalParametersA
  */
 double XLALRateWeightedComovingVolumeDistribution(LALCosmologicalParametersAndRate *p, double z, double zmax)
 {
-    double norm = XLALIntegrateRateWeightedComovingVolumeDensity(p, zmax);          
+    double norm = XLALIntegrateRateWeightedComovingVolumeDensity(p, zmax);
     double unnorm_density = XLALRateWeightedUniformComovingVolumeDensity(z,(void *)p);
     return unnorm_density/norm;
 }

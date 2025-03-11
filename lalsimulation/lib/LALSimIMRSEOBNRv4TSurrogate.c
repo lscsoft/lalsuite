@@ -609,7 +609,7 @@ static int TaylorF2Phasing(
   XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, extraParams);
 
   // Compute and subtract pn_ss3 term (See LALSimInspiralPNCoefficients.c: XLALSimInspiralPNPhasing_F2()).
-  // Rationale: SEOBNRv4T does not contain this ss3 term, therefore 
+  // Rationale: SEOBNRv4T does not contain this ss3 term, therefore
   // we remove it from the TF2 phasing that is used as a base waveform for the surrogate.
   double m1M = m1OverM;
   double m2M = m2OverM;
@@ -1070,7 +1070,7 @@ static int SurrogateCore(
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   // We compute the dimensionless time correction t/M since we use geometric units.
   // We use the Schwarzschild ISCO as a rough proxy for the amplitude peak of the BNS waveform.
-  // We used XLALSimNSNSMergerFreq() earlier and it turned out not to be reliable for extreme input parameters. 
+  // We used XLALSimNSNSMergerFreq() earlier and it turned out not to be reliable for extreme input parameters.
   REAL8 Mf_ISCO_Schwrazschild = 1.0 / (pow(6.,3./2.)*LAL_PI);
   REAL8 t_corr = gsl_spline_eval_deriv(spline_phi_TF2, Mf_ISCO_Schwrazschild, acc_phi_TF2) / (2*LAL_PI);
 
@@ -1201,7 +1201,7 @@ int XLALSimIMRSEOBNRv4TSurrogateFrequencySequence(
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = SurrogateCore(hptilde, hctilde, phiRef, fRef, distance,
-                                inclination, Mtot_sec, eta, chi1, chi2, 
+                                inclination, Mtot_sec, eta, chi1, chi2,
                                 lambda1, lambda2, freqs, 0, spline_order);
 
   return(retcode);
@@ -1271,7 +1271,7 @@ int XLALSimIMRSEOBNRv4TSurrogate(
   freqs->data[1] = fHigh;
 
   int retcode = SurrogateCore(hptilde, hctilde, phiRef, fRef, distance,
-                                inclination, Mtot_sec, eta, chi1, chi2, 
+                                inclination, Mtot_sec, eta, chi1, chi2,
                                 lambda1, lambda2, freqs, deltaF, spline_order);
 
   XLALDestroyREAL8Sequence(freqs);
@@ -1293,12 +1293,12 @@ UNUSED static void Surrogate_Init_LALDATA(void)
 #define datafile SurDataHDF5
   char *path = XLAL_FILE_RESOLVE_PATH(datafile);
   if (path==NULL)
-    XLAL_ERROR_VOID(XLAL_EIO, 
+    XLAL_ERROR_VOID(XLAL_EIO,
       "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
       "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
       "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
       "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
-      "https://git.ligo.org/lscsoft/lalsuite-extra\n", 
+      "https://git.ligo.org/lscsoft/lalsuite-extra\n",
       datafile);
   char *dir = dirname(path);
   int ret = Surrogate_Init(dir);

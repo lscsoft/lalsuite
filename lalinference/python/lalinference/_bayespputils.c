@@ -39,7 +39,7 @@ static PyObject* _burnin(PyObject *self, PyObject *args) {
     /***DECLARATION***/
 
     //INPUT
-    
+
     PyObject* py_inputfile_list=NULL ;// List of files containing posterior chains."
     Py_ssize_t nfiles;
     PyObject* py_spin=NULL;
@@ -48,7 +48,7 @@ static PyObject* _burnin(PyObject *self, PyObject *args) {
     PyObject* py_pos_array=NULL;
     PyObject* py_pos_obj=NULL;
     PyObject* py_bayes=NULL;
-    
+
     //BurnIn input
     BurnInInput* input=(BurnInInput*)malloc(sizeof(BurnInInput));
 
@@ -81,7 +81,7 @@ static PyObject* _burnin(PyObject *self, PyObject *args) {
         input->spin=0;
         ndims=15;
     }
-    
+
     Py_DECREF(Py_True);
 
     /* Create output struct*/

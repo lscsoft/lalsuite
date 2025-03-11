@@ -222,7 +222,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     data = (*htilde)->data->data;
     const REAL8 logv0=log(v0);
     const REAL8 log4=log(4.0);
-    
+
     for (i = iStart; i < n; i++) {
         /* fourier frequency corresponding to this bin */
         const REAL8 f = i * deltaF;

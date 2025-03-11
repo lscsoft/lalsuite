@@ -108,7 +108,7 @@ XLALInspiralInit (InspiralTemplate *params,
   {
     XLAL_ERROR(XLAL_EFUNC);
   }
-  if ( XLALInspiralChooseModel(&(paramsInit->func), &(paramsInit->ak), params) 
+  if ( XLALInspiralChooseModel(&(paramsInit->func), &(paramsInit->ak), params)
        == XLAL_FAILURE )
   {
     XLAL_ERROR(XLAL_EFUNC);

@@ -94,7 +94,7 @@ static BBHPhenomCParams *ComputeIMRPhenomCParamsSPA(
   p->pfa6*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi6(extraParams));
   p->pfa6log*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi6L(extraParams));
   p->pfa7*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi7(extraParams));
-        
+
   /* Coefficients to calculate xdot, that comes in the fourier amplitude */
   p->xdotaN = 64.*eta/5.;
   p->xdota2 = -7.43/3.36 - 11.*eta/4.;
@@ -242,8 +242,8 @@ static BBHPhenomCParams *ComputeIMRPhenomCParams(
     p->a4*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDXi4(extraParams));
     p->a5*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDXi5(extraParams));
     p->a6*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDXi6(extraParams));
-  }  
-  
+  }
+
   /* Get the Spin of the final BH */
   REAL8 s4 = -0.129;
   REAL8 s5 = -0.384;

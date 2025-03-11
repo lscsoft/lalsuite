@@ -48,11 +48,11 @@ all: Peaktest
 # -----------------------------------------------------------
 #  produce object files
 
-PeakSelect.o: PeakSelect.c PeakSelect.h 
+PeakSelect.o: PeakSelect.c PeakSelect.h
 	$(CC) -c $(CFLAGS)  PeakSelect.c
 
 
-PeakSelectTest.o: PeakSelectTest.c PeakSelect.h 
+PeakSelectTest.o: PeakSelectTest.c PeakSelect.h
 	$(CC) -c $(CFLAGS) PeakSelectTest.c
 
 # -----------------------------------------------------------

@@ -26,7 +26,7 @@ The tiger postproc script can be used in two distinct modes
 1. Standalone python script. You can run the script by either calling the
 python interpreter explicitly by
 
-python /path/to/script/postproc.py 
+python /path/to/script/postproc.py
 
 or by making and running the script as an executable by
 
@@ -65,7 +65,7 @@ input would be
 
 The specifics of the input are specified by a so-called configuration file
 (typically with an extension .cfg). An example of a configuration file can be
-generated through 
+generated through
 
 python /path/to/script/postproc.py -g FILENAME
 
@@ -112,7 +112,7 @@ construction, do not use other than seed=0)
 
 4. INTERNAL STRUCTURE
 -------------------------------------------------------------------------------
-Once the input has been specified, the script will 
+Once the input has been specified, the script will
 
 1. Search for usable sources in the specified locations
 2. Download the relevant Bayes factors and SNRs (and posterior samples if
@@ -131,15 +131,15 @@ To perform the post processing the script has within it classes, methods and
 function, which will be described in what follows.
 
 TigerRun (class): Contains information and function relevant for a single tiger
-run (e.g. single seed). 
+run (e.g. single seed).
 * Members include the gps times of useful sources, location of the bayes factor
-	files, etc. 
+	files, etc.
 * Functions include searching for sources, downloading bayes factor, etc
 
 TigerSet (class): Contains multiple instances of the TigerRun class that make
-up a single category of runs (e.g. background, tidal deformation, etc). 
+up a single category of runs (e.g. background, tidal deformation, etc).
 TigerSet (class): Contains some similar members and functions compared to the
-TigerRun class, but aggregates information across different TigerRuns. 
+TigerRun class, but aggregates information across different TigerRuns.
 
 There are also function that operate on TigerSets, mainly those that create the
 plots are calculate statistics. For example, TigerCreateHistogram takes a list
@@ -170,11 +170,11 @@ bin option. Look at the example configuration file for details.
 The tiger post processing script can be used as a library instead of a
 standalone script. This might be useful if you want to use the function in an
 interactive python environment (e.g. ipython) or if you want to make your own
-derivative scripts. 
+derivative scripts.
 
 Once you have build lal and have the relevant paths in your environment
 variable (in particular $PYTHONPATH), you can simply load the tiger
-postprocessing libraries by 
+postprocessing libraries by
 
 from lalinference.tiger.postproc import *
 
@@ -187,4 +187,4 @@ For more information about loading python modules, see Ref. [2].
 7. REFERENCES
 -------------------------------------------------------------------------------
 [1]. arXiv:1110.0530
-[2]. http://docs.python.org/2/tutorial/modules.html  
+[2]. http://docs.python.org/2/tutorial/modules.html

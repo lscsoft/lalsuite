@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
   }
   /* write down git information */
   fprintf(stdout,"\n\nLALInference version:%s,%s,%s,%s,%s\n\n", lalInferenceVCSInfo.vcsId,lalInferenceVCSInfo.vcsDate,lalInferenceVCSInfo.vcsBranch,lalInferenceVCSInfo.vcsAuthor,lalInferenceVCSInfo.vcsStatus);
-  
+
   /* initialise runstate based on command line */
   /* This includes reading in the data */
   /* And performing any injections specified */
@@ -103,8 +103,8 @@ int main(int argc, char *argv[]){
     LALInferenceInjectInspiralSignal(data, state->commandLine);
   }
 
-  /* Simulate calibration errors. 
-  * NOTE: this must be called after both ReadData and (if relevant) 
+  /* Simulate calibration errors.
+  * NOTE: this must be called after both ReadData and (if relevant)
   * injectInspiralTD/FD are called! */
   LALInferenceApplyCalibrationErrors(data, procParams);
 

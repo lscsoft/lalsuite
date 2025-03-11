@@ -608,7 +608,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * The following constants describe the locations and geometrys of the
  * three 10km Interferometric Detectors for the planned third generation
  * Einstein Telescop detector as well as the theoretical null stream.
- * See T1400308 
+ * See T1400308
  */
 /** @{ */
 #define LAL_ET1_DETECTOR_NAME                  	"ET1_T1400308"	/**< ET1 detector name string */

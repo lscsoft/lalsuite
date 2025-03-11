@@ -26,8 +26,8 @@ f2=reshape(f', 1,nn*2);
 
 figure
  colores=['g', 'y','k','c', 'm', 'b', 'r', 'g', 'y','k','c', 'm', 'b', 'r', 'g', 'b','k'];
- 
- 
+
+
 for j=5:kk(2)
   cc = CofH(:,j);
   ccc= [cc,cc];
@@ -37,11 +37,10 @@ for j=5:kk(2)
   hold on
 end
 axis([200 400 -0.05 1.05]);
-xlabel ('Frequency [Hz]'); 
-ylabel ('C(h_0)'); 
+xlabel ('Frequency [Hz]');
+ylabel ('C(h_0)');
 title('S2: L1 5.0e-23 to 1.4e-22')
 %legend('All sky', 'North belt')
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-

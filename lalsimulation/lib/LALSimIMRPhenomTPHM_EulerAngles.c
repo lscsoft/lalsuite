@@ -72,8 +72,8 @@ static double IMRPhenomT_MECOTime(double eta, double S, double dchi, double delt
 
    	nospin = (-236.05916243036953 - 831.5431113584278*eta)/(1 + 20.613030474069898*eta);
 
-   	eqspin = (48.728774732041 + 8.161848266333303*eta + 146.22536542867712*eta*eta)*S + (-13.633462771084439 + 97.744032521123*eta - 333.74293640880865*eta*eta)*S*S + 
-   (-76.67450724471107 + 1030.4869060625915*eta - 3160.810490374918*eta*eta)*S*S*S + (-20.941621754455277 - 26.348664719217858*eta + 778.3469028250508*eta*eta)*S*S*S*S + 
+   	eqspin = (48.728774732041 + 8.161848266333303*eta + 146.22536542867712*eta*eta)*S + (-13.633462771084439 + 97.744032521123*eta - 333.74293640880865*eta*eta)*S*S +
+   (-76.67450724471107 + 1030.4869060625915*eta - 3160.810490374918*eta*eta)*S*S*S + (-20.941621754455277 - 26.348664719217858*eta + 778.3469028250508*eta*eta)*S*S*S*S +
    (86.59936006891306 - 1115.1092303071634*eta + 3348.2374777841*eta*eta)*S*S*S*S*S + (13.413110005766034 + 46.573063129481895*eta - 631.7603046833175*eta*eta)*S*S*S*S*S*S;
 
    	uneqspin = -1385.6109494038105*dchi*delta*(1 - 2.465600020183968*eta)*eta*eta + 10.837064426546098*dchi*dchi*eta*eta*eta + 355.1229694251773*dchi*delta*(1 - 4.1057183984004695*eta)*eta*eta*S;
@@ -161,7 +161,7 @@ typedef struct tagPhenomTPHMEvolution
 
 /** This function provides a wrapper to the analytical PN angle descriptions computed by
 the IMRPhenomXP(HM) waveform models and routines to incorporate a simple approximation in the ringdown
-for the precessing angles (see https://arxiv.org/pdf/1209.3712.pdf, https://arxiv.org/abs/1806.10734, https://arxiv.org/abs/2004.08302). 
+for the precessing angles (see https://arxiv.org/pdf/1209.3712.pdf, https://arxiv.org/abs/1806.10734, https://arxiv.org/abs/2004.08302).
 It provides also additional ways of treating the plunge-merger angles and possibility to compute third
 Euler angle gamma directly from the minimal rotation condition. **/
 
@@ -172,10 +172,10 @@ Euler angle gamma directly from the minimal rotation condition. **/
 
 - GammaVersion:   0 (Gamma is computed from the MSA/NNLO PN expressions.)
                   1 (Gamma computed numerically from minimal rotation condition.)
-*/  
+*/
 
 int PNAnalyticalInspiralEulerAngles(
-  REAL8TimeSeries **alphaTS,          /* Alpha angle time series [out] */ 
+  REAL8TimeSeries **alphaTS,          /* Alpha angle time series [out] */
   REAL8TimeSeries **cosbetaTS,        /* cos(Beta) angle time series [out] */
   REAL8TimeSeries **gammaTS,          /* Gamma angle time series [out] */
   REAL8Sequence *xorb,                /* x(t)=v(t)^2 time series [in] */
@@ -200,7 +200,7 @@ int PNAnalyticalInspiralEulerAngles(
 {
 
   /***** Set up analytical PN evaluation length for the different versions ****/
-  
+
   size_t length = 0; // Initialize length
   REAL8 tMECO = IMRPhenomT_MECOTime(pWF->eta, pWF->Shat, pWF->dchi, pWF->delta); //MECO time needed for EulerRDVersion=2
 
@@ -253,7 +253,7 @@ int PNAnalyticalInspiralEulerAngles(
   REAL8 tt;
 
   /* Analytical Euler angles from PhenomX implementation */
-  switch(pPrec->IMRPhenomXPrecVersion) 
+  switch(pPrec->IMRPhenomXPrecVersion)
   {
     /* ~~~~~ Use NNLO PN Euler Angles - Appendix G of arXiv:2004.06503 and https://dcc.ligo.org/LIGO-T1500602 ~~~~~ */
     case 101:
@@ -336,9 +336,9 @@ int PNAnalyticalInspiralEulerAngles(
   	// Generate time array
   	REAL8Sequence *timesPN = NULL;
   	timesPN = XLALCreateREAL8Sequence(length);
-  	for(UINT8 i=0; i < length; i++) 
+  	for(UINT8 i=0; i < length; i++)
   	{
-    	timesPN->data[i] = i*pWF->dtM; 
+    	timesPN->data[i] = i*pWF->dtM;
   	}
 
   	// Interpolate alpha
@@ -377,7 +377,7 @@ int PNAnalyticalInspiralEulerAngles(
 
       }
 
-    // Free gsl spline objects  
+    // Free gsl spline objects
     gsl_spline_free(spline_alpha);
     gsl_spline_free(spline_cosb);
     gsl_interp_accel_free(accel_alpha);
@@ -397,7 +397,7 @@ int PNAnalyticalInspiralEulerAngles(
   if(EulerRDVersion == 1)
   {
     /* Offsets for the ringdown angles, in order to impose continuity with inspiral angles */
-    
+
     // Offsets initialization
     REAL8 alphaRD0 = 0.0;
     REAL8 cosbetaRD0 = 0.0;
@@ -433,13 +433,13 @@ int PNAnalyticalInspiralEulerAngles(
   /* MSA/NNLO angles computed up tp the MECO time, and then linear continuation to the peak time. Then Euler RD angles are attached. */
   else if(EulerRDVersion == 2)
   {
-    
+
     REAL8 t0 = tMECO;
   	size_t lengthInt = floor((t0 - pPhase->tmin)/pWF->dtM); // Length from tmin to tMECO
   	length = floor((0.0 - pPhase->tmin)/pWF->dtM); // Length from tmin to t=0
 
     /* beta values for computing beta derivative */
-    REAL8 beta1 = acos((*cosbetaTS)->data->data[lengthInt-1]); 
+    REAL8 beta1 = acos((*cosbetaTS)->data->data[lengthInt-1]);
     REAL8 beta2 = acos((*cosbetaTS)->data->data[lengthInt-2]);
     REAL8 beta3 = acos((*cosbetaTS)->data->data[lengthInt-3]);
 
@@ -506,8 +506,8 @@ int PNAnalyticalInspiralEulerAngles(
 /*******************************************************/
 
 /* This section provides the needed functions to perform the evolution of the spin precessing equations, that are specified in XLALSimInspiralSpinDerivativesAvg and
-related SimInspiral code employing the PN expansion parameter v(t) computed from the orbital frequency predicted by IMRPhenomT, instead of evolving v from 
-a TaylorT* approximant. */ 
+related SimInspiral code employing the PN expansion parameter v(t) computed from the orbital frequency predicted by IMRPhenomT, instead of evolving v from
+a TaylorT* approximant. */
 
 /* Function needed by RungeKutta integrator, we just provide a trivial GSL_SUCCESS since TaylorT* stopping conditions do not apply here. */
 int StoppingTest(double UNUSED t, const double UNUSED values[], double UNUSED dvalues[], void UNUSED *mparams);
@@ -621,7 +621,7 @@ int IMRPhenomTPHM_EvolveOrbit(
  * Function to return the time series for the evolution of the individual spins, the Newtonian angular momentum direction and the orbital plane basis vector E.
  * It computes the frequency of the non-precessing 22 mode between minimum frequency and the peak time of the 22,
  * and approximates the PN parameter v(t) from it. Thenn it calls the internal function IMRPhenomTPHM_EvolveOrbit which evolves the spin precessing PN evolution equations
- * using the precomputed v(t) as a driver for the evolution. 
+ * using the precomputed v(t) as a driver for the evolution.
  */
 
 int XLALSimIMRPhenomTPHM_EvolveOrbit( //FIXME: maybe move to Euler angles? Maria will take a look
@@ -664,11 +664,11 @@ int XLALSimIMRPhenomTPHM_EvolveOrbit( //FIXME: maybe move to Euler angles? Maria
   if(fmin    <= 0.0) { XLAL_ERROR(XLAL_EDOM, "f_min must be positive.\n");                          }
   if(fRef > 0.0 && fRef < fmin){ XLAL_ERROR(XLAL_EDOM, "fRef must be >= f_min or =0 to use f_min.\n"); }
 
-  /* Swap components if m2>m1 */  
+  /* Swap components if m2>m1 */
   if(m1_SI < m2_SI)
   {
     REAL8 auxswap;
-    
+
     auxswap = m2_SI;
     m2_SI = m1_SI;
     m1_SI = auxswap;
@@ -685,7 +685,7 @@ int XLALSimIMRPhenomTPHM_EvolveOrbit( //FIXME: maybe move to Euler angles? Maria
     chi2z = chi1z;
     chi1z = auxswap;
   }
-  
+
   REAL8 mass_ratio = m1_SI / m2_SI;
   REAL8 chi1L = chi1z;
   REAL8 chi2L = chi2z;
@@ -728,7 +728,7 @@ int XLALSimIMRPhenomTPHM_EvolveOrbit( //FIXME: maybe move to Euler angles? Maria
   REAL8Sequence *xorb = NULL;
   xorb = XLALCreateREAL8Sequence(length);
 
-  /* Compute x=(0.5*omega_22)^(2/3). 
+  /* Compute x=(0.5*omega_22)^(2/3).
   Depending on the inspiral region, theta is defined with a fitted t0 parameter or with t0=0. */
 
   if(pWF->inspVersion!=0) // If reconstruction is non-default, this will compute frequency, phase and PN expansion parameter x from TaylorT3 with fitted t0 for the early inspiral region-
@@ -738,7 +738,7 @@ int XLALSimIMRPhenomTPHM_EvolveOrbit( //FIXME: maybe move to Euler angles? Maria
       t = pPhase->tmin + jdx*pWF->dtM;
 
       thetabar = pow(pWF->eta*(pPhase->tt0-t),-1./8);
-    
+
       theta = factheta*thetabar;
 
       w22 = IMRPhenomTomega22(t, theta, pWF, pPhase);
@@ -750,7 +750,7 @@ int XLALSimIMRPhenomTPHM_EvolveOrbit( //FIXME: maybe move to Euler angles? Maria
       t = pPhase->tmin + jdx*pWF->dtM;
 
       thetabar = pow(-pWF->eta*t,-1./8);
-    
+
       theta = factheta*thetabar;
 
       w22 = IMRPhenomTomega22(t, theta, pWF, pPhase);
@@ -766,7 +766,7 @@ int XLALSimIMRPhenomTPHM_EvolveOrbit( //FIXME: maybe move to Euler angles? Maria
         t = pPhase->tmin + jdx*pWF->dtM;
 
         thetabar = pow(-pWF->eta*t,-1./8);
-    
+
         theta = factheta*thetabar;
 
         w22 = IMRPhenomTomega22(t, theta, pWF, pPhase);
@@ -827,12 +827,12 @@ int IMRPhenomTPHM_EvolveOrbit(
   )
 {
     /* Initialize objects and variables needed for the RK integrator */
-    
+
     LALAdaptiveRungeKuttaIntegrator *integrator = NULL;     /* GSL integrator object */
     INT4 intreturn;         /* Variable for storing status returned by the integrator */
     REAL8 yinit[12];        /* initial values of parameters */
     REAL8Array *yout;       /* time series of variables returned from integrator */
-    
+
     /* intermediate variables */
     int i, len, len2;
     REAL8 norm1, norm2, m1sec, m2sec, Msec;
@@ -879,7 +879,7 @@ int IMRPhenomTPHM_EvolveOrbit(
 
     XLALSimInspiralSpinTaylorTxCoeffs *Tparams=NULL; // PN coefficients struct
 
-    /* We select fixed values for the different PN orders: No tidal interactions (it is a BBH model), highest PN order for 
+    /* We select fixed values for the different PN orders: No tidal interactions (it is a BBH model), highest PN order for
     spins but perpendicular corrections to Lhat disabled, since it was not clear the effect on this on the derived Euler angles from Lhat. */
 
     REAL8 lambda1 = 0.0; REAL8 lambda2 = 0.0; REAL8 quadparam1 = 0.0; REAL8 quadparam2 = 0.0;
@@ -897,7 +897,7 @@ int IMRPhenomTPHM_EvolveOrbit(
 
     /* Initial quantities for evolution */
 
-    // Needed for getting dimensionful spins 
+    // Needed for getting dimensionful spins
     m1sec = m1_SI / LAL_MSUN_SI * LAL_MTSUN_SI;
     m2sec = m2_SI / LAL_MSUN_SI * LAL_MTSUN_SI;
     Msec = m1sec + m2sec;
@@ -928,10 +928,10 @@ int IMRPhenomTPHM_EvolveOrbit(
                 XLALSimIMRPhenomTPHMSpinDerivatives,
                 StoppingTest,
                 LAL_ST4_ABSOLUTE_TOLERANCE, LAL_ST4_RELATIVE_TOLERANCE);
-    
+
     if( !integrator )
     {
-        XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n", 
+        XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n",
                 __func__);
         XLAL_ERROR(XLAL_EFUNC);
     }
@@ -961,7 +961,7 @@ int IMRPhenomTPHM_EvolveOrbit(
     }
 
     intreturn = integrator->returncode;
-    if (!len) 
+    if (!len)
     {
         XLALPrintError("XLAL Error - %s: integration failed with errorcode %d.\n", __func__, intreturn);
         XLAL_ERROR(XLAL_EFUNC);
@@ -975,32 +975,32 @@ int IMRPhenomTPHM_EvolveOrbit(
     size_t lengthAll = len + length1;
 
     /* allocate memory for output vectors */
-    *V = XLALCreateREAL8TimeSeries( "PN_EXPANSION_PARAMETER", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll);  
-    *S1x = XLALCreateREAL8TimeSeries( "SPIN1_X_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *S1y = XLALCreateREAL8TimeSeries( "SPIN1_Y_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *S1z = XLALCreateREAL8TimeSeries( "SPIN1_Z_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *S2x = XLALCreateREAL8TimeSeries( "SPIN2_X_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *S2y = XLALCreateREAL8TimeSeries( "SPIN2_Y_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *S2z = XLALCreateREAL8TimeSeries( "SPIN2_Z_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *LNhatx = XLALCreateREAL8TimeSeries( "LNHAT_X_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *LNhaty = XLALCreateREAL8TimeSeries( "LNHAT_Y_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *LNhatz = XLALCreateREAL8TimeSeries( "LNHAT_Z_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *E1x = XLALCreateREAL8TimeSeries( "E1_BASIS_X_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *E1y = XLALCreateREAL8TimeSeries( "E1_BASIS_Y_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
-    *E1z = XLALCreateREAL8TimeSeries( "E1_BASIS_Z_COMPONENT", &ligotimegps_zero, 0., 
-            pWF->deltaT, &lalDimensionlessUnit, lengthAll); 
+    *V = XLALCreateREAL8TimeSeries( "PN_EXPANSION_PARAMETER", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *S1x = XLALCreateREAL8TimeSeries( "SPIN1_X_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *S1y = XLALCreateREAL8TimeSeries( "SPIN1_Y_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *S1z = XLALCreateREAL8TimeSeries( "SPIN1_Z_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *S2x = XLALCreateREAL8TimeSeries( "SPIN2_X_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *S2y = XLALCreateREAL8TimeSeries( "SPIN2_Y_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *S2z = XLALCreateREAL8TimeSeries( "SPIN2_Z_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *LNhatx = XLALCreateREAL8TimeSeries( "LNHAT_X_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *LNhaty = XLALCreateREAL8TimeSeries( "LNHAT_Y_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *LNhatz = XLALCreateREAL8TimeSeries( "LNHAT_Z_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *E1x = XLALCreateREAL8TimeSeries( "E1_BASIS_X_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *E1y = XLALCreateREAL8TimeSeries( "E1_BASIS_Y_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
+    *E1z = XLALCreateREAL8TimeSeries( "E1_BASIS_Z_COMPONENT", &ligotimegps_zero, 0.,
+            pWF->deltaT, &lalDimensionlessUnit, lengthAll);
     if ( !*V || !*S1x || !*S1y || !*S1z || !*S2x || !*S2y || !*S2z
              || !*LNhatx || !*LNhaty || !*LNhatz || !*E1x || !*E1y || !*E1z )
     {
@@ -1011,10 +1011,10 @@ int IMRPhenomTPHM_EvolveOrbit(
     }
 
     /* Copy dynamical variables from yout array to output time series.
-     * Note the first 'len' members of yout are the time steps. 
+     * Note the first 'len' members of yout are the time steps.
      */
     for( i = 0; i < len; i++ )
-    { 
+    {
         int j = i + length1;
         (*V)->data->data[j]     = vorb->data[j];
         (*LNhatx)->data->data[j]  = yout->data[len+i];
@@ -1039,33 +1039,33 @@ int IMRPhenomTPHM_EvolveOrbit(
     /********* Integration from tref to tmin ******/
     /* If tref!=tmin, quantities have to be evolved backwards from tref to tmin.
     Formally this is done by a forward integration, but physically it corresponds to a backward integration. */
-    
+
     if(fabs(pPhase->tRef-pPhase->tmin)>=pWF->dtM)
     {
 
       /* Initialize objects and variables needed for the RK integrator */
 
       LALAdaptiveRungeKuttaIntegrator *integrator2 = NULL;
-      REAL8Array *yout2;   // time series of variables returned from integrator 
+      REAL8Array *yout2;   // time series of variables returned from integrator
       REAL8 yinit2[12];
 
       /* Put initial values into a single array for the integrator */
 
-      // LNh(x,y,z) 
+      // LNh(x,y,z)
       yinit2[0] = 0.0;
       yinit2[1] = 0.0;
       yinit2[2] = 1.0;
-      // S1(x,y,z) 
+      // S1(x,y,z)
       norm1 = m1sec * m1sec / Msec / Msec;
       yinit2[3] = norm1 * s1x;
       yinit2[4] = norm1 * s1y;
       yinit2[5] = norm1 * s1z;
-      // S2(x,y,z) 
+      // S2(x,y,z)
       norm2 = m2sec * m2sec / Msec / Msec;
       yinit2[6] = norm2 * s2x;
       yinit2[7] = norm2 * s2y;
       yinit2[8]= norm2 * s2z;
-      // E1(x,y,z) 
+      // E1(x,y,z)
       yinit2[9] = 1.0;
       yinit2[10] = 0.0;
       yinit2[11] = 0.0;
@@ -1075,7 +1075,7 @@ int IMRPhenomTPHM_EvolveOrbit(
       XLALSimInspiralSpinTaylorT4Setup(&Tparams, m1_SI, m2_SI, pWF->fmin, 0.0, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, lscorr, 1);
       params.Tparams = Tparams;
       // Passed to actually performed backward integration. For t' in the integration, v(t) will be evaluated at t = tint1 - t'
-      params.ToffSign = -tint1; 
+      params.ToffSign = -tint1;
 
       /* Set up integrator */
       integrator2 = XLALAdaptiveRungeKutta4Init(12,
@@ -1098,7 +1098,7 @@ int IMRPhenomTPHM_EvolveOrbit(
           XLAL_ERROR(XLAL_EFUNC);
       }
       intreturn = integrator->returncode;
-      if (!len2) 
+      if (!len2)
       {
           XLALPrintError("XLAL Error - %s: integration failed with errorcode %d.\n", __func__, intreturn);
           XLAL_ERROR(XLAL_EFUNC);
@@ -1107,7 +1107,7 @@ int IMRPhenomTPHM_EvolveOrbit(
       /* Copy dynamical variables from yout array to output time series.
         * Note the first 'len' members of yout are the time steps. */
       for( i = 0; i < len2; i++ )
-      { 
+      {
           int j = len2 - 1 - i; // Time series are filled backwards from the index corresponding to tref to fill all the elements.
           (*V)->data->data[j]     = vorb->data[j];
           (*LNhatx)->data->data[j]  = yout2->data[len2+i];
@@ -1129,7 +1129,7 @@ int IMRPhenomTPHM_EvolveOrbit(
       XLALDestroyREAL8Array(yout2);
       LALFree(Tparams);
     }
-    
+
     // Free gsl spline objects
     gsl_spline_free(spline_v);
     gsl_interp_accel_free(accel_v);
@@ -1148,9 +1148,9 @@ int IMRPhenomTPHM_EvolveOrbit(
     - gamma = - \int \dot{alpha}*cosbeta (minimal rotation condition)
  */
 
-int IMRPhenomTPHM_NumericalEulerAngles( 
-  REAL8TimeSeries **alphaInt,               /* Alpha angle time series [out] */ 
-  REAL8TimeSeries **cosbetaInt,             /* cos(Beta) angle time series [out] */           
+int IMRPhenomTPHM_NumericalEulerAngles(
+  REAL8TimeSeries **alphaInt,               /* Alpha angle time series [out] */
+  REAL8TimeSeries **cosbetaInt,             /* cos(Beta) angle time series [out] */
   REAL8TimeSeries **gammaInt,               /* Gamma angle time series [out] */
   REAL8 *af_evolved,                        /* Final spin predicted by the evolved spin values at the peak time */
   REAL8Sequence *xorb,                      /* x(t)=v(t)^2 time series [in] */
@@ -1170,7 +1170,7 @@ int IMRPhenomTPHM_NumericalEulerAngles(
   );
 
 int IMRPhenomTPHM_NumericalEulerAngles(
-  REAL8TimeSeries **alphaTS,                /* Alpha angle time series [out] */ 
+  REAL8TimeSeries **alphaTS,                /* Alpha angle time series [out] */
   REAL8TimeSeries **cosbetaTS,              /* cos(Beta) angle time series [out] */
   REAL8TimeSeries **gammaTS,                /* Gamma angle time series [out] */
   REAL8 *af_evolved,                        /* Final spin predicted by the evolved spin values at the peak time */
@@ -1217,7 +1217,7 @@ int IMRPhenomTPHM_NumericalEulerAngles(
 
   // Compute final spin as predicted by spins at tpeak
 
-  // Needed for getting dimensionful spins 
+  // Needed for getting dimensionful spins
     REAL8 m1sec = m1_SI / LAL_MSUN_SI * LAL_MTSUN_SI;
     REAL8 m2sec = m2_SI / LAL_MSUN_SI * LAL_MTSUN_SI;
     REAL8 Msec = m1sec + m2sec;
@@ -1268,7 +1268,7 @@ int IMRPhenomTPHM_NumericalEulerAngles(
 
     REAL8 af_nonprec = XLALSimIMRPhenomXFinalSpin2017(pWF->eta, s1Lpeak/norm1, s2Lpeak/norm2);
 
-    REAL8 Sf = copysign(1.0,af_nonprec)*sqrt(Sperp*Sperp + pow(af_nonprec,2)); 
+    REAL8 Sf = copysign(1.0,af_nonprec)*sqrt(Sperp*Sperp + pow(af_nonprec,2));
 
     if(Sf>1.0){Sf = 1.0;};
     if(Sf<-1.0){Sf = -1.0;};
@@ -1313,9 +1313,9 @@ int IMRPhenomTPHM_NumericalEulerAngles(
   REAL8 cosKappa = cos(-pPrec->kappa);
   REAL8 sinKappa = sin(-pPrec->kappa);
 
-  for(UINT8 i=0; i < lenPN; i++) 
+  for(UINT8 i=0; i < lenPN; i++)
   {
-    
+
     IMRPhenomT_rotate_z(cosPhiJ,    sinPhiJ,    &(LNhatx->data->data[i]), &(LNhaty->data->data[i]), &(LNhatz->data->data[i]));
     IMRPhenomT_rotate_y(cosThetaJ,  sinThetaJ,  &(LNhatx->data->data[i]), &(LNhaty->data->data[i]), &(LNhatz->data->data[i]));
     IMRPhenomT_rotate_z(cosKappa,   sinKappa,   &(LNhatx->data->data[i]), &(LNhaty->data->data[i]), &(LNhatz->data->data[i]));
@@ -1323,7 +1323,7 @@ int IMRPhenomTPHM_NumericalEulerAngles(
     /* Compute Euler angles in the J frame */
     alphaaux->data[i] = atan2(LNhaty->data->data[i], LNhatx->data->data[i]);
     cosbeta->data[i] = LNhatz->data->data[i];
-    times->data[i] = i*deltaT + epochT; 
+    times->data[i] = i*deltaT + epochT;
   }
 
   // Substract alpha value at tref. Added to alphaOff for comodity.

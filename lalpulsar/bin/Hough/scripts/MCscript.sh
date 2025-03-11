@@ -38,7 +38,7 @@ iam=badkri
 # tell us where you are working
 echo job $1 running as process $process owned by $iam on `hostname`
 
-# choose detector 
+# choose detector
 # L is L1 and H is H1
 #det=L1
 det=H1
@@ -68,7 +68,7 @@ sftdir=/scratch/tmp/badkri/${det}sfts
 # set a trap so if the job ends some cleanup is done
 trap "/bin/rm -rf /scratch/tmp/$iam/$1.run; exit 0" 0 1 2 9 15
 
-# create temporary scratch directory where we work in 
+# create temporary scratch directory where we work in
 tempworkdir=/scratch/tmp/${iam}/$1.run
 mkdir -p $tempworkdir
 
@@ -92,7 +92,7 @@ echo finished copying stuff
 
 # choose freq band
 startfreq=200.0
-freq=`add $1 $startfreq` 
+freq=`add $1 $startfreq`
 band=1.0
 echo frequency range is from $freq Hz with bandwidth $band Hz
 

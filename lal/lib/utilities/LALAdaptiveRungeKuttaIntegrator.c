@@ -429,7 +429,7 @@ int XLALAdaptiveRungeKutta4HermiteOnlyFinal(LALAdaptiveRungeKuttaIntegrator * in
     REAL8 * yinit,                                                      /**< pass in initial values of all variables - overwritten to final values */
     REAL8 tinit,                                                        /**< integration start time */
     REAL8 tend_in,                                                      /**< maximum integration time */
-    REAL8 y1_final,                                                     /**< final value of y[1] */ 
+    REAL8 y1_final,                                                     /**< final value of y[1] */
     REAL8 deltat                                                        /**< step size for integration */
     )
 {

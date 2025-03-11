@@ -259,7 +259,7 @@ int XLALInspiralTDWaveformFromSimInspiral(
      char *filepath = thisRow->numrel_data;
      XLALSimInspiralWaveformParamsInsertNumRelData(params, filepath);
    }
-   
+
    /* get phase PN order; this is an enum such that the value is twice the PN order */
    order = XLALSimInspiralGetPNOrderFromString(thisRow->waveform);
    if ( (int) order == XLAL_FAILURE)
@@ -786,4 +786,3 @@ LALInspiralWaveForInjection(
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
-
