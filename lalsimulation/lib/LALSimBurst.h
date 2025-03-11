@@ -175,7 +175,7 @@ int XLALSimBurstGaussian(
 
 int XLALSimBurstImg(
 	REAL8TimeSeries **hplus,
-	REAL8TimeSeries **hcross, 
+	REAL8TimeSeries **hcross,
 	REAL8Array *image,
 	double dt,
 	double df,

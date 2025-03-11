@@ -608,7 +608,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * The following constants describe the locations and geometrys of the
  * three 10km Interferometric Detectors for the planned third generation
  * Einstein Telescop detector as well as the theoretical null stream.
- * See T1400308 
+ * See T1400308
  */
 /** @{ */
 #define LAL_ET1_DETECTOR_NAME                  	"ET1_T1400308"	/**< ET1 detector name string */
@@ -638,10 +638,10 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_ET2_DETECTOR_LONGITUDE_RAD         	0.18405858870	/**< ET2 vertex longitude (rad) */
 #define LAL_ET2_DETECTOR_LATITUDE_RAD          	0.76299307990	/**< ET2 vertex latitude (rad) */
 #define LAL_ET2_DETECTOR_ELEVATION_SI          	59.735	/**< ET2 vertex elevation (m) */
-#define LAL_ET2_DETECTOR_ARM_X_AZIMUTH_RAD     	4.52795305701	/**< ET2 x arm azimuth (rad) */
-#define LAL_ET2_DETECTOR_ARM_Y_AZIMUTH_RAD     	3.48075550581	/**< ET2 y arm azimuth (rad) */
-#define LAL_ET2_DETECTOR_ARM_X_ALTITUDE_RAD    	0.00000000000	/**< ET2 x arm altitude (rad) */
-#define LAL_ET2_DETECTOR_ARM_Y_ALTITUDE_RAD    	0.00000000000	/**< ET2 y arm altitude (rad) */
+#define LAL_ET2_DETECTOR_ARM_X_AZIMUTH_RAD     	4.52845115854	/**< ET2 x arm azimuth (rad) */
+#define LAL_ET2_DETECTOR_ARM_Y_AZIMUTH_RAD     	3.48125307555	/**< ET2 y arm azimuth (rad) */
+#define LAL_ET2_DETECTOR_ARM_X_ALTITUDE_RAD    	-0.00078362156	/**< ET2 x arm altitude (rad) */
+#define LAL_ET2_DETECTOR_ARM_Y_ALTITUDE_RAD    	-0.00157024452	/**< ET2 y arm altitude (rad) */
 #define LAL_ET2_DETECTOR_ARM_X_MIDPOINT_SI     	5000.00000000000	/**< ET2 x arm midpoint (m) */
 #define LAL_ET2_DETECTOR_ARM_Y_MIDPOINT_SI     	5000.00000000000	/**< ET2 y arm midpoint (m) */
 #define LAL_ET2_VERTEX_LOCATION_X_SI           	4.53936951685e+06	/**< ET2 x-component of vertex location in Earth-centered frame (m) */
@@ -660,10 +660,10 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_ET3_DETECTOR_LONGITUDE_RAD         	0.18192996730	/**< ET3 vertex longitude (rad) */
 #define LAL_ET3_DETECTOR_LATITUDE_RAD          	0.76270463257	/**< ET3 vertex latitude (rad) */
 #define LAL_ET3_DETECTOR_ELEVATION_SI          	59.727	/**< ET3 vertex elevation (m) */
-#define LAL_ET3_DETECTOR_ARM_X_AZIMUTH_RAD     	2.43355795462	/**< ET3 x arm azimuth (rad) */
-#define LAL_ET3_DETECTOR_ARM_Y_AZIMUTH_RAD     	1.38636040342	/**< ET3 y arm azimuth (rad) */
-#define LAL_ET3_DETECTOR_ARM_X_ALTITUDE_RAD    	0.00000000000	/**< ET3 x arm altitude (rad) */
-#define LAL_ET3_DETECTOR_ARM_Y_ALTITUDE_RAD    	0.00000000000	/**< ET3 y arm altitude (rad) */
+#define LAL_ET3_DETECTOR_ARM_X_AZIMUTH_RAD     	2.43258574281	/**< ET3 x arm azimuth (rad) */
+#define LAL_ET3_DETECTOR_ARM_Y_AZIMUTH_RAD     	1.38538766217	/**< ET3 y arm azimuth (rad) */
+#define LAL_ET3_DETECTOR_ARM_X_ALTITUDE_RAD    	-0.00156852107	/**< ET3 x arm altitude (rad) */
+#define LAL_ET3_DETECTOR_ARM_Y_ALTITUDE_RAD    	-0.00078189811	/**< ET3 y arm altitude (rad) */
 #define LAL_ET3_DETECTOR_ARM_X_MIDPOINT_SI     	5000.00000000000	/**< ET3 x arm midpoint (m) */
 #define LAL_ET3_DETECTOR_ARM_Y_MIDPOINT_SI     	5000.00000000000	/**< ET3 y arm midpoint (m) */
 #define LAL_ET3_VERTEX_LOCATION_X_SI           	4.54240595075e+06	/**< ET3 x-component of vertex location in Earth-centered frame (m) */

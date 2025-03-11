@@ -150,4 +150,3 @@ LALResampleREAL4TimeSeries(
 #endif
 
 #endif /* _RESAMPLETIMESERIES_H */
-

@@ -70,11 +70,13 @@ AM_INIT_AUTOMAKE([ \
 MIN_LAL_VERSION="7.6.0"
 MIN_LALMETAIO_VERSION="4.0.0"
 MIN_LALSIMULATION_VERSION="6.1.0"
-MIN_PYTHON_LIGO_LW_VERSION="1.7.0"
+MIN_PYTHON_LIGO_LW_VERSION="1.8.0"
+MIN_SCIPY_VERSION="0.19"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
 AC_SUBST([MIN_LALSIMULATION_VERSION])
 AC_SUBST([MIN_PYTHON_LIGO_LW_VERSION])
+AC_SUBST([MIN_SCIPY_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -118,7 +120,7 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([3.5])
+LALSUITE_CHECK_PYTHON([3.6])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -159,9 +161,6 @@ LALSUITE_USE_SWIG
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
 
-# check for pretty code formatters
-LALSUITE_PROG_PRETTY_CODE
-
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
@@ -189,7 +188,7 @@ AM_COND_IF(
     AC_MSG_CHECKING(expected outcome of snglcoinc_verify.py)
     AM_CONDITIONAL(
       [SNGLCOINC_XPASS],
-      [${PYTHON} -c "import scipy; import ligo.lw; assert scipy.__version__ > '0.18.999'" 2> /dev/null],
+      [${PYTHON} -c "import scipy; import igwn_ligolw; assert scipy.__version__ > '0.18.999'" 2> /dev/null],
     )
     AS_IF(
       [test "x${SNGLCOINC_XPASS}" = xyes],

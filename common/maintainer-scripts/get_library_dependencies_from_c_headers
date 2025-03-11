@@ -1,6 +1,11 @@
 #!/bin/bash
 # Author: Karl Wette, 2022
 
+# Determine library dependencies by tracking C header usage between
+# libraries. This might be useful during major reorganisation where one
+# wanted to confirm library dependencies. Will muck up a local build
+# since it stores preprocessed code in `.o` files.
+
 set -e
 
 # only run from a clean Git repository

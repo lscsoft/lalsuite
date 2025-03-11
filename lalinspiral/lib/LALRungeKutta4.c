@@ -171,7 +171,7 @@ XLALRungeKutta4(
 
    if ( !integrator->input )
      XLAL_ERROR( XLAL_EFAULT );
-   
+
    if ( !params )
      XLAL_ERROR( XLAL_EFAULT );
 
@@ -195,10 +195,10 @@ XLALRungeKutta4(
   while (t < input->h)
   {
     REAL8 tOld = t;
-    XLAL_CALLGSL( gslStatus = gsl_odeiv_evolve_apply(integrator->evolve, 
+    XLAL_CALLGSL( gslStatus = gsl_odeiv_evolve_apply(integrator->evolve,
                     integrator->control, integrator->step, &sys,
 				&t, input->h, &h, integrator->y) );
-    
+
     /*printf("h = %e, t = %e\n", h, t);*/
     if ( gslStatus != GSL_SUCCESS )
     {

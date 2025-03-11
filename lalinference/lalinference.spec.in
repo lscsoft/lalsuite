@@ -38,26 +38,23 @@ BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python3x
-BuildRequires: python-srpm-macros
-BuildRequires: python3-rpm-macros
-BuildRequires: epel-rpm-macros
-BuildRequires: python%{python3_pkgversion}
-BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-astropy >= 1.1.1
-BuildRequires: python%{python3_pkgversion}-gwdatafind
-BuildRequires: python%{python3_pkgversion}-healpy >= 1.9.1
-BuildRequires: python%{python3_pkgversion}-h5py
-BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-lscsoft-glue >= @MIN_GLUE_VERSION@
-BuildRequires: python%{python3_pkgversion}-matplotlib >= 1.2.0
-BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-BuildRequires: python%{python3_pkgversion}-pytest
-BuildRequires: python%{python3_pkgversion}-scipy >= 0.9.0
+BuildRequires: python3
+BuildRequires: python3-devel
+BuildRequires: python3-lal >= @MIN_LAL_VERSION@
+BuildRequires: python3-lalframe >= @MIN_LALFRAME_VERSION@
+BuildRequires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python3-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python3-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: python3dist(astropy) >= 1.1.1
+BuildRequires: python3dist(gwdatafind)
+BuildRequires: python3dist(healpy) >= 1.9.1
+BuildRequires: python3dist(h5py)
+BuildRequires: python3dist(lscsoft-glue) >= @MIN_GLUE_VERSION@
+BuildRequires: python3dist(matplotlib) >= 1.2.0
+BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+BuildRequires: python3dist(pytest)
+BuildRequires: python3dist(scipy) >= 0.9.0
 
 # octave
 BuildRequires: octave-devel
@@ -73,9 +70,8 @@ BuildRequires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
 # lalinference
 Summary: LVK Algorithm Inference Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
+Requires: python3-%{name} = %{version}-%{release}
 Requires: %{name}-data
-Obsoletes: python2-%{name} <= 2.0.7-1
 %description
 The LVK Algorithm Inference Library for gravitational wave data analysis.
 
@@ -125,30 +121,28 @@ package contains files needed build applications that use the LAL Inference
 library.
 
 # python3x-lalinference
-%package -n python%{python3_pkgversion}-%{name}
+%package -n python3-%{name}
 Summary: Python %{python3_version} Bindings for LALInference
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-astropy >= 1.1.1
-Requires: python%{python3_pkgversion}-gwdatafind
-Requires: python%{python3_pkgversion}-healpy >= 1.9.1
-Requires: python%{python3_pkgversion}-h5py
-Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
-Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: python%{python3_pkgversion}-ligo-gracedb
-Requires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
-Requires: python%{python3_pkgversion}-ligo-segments
-Requires: python%{python3_pkgversion}-lscsoft-glue >= @MIN_GLUE_VERSION@
-Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
-Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-Requires: python%{python3_pkgversion}-scipy >= 0.8
-Obsoletes: python2-%{name} < 3.1.0-1
-%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-%description -n python%{python3_pkgversion}-%{name}
+Requires: python3
+Requires: python3-lal >= @MIN_LAL_VERSION@
+Requires: python3-lalframe >= @MIN_LALFRAME_VERSION@
+Requires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python3-lalburst >= @MIN_LALBURST_VERSION@
+Requires: python3-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+Requires: python3dist(astropy) >= 1.1.1
+Requires: python3dist(gwdatafind)
+Requires: python3dist(healpy) >= 1.9.1
+Requires: python3dist(h5py)
+Requires: python3dist(igwn-ligolw) >= @MIN_PYTHON_LIGO_LW_VERSION@
+Requires: python3dist(igwn-segments)
+Requires: python3dist(ligo-gracedb)
+Requires: python3dist(lscsoft-glue) >= @MIN_GLUE_VERSION@
+Requires: python3dist(matplotlib) >= 1.2.0
+Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+Requires: python3dist(scipy) >= 0.8
+%description -n python3-%{name}
 The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings for LALInference.
 
@@ -214,7 +208,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files -n python%{python3_pkgversion}-%{name}
+%files -n python3-%{name}
 %defattr(-,root,root)
 %doc README.md
 %license COPYING

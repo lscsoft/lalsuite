@@ -561,7 +561,7 @@ int XLALFrameUFrameHSetRun_FrameC_(LALFrameUFrameH * frame, int run)
     TRY_FRAMEC_FUNCTION(FrameCFrameHSet, frame, FRAME_H_FIELD_RUN, run_, FRAME_H_FIELD_LAST);
 }
 
-/* 
+/*
  * FrChan functions
  */
 

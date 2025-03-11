@@ -489,7 +489,7 @@ int NRHybSur_Init(
     if (ret == XLAL_SUCCESS){
         NR_hybsur_data->setup = 1;
     }
-    
+
     return ret;
 }
 #endif

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[7.25.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[7.25.2],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -31,7 +31,7 @@ AC_PROG_AWK
 AC_PROG_SED
 
 LALSUITE_ENABLE_NIGHTLY
-LALSUITE_CHECK_PYTHON([3.5])
+LALSUITE_CHECK_PYTHON([3.6])
 LALSUITE_CHECK_GIT_REPO
 
 # provide LAL library enable/disable options

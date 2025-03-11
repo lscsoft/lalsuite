@@ -1429,4 +1429,3 @@ REAL8 minPeriod( const REAL8 moddepth, const REAL8 cohtime )
   REAL8 minP = 2.0 * moddepth * cohtime * cohtime;
   return minP;
 } /* minPeriod() */
-

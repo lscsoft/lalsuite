@@ -104,7 +104,7 @@ void IMRPhenomXHM_SetHMWaveformVariables(
   wf->InspiralAmpVeto=0;
   wf->IntermediateAmpVeto=0;
   wf->RingdownAmpVeto=0;
-  
+
   switch(wf->modeTag){
     case 21:{
       wf->modeInt=0;
@@ -144,15 +144,15 @@ void IMRPhenomXHM_SetHMWaveformVariables(
   wf->IMRPhenomXHMInspiralPhaseVersion       = XLALSimInspiralWaveformParamsLookupPhenomXHMInspiralPhaseVersion(LALParams);//122019
   wf->IMRPhenomXHMIntermediatePhaseVersion   = XLALSimInspiralWaveformParamsLookupPhenomXHMIntermediatePhaseVersion(LALParams); //122019
   wf->IMRPhenomXHMRingdownPhaseVersion       = XLALSimInspiralWaveformParamsLookupPhenomXHMRingdownPhaseVersion(LALParams); //122019
-  
+
   wf->IMRPhenomXHMInspiralAmpFitsVersion     = XLALSimInspiralWaveformParamsLookupPhenomXHMInspiralAmpFitsVersion(LALParams); //122018
   wf->IMRPhenomXHMIntermediateAmpFitsVersion = XLALSimInspiralWaveformParamsLookupPhenomXHMIntermediateAmpFitsVersion(LALParams); //122018
   wf->IMRPhenomXHMRingdownAmpFitsVersion     = XLALSimInspiralWaveformParamsLookupPhenomXHMRingdownAmpFitsVersion(LALParams); //122018
-  
+
   wf->IMRPhenomXHMInspiralAmpFreqsVersion    = XLALSimInspiralWaveformParamsLookupPhenomXHMInspiralAmpFreqsVersion(LALParams); //122018
   wf->IMRPhenomXHMIntermediateAmpFreqsVersion= XLALSimInspiralWaveformParamsLookupPhenomXHMIntermediateAmpFreqsVersion(LALParams); //122018
   wf->IMRPhenomXHMRingdownAmpFreqsVersion    = XLALSimInspiralWaveformParamsLookupPhenomXHMRingdownAmpFreqsVersion(LALParams); //122018
- 
+
   /* Reconstruction version for the amplitude */
   wf->IMRPhenomXHMInspiralAmpVersion         = XLALSimInspiralWaveformParamsLookupPhenomXHMInspiralAmpVersion(LALParams); //3  (3 collocation points)
   wf->IMRPhenomXHMIntermediateAmpVersion     = XLALSimInspiralWaveformParamsLookupPhenomXHMIntermediateAmpVersion(LALParams); //2   (2 collocation points)
@@ -174,60 +174,60 @@ void IMRPhenomXHM_SetHMWaveformVariables(
 
     /* Set parameters for coprecessing frame deviations. NOTE that we add a factor of delta so that all 33 deviations turn off at equal mass ratio -- i.e. there is NO calibration for equal mass ratio cases */
     wf->PNR_DEV_PARAMETER =  wf22->delta * (wf22->PNR_DEV_PARAMETER);
-  
+
     // IF PNR's coprecessing model is wanted, use its fits for the deviation parameters ELSE use the input values with defaults of zeros
-    if( wf22->IMRPhenomXPNRUseTunedCoprec33 ) 
+    if( wf22->IMRPhenomXPNRUseTunedCoprec33 )
     {
-      
+
       /* ------------------------------------------------------ >>
-      Get them from the stored model fits that define PhenomXCP 
+      Get them from the stored model fits that define PhenomXCP
       within PhenomXPNR
       << ------------------------------------------------------ */
-      
+
       /* MU1 modifies pAmp->lambda */
       wf->MU1     = XLALSimIMRPhenomXCP_MU1_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
-      
-      // NOTE that the function for MU2 is not defined in the model 
+
+      // NOTE that the function for MU2 is not defined in the model
       /* MU2 would modify pAmp->gamma2 */
-      
+
       /* MU2 */
       wf->MU2     = XLALSimIMRPhenomXCP_MU2_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
-      
+
       /* MU3 modifies pAmp->gamma3 */
       wf->MU3     = XLALSimIMRPhenomXCP_MU3_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
-      
+
       /* MU4 modifies V2 or V3 for the intermediate amplitude
       for the DEFAULT value of IMRPhenomXIntermediateAmpVersion
       use in IMRPhenomXPHM */
       wf->MU4     = XLALSimIMRPhenomXCP_MU4_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
-      
+
       // NOTE that we choose to disable time-shift tuning
-      // /* NU0 modifies pPhase->c0 */ 
+      // /* NU0 modifies pPhase->c0 */
       // wf->NU0     = XLALSimIMRPhenomXCP_NU0_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
-      
+
       /* NU4 modifies pPhase->cL */
       wf->NU4     = XLALSimIMRPhenomXCP_NU4_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
-      
-      /* NU5 modifies wf->fRING [EXTRAP-PASS-TRUE] */ 
+
+      /* NU5 modifies wf->fRING [EXTRAP-PASS-TRUE] */
       wf->NU5     = XLALSimIMRPhenomXCP_NU5_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
-      
+
       /* NU6 modifies wf->fDAMP [EXTRAP-PASS-TRUE] */
       wf->NU6     = XLALSimIMRPhenomXCP_NU6_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
-      
+
       /* ZETA1 modifies pPhase->b4 */
       wf->ZETA1   = XLALSimIMRPhenomXCP_ZETA1_l3m3( wf22->theta_LS, wf22->eta, wf22->a1 );
-      
+
       /* ZETA2 modifies pPhase->b1  */
       wf->ZETA2   = XLALSimIMRPhenomXCP_ZETA2_l3m3( wf22->theta_LS, wf22->eta, wf22->a1 );
-      
+
       /* DEBUGGING: Turn off select deviations */
       // wf->MU1 = 0;
       // wf->MU2 = 0;
       // wf->MU3 = 0;
       // wf->MU4 = 0;
-      
+
     } else {
-    
+
       // NOTE that all default values are all ZERO
       wf->MU1            = XLALSimInspiralWaveformParamsLookupPhenomXCPMU1l3m3(LALParams);
       wf->MU2            = XLALSimInspiralWaveformParamsLookupPhenomXCPMU2l3m3(LALParams);
@@ -239,9 +239,9 @@ void IMRPhenomXHM_SetHMWaveformVariables(
       wf->NU6            = XLALSimInspiralWaveformParamsLookupPhenomXCPNU6l3m3(LALParams);
       wf->ZETA1          = XLALSimInspiralWaveformParamsLookupPhenomXCPZETA1l3m3(LALParams);
       wf->ZETA2          = XLALSimInspiralWaveformParamsLookupPhenomXCPZETA2l3m3(LALParams);
-    
+
     }
-    
+
   }
 
 
@@ -254,11 +254,11 @@ void IMRPhenomXHM_SetHMWaveformVariables(
   wf->IMRPhenomXHMRingdownPhaseFreqsVersion = wf->IMRPhenomXHMRingdownPhaseVersion;
 
   wf->nCollocPtsRDPhase = 0;
-  
+
   if (wf->IMRPhenomXHMReleaseVersion == 122019){
       if(wf22->eta < 0.013886133703630232 && wf22->chi1L<=0.9){ // For q>70 and chi1<0.9 use two intermediate regions.
         wf->AmpEMR = 1;                                         // These cases have a more pronounced drop off in the amplitude at the end of the inspiral and need two intermediate regions to model it.
-      }      
+      }
       switch(wf->modeTag){
         case 21:{
           if(wf22->q < 8.){
@@ -291,15 +291,15 @@ void IMRPhenomXHM_SetHMWaveformVariables(
       wf->nCollocPtsInspAmp = wf->IMRPhenomXHMInspiralAmpVersion;
       wf->nCollocPtsInterAmp = wf->IMRPhenomXHMIntermediateAmpVersion;
       wf->IMRPhenomXHMRingdownPhaseFreqsVersion = 122019;
-  }  
+  }
   else if (wf->IMRPhenomXHMReleaseVersion == 122022)
   {
       /* Here we change the versions for the collocation point frequencies, parameter space fits and ansatzaes for both amplitude and phase.
          It is better to do it here instead of changing the default values in SimInspiralWaveformParams.c.
          For a new release, copy this else if block and use it as a template. */
-      
+
       /* Amplitude */
-      
+
       // Versions for the cutting and collocation points frequencies
       wf->IMRPhenomXHMInspiralAmpFreqsVersion     = 122022;
       wf->IMRPhenomXHMIntermediateAmpFreqsVersion = 0;
@@ -312,12 +312,12 @@ void IMRPhenomXHM_SetHMWaveformVariables(
       wf->IMRPhenomXHMInspiralAmpVersion     = 123;
       wf->IMRPhenomXHMIntermediateAmpVersion = 211112;
       wf->IMRPhenomXHMRingdownAmpVersion     = 2;
-      
+
       /* Notes for the new release and beyond:
-         - IMRPhenomXHMInspiralAmpVersion: 
+         - IMRPhenomXHMInspiralAmpVersion:
                                            assuming that we have 3 collocation points, it indicates which collocation points are going to be used in the reconstruction.
                                            e.g.: 123 means we use the three, 13 means we only use the 1st and the 3rd; 2 means we only use the 2nd, etc.
-         - IMRPhenomXHMIntermediateAmpVersion: 
+         - IMRPhenomXHMIntermediateAmpVersion:
                                            the number of digits indicate the number of collocation points in the intermediate part.
                                            in this case we have 6 digits which relates to the 4 fitted collocation points + 2 boundaries
                                            if the digit is 0 then we discard that collocation point
@@ -328,11 +328,11 @@ void IMRPhenomXHM_SetHMWaveformVariables(
                                            e.g.: 211112 means we will use the 4 parameter space fits + 2 value + 2 derivative at the boundaries = 8 degrees of freedom
                                            e.g.: 110012 means we skip the left derivative and the two inner most collocation points = 5 degrees of freedom
          - IMRPhenomXHMRingdownAmpVersion:
-                                           this is just an index for the different ansatz versions 
+                                           this is just an index for the different ansatz versions
                                            currently it only takes 0 (old release) and 1 (122022 release)
         */
-      
-      
+
+
       // Mode specific tweaks for amplitude
       if (wf->modeTag == 21){
           /* The 21 behaves better if we skip the left the derivative.
@@ -344,16 +344,16 @@ void IMRPhenomXHM_SetHMWaveformVariables(
           // Use fit of coefficients instead of collocation points
           wf->IMRPhenomXHMRingdownAmpVersion = 1;
       }
-      
+
       // As mentioned above, the number of digits in IMRPhenomXHMInsp(Intermediate)AmpVersion gives the number of collocation points for the inspiral(intermediate) part
       wf->nCollocPtsInspAmp  = snprintf(NULL, 0, "%i", wf->IMRPhenomXHMInspiralAmpVersion);
       wf->nCollocPtsInterAmp = snprintf(NULL, 0, "%i", wf->IMRPhenomXHMIntermediateAmpVersion);
-      
-      
+
+
       /* Phase */
       /* HM Phase is unchanged respect to the old release */
       if (wf->modeTag == 32){wf->nCollocPtsRDPhase = 4;}
-      
+
       /* Uncommenting the code below will employ a recalibration of the spheroidal phase for the 32.
          This includes the collocation points for the derivative and the extra time and phase shift respect the 22 mode.
          This can introduce introduce significant mismatch in the multimode waveform in the region without NR, so it is left for the next update. */
@@ -365,16 +365,16 @@ void IMRPhenomXHM_SetHMWaveformVariables(
       //   wf->nCollocPtsRDPhase = 5;
       // }
 
-      
-            
+
+
   }
   else{
     XLAL_ERROR_VOID(XLAL_EDOM, "Error in IMRPhenomXHM_SetHMWaveformVariables: IMRPhenomXHMReleaseVersion=%i is not valid.\n", wf->IMRPhenomXHMReleaseVersion);
   }
-    
+
   /* Common for all releases */
-    
-  if(wf->modeTag==32){ 
+
+  if(wf->modeTag==32){
       wf->nCollocPtsInterPhase=6;
   }
   else{
@@ -392,7 +392,7 @@ void IMRPhenomXHM_SetHMWaveformVariables(
   /* Ringdown and damping frequencies*/
   wf->fRING = (qnms->fring_lm[wf->modeInt](wf22->afinal))/wf22->Mfinal;
   wf->fDAMP = (qnms->fdamp_lm[wf->modeInt](wf22->afinal))/wf22->Mfinal;
-  
+
   /* Ringdown and damping frequencies*/
   /* (IMRPhenomXPNRUseTunedCoprec) The EZH effective ringdown perscription uses the precessing final spin while the calibrated XPNR uses the non-precessing final spin to calculate its base waveform to which precession effect are added.  */
   #if DEBUG == 1
@@ -401,13 +401,13 @@ void IMRPhenomXHM_SetHMWaveformVariables(
     printf("wf22->afinal      : %e\n",wf22->afinal);
     printf("wf22->afinal_prec  : %e\n",wf22->afinal_prec);
   #endif
-  
-  /* We wish to use the EZH formula for the non-tuned HMs. This formula requires the precessing final spin, 
-   * while tuning was performed relative to the non-precessing model and its non-precessing final spin 
+
+  /* We wish to use the EZH formula for the non-tuned HMs. This formula requires the precessing final spin,
+   * while tuning was performed relative to the non-precessing model and its non-precessing final spin
    * (as would be conferred through wf22->afinal -- see IMRPhenomX_precession.c around about line 566).
-   * 
+   *
    * Just a note: when IMRPhenomXPNRUseTunedCoprec is false, afinal = afinal_prec and the code just above
-   * assigns the appropriate ringdown frequency and damping time. See LALSimIMRPhenomX_precession.c for 
+   * assigns the appropriate ringdown frequency and damping time. See LALSimIMRPhenomX_precession.c for
    * the definition of afinal. */
   if( wf22->IMRPhenomXPNRUseTunedCoprec )
   {
@@ -416,7 +416,7 @@ void IMRPhenomXHM_SetHMWaveformVariables(
   #if DEBUG == 1
     printf("\n** ell, emm **     : %i,%i\n",wf->ell,wf->emm);
     printf("fring              : %e\n",wf->fRING);
-  #endif      
+  #endif
     wf->fRING = wf->fRING - emm * wf22->fRINGEffShiftDividedByEmm;
   #if DEBUG == 1
     printf("fring shift        : %e\n",- emm * wf22->fRINGEffShiftDividedByEmm);
@@ -427,27 +427,27 @@ void IMRPhenomXHM_SetHMWaveformVariables(
 
   if ( wf22->IMRPhenomXPNRUseTunedCoprec33 ) {
   if (wf->modeTag==33) {
-    
+
     #if DEBUG == 1
       printf("fring           : %e\n",wf->fRING);
     #endif
-    
+
     // Apply PNR CoPrec deviations. NOTE that the are OFF when wf22->IMRPhenomXPNRUseTunedCoprec33 is false (see code above)
     wf->fRING = wf->fRING - (wf->PNR_DEV_PARAMETER * wf->NU5);
     wf->fDAMP = wf->fDAMP + (wf->PNR_DEV_PARAMETER * wf->NU6);
-    
+
     #if DEBUG == 1
       printf("fring shift     : %e\n",- (wf->PNR_DEV_PARAMETER * wf->NU5));
       printf("fring (coprec)  : %e\n",wf->fRING);
       printf("fring prec      : %e\n",(qnms->fring_lm[wf->modeInt](wf22->afinal_prec))/wf22->Mfinal);
       printf("fring eff shift : %e\n",- emm * wf22->fRINGEffShiftDividedByEmm);
     #endif
-    
+
     if( wf22->IMRPhenomXPNRUseTunedCoprec ){
       // Note that we transition to the EZH effective ringdown frequency outside of the coprecessing calibration region, ie where PNR_DEV_PARAMETER and pnr_window become zero
       wf->fRING = wf->fRING - (1.0-wf22->pnr_window) * emm * wf22->fRINGEffShiftDividedByEmm;
-    } 
-    
+    }
+
   }
   }
 
@@ -732,11 +732,11 @@ double IMRPhenomXHM_Amplitude_fcutInsp(IMRPhenomXHMWaveformStruct *pWFHM, IMRPhe
   switch(version){
     case 122018: // default version
     {
-        
+
         double fring  = pWFHM->fRING;
         double chieff = pWF22->chiEff;
         double fISCO  = (pWF22->fISCO)*emm*0.5;
-        
+
         switch(pWFHM->modeTag)
         {
             case 21:{
@@ -985,7 +985,7 @@ void IMRPhenomXHM_GetPNAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, 
 
   const double prefactors[] = {sqrt(2)/3., 0.75*sqrt(5/7.), sqrt(5/7.)/3., 4*sqrt(2)/9*sqrt(5/7.)}; //Global factors of each PN hlm
   pAmp->PNglobalfactor = pow(2./(pWFHM->emm),-7/6.)*prefactors[pWFHM->modeInt]; //This is to compensate that we rescale data with the leading order of the 22
- 
+
   /*switch(inspversion){  FIXMEE
     case 122018: // default version
     {*/
@@ -1189,12 +1189,12 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
     pAmp->nCoefficientsInter = 0;
 
     /*** Proceed region by region ***/
-    if(pWFHM->IMRPhenomXHMReleaseVersion != 122019){ 
+    if(pWFHM->IMRPhenomXHMReleaseVersion != 122019){
         pAmp->InspRescaleFactor = 0;
         pAmp->RDRescaleFactor = 0;
         pAmp->InterRescaleFactor = 0;
-                    
-            
+
+
         /* Transform IMRPhenomXHMIntermediateAmpVersion number to int array defining what to do for each collocation point */
         /* 0: don't use coll point, 1: use point, 2: use point and derivative (this only applies for boundaries) */
         // e.g. pAmp->VersionCollocPtsInter = {1, 1, 1, 1, 0, 2} -> use the two boundaries, add derivative to the right one, skip third collocation point
@@ -1206,9 +1206,9 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
 
         pAmp->nCoefficientsInter = 0;
         for (UINT2 i = 0; i < pWFHM->nCollocPtsInterAmp; i++) pAmp->nCoefficientsInter += pAmp->VersionCollocPtsInter[i];
-        /* The number of coefficients in the intermediate ansatz cannot be larger than the number of available collocation points in IMRPhenomXHMIntermediateAmpVersion 
+        /* The number of coefficients in the intermediate ansatz cannot be larger than the number of available collocation points in IMRPhenomXHMIntermediateAmpVersion
            If e.g. IMRPhenomXHMIntermediateAmpVersion has 6 slots, the maximum number of coefficients would be 6 + 2 because we count for the derivatives at the boundaries. */
-        if (pAmp->nCoefficientsInter > pWFHM->nCollocPtsInterAmp + 2) 
+        if (pAmp->nCoefficientsInter > pWFHM->nCollocPtsInterAmp + 2)
             XLAL_ERROR_VOID(XLAL_EFUNC, "IMRPhenomXHM_GetAmplitudeCoefficients failed. Inconsistent number of collocation points (%i) and free parameters (%i).", pWFHM->nCollocPtsInterAmp + 2, pAmp->nCoefficientsInter);
 
         pAmp->nCoefficientsRDAux = 0;
@@ -1229,7 +1229,7 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
         IMRPhenomXHM_Get_Inspiral_Amp_Coefficients(pAmp, pWFHM, pWF22);
 
         IMRPhenomXHM_RD_Amp_Coefficients(pWF22, pWFHM, pAmp);
-                
+
         IMRPhenomXHM_Intermediate_Amp_Coefficients(pAmp, pWFHM, pWF22, pPhase, pAmp22, pPhase22);
 
         // printf("\nInsp Coll points\n");
@@ -1244,7 +1244,7 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
         // for(UINT2 i = 0; i < 3; i++){
         //     printf("%.16f %.16e\n", pAmp->CollocationPointsFreqsAmplitudeRD[i], pAmp->CollocationPointsValuesAmplitudeRD[i]);
         // }
-        // 
+        //
         // printf("\nInsp Coefficients\n");
         // for(UINT2 i = 0; i < 3; i++){
         //     printf("%.16e\n", pAmp->InspiralCoefficient[i]);
@@ -1265,7 +1265,7 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
         // for(UINT2 i = 0; i < pAmp->nCoefficientsRDAux; i++){
         //     printf("%.16e\n", pAmp->RDAuxCoefficient[i]);
         // }
-        
+
 
         /* Set Rescale Factors to build Strain (=0) */
         pAmp->InspRescaleFactor = 0;
@@ -1377,7 +1377,7 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
         {
           pAmp->CollocationPointsValuesAmplitudeInsp[i] = fabs(pAmp->InspiralAmpFits[modeint*nCollocPtsInspAmp+i](pWF22,pWFHM->IMRPhenomXHMInspiralAmpFitsVersion));
         }
-    
+
 
 
         // Values of the collocation point minus the Post-Newtonian value. This gives a "collocation point" for the pseudo-PN part.
@@ -1525,7 +1525,7 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
         pAmp->RDCoefficient[1] = pAmp->RingdownAmpFits[modeint*3+1](pWF22,pWFHM->IMRPhenomXHMRingdownAmpFitsVersion);
         pAmp->RDCoefficient[2] = pAmp->RingdownAmpFits[modeint*3+2](pWF22,pWFHM->IMRPhenomXHMRingdownAmpFitsVersion);
         pAmp->RDCoefficient[3] = 1./12.;
-        
+
         /* (IMRPhenomXPNRUseTunedCoprec) Amplitude deviations e.g. for PNR's copreessing model*/
         if(pWFHM->modeTag==33){
           // pAmp->lambda  = pAmp->lambda   +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->MU1 );
@@ -1639,7 +1639,7 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
         V2 = pAmp->CollocationPointsValuesAmplitudeInter[0];
         V3 = pAmp->CollocationPointsValuesAmplitudeInter[1];
         V4 = powers_of_F4.m_seven_sixths * rdF4;
-        
+
         #if DEBUG == 1
         printf("Before intermediate veto \n");
         printf("V1 = %.16f\n",V1);
@@ -1670,7 +1670,7 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
         V2  = 1.0 / V2;
         V3  = 1.0 / V3;
         V4  = 1.0 / V4;
-        
+
         /* Apply NR tuning for precessing cases (IMRPhenomXPNRUseTunedCoprec) */
         if(pWFHM->modeTag==33){
           V2 = V2 + ( pWFHM->PNR_DEV_PARAMETER * pWFHM->MU1 );
@@ -1908,7 +1908,7 @@ double RescaleFactor(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXHMAmpCoeff
       case 0:{ // Strain
          factor = 1.;
          break;
-      }          
+      }
       case 1:{ // 22factor
           factor = pAmp->ampNorm * powers_of_Mf->m_seven_sixths;
           break;
@@ -1978,8 +1978,8 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
     pPhase->alpha2 = 0.0;
     pPhase->alphaL = 0.0;
 
-  
-    
+
+
     // set number of collocation points used (depends on the mode)
     int nCollocationPts_inter=pWFHM->nCollocPtsInterPhase;
     // define mass-ratio that discriminates between EMR and rest of cases
@@ -2013,9 +2013,9 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
     double phenXnonLog[]={pPhase22->phi0,pPhase22->phi1,pPhase22->phi2,pPhase22->phi3,pPhase22->phi4,pPhase22->phi5,pPhase22->phi6,pPhase22->phi7,pPhase22->phi8,pPhase22->phi9,0.,0,0,0};
     double phenXLog[]={0.,0.,0.,0.,0.,pPhase22->phi5L,pPhase22->phi6L,0.,pPhase22->phi8L,pPhase22->phi9L,0,0,0,0};
     double pseudoPN[]={0.,0.,0.,0.,0.,0.,0.,0.,pPhase22->sigma1,pPhase22->sigma2,pPhase22->sigma3,pPhase22->sigma4,pPhase22->sigma5};
-    
-  
-    
+
+
+
     //rescale the coefficients of phenX by applying phi_lm(f)~m/2 *phi_22(2/m f)
     // for more details, see Appendix D of the paper
     double m_over_2=emm*0.5, two_over_m=1./m_over_2;
@@ -2186,7 +2186,7 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
         // we first compute the full spherical-harmonic-basis waveforms at three points
         double complex SphericalWF[3];
         double fstep=0.0000001;
-        
+
         for(int i=0; i<3; i++){
 
           double FF=fcutRD+(i-1)*fstep;
@@ -2285,7 +2285,7 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
     pPhase->c1 = gsl_vector_get(x,2); // x[2]; // c1
     pPhase->c2 = gsl_vector_get(x,3); // x[3]; // c2
     pPhase->c4 = gsl_vector_get(x,4); // x[4]; // c4
-    
+
     /* (IMRPhenomXPNRUseTunedCoprec) Add PNR or input deviations (e.g. tuning for coprecessing frame model) to cL, c1 and c4 in the same manner as is done for the l=m=2 moment */
     if ( pWFHM->modeTag == 33){
 	    pPhase->c0 = pPhase->c0  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->NU0 );
@@ -2293,7 +2293,7 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
       pPhase->c1 = pPhase->c1  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->ZETA2 );
       pPhase->c4 = pPhase->c4  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->ZETA1 );
     }
-    
+
 
     // currently the 32 mode is calibrated using one extra point
     if ((pWFHM->modeTag)== 32)
@@ -2330,8 +2330,8 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
 
     pPhase->C1RD=IMRPhenomXHM_Inter_Phase_Ansatz(fcutRD, &powers_of_f,pWFHM, pPhase)-pPhase->dphi0RD;
     pPhase->CRD=-pPhase->C1RD*fcutRD+IMRPhenomXHM_Inter_Phase_AnsatzInt(fcutRD, &powers_of_f,pWFHM, pPhase)-pPhase->phi0RD;
-    
-    
+
+
     // we now have a C1 reconstruction of the phase
     // below we align each mode so that at low-f its relative phase wrt the 22 agrees with PN
     double falign;
@@ -2341,7 +2341,7 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
     else
     falign=m_over_2*pWF22->fMECO;
     // printf("0>> falign = %f\n",falign);
-    
+
     // // (ltl) 0.6 is found to be too large a factor, so let's try a smaller one
     // if (pWF22->IMRPhenomXPNRUseTunedCoprec && (pWFHM->modeTag==33)) {
     //     if(pWF22->eta>pWFHM->etaEMR){
@@ -2370,24 +2370,24 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
     pPhase->deltaphiLM=fmod(deltaphiLM,2.*LAL_PI);
 
     // /* (ll) We have commented out the code above in order to rewrite the same code in a more carefully formatted way */
-    
+
     // // (ll) Define the relative phase parameter used in Eq. (4.13)
     // double relative_phase_at_zero_freq = 3.*LAL_PI_4*(1-m_over_2);
-    
+
     // // (ll) Define the (2,2) inspiral phase evaluated at (2/m)*falign, and then rescaled by m/2
     // double rescaled_phi22_at_falign = m_over_2*(1./pWF22->eta*IMRPhenomX_Phase_22(two_over_m*falign, &powers_of_f,pPhase22,pWF22)+pWFHM->phaseshift + pWFHM->phiref22)+pWFHM->timeshift*falign;
-    
+
     // //
     // printf("*>> falign = %f\n",falign);
     // printf("*>> relative_phase_at_zero_freq = %f\n",relative_phase_at_zero_freq);
     // printf("*>> m_over_2 = %f\n\n",m_over_2);
-    
-    // // (ll) Define XHM inspiral phase at align frequency 
+
+    // // (ll) Define XHM inspiral phase at align frequency
     // double phiLM_inspiral_at_falign = (IMRPhenomXHM_Inspiral_Phase_AnsatzInt(falign, &powers_of_falign,pPhase)+pPhase->C1INSP*falign+pPhase->CINSP);
 
-    // // (ll) 
+    // // (ll)
     // double deltaphiLM = rescaled_phi22_at_falign - ( relative_phase_at_zero_freq + phiLM_inspiral_at_falign );
-    
+
     // // (ll) Get the representation closest to 2*pi
     // pPhase->deltaphiLM=fmod(deltaphiLM,2.*LAL_PI);
 
@@ -2565,7 +2565,7 @@ void  GetSpheroidalCoefficients(IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenom
     // we compute dphi22(fref)
     IMRPhenomX_Phase_22_ConnectionCoefficients(pWF22,pPhase22);
     pWFHM->timeshift=IMRPhenomX_TimeShift_22(pPhase22, pWF22);
-    
+
     pPhase->phi0_S = 0;
 
     // we impose that dphiS(fref)-dphi22(fref) has the value given by our fit
@@ -2593,7 +2593,7 @@ void  GetSpheroidalCoefficients(IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenom
         pPhase->RDCoefficient[nCollocationPts_RD_Phase + 1] = -IMRPhenomXHM_RD_Phase_DerAnsatz(ff, &powers_of_ff, pWFHM, pPhase) * pow(ff, exponent + 1) / exponent;
         pPhase->RDCoefficient[nCollocationPts_RD_Phase] = IMRPhenomXHM_RD_Phase_Ansatz(ff, &powers_of_ff, pWFHM, pPhase) - pPhase->RDCoefficient[nCollocationPts_RD_Phase + 1] / pow(ff, exponent);
         pPhase->RDCoefficient[nCollocationPts_RD_Phase + 2] = IMRPhenomXHM_RD_Phase_AnsatzInt(ff, &powers_of_ff, pWFHM, pPhase) - (pPhase->RDCoefficient[5]*ff - 0.25 * pPhase->RDCoefficient[6] * powers_of_ff.m_four);
-        pWFHM->fPhaseRDflat = ff;   
+        pWFHM->fPhaseRDflat = ff;
     }
 
     /*************** phase-shift of spheroidal ansatz *******************/
@@ -2614,7 +2614,7 @@ void  GetSpheroidalCoefficients(IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenom
     // printf("phi22ref = %.16e\n", phi22ref);
     // printf("phi32ref = %.16e\n", IMRPhenomXHM_RD_Phase_AnsatzInt(frefRD,&powers_of_FREF,pWFHM,pPhase));
     // printf("frefRD = %.16e\n", frefRD);
-    
+
     // we call a fit for Mod[phiS(fref)-phi22(fref),2*Pi]
     double phishift=IMRPhenomXHM_RD_Phase_32_SpheroidalPhaseShift(pWF22,pWFHM->IMRPhenomXHMRingdownPhaseFitsVersion);
     //if (pWFHM->IMRPhenomXHMRingdownPhaseVersion == 20221114) phishift += LAL_PI;
@@ -2623,10 +2623,10 @@ void  GetSpheroidalCoefficients(IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenom
     //we adjust the relative phase of our reconstruction
     pPhase->phi0_S= phi22ref - IMRPhenomXHM_RD_Phase_AnsatzInt(frefRD,&powers_of_FREF,pWFHM,pPhase) + phishift;
     // printf("phaseshift = %.16e\n", pPhase->phi0_S);
-    // 
+    //
     // printf("phi32ref = %.16e\n", IMRPhenomXHM_RD_Phase_AnsatzInt(frefRD,&powers_of_FREF,pWFHM,pPhase));
-    
-        
+
+
     #if DEBUG == 1
     printf("**********\n alpha0_S=%.16e \n alphaL_S=%.16e \n alpha2_S=%.16e \n alpha4_S=%.16e \n \n ", pPhase->alpha0_S, pPhase->alphaL_S, pPhase->alpha2_S, pPhase->alpha4_S);
     printf("**********\n **Spheroidal reconstruction parameters:**\n \n phi0_S=%.16e \n alpha0_S=%.16e \n alphaL_S=%.16e \n alpha2_S=%.16e \n alpha4_S=%.16e \n \n ",pPhase->phi0_S, pPhase->alpha0_S, pPhase->alphaL_S, pPhase->alpha2_S, pPhase->alpha4_S);
@@ -2710,7 +2710,7 @@ void  GetSpheroidalCoefficients(IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenom
     if(pWF->Ampzero==1){
       return 0.;
     }
-    
+
     // Use step function to only calculate IMR regions in approrpiate frequency regime
     REAL8 Amp, Mf = powers_of_Mf->itself;
     // Inspiral range
@@ -2909,7 +2909,7 @@ REAL8 IMRPhenomXHM_Phase_ModeMixingRecycle(IMRPhenomX_UsefulPowers *powers_of_Mf
     return dPhiInt;
   }
 
-  
+
 
   /*****************/
   /*   DEBUGGING   */

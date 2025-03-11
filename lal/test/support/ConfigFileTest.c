@@ -198,5 +198,3 @@ int main ( int argc, char *argv[])
   return XLAL_SUCCESS;
 
 } // main()
-
-

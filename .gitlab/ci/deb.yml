@@ -17,15 +17,16 @@
     - !reference [.build-init]
     - PACKAGE=${CI_JOB_NAME%%:*}
     # install extra build requirements
-    - apt-get install -y -q -q
+    - retry apt-get install -y -q -q
           lintian
+          python3-venv
     # setup local apt repository to house upstream packages
     - if test -n "$(find . -maxdepth 1 -name '*.deb' -print -quit)"; then
-          apt-get -y -q -q install local-apt-repository;
+          retry apt-get -y -q -q install local-apt-repository;
           mkdir -pv /srv/local-apt-repository;
           mv -v *.deb /srv/local-apt-repository;
           /usr/lib/local-apt-repository/rebuild;
-          apt-get -y -q update;
+          retry apt-get -y -q update;
       fi
     # create orig tarball
     - cd ${PACKAGE}/
@@ -42,7 +43,7 @@
     # update changelog
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
-    - mk-build-deps
+    - retry mk-build-deps
           --tool "apt-get -y -q -o Debug::pkgProblemResolver=yes --no-install-recommends"
           --install
           --remove
@@ -52,6 +53,17 @@
          --prepend-path=/usr/lib/ccache --set-envvar=CCACHE_DIR=${CCACHE_DIR}
          -us -uc -r
          --lintian-opts --color=always --allow-root
+    # create a codeclimate report from the lintian report
+    - !reference [.pip-venv]
+    - pip install "lintian-codeclimate>=0.1.1"
+    - |
+      lintian --allow-root --fail-on none --info --color never ../${PACKAGE}_*.changes > lintian.out
+      python3 -m lintian_codeclimate lintian.out -d . -o $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
+      sed -i \
+        -e "s|debian\/control|debian/control.in|g" \
+        -e "s|debian\/|$PACKAGE/debian/|g" \
+        $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
+      echo "lintian codeclimate report written to lintian-gl-codeclimate-${PACKAGE}.json"
     # print package info
     - set +x
     - cd ${CI_PROJECT_DIR}
@@ -77,6 +89,7 @@
       # the orig tarball
       - "${CI_JOB_NAME%%:*}*.orig.*"
     reports:
+      codequality: "lintian-gl-codeclimate-*.json"
       junit: "${CI_JOB_NAME%%:*}-*/**/*junit*.xml"
     when: always
   rules:

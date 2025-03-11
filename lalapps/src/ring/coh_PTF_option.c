@@ -117,7 +117,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "timing-accuracy",         required_argument, 0, 'G' },
     { "approximant",             required_argument, 0, 'C' },
     { "order",                   required_argument, 0, 'v' },
-    { "h1-slide-segment",        required_argument, 0, '!' }, 
+    { "h1-slide-segment",        required_argument, 0, '!' },
     { "h2-slide-segment",        required_argument, 0, '&' },
     { "l1-slide-segment",        required_argument, 0, '(' },
     { "v1-slide-segment",        required_argument, 0, ')' },
@@ -126,8 +126,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "cluster-window",          required_argument, 0, '4' },
     { "inj-search-window",       required_argument, 0, '3' },
     { "inj-mchirp-window",       required_argument, 0, '5' },
-    { "ligo-calibrated-data",    required_argument, 0, '7' }, 
-    { "virgo-calibrated-data",   required_argument, 0, '8' }, 
+    { "ligo-calibrated-data",    required_argument, 0, '7' },
+    { "virgo-calibrated-data",   required_argument, 0, '8' },
     { "short-slide-offset",      required_argument, 0, '@' },
     { 0, 0, 0, 0 }
   };
@@ -170,7 +170,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case '<': /* trigger-time */
         localparams.trigTime.gpsSeconds = atol( LALoptarg );
         break;
-      case '>': /* trigger-time-ns */ 
+      case '>': /* trigger-time-ns */
         localparams.trigTime.gpsNanoSeconds = atol( LALoptarg );
         break;
       case 'c': /* h1 channel-name */
@@ -238,7 +238,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
           exit(1);
         }
         break;
-      case 'v': /* PN order of waveform */        
+      case 'v': /* PN order of waveform */
         if ( ! strcmp( "twoPN", LALoptarg ) )
         {
           localparams.order = LAL_PNORDER_TWO;
@@ -339,7 +339,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'q': /* num chi square bins */
         localparams.numChiSquareBins = atoi( LALoptarg );
         break;
-      case 'Q': 
+      case 'Q':
         localparams.chiSquareCalcThreshold = atof( LALoptarg );
         break;
       case 'r': /* random seed */
@@ -472,7 +472,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       localparams.numIFO++;
     }
   }
-  
+
   /* check for H1H2 */
   if (localparams.numIFO == 2)
   {
@@ -516,7 +516,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     localparams.analEndPoint = localparams.numTimePoints;
     /* Remove the spectrum truncation */
     localparams.analEndPoint -= floor(\
-        0.5 * localparams.truncateDuration * localparams.sampleRate + 0.5); 
+        0.5 * localparams.truncateDuration * localparams.sampleRate + 0.5);
     /* Remove the buffer points */
     localparams.analEndPoint -= localparams.numBufferPoints;
     /* And set the start point */
@@ -563,7 +563,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     /* Most of this gets stored in fcTmplt->fcTmpltNorm which is computed on
      * the fly. This is the correction needed to that. */
     /* First need to add ( (df)**-7./6. )**2 */
-    localparams.tempCorrFac = pow(localparams.segmentDuration,14./6.); 
+    localparams.tempCorrFac = pow(localparams.segmentDuration,14./6.);
     /* For some reason FindChirp multiplies by a dt factor, take this out */
     localparams.tempCorrFac *= pow(localparams.sampleRate,2./6.);
   }
@@ -610,7 +610,7 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   params->dynRangeFac = 1E20;
 
   /* Various frequencies must be set */
-  params->highpassFrequency     = -1.0; 
+  params->highpassFrequency     = -1.0;
   params->lowTemplateFrequency = -1.0;
   params->lowFilterFrequency = -1.0;
   params->highFilterFrequency = -1.0;
@@ -772,7 +772,7 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
   sanity_check( params->order != LAL_PNORDER_NUM_ORDER);
   sanity_check( params->dynTempLength == 0 || params->approximant == FindChirpSP);
 
-// This needs fixing. Need a check on whether segmentsToDoList and 
+// This needs fixing. Need a check on whether segmentsToDoList and
 // analyzeInjSegsOnly have been given.
 //  sanity_check( ! ((params->segmentsToDoList  != "^-$") && (params->analyzeInjSegsOnly)));
 

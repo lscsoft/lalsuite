@@ -11,7 +11,7 @@
 
 void
 FUNC ( LALStatus *stat, VTYPE **sequence, FILE *stream )
-{ 
+{
   BufferList head;    /* head of linked list of buffers */
   BufferList *here;   /* pointer to current position in list */
   BOOLEAN done;       /* whether to stop reading */

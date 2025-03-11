@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 183
+# serial 185
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1204,7 +1204,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
     AC_CONFIG_FILES([doxygen/make_autogen_dox],[chmod +x doxygen/make_autogen_dox])
 
     # Python is required to run some scripts
-    LALSUITE_REQUIRE_PYTHON([3.5])
+    LALSUITE_REQUIRE_PYTHON([3.6])
 
     # Perl and BibTeX are required to build the references
     AC_PATH_PROG([PERL],[perl],[],[])
@@ -1288,25 +1288,6 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
       AC_SUBST([MARKDOWN2HTML_DOXYBLOCK],[htmlonly])
     ])
 
-  ])
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_PROG_PRETTY_CODE],[
-  # $0: check for pretty code formatters
-  # - for C code
-  AC_CHECK_PROGS([ASTYLE],[astyle],[false])
-  # - for Python code
-  AC_REQUIRE([LALSUITE_CHECK_PYTHON])
-  AC_SUBST([PYTHON_BLACK],["${PYTHON} -m black"])
-  AC_MSG_CHECKING([if ${PYTHON_BLACK} works])
-  AS_IF([${PYTHON_BLACK} --version >/dev/null 2>&1],[
-    AC_MSG_RESULT([yes])
-    python_black_target_version=`echo "${lalsuite_minimum_pyvers}" | tr -d '.'`
-    PYTHON_BLACK="${PYTHON_BLACK} --target-version py${python_black_target_version}"
-  ],[
-    AC_MSG_RESULT([no])
-    PYTHON_BLACK="false"
   ])
   # end $0
 ])

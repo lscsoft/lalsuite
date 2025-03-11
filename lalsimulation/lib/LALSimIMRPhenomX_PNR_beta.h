@@ -66,7 +66,7 @@ extern "C"
         IMRPhenomXPrecessionStruct *pPrec,
         IMRPhenomXWaveformStruct *pWF_SingleSpin,
         IMRPhenomXPrecessionStruct *pPrec_SingleSpin);
-  
+
     REAL8 IMRPhenomX_PNR_GeneratePNRBetaNoMR(
         REAL8 Mf,
         IMRPhenomXWaveformStruct *pWF,

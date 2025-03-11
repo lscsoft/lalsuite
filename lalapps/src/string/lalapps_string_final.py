@@ -53,8 +53,8 @@ import sys
 import traceback
 
 
-from ligo.lw import dbtables
-from ligo.lw.utils import process as ligolwprocess
+from igwn_ligolw import dbtables
+from igwn_ligolw.utils import process as ligolwprocess
 import lal
 from lal import rate
 from lal.utils import CacheEntry
@@ -63,8 +63,8 @@ from lalburst import packing
 from lalburst import SimBurstUtils
 from lalburst import SnglBurstUtils
 from lalburst import stringutils
-from ligo import segments
-from ligo.segments import utils as segmentsUtils
+import igwn_segments as segments
+from igwn_segments import utils as segmentsUtils
 
 
 SnglBurstUtils.matplotlib.rcParams.update({

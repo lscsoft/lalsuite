@@ -1,5 +1,5 @@
 %only valind for initial 10 h_0 values
-% 
+%
 % script that look into L1kkoutput and create a file with the refine H0 values
 
 clear
@@ -28,7 +28,7 @@ for j=1:nbands
   Ch0= CofH(j, 5: kk(2));
   h0min = h0val(9);
   h0max = 5.0e-22;
-  
+
   if( Ch0(nh)> 0.955)
    small = find( Ch0<0.945);
    h0min = h0val(length(small));

@@ -132,12 +132,12 @@ COMPLEX8FrequencySeries * get_frame_response(
   npoints = floor( dataDuration * dataSampleRate + 0.5 ); /* round */
   response = XLALCreateCOMPLEX8FrequencySeries(channel_name, epoch, 0.0, 1.0 / dataDuration, &strainPerCount, npoints / 2 + 1);
 
-  if(!response) 
+  if(!response)
   {
     XLAL_ERROR_NULL(XLAL_ENOMEM);
     return NULL;
   }
-    
+
   verbose("obtaining calibration information from cache file %s\n", cacheName);
 
   /* create cache from cachefile name */
@@ -258,7 +258,7 @@ COMPLEX8FrequencySeries * get_reference_sensing_function( LALCache *calCache,
   refSensing->sampleUnits = lalDimensionlessUnit;
 
   /* close stream and destroy cache */
-  XLALFrStreamClose( stream ); 
+  XLALFrStreamClose( stream );
   XLALDestroyCache( refCache );
 
   return refSensing;
@@ -332,4 +332,3 @@ COMPLEX8TimeSeries * get_open_loop_gain_factor( LALCache *calCache,
 
   return alphabeta;
 }
-

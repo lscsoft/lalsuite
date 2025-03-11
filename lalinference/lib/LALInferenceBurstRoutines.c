@@ -1,10 +1,10 @@
 /*
- *  LALInferenceBurst.c: 
+ *  LALInferenceBurst.c:
  *  Contains burst specific routines (used by LIB)
  *  They are here rather than in lalsimulation or lalburst so that they won't inferfeere with other people work
  *  They may be migrated once proven to be fully reliable.
  *  I (salvo) will open redmine tickets for all this changes and move the relative functions from here to there
- *  once each is accepted. 
+ *  once each is accepted.
  *
  *  Copyright (C) 2015 Salvatore Vitale
  *
@@ -146,7 +146,7 @@ int XLALSimBurstImplementedFDApproximants(
     )
 {
     switch (approximant)
-    {   
+    {
         case SineGaussianF:
         case RingdownF:
         case DampedSinusoidF:
@@ -157,13 +157,13 @@ int XLALSimBurstImplementedFDApproximants(
     }
 }
 
-/* Tentative common interface to burst FD WF. Pass all standard burst parameters (as in sim_burst table). 
+/* Tentative common interface to burst FD WF. Pass all standard burst parameters (as in sim_burst table).
  * Parameters which are not defined for the WF of interest will be ignored.
- * Unconventional parameters can be passed through extraParams 
- * 
+ * Unconventional parameters can be passed through extraParams
+ *
  * Returned waveforms are centered at t=0, thus must be time shifted to wanted time.
  * No taper, windowing, etc, is applied. The caller must take care of that.
- * 
+ *
  * */
 int XLALSimBurstChooseFDWaveform(
     COMPLEX16FrequencySeries **hptilde,     /**< FD plus polarization */
@@ -234,13 +234,13 @@ int XLALSimBurstChooseFDWaveform(
     return ret;
 }
 
-/* Tentative common interface to burst FD WF. Pass all standard burst parameters (as in sim_burst table). 
+/* Tentative common interface to burst FD WF. Pass all standard burst parameters (as in sim_burst table).
  * Parameters which are not defined for the WF of interest can be passe as NULL.
- * Unconventional parameters can be passed through extraParams 
- * 
+ * Unconventional parameters can be passed through extraParams
+ *
  * Returned waveforms are centered at t=0, thus must be time shifted to wanted time.
  * No taper, windowing, etc, is applied. The caller must take care of that.
- * 
+ *
  * */
 int XLALSimBurstChooseTDWaveform(
     REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
@@ -270,7 +270,7 @@ int XLALSimBurstChooseTDWaveform(
         case SineGaussian:
             /* Waveform-specific sanity checks */
             /* None so far */
-            
+
             (void) f_max;
             (void) tau;
             /* Call the waveform driver routine */
@@ -283,7 +283,7 @@ int XLALSimBurstChooseTDWaveform(
             (void) f_max;
             (void) f0;
             (void) q;
-            
+
             /* Call the waveform driver routine */
             ret = XLALInferenceBurstGaussian(hplus,hcross,tau,hrss,polar_ecc ,polar_angle,deltaT);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
@@ -388,7 +388,7 @@ int XLALInferenceBurstSineGaussian(
 	REAL8 phase,
 	REAL8 delta_t // 1 over srate
 )
-{	
+{
 
   REAL8 cp=cos(phase);
   REAL8 sp=sin(phase);
@@ -418,7 +418,7 @@ int XLALInferenceBurstSineGaussian(
 	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t); // epoch is set to minus (30 taus) in secs
 
 	/* allocate the time series */
-    
+
 	*hplus = XLALCreateREAL8TimeSeries("sine-Gaussian +", &epoch, 0.0, delta_t, &lalStrainUnit, length);  // hplus epoch=-21tau length = 6tau+1
 	*hcross = XLALCreateREAL8TimeSeries("sine-Gaussian x", &epoch, 0.0, delta_t, &lalStrainUnit, length); // hplus epoch=-21tau length = 6tau+1
 	if(!*hplus || !*hcross) {
@@ -433,7 +433,7 @@ int XLALInferenceBurstSineGaussian(
   double phi=0.0;
   double fac=0.0;
   REAL8 twopif=LAL_TWOPI * centre_frequency;
-    
+
   for(i = 0; i < (*hplus)->data->length; i++) {
     t = ((REAL8) i - ((REAL8)length - 1.) / 2.) * delta_t; // t in [-21 tau, ??]
     phi = twopif * t; // this is the actual time, not t0
@@ -446,7 +446,7 @@ int XLALInferenceBurstSineGaussian(
 }
 
 /* Frequency domain SineGaussians (these are the exact analytic Fourier Transform of the LIB time domain SG.
- * 
+ *
  * See https://dcc.ligo.org/LIGO-T1400734
  * SALVO: fix documentation
  * */
@@ -458,7 +458,7 @@ int XLALInferenceBurstSineGaussianF(
   REAL8 centre_frequency,
   REAL8 hrss,
   REAL8 eccentricity,
-  REAL8 phase,  
+  REAL8 phase,
   REAL8 deltaF,
   REAL8 deltaT
 )
@@ -485,35 +485,35 @@ int XLALInferenceBurstSineGaussianF(
 	length = (int) floor(max_sigmas * Q / (LAL_TWOPI * centre_frequency) / deltaT / 2.0);  // This is 3 tau_t
 	length = 2 * length + 1; // length is 6 taus +1 bin
   XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT); // epoch is set to minus (30 taus_t) in secs
-    
-  
+
+
   REAL8 tau=Q/LAL_PI/LAL_SQRT2/centre_frequency;
   REAL8 tau2pi2=tau*tau*LAL_PI*LAL_PI;
-  
+
   /* sigma is the width of the gaussian envelope in the freq domain WF ~ exp(-1/2 X^2/sigma^2)*/
   REAL8 sigma= centre_frequency/Q; // This is also equal to 1/(sqrt(2) Pi tau)
-  
+
   /* set fmax to be f0 + 3sigmas*/
   REAL8 Fmax=centre_frequency +max_sigmas*sigma;
   /* if fmax > nyquist use nyquist */
-  if (Fmax>(1.0/(2.0*deltaT))) 
+  if (Fmax>(1.0/(2.0*deltaT)))
     Fmax=1.0/(2.0*deltaT);
-  
+
   REAL8 Fmin= centre_frequency -max_sigmas*sigma;
   /* if fmin <0 use 0 */
   if (Fmin<0.0 || Fmin >=Fmax)
     Fmin=0.0;
-  
-  size_t lower =(size_t) ( Fmin/deltaF);    
+
+  size_t lower =(size_t) ( Fmin/deltaF);
   size_t upper= (size_t) ( Fmax/deltaF+1);
 
   COMPLEX16FrequencySeries *hptilde;
   COMPLEX16FrequencySeries *hctilde;
-    
+
   /* the middle sample is t = 0 */
   hptilde=XLALCreateCOMPLEX16FrequencySeries("hplus",&epoch,0.0,deltaF,&lalStrainUnit,upper);
   hctilde=XLALCreateCOMPLEX16FrequencySeries("hcross",&epoch,0.0,deltaF,&lalStrainUnit,upper);
-	
+
 	if(!hptilde || !hctilde) {
 		XLALDestroyCOMPLEX16FrequencySeries(hptilde);
 		XLALDestroyCOMPLEX16FrequencySeries(hctilde);
@@ -525,7 +525,7 @@ int XLALInferenceBurstSineGaussianF(
     hptilde->data->data[i] = 0.0;
     hctilde->data->data[i] = 0.0;
   }
-  
+
   /* populate */
   REAL8 f=0.0;
   REAL8 phi2minus=0.0;
@@ -539,7 +539,7 @@ int XLALInferenceBurstSineGaussianF(
     hptilde->data->data[i] = crect(cp*h0plus*ephimin,-h0plus*ephimin*sp);
     // exp(-I phi) gives a -I sin(phi), which gets multiplied by the -I already there, giving a - sign, which is already take care of in h0cross a couple of lines above
     hctilde->data->data[i] = crect(h0cross*ephimin*sp,h0cross*ephimin*cp);
-    
+
   }
 
   *hplus=hptilde;
@@ -550,7 +550,7 @@ int XLALInferenceBurstSineGaussianF(
 
 
 /* Frequency domain SineGaussians (these are the exact analytic Fourier Transform of the LIB time domain SG.
- * 
+ *
  * See https://dcc.ligo.org/LIGO-T1400734
  * SALVO: fix documentation
  * */
@@ -562,7 +562,7 @@ int XLALInferenceBurstSineGaussianFFast(
   REAL8 centre_frequency,
   REAL8 hrss,
   REAL8 eccentricity,
-  REAL8 phase,  
+  REAL8 phase,
   REAL8 deltaF,
   REAL8 deltaT
 )
@@ -589,35 +589,35 @@ int XLALInferenceBurstSineGaussianFFast(
 	length = (int) floor(max_sigmas * Q / (LAL_TWOPI * centre_frequency) / deltaT / 2.0);  // This is 3 tau_t
 	length = 2 * length + 1; // length is 6 taus +1 bin
   XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT); // epoch is set to minus (30 taus_t) in secs
-    
-  
+
+
   REAL8 tau=Q/LAL_PI/LAL_SQRT2/centre_frequency;
   REAL8 tau2pi2=tau*tau*LAL_PI*LAL_PI;
-  
+
   /* sigma is the width of the gaussian envelope in the freq domain WF ~ exp(-1/2 X^2/sigma^2)*/
   REAL8 sigma= centre_frequency/Q; // This is also equal to 1/(sqrt(2) Pi tau)
-  
+
   /* set fmax to be f0 + 3sigmas*/
   REAL8 Fmax=centre_frequency +max_sigmas*sigma;
   /* if fmax > nyquist use nyquist */
-  if (Fmax>(1.0/(2.0*deltaT))) 
+  if (Fmax>(1.0/(2.0*deltaT)))
     Fmax=1.0/(2.0*deltaT);
-  
+
   REAL8 Fmin= centre_frequency -max_sigmas*sigma;
   /* if fmin <0 use 0 */
   if (Fmin<0.0 || Fmin >=Fmax)
     Fmin=0.0;
-  
-  size_t lower =(size_t) ( Fmin/deltaF);    
+
+  size_t lower =(size_t) ( Fmin/deltaF);
   size_t upper= (size_t) ( Fmax/deltaF+1);
 
   COMPLEX16FrequencySeries *hptilde;
   COMPLEX16FrequencySeries *hctilde;
-    
+
   /* the middle sample is t = 0 */
   hptilde=XLALCreateCOMPLEX16FrequencySeries("hplus",&epoch,Fmin,deltaF,&lalStrainUnit,upper);
   hctilde=XLALCreateCOMPLEX16FrequencySeries("hcross",&epoch,Fmin,deltaF,&lalStrainUnit,upper);
-	
+
 	if(!hptilde || !hctilde) {
 		XLALDestroyCOMPLEX16FrequencySeries(hptilde);
 		XLALDestroyCOMPLEX16FrequencySeries(hctilde);
@@ -629,7 +629,7 @@ int XLALInferenceBurstSineGaussianFFast(
     hptilde->data->data[i] = 0.0;
     hctilde->data->data[i] = 0.0;
   }
-  
+
   /* populate */
   REAL8 f=0.0;
   REAL8 phi2minus=0.0;
@@ -643,7 +643,7 @@ int XLALInferenceBurstSineGaussianFFast(
     hptilde->data->data[i] = crect(cp*h0plus*ephimin,-h0plus*ephimin*sp);
     // exp(-I phi) gives a -I sin(phi), which gets multiplied by the -I already there, giving a - sign, which is already take care of in h0cross a couple of lines above
     hctilde->data->data[i] = crect(h0cross*ephimin*sp,h0cross*ephimin*cp);
-    
+
   }
 
   *hplus=hptilde;
@@ -810,7 +810,7 @@ int XLALInferenceBurstDampedSinusoid(
 	REAL8 phase,
 	REAL8 delta_t // 1 over srate
 )
-{	
+{
 
   REAL8 cp=cos(phase);
   REAL8 sp=sin(phase);
@@ -840,7 +840,7 @@ int XLALInferenceBurstDampedSinusoid(
 	XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t); // epoch is set to minus (30 taus) in secs
 
 	/* allocate the time series */
-    
+
 	*hplus = XLALCreateREAL8TimeSeries("DS-Gaussian +", &epoch, 0.0, delta_t, &lalStrainUnit, length);  // hplus epoch=-21tau length = 6tau+1
 	*hcross = XLALCreateREAL8TimeSeries("DS-Gaussian x", &epoch, 0.0, delta_t, &lalStrainUnit, length); // hplus epoch=-21tau length = 6tau+1
 	if(!*hplus || !*hcross) {
@@ -855,7 +855,7 @@ int XLALInferenceBurstDampedSinusoid(
   double phi=0.0;
   double fac=0.0;
   REAL8 twopif=LAL_TWOPI * centre_frequency;
-    
+
   for(i = 0; i < (*hplus)->data->length; i++) {
     t = ((REAL8) i - ((REAL8)length - 1.) / 2.) * delta_t; // t in [-21 tau, ??]
     phi = twopif * t; // this is the actual time, not t0
@@ -875,11 +875,11 @@ int XLALInferenceBurstDampedSinusoidF(
   REAL8 centre_frequency,
   REAL8 hrss,
   REAL8 eccentricity,
-  REAL8 phase,  
+  REAL8 phase,
   REAL8 deltaF,
   REAL8 deltaT
 )
-{	
+{
 
   REAL8 cp=cos(phase);
   REAL8 sp=sin(phase);
@@ -909,28 +909,28 @@ length = 2 * length + 1; // length is 6taus +1 bin
 XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT); // epoch is set to minus (30 taus) in secs
 /* sigma is the width of the gaussian envelope in the freq domain WF ~ exp(-1/2 X^2/sigma^2)*/
   REAL8 sigma= centre_frequency/Q; // This is also equal to 1/(sqrt(2) Pi tau)
-  
+
   /* set fmax to be f0 + 3sigmas*/
   REAL8 Fmax=centre_frequency +max_sigmas*sigma;
   /* if fmax > nyquist use nyquist */
-  if (Fmax>(1.0/(2.0*deltaT))) 
+  if (Fmax>(1.0/(2.0*deltaT)))
     Fmax=1.0/(2.0*deltaT);
-  
+
   REAL8 Fmin= centre_frequency -max_sigmas*sigma;
   /* if fmin <0 use 0 */
   if (Fmin<0.0 || Fmin >=Fmax)
     Fmin=0.0;
-  
-  size_t lower =(size_t) ( Fmin/deltaF);    
+
+  size_t lower =(size_t) ( Fmin/deltaF);
   size_t upper= (size_t) ( Fmax/deltaF+1);
 
   COMPLEX16FrequencySeries *hptilde;
   COMPLEX16FrequencySeries *hctilde;
-    
+
   /* the middle sample is t = 0 */
   hptilde=XLALCreateCOMPLEX16FrequencySeries("hplus",&epoch,0.0,deltaF,&lalStrainUnit,upper);
   hctilde=XLALCreateCOMPLEX16FrequencySeries("hcross",&epoch,0.0,deltaF,&lalStrainUnit,upper);
-	
+
 	if(!hptilde || !hctilde) {
 		XLALDestroyCOMPLEX16FrequencySeries(hptilde);
 		XLALDestroyCOMPLEX16FrequencySeries(hctilde);
@@ -945,7 +945,7 @@ XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT); // epoch is set to minus (3
 
 	/* populate */
   double f=0.0;
-  
+
   double lambda=LAL_PI*centre_frequency/Q;
   REAL8 twopif=LAL_TWOPI * centre_frequency;
   double lambda2=lambda*lambda;
@@ -965,7 +965,7 @@ XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT); // epoch is set to minus (3
 /*   ============ BELOW IS WHAT WAS LALSIMBURSTWAVEFORMFROMCACHE  */
 
 /*
- * Copyright (C) 2013 Evan Ochsner and Will M. Farr, 
+ * Copyright (C) 2013 Evan Ochsner and Will M. Farr,
  *  2014 Salvatore Vitale
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1032,7 +1032,7 @@ static int StoreFDHCache(
         LALSimBurstWaveformCache *cache,
         COMPLEX16FrequencySeries *hptilde,
         COMPLEX16FrequencySeries *hctilde,
-        REAL8 deltaF, 
+        REAL8 deltaF,
         REAL8 deltaT,
         REAL8 f0,
         REAL8 q, REAL8 tau,
@@ -1181,7 +1181,7 @@ int XLALSimBurstChooseFDWaveformFromCache(
     REAL8 hrss_ratio;
     CacheVariableDiffersBitmask changedParams;
   if ((!cache) ){
-     
+
         return XLALSimBurstChooseFDWaveform(hptilde, hctilde,deltaF,deltaT,f0,q, tau,f_min,f_max, hrss,polar_angle, polar_ecc,extraParams,approximant);
      }
 
@@ -1253,7 +1253,7 @@ int XLALSimBurstChooseFDWaveformFromCache(
     }
 
   return XLAL_SUCCESS;
-  
+
 }
 
 /**
@@ -1320,7 +1320,7 @@ static CacheVariableDiffersBitmask CacheArgsDifferenceBitmask(
     if ( approximant != cache->approximant) return INTRINSIC;
     if ( polar_angle != cache->polar_angle) return INTRINSIC;
     if ( polar_ecc != cache->polar_ecc) return INTRINSIC;
-    
+
     if (hrss != cache->hrss) difference = difference | HRSS;
     return difference;
 }
@@ -1367,7 +1367,7 @@ static int StoreTDHCache(
     if (extraParams==NULL)
       cache->extraParams=NULL;
     /*else if (cache->extraParams==NULL){
-      // Initialize to something that won't make the ratio of sin alphas to blow up 
+      // Initialize to something that won't make the ratio of sin alphas to blow up
       cache->extraParams=XLALSimBurstCreateExtraParam("alpha",1.0);
     }
     else{
@@ -1434,13 +1434,13 @@ static int StoreFDHCache(LALSimBurstWaveformCache *cache, /**< the cache */
     if (extraParams==NULL)
       cache->extraParams=NULL;
     /*else if (cache->extraParams==NULL){
-      // Initialize to something that won't make the ratio of sin alphas to blow up 
+      // Initialize to something that won't make the ratio of sin alphas to blow up
       cache->extraParams=XLALSimBurstCreateExtraParam("alpha",1.0);
     }
     else{
       XLALSimBurstSetExtraParam(cache->extraParams,"alpha",XLALSimBurstGetExtraParam(extraParams,"alpha"));
     }*/
-    
+
     cache->approximant = approximant;
 
     // Copy over the waveforms
@@ -1465,7 +1465,7 @@ static int StoreFDHCache(LALSimBurstWaveformCache *cache, /**< the cache */
 
 /* Copyright (C) 2014 Salvatore Vitale
  *  Based on LALSimBurstExtraParams of Del Pozzo, Ochser and Vitale
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -1492,7 +1492,7 @@ LALSimBurstExtraParam *XLALSimBurstCreateExtraParam(
         )
 {
         LALSimBurstExtraParam *parameter = (LALSimBurstExtraParam *)XLALMalloc(sizeof(LALSimBurstExtraParam));
-        if (parameter) 
+        if (parameter)
         {
             parameter->data =  (LALSimBurstExtraParamData *)XLALMalloc(sizeof(LALSimBurstExtraParamData));
             memcpy(parameter->data->name, name, 32);
@@ -1514,23 +1514,23 @@ int XLALSimBurstAddExtraParam(
 {
     LALSimBurstExtraParam *temp;
     temp = *parameter;
-    if (*parameter==NULL) 
+    if (*parameter==NULL)
     {
-        temp = XLALSimBurstCreateExtraParam(name,value); 
+        temp = XLALSimBurstCreateExtraParam(name,value);
         //temp->next=NULL;
         *parameter=temp;
     }
-    else 
+    else
     {
 
         if (!XLALSimBurstExtraParamExists(*parameter, name))
         {
             temp = *parameter;
              while(temp->next!=NULL) {temp=temp->next;}
-            LALSimBurstExtraParam *newParam = XLALSimBurstCreateExtraParam(name,value);        
+            LALSimBurstExtraParam *newParam = XLALSimBurstCreateExtraParam(name,value);
             temp->next = newParam;
         }
-        else 
+        else
         {
             XLALPrintError("XLAL Error - %s: parameter '%s' exists already! Not added to the structure\n",
                     __func__, name);
@@ -1551,7 +1551,7 @@ int XLALSimBurstSetExtraParam(
         const double value 		/**< New value for parameter */
         )
 {
-    if (XLALSimBurstExtraParamExists(parameter, name)) 
+    if (XLALSimBurstExtraParamExists(parameter, name))
     {
         while(parameter)
         {
@@ -1577,15 +1577,15 @@ double XLALSimBurstGetExtraParam(
         const char *name 	   /**< Name of parameter to be retrieved */
         )
 {
-    if (XLALSimBurstExtraParamExists(parameter, name)) 
+    if (XLALSimBurstExtraParamExists(parameter, name))
         {
-            while(parameter) 
+            while(parameter)
             {
                 if(!strcmp(parameter->data->name, name)) return parameter->data->value;
                 parameter=parameter->next;
             }
         }
-    else 
+    else
     {
         XLALPrintError("XLAL Error - %s: parameter '%s' unknown!\n",
                 __func__, name);
@@ -1616,7 +1616,7 @@ int XLALSimBurstPrintExtraParam(
 {
     if (parameter!=NULL)
     {
-        while(parameter) 
+        while(parameter)
         {
             fprintf(fp,"%s %10.5f\n",parameter->data->name,parameter->data->value);
             parameter=parameter->next;
@@ -1643,4 +1643,3 @@ void XLALSimBurstDestroyExtraParam(
 	parameter=tmp;
 	}
 }
-

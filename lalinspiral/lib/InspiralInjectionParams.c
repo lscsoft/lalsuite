@@ -220,7 +220,7 @@ SimInspiralTable* XLALm1m2SquareGridInspiralMasses(
     REAL4  mass2Delta,       /**< m2 grid spacing */
     INT4   mass1Pnt,         /**< number of grid points along m1 */
     INT4   mass2Pnt,         /**< number of grid points along m2 */
-    INT4   injNum,           /**< injection number */  
+    INT4   injNum,           /**< injection number */
     INT4   *count            /**< unsuccessful injection counter */
     )
 {
@@ -239,7 +239,7 @@ SimInspiralTable* XLALm1m2SquareGridInspiralMasses(
 
   inj->eta = inj->mass1 * inj->mass2 / ( mTotal * mTotal );
   inj->mchirp = mTotal * pow(inj->eta, 0.6);
-  
+
   return ( inj );
 }
 
@@ -257,7 +257,7 @@ SimInspiralTable* XLALFixedInspiralMasses(
   mTotal = inj->mass1 + inj->mass2 ;
   inj->eta = inj->mass1 * inj->mass2 / ( mTotal * mTotal );
   inj->mchirp = mTotal * pow(inj->eta, 0.6);
-  
+
   return ( inj );
 }
 
@@ -497,7 +497,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
   {
 	case uniformSpinDist:  spin1Mag =  spin1Min + XLALUniformDeviate( randParams ) *(spin1Max - spin1Min);
 	break;
-	case gaussianSpinDist:  
+	case gaussianSpinDist:
 	  do spin1Mag = spin1Mean + spin1Std*XLALNormalDeviate(randParams);
       while ( spin1Mag > spin1Max || spin1Mag < spin1Min );
     break;
@@ -584,7 +584,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
   {
 	case uniformSpinDist:  spin2Mag =  spin2Min + XLALUniformDeviate( randParams ) *(spin2Max - spin2Min);
 	break;
-	case gaussianSpinDist:  
+	case gaussianSpinDist:
 	  do spin2Mag = spin2Mean + spin2Std*XLALNormalDeviate(randParams);
       while ( spin2Mag > spin2Max || spin2Mag < spin2Min );
     break;

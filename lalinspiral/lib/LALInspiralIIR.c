@@ -4,7 +4,7 @@
   inspiral waveform.  The idea is that a sum a set of delayed first order IIR
   filters with one feedback coefficient (a1) and one feedforward (b0)
   coefficient that will approximate the correlation of the input data and the
-  inspiral waveform. 
+  inspiral waveform.
 
   I.E the total impulse response is approximately a time reversed inspiral
   waveform.
@@ -38,20 +38,20 @@ static REAL8 clogabs(COMPLEX16 z)
 }
 
 int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, double padding, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
-{  
+{
 	int j = amp->length-1, jstep, jstepThird, k;
 	int nfilters = 0, decimationFactor = 1;
 	double phase_tdot, phase_ddot, phase_dot;
 
 	//printf("This is confirming that the LALInspiralIIR.c code has been successfully modified");
 	/* FIXME: Add error checking for lengths of amp and phase */
-	if (amp->length != phase->length) 
+	if (amp->length != phase->length)
 	         XLAL_ERROR(XLAL_EINVAL);
 
 	*a1 = XLALCreateCOMPLEX16Vector(0);
 	*b0 = XLALCreateCOMPLEX16Vector(0);
 	*delay = XLALCreateINT4Vector(0);
-	
+
 	//printf("This is the modified code\n");
 
 	while (j > 3 ) {
@@ -88,7 +88,7 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 		    k = (int ) floor((double ) j - alpha * (double ) jstep + 0.5);
 		}
 		//printf("jstep: %d jstepThird: %d k: %d j:%d \n ", jstep, jstepThird, k, j);
-		
+
 
 		if(k == 0){
 		    k = 1;
@@ -196,7 +196,7 @@ int XLALInspiralCalculateIIRSetInnerProduct(COMPLEX16Vector *a1, COMPLEX16Vector
 	COMPLEX16 hfcos = 0.0;
 	COMPLEX16 hfsin = 0.0;
 
-	*ip = 0.0; 
+	*ip = 0.0;
 
 	for (j = 0; j < psd->length; j++)
 		{

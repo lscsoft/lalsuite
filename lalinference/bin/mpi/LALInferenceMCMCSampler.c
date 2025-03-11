@@ -330,7 +330,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     }
     LALInferenceNameOutputs(runState);
     LALInferenceResumeMCMC(runState);
-    
+
     if (benchmark) {
         struct timeval start_tv;
         gettimeofday(&start_tv, NULL);
@@ -472,7 +472,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
             do
             {
                 XLAL_TRY(LALInferenceCheckpointMCMC(runState), retcode);
-                if(retcode!=XLAL_SUCCESS) 
+                if(retcode!=XLAL_SUCCESS)
                 {
                     saveattempts+=1;
                     fprintf(stderr,"Process %i failed to write checkpoint file %s \
@@ -485,7 +485,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
             do
             {
                 XLAL_TRY(LALInferenceWriteMCMCSamples(runState), retcode);
-                if(retcode!=XLAL_SUCCESS) 
+                if(retcode!=XLAL_SUCCESS)
                 {
                     saveattempts+=1;
                     fprintf(stderr,"Process %i failed to write samples file %s \
@@ -1487,7 +1487,7 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     XLALH5FileClose(resume_file);
 
     /* Read in samples collected so far */
-    
+
 
     li_group = XLALH5GroupOpen(output, "lalinference");
     group = XLALH5GroupOpen(li_group, runState->runID);
@@ -1774,7 +1774,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
         sz = theEventTable->spin2z;
 
         REAL8 a_spin2 = sqrt(sx*sx + sy*sy + sz*sz);
-        
+
         REAL8 theta_spin2, phi_spin2;
         if (a_spin2 == 0.0) {
             theta_spin2 = 0.0;

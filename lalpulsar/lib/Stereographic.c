@@ -391,6 +391,3 @@ void LALStereoInvProjectCart( LALStatus           *status,
   /* normal exit */
   RETURN( status );
 }
-
-
-

@@ -38,7 +38,7 @@
 	See section VI. B of arXiv:2001.11412
 
     Value of intermediate amplitude collocation vA point at f_2, defined in Table II of arXiv:2001.11412
-   
+
     Effective spin parameterization used = StotR
 */
 static double IMRPhenomX_Intermediate_Amp_22_vA(double eta, double S, double dchi, double delta, int IntAmpFlag){
@@ -73,11 +73,11 @@ static double IMRPhenomX_Intermediate_Amp_22_vA(double eta, double S, double dch
 
 }
 
-/*	
+/*
 	See section VI. B of arXiv:2001.11412. Collocation point for 5th order polynomial ansatz.
 
     Value of intermediate amplitude collocation point v2 at f_2, defined in Table I of arXiv:2001.11412
-   
+
     Effective spin parameterization used = StotR
 */
 static double IMRPhenomX_Intermediate_Amp_22_v2(double eta, double S, double dchi, double delta, int IntAmpFlag){
@@ -113,11 +113,11 @@ static double IMRPhenomX_Intermediate_Amp_22_v2(double eta, double S, double dch
 
 }
 
-/*	
+/*
 	See section VI. B of arXiv:2001.11412. Collocation point for 5th order polynomial ansatz.
 
     Value of intermediate amplitude collocation point v3 at f_3, defined in Table I of arXiv:2001.11412
-   
+
     Effective spin parameterization used = StotR
 */
 static double IMRPhenomX_Intermediate_Amp_22_v3(double eta, double S, double dchi, double delta, int IntAmpFlag){
@@ -1312,8 +1312,8 @@ static double IMRPhenomX_Intermediate_Phase_22_d43(double eta, double S, double 
 }
 
 
-/*	
-	See section VII. B of arXiv:2001.11412. 
+/*
+	See section VII. B of arXiv:2001.11412.
 
 	Phase derivative ansatz for intermediate region, Eq. 7.6 of arXiv:2001.11412.
 
@@ -1373,8 +1373,8 @@ static double IMRPhenomX_Intermediate_Phase_22_Ansatz(double ff, IMRPhenomX_Usef
   return phaseOut;
 }
 
-/*	
-	See section VII. B of arXiv:2001.11412. 
+/*
+	See section VII. B of arXiv:2001.11412.
 
 	Integrated phase ansatz for intermediate region, Eq. 7.6 of arXiv:2001.11412.
 

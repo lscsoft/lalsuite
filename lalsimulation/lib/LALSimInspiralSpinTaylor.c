@@ -246,7 +246,7 @@ static REAL8Array *removeDuplicates(REAL8Array *series) {
   return series;
 }
 
-/* Setup coefficients of the energy function and 
+/* Setup coefficients of the energy function and
  * of the spin derivative equations, which are common
  * to all members of the SpinTaylor family.
  */
@@ -523,11 +523,11 @@ INT4 XLALSimInspiralSpinDerivativesAvg(REAL8 *dLNhx,
   *dS2y=0.;
   *dS2z=0.;
   INT4 lscorr=params->lscorr;
-  
+
   REAL8 dLNhatx=0.; // Derivative of the Newtonian angular momentum unit vector
   REAL8 dLNhaty=0.;
   REAL8 dLNhatz=0.;
-  
+
   const REAL8 eta=params->eta;
   const REAL8 LN0mag=eta/v;
   REAL8 LNmag=LN0mag;
@@ -536,7 +536,7 @@ INT4 XLALSimInspiralSpinDerivativesAvg(REAL8 *dLNhx,
   const REAL8 cS1L = XLALSimInspiralL_3PNSiLcoeffAvg(params->m1M);
   const REAL8 cS2  = XLALSimInspiralL_3PNSicoeffAvg(params->m2M);
   const REAL8 cS2L = XLALSimInspiralL_3PNSiLcoeffAvg(params->m2M);
-  
+
   /*
    * dS1
    * d S_1 / d \hat{t} = M * d S_1 / dt = \Omega_{S1,S2,LN,v} x S_1
@@ -554,13 +554,13 @@ INT4 XLALSimInspiralSpinDerivativesAvg(REAL8 *dLNhx,
     const REAL8 dS1xL = params->S1dot3 * v5 * LNhcS1[0];
     const REAL8 dS1yL = params->S1dot3 * v5 * LNhcS1[1];
     const REAL8 dS1zL = params->S1dot3 * v5 * LNhcS1[2];
-    
+
     REAL8 *LNhcS2=NULL;
     XLALSimInspiralVectorCrossProduct(&LNhcS2,LNhx,LNhy,LNhz,S2x,S2y,S2z);
     const REAL8 dS2xL = params->S2dot3 * v5 * LNhcS2[0];
     const REAL8 dS2yL = params->S2dot3 * v5 * LNhcS2[1];
     const REAL8 dS2zL = params->S2dot3 * v5 * LNhcS2[2];
-    
+
     *dS1x =dS1xL;
     *dS1y =dS1yL;
     *dS1z =dS1zL;
@@ -572,13 +572,13 @@ INT4 XLALSimInspiralSpinDerivativesAvg(REAL8 *dLNhx,
     const REAL8 dLxL=-(dS1xL+ dS2xL) ;
     const REAL8 dLyL=-(dS1yL+ dS2yL);
     const REAL8 dLzL=-(dS1zL+ dS2zL);
-    
+
     /* dLNhat should be normalized by dividing by the modulus of LN.
      * It will be done at the end of this fucntion. */
     dLNhatx = dLxL;
     dLNhaty = dLyL;
     dLNhatz = dLzL;
-    
+
     if ( (params->spinO>=4) || (params->spinO<0.) ) {
       /* dS1,2 NLO term (v x leading), Spin^2 terms */
       REAL8 omega2=omega*omega;
@@ -596,7 +596,7 @@ INT4 XLALSimInspiralSpinDerivativesAvg(REAL8 *dLNhx,
       dS1xNL += omega2 * params->S1dot4QMS1OAvg * LNhdotS1 * LNhcS1[0]; // v6 terms
       dS1yNL += omega2 * params->S1dot4QMS1OAvg * LNhdotS1 * LNhcS1[1];
       dS1zNL += omega2 * params->S1dot4QMS1OAvg * LNhdotS1 * LNhcS1[2];
-      
+
       /* QM S2S2 contribution */
       dS2xNL += omega2 * params->S2dot4QMS2OAvg * LNhdotS2 * LNhcS2[0];
       dS2yNL += omega2 * params->S2dot4QMS2OAvg * LNhdotS2 * LNhcS2[1];
@@ -659,12 +659,12 @@ INT4 XLALSimInspiralSpinDerivativesAvg(REAL8 *dLNhx,
            * spin-dependent terms of orbital angular momentum.
            * LO of spin derivative is v^5, derivative \hat L is v^6 at LO.
 	   * Spin derivative at leading order are perpendicular to L.
-	   */	  
+	   */
 	  dLNhatx -= eta*v2*( cS1*dS1xL + cS2*dS2xL);
 	  dLNhaty -= eta*v2*( cS1*dS1yL + cS2*dS2yL);
 	  dLNhatz -= eta*v2*( cS1*dS1zL + cS2*dS2zL);
 	}
-	
+
 	if ( (params->spinO>=6) || (params->spinO<0) ) {
 
 	  if (!(params->phenomtp)) {
@@ -703,7 +703,7 @@ INT4 XLALSimInspiralSpinDerivativesAvg(REAL8 *dLNhx,
 	      if (lscorr) {
 		/* Contributions to dLNh coming from the S-dependent
 		 * part of L, in particular: dS, dS_l at v6 order.
-		 * We omit here terms parallel to LNhat 
+		 * We omit here terms parallel to LNhat
 		 * as they will be projected out at the end.
 		 */
 		dLNhatx-=eta*v2*( cS1*dS1xNL + cS2*dS2xNL + (cS1L*LNhdotS1+cS2L*LNhdotS2)*dLxL/LN0mag );  // v8 terms
@@ -2439,7 +2439,7 @@ static int XLALSimInspiralSpinTaylorStoppingTest(double UNUSED t,
     REAL8 Espin5=0.;
     REAL8 Espin4=0.;
     REAL8 Espin3=0.;
-    XLALSimInspiralSpinTaylorTxCoeffs *params 
+    XLALSimInspiralSpinTaylorTxCoeffs *params
             = (XLALSimInspiralSpinTaylorTxCoeffs*) mparams;
     /* Spin-corrections to energy (including dynamical terms) */
 
@@ -2462,13 +2462,13 @@ static int XLALSimInspiralSpinTaylorStoppingTest(double UNUSED t,
     XLALSimInspiralSetEnergyPNTermsAvg(&Espin3,&Espin4,&Espin5,&Espin6,&Espin7,params,LNhdotS1,LNhdotS2,S1sq,S2sq,S1dotS2);
 
     /* We are testing if the orbital energy increases with \f$\omega\f$.
-     * We should be losing energy to GW flux, so if E increases 
-     * we stop integration because the dynamics are becoming unphysical. 
-     * 'test' is the PN expansion of \f$dE/d\omega\f$ without the prefactor, 
+     * We should be losing energy to GW flux, so if E increases
+     * we stop integration because the dynamics are becoming unphysical.
+     * 'test' is the PN expansion of \f$dE/d\omega\f$ without the prefactor,
      * i.e. \f$dE/d\omega = dE/dv * dv/d\omega = - (M^2*eta/6) * test\f$
      * Therefore, the energy is increasing with \f$\omega\f$ iff. test < 0.
      */
-    test = 2. + v * v * ( 4. * params->Ecoeff[2] 
+    test = 2. + v * v * ( 4. * params->Ecoeff[2]
             + v * ( 5. * (params->Ecoeff[3] + Espin3)
             + v * ( 6. * (params->Ecoeff[4] + Espin4)
             + v * ( 7. * (params->Ecoeff[5] + Espin5)
@@ -2552,7 +2552,7 @@ INT4 XLALSimInspiralSpinTaylorT4DerivativesAvg(
     REAL8 v, v2, v11;
     REAL8 LNhdotS1, LNhdotS2, S1dotS2, S1sq, S2sq;
     REAL8 wspin3 = 0., wspin4Avg = 0., wspin5 = 0., wspin6Avg=0.;
-    XLALSimInspiralSpinTaylorTxCoeffs *params 
+    XLALSimInspiralSpinTaylorTxCoeffs *params
             = (XLALSimInspiralSpinTaylorTxCoeffs*) mparams;
 
     /* copy variables */
@@ -2580,7 +2580,7 @@ INT4 XLALSimInspiralSpinTaylorT4DerivativesAvg(
 
     /*
      * domega
-     * 
+     *
      * Note we are actually computing \f$d \hat{\omega} / d \hat{t}\f$
      * where \f$\hat{\omega} = M \omega\f$ and \f$\hat{t} = t / M\f$
      * Therefore \f$domega = M^2 * d\omega / dt\f$
@@ -2679,7 +2679,7 @@ INT4 XLALSimInspiralSpinTaylorT4DerivativesAvg(
  *
  * The derivatives for \f$\omega\f$ in the spin-less case, can be found
  * as Eqs. (1), (7) of gr-qc/0405090, see below for spin effects
- * 
+ *
  */
 
 static int XLALSimInspiralSpinTaylorT1DerivativesAvg(
@@ -2834,7 +2834,7 @@ static int XLALSimInspiralSpinTaylorT1DerivativesAvg(
  *
  * The derivatives for \f$\omega\f$ in the spin-less case, can be found
  * as Eqs. (1), (7) of gr-qc/0405090, see below for spin effects
- * 
+ *
  */
 
 static int XLALSimInspiralSpinTaylorT5DerivativesAvg(
@@ -2848,12 +2848,12 @@ static int XLALSimInspiralSpinTaylorT5DerivativesAvg(
     REAL8 LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z, E1x, E1y, E1z;
     REAL8 omega, domega, dLNhx, dLNhy, dLNhz,dE1x,dE1y,dE1z;
     REAL8 dS1x, dS1y, dS1z, dS2x, dS2y, dS2z;
-    
+
     /* auxiliary variables */
     REAL8 v,v11;
     REAL8 LNhdotS1, LNhdotS2, S1dotS2, S1sq, S2sq;
     REAL8 wspin3 = 0., wspin4Avg = 0., wspin5 = 0., wspin6Avg = 0.;
-    
+
     XLALSimInspiralSpinTaylorTxCoeffs *params
             = (XLALSimInspiralSpinTaylorTxCoeffs*) mparams;
 
@@ -2905,7 +2905,7 @@ static int XLALSimInspiralSpinTaylorT5DerivativesAvg(
 	  + (params->wdot6S1S1Avg + params->wdot6QMS1S1Avg)*S1sq
 	  + (params->wdot6S2S2Avg + params->wdot6QMS2S2Avg)*S2sq
 	  + (params->wdot6S1OS1OAvg + params->wdot6QMS1OS1OAvg)*LNhdotS1*LNhdotS1 +
-	  + (params->wdot6S2OS2OAvg + params->wdot6QMS2OS2OAvg)*LNhdotS2*LNhdotS2;  
+	  + (params->wdot6S2OS2OAvg + params->wdot6QMS2OS2OAvg)*LNhdotS2*LNhdotS2;
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
@@ -2975,20 +2975,20 @@ static int XLALSimInspiralSpinTaylorT5DerivativesAvg(
 /* Appends the start and end time series together, skipping the redundant first
  * sample of end.  Frees end before returning a pointer to the result, which is
  * the resized start series.  */
-static REAL8TimeSeries *appendTSandFree(REAL8TimeSeries *start, 
+static REAL8TimeSeries *appendTSandFree(REAL8TimeSeries *start,
         REAL8TimeSeries *end) {
     unsigned int origlen = start->data->length;
-    start = XLALResizeREAL8TimeSeries(start, 0, 
+    start = XLALResizeREAL8TimeSeries(start, 0,
             start->data->length + end->data->length - 1);
-    
-    memcpy(start->data->data + origlen, end->data->data+1, 
+
+    memcpy(start->data->data + origlen, end->data->data+1,
             (end->data->length-1)*sizeof(REAL8));
 
     XLALGPSAdd(&(start->epoch), -end->deltaT*(end->data->length - 1));
 
     XLALDestroyREAL8TimeSeries(end);
 
-    return start;        
+    return start;
 }
 
 /**
@@ -3171,7 +3171,7 @@ int XLALSimInspiralSpinTaylorDriver(
     e1xtmp=e1xp;
     e1ytmp=e1yp;
     REAL8 iota=atan2(lxy,lnhatz);
-    //Rotation in the x-z plane to bring L along z 
+    //Rotation in the x-z plane to bring L along z
     e1xp=e1xtmp*cos(iota)-e1ztmp*sin(iota);
     e1zp=e1ztmp*cos(iota)+e1xtmp*sin(iota);
     e1xtmp=e1xp;
@@ -3190,13 +3190,13 @@ int XLALSimInspiralSpinTaylorDriver(
     /* Sanity check fRef value */
     if( fRef < 0. )
     {
-        XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+        XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
                 __func__, fRef);
         XLAL_ERROR(XLAL_EINVAL);
     }
     if( fRef != 0. && fRef < fStart )
     {
-        XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+        XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
                 __func__, fRef, fStart);
         XLAL_ERROR(XLAL_EINVAL);
     }
@@ -3324,7 +3324,7 @@ int XLALSimInspiralSpinTaylorDriver(
         }
 
         /* Stitch 2nd set of vectors onto 1st set. Free 2nd set. */
-        V = appendTSandFree(V1, V2); 
+        V = appendTSandFree(V1, V2);
         Phi = appendTSandFree(Phi1, Phi2);
         S1x = appendTSandFree(S1x1, S1x2);
         S1y = appendTSandFree(S1y1, S1y2);
@@ -3339,7 +3339,7 @@ int XLALSimInspiralSpinTaylorDriver(
         E1y = appendTSandFree(E1y1, E1y2);
         E1z = appendTSandFree(E1z1, E1z2);
     }
-    
+
     /* Use the dynamical variables to build the polarizations */
     if (hplus && hcross) {
       status = XLALSimInspiralPrecessingPolarizationWaveforms(hplus, hcross,
@@ -3946,7 +3946,7 @@ int XLALSimInspiralTransformPrecessingObsoleteInitialConditions(
 	/* We have completed the transformation. Now find the inclination
 	 * of LN relative to N (the final z-axis). */
 	*incl = acos(LNhz);
-	
+
 	/* Multiply spin unit vectors by chi magnitude (but NOT m_i^2) */
 	s1hatx *= chi1;
 	s1haty *= chi1;
@@ -4336,13 +4336,13 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     /* Check start and end frequencies are positive */
     if( fStart <= 0. )
     {
-        XLALPrintError("XLAL Error - %s: fStart = %f must be > 0.\n", 
+        XLALPrintError("XLAL Error - %s: fStart = %f must be > 0.\n",
                 __func__, fStart );
         XLAL_ERROR(XLAL_EINVAL);
     }
     if( fEnd < 0. ) /* fEnd = 0 allowed as special case */
     {
-        XLALPrintError("XLAL Error - %s: fEnd = %f must be >= 0.\n", 
+        XLALPrintError("XLAL Error - %s: fEnd = %f must be >= 0.\n",
                 __func__, fEnd );
         XLAL_ERROR(XLAL_EINVAL);
     }
@@ -4359,7 +4359,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     {
         XLALSimInspiralSpinTaylorT4Setup(&params, m1_SI, m2_SI, fStart, fEnd,
 					 lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, lscorr, 0);
-      
+
     }
     else if( approx == SpinTaylorT5 )
     {
@@ -4382,13 +4382,13 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     m2sec = m2_SI / LAL_MSUN_SI * LAL_MTSUN_SI;
     Msec = m1sec + m2sec;
     Mcsec = Msec * pow( m1sec*m2sec/Msec/Msec, 0.6);
-	   
+
     /* Estimate length of waveform using Newtonian t(f) formula */
     /* Time from freq. = fStart to infinity */
-    dtStart = (5.0/256.0) * pow(LAL_PI,-8.0/3.0) 
+    dtStart = (5.0/256.0) * pow(LAL_PI,-8.0/3.0)
             * pow(Mcsec * fStart,-5.0/3.0) / fStart;
     /* Time from freq. = fEnd to infinity. Set to zero if fEnd=0 */
-    dtEnd = (fEnd == 0. ? 0. : (5.0/256.0) * pow(LAL_PI,-8.0/3.0) 
+    dtEnd = (fEnd == 0. ? 0. : (5.0/256.0) * pow(LAL_PI,-8.0/3.0)
             * pow(Mcsec * fEnd,-5.0/3.0) / fEnd);
     /* Time in sec from fStart to fEnd. Note it can be positive or negative */
     lengths = dtStart - dtEnd;
@@ -4440,7 +4440,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     }
     if( !integrator )
     {
-        XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n", 
+        XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n",
                 __func__);
         XLAL_ERROR(XLAL_EFUNC);
     }
@@ -4463,7 +4463,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     XLALAdaptiveRungeKuttaFree(integrator);
     LALFree(params);
 
-    if (!len) 
+    if (!len)
     {
         XLALPrintError("XLAL Error - %s: integration failed with errorcode %d.\n", __func__, intreturn);
         XLAL_ERROR(XLAL_EFUNC);
@@ -4476,9 +4476,9 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
         XLALPrintWarning("XLAL Warning - %s: integration terminated with code %d.\n Waveform parameters were m1 = %e, m2 = %e, s1 = (%e,%e,%e), s2 = (%e,%e,%e), inc = %e.\n", __func__, intreturn, m1_SI / LAL_MSUN_SI, m2_SI / LAL_MSUN_SI, s1x, s1y, s1z, s2x, s2y, s2z, acos(lnhatz));
     }
 
-    /* 
+    /*
      * If ending frequency was non-zero, we may have overshot somewhat.
-     * The integrator takes one adaptive stride past fEnd, 
+     * The integrator takes one adaptive stride past fEnd,
      * but this may include several smaller interpolation steps.
      * Therefore, 'cutlen' will be the index of the first interpolated step
      * to cross fEnd and 'len' is the full length returned from the integrator.
@@ -4489,7 +4489,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     {
         wEnd = LAL_PI * Msec * fEnd;/* Ending dimensionless freq. \hat{omega} */
         /* Integrator returns \hat{omega} in array 'yout'
-           in range data[2*len] to data[2*len+(len-1)]. 
+           in range data[2*len] to data[2*len+(len-1)].
            Start at end and find where we cross wEnd */
         while( yout->data[2*len+cutlen-1] < wEnd )
             cutlen--;
@@ -4500,7 +4500,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     {
         wEnd = LAL_PI * Msec * fEnd;/* Ending dimensionless freq. \hat{omega} */
         /* Integrator returns \hat{omega} in array 'yout'
-           in range data[2*len] to data[2*len+(len-1)]. 
+           in range data[2*len] to data[2*len+(len-1)].
            Start at end and find where we cross wEnd */
         while( yout->data[2*len+cutlen-1] > wEnd )
             cutlen--;
@@ -4517,34 +4517,34 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     XLALPrintInfo("XLAL Info - %s: integration terminated with code %d. The final GW frequency reached was %g\n", __func__, intreturn, fTerm);
 
     /* allocate memory for output vectors */
-    *V = XLALCreateREAL8TimeSeries( "PN_EXPANSION_PARAMETER", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *Phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *S1x = XLALCreateREAL8TimeSeries( "SPIN1_X_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *S1y = XLALCreateREAL8TimeSeries( "SPIN1_Y_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *S1z = XLALCreateREAL8TimeSeries( "SPIN1_Z_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *S2x = XLALCreateREAL8TimeSeries( "SPIN2_X_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *S2y = XLALCreateREAL8TimeSeries( "SPIN2_Y_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *S2z = XLALCreateREAL8TimeSeries( "SPIN2_Z_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *LNhatx = XLALCreateREAL8TimeSeries( "LNHAT_X_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *LNhaty = XLALCreateREAL8TimeSeries( "LNHAT_Y_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *LNhatz = XLALCreateREAL8TimeSeries( "LNHAT_Z_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *E1x = XLALCreateREAL8TimeSeries( "E1_BASIS_X_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *E1y = XLALCreateREAL8TimeSeries( "E1_BASIS_Y_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
-    *E1z = XLALCreateREAL8TimeSeries( "E1_BASIS_Z_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, cutlen); 
+    *V = XLALCreateREAL8TimeSeries( "PN_EXPANSION_PARAMETER", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *Phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *S1x = XLALCreateREAL8TimeSeries( "SPIN1_X_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *S1y = XLALCreateREAL8TimeSeries( "SPIN1_Y_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *S1z = XLALCreateREAL8TimeSeries( "SPIN1_Z_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *S2x = XLALCreateREAL8TimeSeries( "SPIN2_X_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *S2y = XLALCreateREAL8TimeSeries( "SPIN2_Y_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *S2z = XLALCreateREAL8TimeSeries( "SPIN2_Z_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *LNhatx = XLALCreateREAL8TimeSeries( "LNHAT_X_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *LNhaty = XLALCreateREAL8TimeSeries( "LNHAT_Y_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *LNhatz = XLALCreateREAL8TimeSeries( "LNHAT_Z_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *E1x = XLALCreateREAL8TimeSeries( "E1_BASIS_X_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *E1y = XLALCreateREAL8TimeSeries( "E1_BASIS_Y_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
+    *E1z = XLALCreateREAL8TimeSeries( "E1_BASIS_Z_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, cutlen);
     if ( !*V || !*Phi || !*S1x || !*S1y || !*S1z || !*S2x || !*S2y || !*S2z
              || !*LNhatx || !*LNhaty || !*LNhatz || !*E1x || !*E1y || !*E1z )
     {
@@ -4559,12 +4559,12 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
         offset = 0;
 
     /* Copy dynamical variables from yout array to output time series.
-     * Note the first 'len' members of yout are the time steps. 
+     * Note the first 'len' members of yout are the time steps.
      * Also, the for loop only goes to 'cutlen', in case we overshot fEnd.
      * If we integrated backwards, we copy backwards from 'cutlen'.
      */
     for( i = 0; i < cutlen; i++ )
-    {	
+    {
         int j = sgn*i+offset;
         (*Phi)->data->data[j] 		= yout->data[len+i];
         (*V)->data->data[j] 		= cbrt(yout->data[2*len+i]);
@@ -4682,13 +4682,13 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbitOnlyFinal(
     /* Check start and end frequencies are positive */
     if( fStart <= 0. )
     {
-        XLALPrintError("XLAL Error - %s: fStart = %f must be > 0.\n", 
+        XLALPrintError("XLAL Error - %s: fStart = %f must be > 0.\n",
                 __func__, fStart );
         XLAL_ERROR(XLAL_EINVAL);
     }
     if( fEnd < 0. ) /* fEnd = 0 allowed as special case */
     {
-        XLALPrintError("XLAL Error - %s: fEnd = %f must be >= 0.\n", 
+        XLALPrintError("XLAL Error - %s: fEnd = %f must be >= 0.\n",
                 __func__, fEnd );
         XLAL_ERROR(XLAL_EINVAL);
     }
@@ -4705,7 +4705,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbitOnlyFinal(
     {
         XLALSimInspiralSpinTaylorT4Setup(&params, m1_SI, m2_SI, fStart, fEnd,
 					 lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, lscorr, 0);
-      
+
     }
     else if( approx == SpinTaylorT5 )
     {
@@ -4728,13 +4728,13 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbitOnlyFinal(
     m2sec = m2_SI / LAL_MSUN_SI * LAL_MTSUN_SI;
     Msec = m1sec + m2sec;
     Mcsec = Msec * pow( m1sec*m2sec/Msec/Msec, 0.6);
-	   
+
     /* Estimate length of waveform using Newtonian t(f) formula */
     /* Time from freq. = fStart to infinity */
-    dtStart = (5.0/256.0) * pow(LAL_PI,-8.0/3.0) 
+    dtStart = (5.0/256.0) * pow(LAL_PI,-8.0/3.0)
             * pow(Mcsec * fStart,-5.0/3.0) / fStart;
     /* Time from freq. = fEnd to infinity. Set to zero if fEnd=0 */
-    dtEnd = (fEnd == 0. ? 0. : (5.0/256.0) * pow(LAL_PI,-8.0/3.0) 
+    dtEnd = (fEnd == 0. ? 0. : (5.0/256.0) * pow(LAL_PI,-8.0/3.0)
             * pow(Mcsec * fEnd,-5.0/3.0) / fEnd);
     /* Time in sec from fStart to fEnd. Note it can be positive or negative */
     lengths = dtStart - dtEnd;
@@ -4786,7 +4786,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbitOnlyFinal(
     }
     if( !integrator )
     {
-        XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n", 
+        XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n",
                 __func__);
         XLAL_ERROR(XLAL_EFUNC);
     }
@@ -4802,7 +4802,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbitOnlyFinal(
     XLALAdaptiveRungeKuttaFree(integrator);
     LALFree(params);
 
-    if (!out) 
+    if (!out)
     {
         XLALPrintError("XLAL Error - %s: integration failed with errorcode %d.\n", __func__, intreturn);
         XLAL_ERROR(XLAL_EFUNC);
@@ -4817,34 +4817,34 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbitOnlyFinal(
     }
 
     /* allocate memory for output vectors */
-    *V = XLALCreateREAL8TimeSeries( "PN_EXPANSION_PARAMETER", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *Phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *S1x = XLALCreateREAL8TimeSeries( "SPIN1_X_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *S1y = XLALCreateREAL8TimeSeries( "SPIN1_Y_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *S1z = XLALCreateREAL8TimeSeries( "SPIN1_Z_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *S2x = XLALCreateREAL8TimeSeries( "SPIN2_X_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *S2y = XLALCreateREAL8TimeSeries( "SPIN2_Y_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *S2z = XLALCreateREAL8TimeSeries( "SPIN2_Z_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *LNhatx = XLALCreateREAL8TimeSeries( "LNHAT_X_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *LNhaty = XLALCreateREAL8TimeSeries( "LNHAT_Y_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *LNhatz = XLALCreateREAL8TimeSeries( "LNHAT_Z_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *E1x = XLALCreateREAL8TimeSeries( "E1_BASIS_X_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *E1y = XLALCreateREAL8TimeSeries( "E1_BASIS_Y_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
-    *E1z = XLALCreateREAL8TimeSeries( "E1_BASIS_Z_COMPONENT", &tStart, 0., 
-            deltaT, &lalDimensionlessUnit, 1); 
+    *V = XLALCreateREAL8TimeSeries( "PN_EXPANSION_PARAMETER", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *Phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *S1x = XLALCreateREAL8TimeSeries( "SPIN1_X_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *S1y = XLALCreateREAL8TimeSeries( "SPIN1_Y_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *S1z = XLALCreateREAL8TimeSeries( "SPIN1_Z_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *S2x = XLALCreateREAL8TimeSeries( "SPIN2_X_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *S2y = XLALCreateREAL8TimeSeries( "SPIN2_Y_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *S2z = XLALCreateREAL8TimeSeries( "SPIN2_Z_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *LNhatx = XLALCreateREAL8TimeSeries( "LNHAT_X_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *LNhaty = XLALCreateREAL8TimeSeries( "LNHAT_Y_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *LNhatz = XLALCreateREAL8TimeSeries( "LNHAT_Z_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *E1x = XLALCreateREAL8TimeSeries( "E1_BASIS_X_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *E1y = XLALCreateREAL8TimeSeries( "E1_BASIS_Y_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
+    *E1z = XLALCreateREAL8TimeSeries( "E1_BASIS_Z_COMPONENT", &tStart, 0.,
+            deltaT, &lalDimensionlessUnit, 1);
     if ( !*V || !*Phi || !*S1x || !*S1y || !*S1z || !*S2x || !*S2y || !*S2z
              || !*LNhatx || !*LNhaty || !*LNhatz || !*E1x || !*E1y || !*E1z )
     {
@@ -5291,7 +5291,7 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
         nx2 = nx*nx;    ny2 = ny*ny;    nz2 = nz*nz;
         lx2 = lx*lx;    ly2 = ly*ly;    lz2 = lz*lz;
 
-        /* 
+        /*
          * NOTE: For PTF waveforms, we must use only the dominant amplitude
          * The Q values are computed from equations 13,14,17, 46 + 47 in PBCV or
          * more simply from equations (3.10) in Diego Fazi's thesis.
@@ -5344,7 +5344,7 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
         int phaseO                      /**< twice PN phase order */
         )
 {
-    /* To generate the QVecs we need to choose a specific frame 
+    /* To generate the QVecs we need to choose a specific frame
      * This frame is set so that inclination, and most other extrinsic
      * angles are 0. This does not lead to loss in generality as PTF maximizes
      * over these angles. This follows the PBCV convention
@@ -5355,7 +5355,7 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
     REAL8 s1x = chi1 * pow((1 - kappa1*kappa1),0.5);
     REAL8 s1z = chi1 * kappa1;
     REAL8 s1y,s2x,s2y,s2z,lnhatx,lnhaty,lnhatz,e1x,e1y,e1z;
-    s1y = s2x = s2y = s2z = lnhatx = lnhaty = e1y = e1z = 0;     
+    s1y = s2x = s2y = s2z = lnhatx = lnhaty = e1y = e1z = 0;
     lnhatz = e1x = 1.;
 
     REAL8TimeSeries *V, *Phi, *S1x, *S1y, *S1z, *S2x, *S2y, *S2z;

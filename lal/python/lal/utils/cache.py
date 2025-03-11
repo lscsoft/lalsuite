@@ -28,7 +28,7 @@ from urllib.parse import (
     urlunparse,
 )
 
-from ligo import segments
+import igwn_segments as segments
 
 from .. import git_version
 from ..lal import CacheImport
@@ -94,7 +94,7 @@ class CacheEntry(object):
 
     The values for these columns are stored in the .observatory,
     .description, .segment and .url attributes of instances of this class,
-    respectively.  The .segment attribute stores a ligo.segments.segment
+    respectively.  The .segment attribute stores a igwn_segments.segment
     object describing the interval spanned by the file.  Any of these
     attributes except the URL is allowed to be None.
 
@@ -119,7 +119,7 @@ class CacheEntry(object):
 
     Example (extract segmentlist dictionary from LAL cache):
 
-    >>> from ligo import segments
+    >>> import igwn_segments as segments
     >>> seglists = segments.segmentlistdict()
     >>> for cacheentry in cache:
     ...    seglists |= cacheentry.segmentlistdict
@@ -146,7 +146,7 @@ class CacheEntry(object):
 
     See also:
 
-    ligo.segments.utils..fromlalcache()
+    igwn_segments.utils..fromlalcache()
     """
     # How to parse a line in a LAL cache file.  Five white-space
     # delimited columns.
@@ -311,7 +311,7 @@ class CacheEntry(object):
         The \"observatory\" column of the cache entry, which is frequently
         used to store instrument names, is parsed into instrument names for
         the dictionary keys using the same rules as
-        ligo.lw.lsctables.instrumentsproperty.get().
+        igwn_ligolw.lsctables.instrumentsproperty.get().
 
         Example:
 

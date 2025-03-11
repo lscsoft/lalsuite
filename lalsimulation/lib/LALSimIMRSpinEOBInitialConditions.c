@@ -174,7 +174,7 @@ ApplyRotationMatrix(
 {
 
   gsl_vector *tmpVec1 = gsl_vector_alloc( 3 );
-  gsl_vector *tmpVec2 = gsl_vector_calloc( 3 );  
+  gsl_vector *tmpVec2 = gsl_vector_calloc( 3 );
 
   gsl_vector_set( tmpVec1, 0, a[0] );
   gsl_vector_set( tmpVec1, 1, a[1] );
@@ -252,7 +252,7 @@ static int CartesianToSpherical(
 
   REAL8 r;
   REAL8 pr, pTheta, pPhi;
-  
+
   REAL8 x; //, y, z;
   REAL8 pX, pY, pZ;
 
@@ -546,8 +546,8 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2(
 
   result = result / ( 2.*STEP_SIZE );
 */
- 
-  XLAL_CALLGSL( gslStatus = gsl_deriv_central( &F, values[idx1], 
+
+  XLAL_CALLGSL( gslStatus = gsl_deriv_central( &F, values[idx1],
                       STEP_SIZE, &result, &absErr ) );
 
   if ( gslStatus != GSL_SUCCESS )
@@ -694,10 +694,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
   EOBNonQCCoeffs *nqcCoeffs = NULL;
   nqcCoeffs = params->nqcCoeffs;
 
-  /* STEP 1) Rotate to LNhat0 along z-axis and N0 along x-axis frame, where LNhat0 and N0 are initial normal to 
+  /* STEP 1) Rotate to LNhat0 along z-axis and N0 along x-axis frame, where LNhat0 and N0 are initial normal to
    *         orbital plane and initial orbital separation;
    */
- 
+
   /* Set the initial orbital ang mom direction. Taken from STPN code */
   LnHat[0] = sin(inc);
   LnHat[1] = 0.;
@@ -788,7 +788,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
   /* for spherical coords in the new basis */
   rootParams.omega  = omega;
   rootParams.params = params;
-  
+
   /* To start with, we will just assign Newtonian-ish ICs to the system */
   rootParams.values[0] = 1./(v0*v0);  /* Initial r */
   rootParams.values[4] = v0;    /* Initial p */
@@ -829,7 +829,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
 
   do
   {
-    XLAL_CALLGSL( gslStatus = gsl_multiroot_fsolver_iterate( rootSolver ) ); 
+    XLAL_CALLGSL( gslStatus = gsl_multiroot_fsolver_iterate( rootSolver ) );
     if ( gslStatus != GSL_SUCCESS )
     {
       XLALPrintError( "Error in GSL iteration function!\n" );
@@ -857,7 +857,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
   finalValues = gsl_multiroot_fsolver_root( rootSolver );
 
   /*printf( "Spherical orbit conditions here given by the following:\n" );
-  printf( " x = %.16e, py = %.16e, pz = %.16e\n", gsl_vector_get( finalValues, 0 ), 
+  printf( " x = %.16e, py = %.16e, pz = %.16e\n", gsl_vector_get( finalValues, 0 ),
       gsl_vector_get( finalValues, 1 ), gsl_vector_get( finalValues, 2 ) );*/
 
   memset( qCart, 0, sizeof(qCart) );
@@ -884,7 +884,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
 
   Lhat[0] = CalculateCrossProduct( 0, qHat, pHat );
   Lhat[1] = CalculateCrossProduct( 1, qHat, pHat );
-  Lhat[2] = CalculateCrossProduct( 2, qHat, pHat );  
+  Lhat[2] = CalculateCrossProduct( 2, qHat, pHat );
 
   NormalizeVector( Lhat );
 
@@ -907,7 +907,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
   ApplyRotationMatrix( rotMatrix2, tmpS2Norm );
   ApplyRotationMatrix( rotMatrix2, qCart );
   ApplyRotationMatrix( rotMatrix2, pCart );
- 
+
   /* STEP 4) In the L0-N0 frame, we calculate (dE/dr)|sph using Eq. (4.14), then initial dr/dt using Eq. (4.10),
    *         and finally pr0 using Eq. (4.15).
    */
@@ -1020,7 +1020,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
   /* Now we are done - convert back to cartesian coordinates ) */
   SphericalToCartesian( qCart, pCart, qSph, pSph );
 
-  /* STEP 5) Rotate back to the original inertial frame by inverting the rotation of STEP 3 and then  
+  /* STEP 5) Rotate back to the original inertial frame by inverting the rotation of STEP 3 and then
    *         inverting the rotation of STEP 1.
    */
 
@@ -1072,10 +1072,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
   memcpy( initConds->data+3, pCart, sizeof(pCart) );
   memcpy( initConds->data+6, tmpS1Norm, sizeof(tmpS1Norm) );
   memcpy( initConds->data+9, tmpS2Norm, sizeof(tmpS2Norm) );
-  
+
   gsl_matrix_free(rotMatrix2);
   gsl_matrix_free(invMatrix2);
-  
+
   gsl_matrix_free(rotMatrix);
   gsl_matrix_free(invMatrix);
 

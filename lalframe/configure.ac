@@ -70,7 +70,7 @@ AM_INIT_AUTOMAKE([ \
 # version requirements
 MIN_LAL_VERSION="7.6.0"
 MIN_FRAMECPPC_VERSION="2.5.5"
-MIN_FRAMEL_VERSION="8.39.2"
+MIN_FRAMEL_VERSION="8.42.2"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_FRAMECPPC_VERSION])
 AC_SUBST([MIN_FRAMEL_VERSION])
@@ -127,7 +127,7 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([3.5])
+LALSUITE_CHECK_PYTHON([3.6])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -166,7 +166,7 @@ AS_IF([test "${framec}" = "true"], [
 
 AS_IF([test "${framel}" = "true"], [
        FRAMEL_AVAILABLE="yes"
-       PKG_CHECK_MODULES([FRAMEL],[framel],[true],[false])
+       PKG_CHECK_MODULES([FRAMEL],[framel >= ${MIN_FRAMEL_VERSION}],[true],[false])
        LALSUITE_ADD_FLAGS([C],[${FRAMEL_CFLAGS}],[${FRAMEL_LIBS}])
        AC_CHECK_LIB([framel],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
        AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
@@ -199,9 +199,6 @@ LALSUITE_USE_SWIG
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
-
-# check for pretty code formatters
-LALSUITE_PROG_PRETTY_CODE
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS

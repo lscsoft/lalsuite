@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson, 
+ * Copyright (C) 2007 S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson,
  * C. Pankow
  *
  *  This program is free software; you can redistribute it and/or modify

@@ -135,8 +135,13 @@ static PrecessingNRSurData __lalsim_NRSur7dq4_data;
  * See Varma et al. (arxiv:1905.09300) for details.
  * Any studies that use this waveform model should include a reference to that
  * paper.
- * Using this model requires the file lalsuite-extra/data/lalsimulation/NRSur7dq4.h5
- * Make sure your $LAL_DATA_PATH points to lalsuite-extra/data/lalsimulation/.
+ * The binary data file (NRSur7dq4_v1.0.h5) is available at:
+ * https://git.ligo.org/waveforms/software/lalsuite-waveform-data.
+ * Get the lalsuite-waveform-data repo or put the data into a location in your
+ * LAL_DATA_PATH.
+ * The data is also available on CIT at /home/lalsimulation_data and via CVMFS
+ * at /cvmfs/shared.storage.igwn.org/igwn/shared/auxiliary/obs_sci/cbc/waveform/lalsimulation_data
+ * Make sure the files are in your LAL_DATA_PATH.
  */
 
 
@@ -185,8 +190,15 @@ static void NRSur7dq4_Init_LALDATA(void) {
     if (NRSur7dq4_IsSetup()) return;
 
     char *path = XLAL_FILE_RESOLVE_PATH(NRSUR7DQ4_DATAFILE);
-    if (path==NULL)
-        XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", NRSUR7DQ4_DATAFILE);
+    if (path==NULL){
+        XLAL_ERROR_VOID(XLAL_EIO,
+        "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
+        "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
+        "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
+        "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
+        "https://git.ligo.org/lscsoft/lalsuite-extra\n",
+        NRSUR7DQ4_DATAFILE);
+    }
     char *dir = dirname(path);
     size_t size = strlen(dir) + strlen(NRSUR7DQ4_DATAFILE) + 2;
     char *file_path = XLALMalloc(size);
@@ -306,7 +318,7 @@ static void PrecessingNRSur_LoadFitData(
     nwritten = snprintf(tmp_name, str_size, "%s_coefs", name);
     XLAL_CHECK_ABORT(nwritten < str_size);
     (*fit_data)->coefs = NULL;
-    
+
     ReadHDF5RealVectorDataset(sub, tmp_name, &((*fit_data)->coefs));
 
     nwritten = snprintf(tmp_name, str_size, "%s_bfOrders", name);
@@ -2783,4 +2795,3 @@ int XLALPrecessingNRSurDynamics(
 
 /** @} */
 /** @} */
-

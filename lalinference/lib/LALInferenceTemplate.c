@@ -94,7 +94,7 @@ const UINT4 N_FTA_params = 26;
 static REAL8 dquadmon_from_lambda(REAL8 lambdav);
 static REAL8 dquadmon_from_lambda(REAL8 lambdav)
 {
-    
+
     double ll = log(lambdav);
     double ai = .194, bi = .0936, ci = 0.0474, di = -4.21e-3, ei = 1.23e-4;
     double ln_quad_moment = ai + bi*ll + ci*ll*ll + di*pow(ll,3.0) + ei*pow(ll,4.0);
@@ -363,7 +363,7 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
         return;
       }
   }
-/* ==== Spin induced quadrupole moment PARAMETERS ==== */ 
+/* ==== Spin induced quadrupole moment PARAMETERS ==== */
  if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
     REAL8 dQuadMon1=0.;
     REAL8 dQuadMon2=0.;
@@ -710,7 +710,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   static int sizeWarning = 0;
   int ret=0;
   INT4 errnum=0;
-  
+
   REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform [returned] */
   REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
@@ -866,7 +866,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
         XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingNewInitialConditions(): error converting angles. errnum=%d: %s\n",errnum, XLALErrorString(errnum) );
         return;
       }
-  } 
+  }
 /* ==== Spin induced quadrupole moment PARAMETERS ==== */
  if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
     REAL8 dQuadMon1=0.;
@@ -919,7 +919,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       {
          r2 = XLALSimNeutronStarRadius(m2*LAL_MSUN_SI, eos_fam);
          k2_2 = XLALSimNeutronStarLoveNumberK2(m2*LAL_MSUN_SI, eos_fam);
-         lambda2 = (2./3.)*k2_2 * pow(r2/(m2*LAL_MRSUN_SI), 5.0);          
+         lambda2 = (2./3.)*k2_2 * pow(r2/(m2*LAL_MRSUN_SI), 5.0);
       }
       /* Set waveform params */
       XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
@@ -948,7 +948,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           f_max = fmax_eos;
         }
       }
-    
+
       /* Add derived quantities for output */
       LALInferenceAddVariable(model->params, "radius1", &r1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
       LALInferenceAddVariable(model->params, "radius2", &r2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
@@ -1035,7 +1035,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       deltaF = model->deltaF;
       /* Correct distance to account for renormalisation of data due to window RMS */
       double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->data->length);
-    
+
       /* check if the user requested a generic phase correction */
       if (generic_fd_correction != 1)
       {
@@ -1055,7 +1055,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
         while ((param = XLALDictIterNext(&iter)) != NULL) {
           XLALDictInsertValue( grParams , XLALDictEntryGetKey(param), XLALDictEntryGetValue(param) );
         }
-        
+
         /* set all FTA parameters in grParams to their default GR value*/
         REAL8 default_GR_value = 0.0;
         for (UINT4 k=0; k<N_FTA_params; k++)
@@ -1075,7 +1075,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
         INT4 generic_fd_correction_hm = 0;
         if (LALInferenceCheckVariable(model->params, "generic_fd_correction_hm"))
           generic_fd_correction_hm = *(INT4*) LALInferenceGetVariable(model->params, "generic_fd_correction_hm");
-        
+
         if(generic_fd_correction_hm == 0){
           /* generate waveform with non-GR parameters set to default (zero) */
           XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
@@ -1085,8 +1085,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
           /* apply FTA corrections */
           XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hptilde,2,2,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
-        
-          XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hctilde,2,2,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);            
+
+          XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hctilde,2,2,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
         }
         else{
           /* generate modes with non-GR parameters set to default (zero) */
@@ -1114,7 +1114,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
               XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hlm_mode,hlms_temp->l,abs(hlms_temp->m),m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
               hlms_temp = hlms_temp->next;
             }
-  
+
             /* Construct hp and hc from hlms */
             size_t npts_wave = hlm_mode->data->length;
 
@@ -1125,7 +1125,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
                       &(hlm_mode->epoch), 0.0, deltaF,
                       &(hlm_mode->sampleUnits), npts_wave);
             memset(hptilde->data->data, 0, npts_wave * sizeof(COMPLEX16));
-            memset(hctilde->data->data, 0, npts_wave * sizeof(COMPLEX16));  
+            memset(hctilde->data->data, 0, npts_wave * sizeof(COMPLEX16));
 
             hlms_temp = hlms;
             while(hlms_temp){
@@ -1137,7 +1137,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
             XLALDestroySphHarmFrequencySeries(hlms);
           }
         }
-        
+
 
       }
     /* if the waveform failed to generate, fill the buffer with zeros

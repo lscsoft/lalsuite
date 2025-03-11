@@ -175,19 +175,20 @@ outputs:
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - pytest  # [build_platform == target_platform]
         - python
+        - igwn-ligolw >={{ python_ligo_lw_version }}
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalburst >={{ lalburst_version }}
         - python-lalinspiral >={{ lalinspiral_version }}
-        - python-ligo-lw >={{ python_ligo_lw_version }}
         - numpy
       run:
         - astropy >=1.1.1
         - healpy >=1.17.3
         - h5py
         - {{ pin_subpackage('liblalinference', exact=True) }}
-        - ligo-segments
+        - igwn-ligolw >={{ python_ligo_lw_version }}
+        - igwn-segments
         - lscsoft-glue >=1.54.1
         - matplotlib-base >=1.2.0
         - numpy
@@ -197,7 +198,6 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalburst >={{ lalburst_version }}
         - python-lalinspiral >={{ lalinspiral_version }}
-        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
     test:
       requires:
@@ -239,7 +239,7 @@ outputs:
       ignore_run_exports:
         - python
         # extras to help the solver
-        - icu  # [mpi != 'nompi']
+        - icu *
       script_env:
         - CI_COMMIT_TAG
         - CI_PIPELINE_SOURCE
@@ -263,8 +263,6 @@ outputs:
         - numpy                               # [build_platform != target_platform]
         - python                              # [build_platform != target_platform]
         - {{ mpi }}                           # [build_platform != target_platform and mpi == 'openmpi']
-        # extras to help the solver
-        - icu  # [mpi != 'nompi']
       host:
         - gsl  # [mpi != 'nompi']
         - libgomp  # [linux and mpi != 'nompi']
@@ -278,17 +276,20 @@ outputs:
         # run requirements needed for help2man (not when cross compiling)
         - astropy >=1.1.1  # [build_platform == target_platform]
         - h5py  # [build_platform == target_platform]
+        - igwn-ligolw  # [build_platform == target_platform]
         - ligo-gracedb  # [build_platform == target_platform]
         - lscsoft-glue >=1.54.1  # [build_platform == target_platform]
         - matplotlib-base >=1.2.0  # [build_platform == target_platform]
         - python-lal >={{ lal_version }}  # [build_platform == target_platform]
         - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
-        - python-ligo-lw  # [build_platform == target_platform]
         - scipy >=0.9.0  # [build_platform == target_platform]
+        # extras to help the solver
+        - icu *
       run:
         - astropy >=1.1.1
         - gsl  # [mpi != 'nompi']
         - h5py
+        - igwn-ligolw >={{ python_ligo_lw_version }}
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - liblalmetaio >={{ lalmetaio_version }}
@@ -301,7 +302,6 @@ outputs:
         - python-lal >={{ lal_version }}
         - {{ pin_subpackage('python-lalinference', exact=True) }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
     test:
       requires:

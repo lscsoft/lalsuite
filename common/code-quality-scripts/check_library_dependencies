@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # Author: Karl Wette, 2022
 
+# Check for consistent library dependencies across `.gitlab-ci.yml`,
+# autotools, and the Conda, Debian, and RPM packages. This script is
+# run by the `lint:depends` GitLab CI job.
+
 import logging
 import os
 import sys
@@ -121,7 +125,7 @@ def boot():
     """Generate `./configure` by running `./00boot`
     """
     # autoconf --trace only works if autoreconf has been run
-    print('calling ./00boot')
+    LOGGER.debug('calling ./00boot')
     check_call(
         ["./00boot"],
         cwd=os.path.curdir,
@@ -310,7 +314,7 @@ def check_spec_depends(lib, direct):
     # parse rpm .spec file
     spec_file = Path(lib, f'{lib}.spec.in')
     spec = Spec.from_file(spec_file)
-    spec.macros['python3_pkgversion'] = '3x'
+    spec.macros['python3_pkgversion'] = '3'
 
     # -- check dependencies
 
@@ -321,15 +325,15 @@ def check_spec_depends(lib, direct):
     ).replace('@PACKAGE@', lib)
     requires_list = [
         (f"{name}:BuildRequires",
-         ('lib{}-devel', 'python3x-{}'),
+         ('lib{}-devel', 'python3-{}'),
          spec.build_requires),
     ]
 
     # - check 'Requires' in sub-packages
-    # - base package requires 'liblal*-devel', and 'python3x-lal*' packages
+    # - base package requires 'liblal*-devel', and 'python3-lal*' packages
     # - package named 'liblal*-devel' requires 'liblal*-devel' packages
     # - package named 'liblal*' requires 'liblal*' packages
-    # - package named 'python3x-lal*' requires 'python3x-lal*' packages
+    # - package named 'python3-lal*' requires 'python3-lal*' packages
     # - package named 'lal*-octave' requires 'lal*-octave' packages
     for package in spec.packages:
         name = replace_macros(
@@ -344,9 +348,9 @@ def check_spec_depends(lib, direct):
             requires_list.append(
                 (f"{name}:Requires", ('lib{}',), package.requires),
             )
-        if name == f'python3x-{lib}':
+        if name == f'python3-{lib}':
             requires_list.append(
-                (f"{name}:Requires", ('python3x-{}',), package.requires),
+                (f"{name}:Requires", ('python3-{}',), package.requires),
             )
         if name == f'{lib}-octave':
             requires_list.append(

@@ -37,20 +37,17 @@ BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python3x
-BuildRequires: python-srpm-macros
-BuildRequires: python3-rpm-macros
-BuildRequires: epel-rpm-macros
-BuildRequires: python%{python3_pkgversion}
-BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-BuildRequires: python%{python3_pkgversion}-ligo-lw
-BuildRequires: python%{python3_pkgversion}-lscsoft-glue
-BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-BuildRequires: python%{python3_pkgversion}-pytest
+BuildRequires: python3
+BuildRequires: python3-devel
+BuildRequires: python3-lal >= @MIN_LAL_VERSION@
+BuildRequires: python3-lalframe >= @MIN_LALFRAME_VERSION@
+BuildRequires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python3-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python3dist(igwn-ligolw)
+BuildRequires: python3dist(lscsoft-glue)
+BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+BuildRequires: python3dist(pytest)
 
 # octave
 BuildRequires: octave-devel
@@ -65,9 +62,8 @@ BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
 # lalinspiral
 Summary: LVK Algorithm Inspiral Library
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}-ligo-segments
-Obsoletes: python2-%{name} <= 2.0.2-1
+Requires: python3-%{name} = %{version}-%{release}
+Requires: python3dist(igwn-segments)
 %description
 The LVK Algorithm Inspiral Library for gravitational wave data analysis.
 This package provides the runtime tools.
@@ -104,22 +100,20 @@ This package contains files needed build applications that use the LAL Inspiral
 library.
 
 # python3x-lalinspiral
-%package -n python%{python3_pkgversion}-%{name}
+%package -n python3-%{name}
 Summary: Python %{python3_version} bindings for LALInspiral
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
-Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-Requires: python%{python3_pkgversion}-ligo-lw
-Requires: python%{python3_pkgversion}-lscsoft-glue
-Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-Requires: python%{python3_pkgversion}-tqdm
-Obsoletes: python2-%{name} < 2.0.3-1
-%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-%description -n python%{python3_pkgversion}-%{name}
+Requires: python3
+Requires: python3-lal >= @MIN_LAL_VERSION@
+Requires: python3-lalframe >= @MIN_LALFRAME_VERSION@
+Requires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python3-lalburst >= @MIN_LALBURST_VERSION@
+Requires: python3dist(igwn-ligolw)
+Requires: python3dist(lscsoft-glue)
+Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+Requires: python3dist(tqdm)
+%description -n python3-%{name}
 This package provides the Python bindings for LALInspiral.
 
 # lalinspiral-octave
@@ -176,7 +170,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files -n python%{python3_pkgversion}-%{name}
+%files -n python3-%{name}
 %defattr(-,root,root)
 %doc README.md
 %license COPYING

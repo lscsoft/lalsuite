@@ -55,9 +55,6 @@
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
 static const char SurDataHDF5[] = "SEOBNRv4T_surrogate_v2.0.0.hdf5";
-static const INT4 SurDataHDF5_VERSION_MAJOR = 2;
-static const INT4 SurDataHDF5_VERSION_MINOR = 0;
-static const INT4 SurDataHDF5_VERSION_MICRO = 0;
 #endif
 
 #include <lal/LALSimInspiral.h>
@@ -539,10 +536,7 @@ int Surrogatedata_Init(
   XLALPrintInfo("Surrogate metadata\n============\n");
   PrintInfoStringAttribute(file, "Email");
   PrintInfoStringAttribute(file, "Description");
-  ret = ROM_check_version_number(file, SurDataHDF5_VERSION_MAJOR,
-                                       SurDataHDF5_VERSION_MINOR,
-                                       SurDataHDF5_VERSION_MICRO);
-  ret |= ROM_check_canonical_file_basename(file,SurDataHDF5,"CANONICAL_FILE_BASENAME");
+  ret = ROM_check_canonical_file_basename(file,SurDataHDF5,"CANONICAL_FILE_BASENAME");
 
   XLALFree(path);
   XLALH5FileClose(file);
@@ -615,7 +609,7 @@ static int TaylorF2Phasing(
   XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, extraParams);
 
   // Compute and subtract pn_ss3 term (See LALSimInspiralPNCoefficients.c: XLALSimInspiralPNPhasing_F2()).
-  // Rationale: SEOBNRv4T does not contain this ss3 term, therefore 
+  // Rationale: SEOBNRv4T does not contain this ss3 term, therefore
   // we remove it from the TF2 phasing that is used as a base waveform for the surrogate.
   double m1M = m1OverM;
   double m2M = m2OverM;
@@ -1076,7 +1070,7 @@ static int SurrogateCore(
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   // We compute the dimensionless time correction t/M since we use geometric units.
   // We use the Schwarzschild ISCO as a rough proxy for the amplitude peak of the BNS waveform.
-  // We used XLALSimNSNSMergerFreq() earlier and it turned out not to be reliable for extreme input parameters. 
+  // We used XLALSimNSNSMergerFreq() earlier and it turned out not to be reliable for extreme input parameters.
   REAL8 Mf_ISCO_Schwrazschild = 1.0 / (pow(6.,3./2.)*LAL_PI);
   REAL8 t_corr = gsl_spline_eval_deriv(spline_phi_TF2, Mf_ISCO_Schwrazschild, acc_phi_TF2) / (2*LAL_PI);
 
@@ -1110,7 +1104,12 @@ static int SurrogateCore(
  * This is a frequency domain model that approximates the time domain TEOBv4 model.
  *
  * The binary data HDF5 file (SEOBNRv4T_surrogate_v2.0.0.hdf5)
- * is available on CIT at /home/lalsimulation_data and soon through CVMFS.
+ * is available at:
+ * https://git.ligo.org/waveforms/software/lalsuite-waveform-data.
+ * Get the lalsuite-waveform-data repo or put the data into a location in your
+ * LAL_DATA_PATH.
+ * The data is also available on CIT at /home/lalsimulation_data and and via CVMFS
+ * at /cvmfs/shared.storage.igwn.org/igwn/shared/auxiliary/obs_sci/cbc/waveform/lalsimulation_data
  * Make sure the files are in your LAL_DATA_PATH.
  *
  * @note Note that due to its construction the iFFT of the surrogate has a small (~ 20 M) offset
@@ -1202,7 +1201,7 @@ int XLALSimIMRSEOBNRv4TSurrogateFrequencySequence(
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = SurrogateCore(hptilde, hctilde, phiRef, fRef, distance,
-                                inclination, Mtot_sec, eta, chi1, chi2, 
+                                inclination, Mtot_sec, eta, chi1, chi2,
                                 lambda1, lambda2, freqs, 0, spline_order);
 
   return(retcode);
@@ -1272,7 +1271,7 @@ int XLALSimIMRSEOBNRv4TSurrogate(
   freqs->data[1] = fHigh;
 
   int retcode = SurrogateCore(hptilde, hctilde, phiRef, fRef, distance,
-                                inclination, Mtot_sec, eta, chi1, chi2, 
+                                inclination, Mtot_sec, eta, chi1, chi2,
                                 lambda1, lambda2, freqs, deltaF, spline_order);
 
   XLALDestroyREAL8Sequence(freqs);
@@ -1294,7 +1293,13 @@ UNUSED static void Surrogate_Init_LALDATA(void)
 #define datafile SurDataHDF5
   char *path = XLAL_FILE_RESOLVE_PATH(datafile);
   if (path==NULL)
-    XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
+    XLAL_ERROR_VOID(XLAL_EIO,
+      "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
+      "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
+      "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
+      "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
+      "https://git.ligo.org/lscsoft/lalsuite-extra\n",
+      datafile);
   char *dir = dirname(path);
   int ret = Surrogate_Init(dir);
   XLALFree(path);

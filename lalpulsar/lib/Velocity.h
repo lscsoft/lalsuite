@@ -124,4 +124,3 @@ void LALDetectorPos( LALStatus   *status,
 #endif
 
 #endif  /* end of double inclusion protection */
-

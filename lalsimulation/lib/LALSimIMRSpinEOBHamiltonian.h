@@ -1,6 +1,6 @@
 //
 //  LALSimIMRSpinEOBHamiltonian.h
-//  
+//
 //
 //  Created by Andrea Taracchini on 9/9/16.
 //

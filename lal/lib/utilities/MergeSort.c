@@ -47,6 +47,3 @@ int XLALMergeSort(void *base, size_t nobj, size_t size, void *params, int (*comp
     LALFree(work);
     return 0;
 }
-
-
-

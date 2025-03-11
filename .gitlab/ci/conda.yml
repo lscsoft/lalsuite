@@ -10,16 +10,16 @@
 #       macos runners at CIT, if you need a writable base env
 #       on those machines, install miniconda/miniforge yourself
 .conda-init:
-  # use retry()
+  # set up retry()
   # - "appears to be corrupted" error messages are caused by
   #   corrupted packages in $CONDA_PKGS_DIRS
   # - need to remove $CONDA_PKGS_DIRS before retrying
-  - !reference [.retry]
-  - RETRY_EXIT_PATTERN='/appears to be corrupted/'
-  - RETRY_CLEANUP="rm -rf ${CONDA_PKGS_DIRS}"
+  - RETRY_EXIT_PATT='/appears to be corrupted/'
+  - RETRY_CLEANUP_CMD="test ! -d '${CONDA_PKGS_DIRS}' || rm -rf ${CONDA_PKGS_DIRS}/"
   # init conda
   - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
-  - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
+  - command -v conda &> /dev/null && CONDA_ROOT=$(conda info --base) || CONDA_ROOT=/opt/conda
+  - source ${CONDA_ROOT}/etc/profile.d/conda.sh
   # configure conda options
   - rm -fv ${CONDARC}  # start afresh
   - conda config --file ${CONDARC} --set always_yes yes
@@ -29,11 +29,14 @@
   - conda config --show aggressive_update_packages >> ${CONDARC}
   - conda config --file ${CONDARC} --remove aggressive_update_packages openssl
   # install build helpers
-  - retry conda install -n base
+  - retry conda install
+        --name base
+        --satisfied-skip-solve
         "conda-build!=3.18.10,!=24.11.1"
         conda-forge-pinning
         "conda-smithy>=3.7.5"
         conda-libmamba-solver
+        "py-lief<0.15"
   # print info
   - conda activate base
   - conda info --all
@@ -155,19 +158,11 @@
 
 # activate conda LALSuite development environment
 .conda-lalsuite-dev:
-  - conda env create
+  - retry conda env create
         --file ${ENVIRONMENT_FILE}
         --quiet
   - conda list --name lalsuite-dev
   - conda activate lalsuite-dev
-  # manually install packages that have circular dependencies upon lal
-  - conda install --yes --quiet --name lalsuite-dev
-        python-ligo-lw
-  # then forcibly remove lalsuite
-  - conda uninstall --yes --quiet --name lalsuite-dev --solver classic --force-remove
-        "liblal*"
-        "lal*"
-        "python-lal*"
 
 # -- builds
 

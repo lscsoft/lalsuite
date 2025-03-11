@@ -9,8 +9,8 @@
 #define FUNC CONCAT3(LAL,TYPECODE,PrintFrequencySeries)
 
 
-void FUNC ( STYPE *series, const CHAR *filename ) 
- 
+void FUNC ( STYPE *series, const CHAR *filename )
+
 {
   REAL8 f;
   TYPE *data;

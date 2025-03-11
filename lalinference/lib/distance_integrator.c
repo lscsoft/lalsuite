@@ -280,7 +280,7 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
     const double d = (xmax - xmin) / (size - 1); /* dx = dy = du */
     const double umin = - (1 + M_SQRT1_2) * alpha;
     const double vmax = x0 - M_SQRT1_2 * alpha;
-    
+
     double *z1=calloc(size,sizeof(*z1));
     double *z2=calloc(size,sizeof(*z2));
     double *z0=calloc(size*size,sizeof(*z0));
@@ -295,7 +295,7 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
     /* const double umax = xmax - vmax; */ /* unused */
 
     if(cosmology) dVC_dVL_init();
-    
+
     int interrupted=0;
     OMP_BEGIN_INTERRUPTIBLE
     integrator = malloc(sizeof(*integrator));
@@ -320,7 +320,7 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
         z0[ix*size + iy] = log_radial_integral(r1, r2, p, b, k, cosmology, gaussian);
     }
     gsl_set_error_handler(old_handler);
-    
+
 	if (OMP_WAS_INTERRUPTED)
         goto done;
 
@@ -337,7 +337,7 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
 done:
     interrupted = OMP_WAS_INTERRUPTED;
     OMP_END_INTERRUPTIBLE
-    
+
     free(z2); free(z1); free(z0);
     if (interrupted || !(integrator && region0 && region1 && region2))
     {
@@ -412,5 +412,3 @@ double log_radial_integrator_eval(const log_radial_integrator *integrator, doubl
 
     return result;
 }
-
-

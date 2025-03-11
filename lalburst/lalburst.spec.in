@@ -35,20 +35,17 @@ BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python3x
-BuildRequires: epel-rpm-macros
-BuildRequires: python-srpm-macros
-BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
-BuildRequires: python%{python3_pkgversion}-lscsoft-glue
-BuildRequires: python%{python3_pkgversion}-matplotlib
-BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-BuildRequires: python%{python3_pkgversion}-pillow
-BuildRequires: python%{python3_pkgversion}-pytest
-BuildRequires: python%{python3_pkgversion}-scipy
-BuildRequires: python3-rpm-macros
+BuildRequires: python3-devel
+BuildRequires: python3-lal >= @MIN_LAL_VERSION@
+BuildRequires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python3dist(igwn-ligolw) >= @MIN_PYTHON_LIGO_LW_VERSION@
+BuildRequires: python3dist(lscsoft-glue)
+BuildRequires: python3dist(matplotlib)
+BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+BuildRequires: python3dist(pillow)
+BuildRequires: python3dist(pytest)
+BuildRequires: python3dist(scipy) >= @MIN_SCIPY_VERSION@
 
 # octave
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
@@ -61,18 +58,17 @@ BuildRequires: octave-devel
 # lalburst
 Summary: LVK Algorithm Burst Libary - runtime tools
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}-lal
-Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}-lalmetaio
-Requires: python%{python3_pkgversion}-lalsimulation
-Requires: python%{python3_pkgversion}-ligo-lw
-Requires: python%{python3_pkgversion}-ligo-segments
-Requires: python%{python3_pkgversion}-matplotlib
-Requires: python%{python3_pkgversion}-numpy
-Requires: python%{python3_pkgversion}-pillow
-Requires: python%{python3_pkgversion}-scipy
-Requires: python%{python3_pkgversion}-tqdm
-Obsoletes: python2-%{name} <= 1.5.8-1
+Requires: python3-%{name} = %{version}-%{release}
+Requires: python3-lal
+Requires: python3-lalmetaio
+Requires: python3-lalsimulation
+Requires: python3dist(igwn-ligolw)
+Requires: python3dist(igwn-segments)
+Requires: python3dist(matplotlib)
+Requires: python3dist(numpy)
+Requires: python3dist(pillow)
+Requires: python3dist(scipy) >= @MIN_SCIPY_VERSION@
+Requires: python3dist(tqdm)
 %description
 The LVK Algorithm Burst Library for gravitational wave data analysis.
 This package provides the runtime tools.
@@ -104,22 +100,20 @@ This package contains files needed build applications that use the LAL Burst
 library.
 
 # python3x-lalburst
-%package -n python%{python3_pkgversion}-%{name}
+%package -n python3-%{name}
 Summary: Python %{python3_version} Bindings for LALBurst
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: python%{python3_pkgversion}-ligo-lw
-Requires: python%{python3_pkgversion}-ligo-segments
-Requires: python%{python3_pkgversion}-lscsoft-glue
-Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-Requires: python%{python3_pkgversion}-scipy
-Requires: python%{python3_pkgversion}-tqdm
-Obsoletes: python2-%{name} < 1.5.9-1
-%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-%description -n python%{python3_pkgversion}-%{name}
+Requires: python3
+Requires: python3-lal >= @MIN_LAL_VERSION@
+Requires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python3dist(igwn-ligolw)
+Requires: python3dist(igwn-segments)
+Requires: python3dist(lscsoft-glue)
+Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+Requires: python3dist(scipy) >= @MIN_SCIPY_VERSION@
+Requires: python3dist(tqdm)
+%description -n python3-%{name}
 The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings for LALBurst.
 
@@ -176,7 +170,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files -n python%{python3_pkgversion}-%{name}
+%files -n python3-%{name}
 %defattr(-,root,root)
 %doc README.md
 %license COPYING

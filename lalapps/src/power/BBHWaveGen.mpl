@@ -36,7 +36,7 @@ catch:
    error:
 end try:
 printf("Proceeding with input file %s.\n",filename):
-   
+
 # If a parameter do not exist or look wrong, alert user and quit.
 
 if (not assigned(f_low) ) then

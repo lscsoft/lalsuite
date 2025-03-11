@@ -645,7 +645,7 @@ XLALSimIMRSpinAlignedEOBWaveform (
   dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(LALParams);
   domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALParams);
   dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALParams);
-  
+
   if (SpinAlignedEOBversion == 4112) TGRflag = 1;
 
   LALDict *TGRParams = XLALCreateDict();
@@ -1633,7 +1633,7 @@ XLALSimIMRSpinAlignedEOBModes (
     {
       UINT4 rSize;
       rSize = dynamicsPA->dimLength->data[1];
-      
+
       values->data[0] = dynamicsPA->data[2*rSize-1];
       values->data[1] = 0.;
       values->data[2] = dynamicsPA->data[4*rSize-1];
@@ -1690,7 +1690,7 @@ XLALSimIMRSpinAlignedEOBModes (
         }
         else
         {
-          
+
           if(postAdiabaticFlag){
               if (!
                   (integrator =
@@ -1718,8 +1718,8 @@ XLALSimIMRSpinAlignedEOBModes (
 
   integrator->stopontestonly = 1;
   integrator->retries = 1;
-  
- 
+
+
   if (use_optimized_v2_or_v4)
     {
       /* BEGIN OPTIMIZED */
@@ -1803,13 +1803,13 @@ XLALSimIMRSpinAlignedEOBModes (
 
     const INT4 combinedLen = PALen + retLen - 1;
 
-    combinedLenForInterp = ceil((dynamics->data[retLen-1]+tOffset-dynamicsPA->data[0]) / tStepInterp) - 1; 
+    combinedLenForInterp = ceil((dynamics->data[retLen-1]+tOffset-dynamicsPA->data[0]) / tStepInterp) - 1;
     // printf("Last point of integration: %e\n",dynamics->data[retLen-1]+tOffset);
     // printf("First point of PA is %e\n",dynamicsPA->data[0]);
     // printf("The spacing to interpolate to is %e\n",tStepInterp);
     // printf("The length of the array is %d\n",combinedLenForInterp);
     //REAL8 nODE = ceil((dynamics->data[retLen-1]-dynamics->data[0])/tStepInterp);
-    //combinedLenForInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp) + nODE - 1; 
+    //combinedLenForInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp) + nODE - 1;
     REAL8Array *combinedDynamics = NULL;
     combinedDynamics = XLALCreateREAL8ArrayL(2, 5, combinedLen);
 
@@ -1855,7 +1855,7 @@ XLALSimIMRSpinAlignedEOBModes (
 	combinedDynamics->data[3*combinedLen + i] = dynamicsPA->data[3*PALen + i];
 	combinedDynamics->data[4*combinedLen + i] = dynamicsPA->data[4*PALen + i];
       }
-    
+
     for (i = 1; i < retLen; i++)
     {
       combinedDynamics->data[PALen + i - 1] = dynamics->data[i] + tOffset;
@@ -1940,7 +1940,7 @@ XLALSimIMRSpinAlignedEOBModes (
   if (postAdiabaticFlag && postAdiabaticOutcome == XLAL_SUCCESS)
     {
       /* The time to which want to step back to */
-      
+
       REAL8 tTarget =  tVec.data[retLen-1]-tStepBack/mTScaled;
       UINT4 ndx = floor(tTarget*mTScaled/deltaT);
       REAL8 closestTime = ndx*deltaT/mTScaled;
@@ -2009,7 +2009,7 @@ XLALSimIMRSpinAlignedEOBModes (
   // retLen now means the length of the high-sampling dynamics
   // We also keep track of the starting time of the high-sampling dynamics
   INT4 retLenHi_out = retLen;
-  
+
 
 
   if(!postAdiabaticFlag)
@@ -2077,7 +2077,7 @@ XLALSimIMRSpinAlignedEOBModes (
 				   (UINT4) ceil (20 * (1. + dtau220) /
 						 (cimag (modeFreq) * deltaTHigh)));
     }
-  else { 
+  else {
     /* Allocate the high sample rate vectors */
       sigReHi =
         XLALCreateREAL8Vector (retLen +
@@ -2144,7 +2144,7 @@ XLALSimIMRSpinAlignedEOBModes (
 	}
       else
 	{
-   
+
     if(postAdiabaticFlag){
       omega =
               XLALSimIMRSpinAlignedEOBCalcOmegaOptimized (values->data, &seobParams);
@@ -2159,7 +2159,7 @@ XLALSimIMRSpinAlignedEOBModes (
 	omega = 1.0e-9;		//YPnote: make sure omega>0 during very-late evolution when numerical errors are huge.
       omegaHi->data[i] = omega;	//YPnote: omega<0 is extremely rare and had only happenned after relevant time interval.
       v = cbrt (omega);
-      
+
       if (postAdiabaticFlag){
 	 vPhiVecHi->data[i] =  XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized (values->data, &seobParams);
       }
@@ -2452,7 +2452,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
 	   status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform(&hLM, values, v, hamVHi->data[i], modeL, modeM, &seobParams,
                                                               use_optimized_v2_or_v4);
         }
-        
+
 	  if (status == XLAL_FAILURE)
         {
             if(tmpValues){
@@ -3208,7 +3208,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
   memset (sigImCoorbVec->data, 0, sigImCoorbVec->length * sizeof (REAL8));
   // PA: the spacing is not regular on the dynamics grid, so must be careful
   // to set the correct length with the desired spacing
-  
+
   hLMAll = XLALCreateREAL8Vector((UINT4)2*sigReVec->length*nModes);
   memset(hLMAll->data, 0, hLMAll->length*sizeof (REAL8));
 
@@ -3290,7 +3290,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
           }
           if(vPhiVec)
             XLALDestroyREAL8Vector(vPhiVec);
-          
+
           XLAL_ERROR (XLAL_ENOMEM);
         }
       for (i = 0; i < (INT4) rVec.length; i++)
@@ -3303,14 +3303,14 @@ for ( UINT4 k = 0; k<nModes; k++) {
 	  if (postAdiabaticFlag){
       omegaVec->data[i] = XLALSimIMRSpinAlignedEOBCalcOmegaOptimized (values->data, &seobParams);
       vPhiVec->data[i] =  XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized (values->data, &seobParams);
-      
+
     }
     else{
       omegaVec->data[i] = XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams, STEP_SIZE);
     }
-    
+
 	    //
-	  
+
 #if debugOutput
         fprintf (out, "%.16e %.16e %.16e %.16e %.16e %.16e\n", dynamics->data[i],
                  rVec.data[i], phiVec.data[i], prVec.data[i], pPhiVec.data[i],omegaVec->data[i]);
@@ -3319,7 +3319,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
 	  cartPosVec.data[0] = values->data[0];
 	  cartMomVec.data[0] = values->data[2];
 	  cartMomVec.data[1] = values->data[3] / values->data[0];
-    
+
     if(postAdiabaticFlag){
 	  hamV->data[i] =
 	    XLALSimIMRSpinEOBHamiltonianOptimized (eta, &cartPosVec, &cartMomVec,
@@ -3336,7 +3336,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
     }
   }
 
-    
+
     // Interpolants for Re/Im parts of coorb modes
     UNUSED gsl_interp_accel *acc_re = gsl_interp_accel_alloc();
 	  gsl_spline *spline_re = gsl_spline_alloc(gsl_interp_cspline, rVec.length);
@@ -3376,7 +3376,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
             values->data[3] = pPhiVec.data[i];
             if(postAdiabaticFlag){
               status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform_PA(
-                &hLM, 
+                &hLM,
                 values,
                 cbrt (omegaVec->data[i]),
                 hamV->data[i],
@@ -3389,7 +3389,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
             else{
 	       status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform(&hLM, values,  cbrt (omegaVec->data[i]), hamV->data[i], modeL, modeM, &seobParams, 0 /*use_optimized_v2_or_v4 */ );
             }
-          
+
         if ( status == XLAL_FAILURE)
             {
               if(tmpValues){
@@ -3439,7 +3439,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
               }
               if(vPhiVec)
                 XLALDestroyREAL8Vector(vPhiVec);
-              
+
               XLAL_ERROR (XLAL_EFUNC);
             }
             hT = 0.;
@@ -3537,14 +3537,14 @@ for ( UINT4 k = 0; k<nModes; k++) {
 	    }
         }
 	if(postAdiabaticFlag && postAdiabaticOutcome == XLAL_SUCCESS){
-	  
-    
+
+
 	  gsl_spline_init(spline_re, tVec.data, sigReCoorbVec->data, rVec.length);
-	  
-	 
+
+
 	  gsl_spline_init(spline_im, tVec.data, sigImCoorbVec->data, rVec.length);
 
- 
+
 
 	  REAL8 t_i = 0.0;
 	  REAL8 re_temp = 0.0;
@@ -3582,7 +3582,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
                                        &b_i_old3, &c_i_old3, &d_i_old3);
       cm = cos(modeM * phase_temp);
       sm = sin(modeM * phase_temp);
-      
+
       // Reconstruct the intertial frame mode
       re_In = re_temp * cm + im_temp * sm;
       im_In = -re_temp * sm + im_temp * cm;
@@ -3594,9 +3594,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
       }
     }
     hiSRndx = idx;
-   
+
   }
-  
+
 #if outputDebug
          fclose (out);
         fclose(out2);
@@ -3609,20 +3609,20 @@ for ( UINT4 k = 0; k<nModes; k++) {
   gsl_spline_free( spline_im);
   gsl_interp_accel_free( acc_im );
 }
- 
+
     if ( OmVec )
         XLALDestroyREAL8Vector(OmVec);
     if ( omegaVec )
          XLALDestroyREAL8Vector(omegaVec);
 
-    
-    
-    
+
+
+
 
   /*
    * STEP 8) Generate full IMR modes -- attaching ringdown to inspiral
    */
- 
+
   /* Attach the ringdown part to the inspiral */
 if(postAdiabaticFlag){
     XLALGPSAdd (&tc, -(deltaT*hiSRndx + timePeak*mTScaled));

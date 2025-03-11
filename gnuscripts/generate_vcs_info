@@ -32,7 +32,7 @@ for option; do
     *=)   optarg= ;;
     *)    optarg=yes ;;
     esac
-    
+
     case $option in
     -help | --help | --hel | --he | -h) usage 0;;
     --git-path)   prev=git_path;;

@@ -1,6 +1,6 @@
 //
 //  LALInferenceDistanceMarg.c
-//  
+//
 //
 //  Created by John Veitch on 20/03/2018.
 //
@@ -25,7 +25,7 @@ double dist_integral(double rho_opt, double rho_match, double dist_min, double d
     F.function = &dist_snr_pdf;
     struct integrand_args args = {.A=rho_opt, .B=rho_match};
     F.params = &args;
-    
+
     gsl_integration_qag (&F, dist_min, dist_max, 0.1, 1e-6, limit, GSL_INTEG_GAUSS61, workspace, &result, &abserr);
     gsl_integration_workspace_free(workspace);
     return(result / (dist_max-dist_min));
@@ -38,4 +38,3 @@ double dist_snr_pdf(double dL, void *args)
     double result = exp(-a->A/dL/dL + a->B/dL)*dL*dL;
 	return result;
 }
-

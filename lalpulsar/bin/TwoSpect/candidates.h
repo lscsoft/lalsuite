@@ -142,5 +142,3 @@ REAL8 minPeriod( const REAL8 moddepth, const REAL8 cohtime );
 REAL8 calculateR( const REAL4VectorAligned *ffdata, const TwoSpectTemplate *template, const REAL4VectorAligned *noise, const REAL4VectorAligned *fbinaveratios );
 
 #endif
-
-

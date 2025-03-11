@@ -78,7 +78,7 @@ extern "C"
   }
 
   /**
-   * This function generates the blended PNR and PN expressions for alpha for the transition region of parameter space. 
+   * This function generates the blended PNR and PN expressions for alpha for the transition region of parameter space.
    */
   REAL8 IMRPhenomX_PNR_GenerateMergedPNRAlphaAtMf(
       REAL8 Mf,                                           /**< geometric frequency */

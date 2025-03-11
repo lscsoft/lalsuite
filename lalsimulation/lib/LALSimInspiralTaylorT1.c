@@ -108,7 +108,7 @@ typedef struct
 /*
  * This function is used in the call to the integrator.
  */
-static int 
+static int
 XLALSimInspiralTaylorT1PNEvolveOrbitIntegrand(double UNUSED t, const double y[], double ydot[], void *params)
 {
 	XLALSimInspiralTaylorT1PNEvolveOrbitParams* p = (XLALSimInspiralTaylorT1PNEvolveOrbitParams*)params;
@@ -138,7 +138,7 @@ XLALSimInspiralTaylorT1StoppingTest(double UNUSED t, const double y[], double UN
  *
  * Inputs given in SI units.
  */
-static int 
+static int
 XLALSimInspiralTaylorT1Setup(
     expnCoeffsTaylorT1 *ak,			/**< coefficients for TaylorT1 evolution [modified] */
     expnFuncTaylorT1 *f,			/**< functions for TaylorT1 evolution [modified] */
@@ -351,7 +351,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	intreturn = integrator->returncode;
 	XLALAdaptiveRungeKuttaFree(integrator);
 
-	if (!len) 
+	if (!len)
 	{
 		XLALPrintError("XLAL Error - %s: integration failed with errorcode %d.\n", __func__, intreturn);
 		XLAL_ERROR(XLAL_EFUNC);
@@ -393,7 +393,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	/* from yout array returned by integrator to output time series */
 	/* Note the first 'len' members of yout are the time steps */
 	for( idx = 0; idx < len; idx++ )
-	{	
+	{
 		(*V)->data->data[idx]   = yout->data[len+idx];
 		(*phi)->data->data[idx]	= yout->data[2*len+idx] + phiRef;
 	}
@@ -435,13 +435,13 @@ int XLALSimInspiralTaylorT1PNGenerator(
 	/* Sanity check fRef value */
 	if( fRef < 0. )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
 				__func__, fRef);
 		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR(XLAL_EINVAL);
 	}
@@ -492,13 +492,13 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT1PNModes(
 	/* Sanity check fRef value */
 	if( fRef < 0. )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
 				__func__, fRef);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
@@ -562,13 +562,13 @@ COMPLEX16TimeSeries *XLALSimInspiralTaylorT1PNMode(
 	/* Sanity check fRef value */
 	if( fRef < 0. )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
 				__func__, fRef);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}

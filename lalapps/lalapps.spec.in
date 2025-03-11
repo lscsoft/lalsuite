@@ -33,15 +33,14 @@ BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: libmetaio-devel >= @MIN_METAIO_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
-BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
-BuildRequires: python3-rpm-macros
+BuildRequires: python3-lal >= @MIN_LAL_VERSION@
+BuildRequires: python3-lalframe >= @MIN_LALFRAME_VERSION@
+BuildRequires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python3-lalpulsar >= @MIN_LALPULSAR_VERSION@
+BuildRequires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python3-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python3-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lalburst >= @MIN_LALBURST_VERSION@
 Requires: lalframe >= @MIN_LALFRAME_VERSION@
@@ -53,22 +52,22 @@ Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: less
 Requires: libframel >= @MIN_FRAMEL_VERSION@
 Requires: libmetaio >= @MIN_METAIO_VERSION@
-Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-h5py
-Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
-Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
-Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
-Requires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
-Requires: python%{python3_pkgversion}-ligo-segments
-Requires: python%{python3_pkgversion}-matplotlib
-Requires: python%{python3_pkgversion}-numpy
-Requires: python%{python3_pkgversion}-scipy
-Requires: python%{python3_pkgversion}-tqdm
+Requires: python3
+Requires: python3dist(h5py)
+Requires: python3dist(igwn-ligolw) >= @MIN_PYTHON_LIGO_LW_VERSION@
+Requires: python3dist(igwn-segments)
+Requires: python3dist(matplotlib)
+Requires: python3dist(numpy)
+Requires: python3dist(scipy)
+Requires: python3dist(tqdm)
+Requires: python3-lal >= @MIN_LAL_VERSION@
+Requires: python3-lalframe >= @MIN_LALFRAME_VERSION@
+Requires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python3-lalpulsar >= @MIN_LALPULSAR_VERSION@
+Requires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python3-lalburst >= @MIN_LALBURST_VERSION@
+Requires: python3-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+Requires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
 Obsoletes: lalxml < 1.2.5-1
 Obsoletes: lalxml-debuginfo < 1.2.5-1
 Obsoletes: lalxml-devel < 1.2.5-1

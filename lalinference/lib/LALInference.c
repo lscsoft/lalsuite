@@ -399,7 +399,7 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, co
   LALInferenceVariableItem *old=NULL;
   /* Create the hash table if it does not exist */
   if(!vars->hash_table) vars->hash_table = XLALHashTblCreate( del_elem, LALInferenceElemHash, LALInferenceElemCmp);
-  
+
   /* Check input value is accessible */
   if(!value) {
     XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to access value through null pointer; trying to add \"%s\".", name);
@@ -551,7 +551,7 @@ void LALInferenceClearVariables(LALInferenceVariables *vars)
   vars->dimension=0;
   if(vars->hash_table) XLALHashTblDestroy(vars->hash_table);
   vars->hash_table=NULL;
-  
+
   return;
 }
 
@@ -682,7 +682,7 @@ void LALInferenceCopyUnsetREAL8Variables(LALInferenceVariables *origin, LALInfer
     }
 }
 
-/** Prints a variable item to a string (must be pre-allocated!) 
+/** Prints a variable item to a string (must be pre-allocated!)
  * Returns the number of bytes necessary to store the output */
 UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenceVariableItem *const ptr)
 {
@@ -4340,12 +4340,12 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
 
   gsl_interp_accel *ampAcc = NULL, *phaseAcc = NULL;
   gsl_interp *ampInterp = NULL, *phaseInterp = NULL;
- 
+
   int status = XLAL_SUCCESS;
   const char *fmt = "";
 
   size_t N = 0;
-  
+
   /* should I check that calFactorROQ = NULL as well? */
 
   if (logfreqs == NULL || deltaAmps == NULL || deltaPhases == NULL || freqNodesLin == NULL || freqNodesQuad == NULL) {
@@ -4359,8 +4359,8 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
     fmt = "input lengths differ";
     goto cleanup;
   }
-  
-  
+
+
   N = logfreqs->length;
 
   ampInterp = gsl_interp_alloc(gsl_interp_cspline, N);
@@ -4387,7 +4387,7 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
   REAL8 lowf = exp(logfreqs->data[0]);
   REAL8 highf = exp(logfreqs->data[N-1]);
   REAL8 dA = 0.0, dPhi = 0.0;
-  
+
   for (unsigned int i = 0; i < freqNodesLin->length; i++) {
     REAL8 f = freqNodesLin->data[i];
     if (f < lowf || f > highf) {
@@ -4397,10 +4397,10 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
       dA = gsl_interp_eval(ampInterp, logfreqs->data, deltaAmps->data, log(f), ampAcc);
       dPhi = gsl_interp_eval(phaseInterp, logfreqs->data, deltaPhases->data, log(f), phaseAcc);
     }
-    
+
     (*calFactorROQLin)->data[i] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
   }
-  
+
   for (unsigned int j = 0; j < freqNodesQuad->length; j++) {
     REAL8 f = freqNodesQuad->data[j];
     if (f < lowf || f > highf) {
@@ -4540,7 +4540,7 @@ void LALInferenceBinaryLove(LALInferenceVariables *vars, REAL8 *lambda1, REAL8 *
 
     REAL8 lambdaA_fitOnly = Fnofq*lambdaS*numerator/denominator;
 
-    /* Eqn 6, correction on fit for lambdaA caused by uncertainty in the mean of the lambdaS residual fit, 
+    /* Eqn 6, correction on fit for lambdaA caused by uncertainty in the mean of the lambdaS residual fit,
     *         using coefficients mu_1, mu_2 and mu_3 from Table II */
 
     REAL8 lambdaA_lambdaS_meanCorr = (137.1252739/(lambdaS*lambdaS)) - (32.8026613/lambdaS) + 0.5168637;
@@ -4550,12 +4550,12 @@ void LALInferenceBinaryLove(LALInferenceVariables *vars, REAL8 *lambda1, REAL8 *
 
     REAL8 lambdaA_lambdaS_stdCorr = (-0.0000739*lambdaS*lambdaSsqrt) + (0.0103778*lambdaS) + (0.4581717*lambdaSsqrt)  - 0.8341913;
 
-    /* Eqn 7, correction on fit for lambdaA caused by uncertainty in the mean of the q residual fit, 
+    /* Eqn 7, correction on fit for lambdaA caused by uncertainty in the mean of the q residual fit,
     *         using coefficients mu_4 and mu_5 from Table II */
 
     REAL8 lambdaA_q_meanCorr = (-11.2765281*q2) + (14.9499544*q) - 4.6638851;
 
-    /* Eqn 9, correction on fit for lambdaA caused by uncertainty in the standard deviation of the q residual fit, 
+    /* Eqn 9, correction on fit for lambdaA caused by uncertainty in the standard deviation of the q residual fit,
     *         using coefficients sigma_5, sigma_6 and sigma_7 from Table II */
 
     REAL8 lambdaA_q_stdCorr = (-201.4323962*q2) + (273.9268276*q) - 71.2342246;
@@ -4568,7 +4568,7 @@ void LALInferenceBinaryLove(LALInferenceVariables *vars, REAL8 *lambda1, REAL8 *
 
     REAL8 lambdaA_stdCorr = sqrt((lambdaA_lambdaS_stdCorr*lambdaA_lambdaS_stdCorr) + (lambdaA_q_stdCorr*lambdaA_q_stdCorr));
 
-    /* Draw a correction on the fit from a Gaussian distribution wiht width lambdaA_stdCorr 
+    /* Draw a correction on the fit from a Gaussian distribution wiht width lambdaA_stdCorr
     *  this is done by sampling a inverse cdf through a U{0,1} variable called BLuni */
 
     REAL8 BLuni = *(REAL8*) LALInferenceGetVariable(vars, "BLuni");

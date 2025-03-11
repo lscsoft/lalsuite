@@ -1,10 +1,3 @@
-# important notes:
-# to get python-ligo-lw into this env (needed for some tests)
-# a workaround is to
-# 1. create the environment from this file
-# 2. then manually install python-ligo-lw
-# 3. then forcibly uninstall any auto-installed LALSuite packages
-
 name: lalsuite-dev
 channels:
   - conda-forge
@@ -13,7 +6,6 @@ dependencies:
   - autoconf
   - automake
   - bc
-  - black ~=22.0
   - cfitsio
   - doxygen
   - fftw
@@ -25,10 +17,11 @@ dependencies:
   - hdf5
   - healpy >=1.17.3
   - help2man >=1.37
+  - igwn-ligolw
+  - igwn-segments
   - ldas-tools-framecpp <3.0.0a0
   - libframel <9.0.0a0
   - ligo-gracedb
-  - ligo-segments
   - lscsoft-glue >=2.0.0
   - make
   - matplotlib-base
@@ -39,15 +32,12 @@ dependencies:
   - pillow
   - pip
   - pkg-config >=0.18.0
+  - pre-commit
   - pytest
   - python <3.13.0a0
-  #- python-ligo-lw  <-- depends upon python-lal
   - scipy >=0.9.0
   - swig >=3.0.10
   - sympy
   - tqdm
   - xz
   - zlib
-  - pip:
-    - astyle
- 

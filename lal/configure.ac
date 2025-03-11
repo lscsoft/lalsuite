@@ -173,7 +173,7 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([3.5])
+LALSUITE_CHECK_PYTHON([3.6])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -331,9 +331,6 @@ LALSUITE_USE_SWIG
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
-
-# check for pretty code formatters
-LALSUITE_PROG_PRETTY_CODE
 
 # configure CUDA
 LALSUITE_USE_CUDA

@@ -40,20 +40,17 @@ BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python3x
-BuildRequires: python-srpm-macros
-BuildRequires: python3-rpm-macros
-BuildRequires: epel-rpm-macros
-BuildRequires: python%{python3_pkgversion}
-BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-astropy
-BuildRequires: python%{python3_pkgversion}-h5py
-BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
-BuildRequires: python%{python3_pkgversion}-lscsoft-glue >= @MIN_GLUE_VERSION@
-BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-BuildRequires: python%{python3_pkgversion}-pytest
+BuildRequires: python3
+BuildRequires: python3-devel
+BuildRequires: python3-lal >= @MIN_LAL_VERSION@
+BuildRequires: python3-lalframe >= @MIN_LALFRAME_VERSION@
+BuildRequires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
+BuildRequires: python3dist(astropy)
+BuildRequires: python3dist(h5py)
+BuildRequires: python3dist(lscsoft-glue) >= @MIN_GLUE_VERSION@
+BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+BuildRequires: python3dist(pytest)
 
 # octave
 BuildRequires: octave-devel
@@ -68,9 +65,8 @@ BuildRequires: lalinference-octave >= @MIN_LALINFERENCE_VERSION@
 Summary: LVK Algorithm Pulsar Library - runtime tools
 Requires: gwdatafind
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
+Requires: python3-%{name} = %{version}-%{release}
 Requires: %{name}-data
-Obsoletes: python2-%{name} <= 3.0.1-1
 %description
 The LVK Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
@@ -119,22 +115,20 @@ This package contains files needed build applications that use the LAL
 Pulsar library.
 
 # python3x-lalpulsar
-%package -n python%{python3_pkgversion}-%{name}
+%package -n python3-%{name}
 Summary: Python %{python3_version} bindings for LALPulsar
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-astropy
-Requires: python%{python3_pkgversion}-h5py
-Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
-Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
-Requires: python%{python3_pkgversion}-lscsoft-glue >= @MIN_GLUE_VERSION@
-Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-# BuildRequires: python3-sympy - not yet available
-Obsoletes: python2-%{name} < 3.1.0-1
-%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-%description -n python%{python3_pkgversion}-%{name}
+Requires: python3
+Requires: python3-lal >= @MIN_LAL_VERSION@
+Requires: python3-lalframe >= @MIN_LALFRAME_VERSION@
+Requires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
+Requires: python3dist(astropy)
+Requires: python3dist(h5py)
+Requires: python3dist(lscsoft-glue) >= @MIN_GLUE_VERSION@
+Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+Recommends: python3dist(sympy)
+%description -n python3-%{name}
 This package provides the Python %{python3_version} bindings for LALPulsar.
 
 # lalpulsar-octave
@@ -196,7 +190,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files -n python%{python3_pkgversion}-%{name}
+%files -n python3-%{name}
 %defattr(-,root,root)
 %doc README.md
 %license COPYING

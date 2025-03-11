@@ -210,11 +210,11 @@ int parseargs( int argc, char **argv )
 	while (1) {
 		int option_index = 0;
 		int c;
-	
+
 		c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
 		if (c == -1) /* end of options */
 			break;
-	
+
 		switch (c) {
 			case 0: /* if option set a flag, nothing else to do */
 				if (long_options[option_index].flag)
@@ -271,7 +271,7 @@ int parseargs( int argc, char **argv )
 				exit(1);
 		}
 	}
-	
+
 	if ( LALoptind < argc ) {
 		fprintf(stderr, "extraneous command line arguments:\n");
 		while (LALoptind < argc)
@@ -303,7 +303,7 @@ int parseargs( int argc, char **argv )
 
 	return 0;
 }
-	
+
 int usage( const char *program )
 {
 	fprintf(stderr, "usage: %s [options]\n", program);

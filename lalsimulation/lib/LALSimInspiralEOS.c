@@ -16,7 +16,7 @@
  *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *  MA  02110-1301  USA
  */
- #include <stdlib.h> 
+ #include <stdlib.h>
  #include <stdio.h>
  #include <string.h>
  #include <lal/LALSimInspiralEOS.h>
@@ -60,17 +60,17 @@ REAL8 XLALSimInspiralEOSLambda(LALEquationOfState eos_type, REAL8 m_intr_msun){/
     // MS1
         case LAL_SIM_INSPIRAL_EOS_MS1:
            // printf("Using EOS MS1\n");
-            lambda = 2.755956E-24*(2.19296 + 20.0273*m_intr_msun - 17.9443*m_intr_msun*m_intr_msun 
+            lambda = 2.755956E-24*(2.19296 + 20.0273*m_intr_msun - 17.9443*m_intr_msun*m_intr_msun
             + 5.75129*m_intr_msun*m_intr_msun*m_intr_msun - 0.699095*m_intr_msun*m_intr_msun*m_intr_msun*m_intr_msun);
         break;
     // H4
         case LAL_SIM_INSPIRAL_EOS_H4:
-            lambda = 2.755956E-24*(0.743351 + 15.8917*m_intr_msun - 14.7348*m_intr_msun*m_intr_msun 
+            lambda = 2.755956E-24*(0.743351 + 15.8917*m_intr_msun - 14.7348*m_intr_msun*m_intr_msun
             + 5.32863*m_intr_msun*m_intr_msun*m_intr_msun - 0.942625*m_intr_msun*m_intr_msun*m_intr_msun*m_intr_msun);
-        break; 
+        break;
     // SQM3
         case LAL_SIM_INSPIRAL_EOS_SQM3:
-            lambda = 2.755956E-24*(-5.55858 + 20.8977*m_intr_msun - 20.5583*m_intr_msun*m_intr_msun 
+            lambda = 2.755956E-24*(-5.55858 + 20.8977*m_intr_msun - 20.5583*m_intr_msun*m_intr_msun
             + 9.55465*m_intr_msun*m_intr_msun*m_intr_msun - 1.84933*m_intr_msun*m_intr_msun*m_intr_msun*m_intr_msun);
         break;
     // MPA1
@@ -99,7 +99,7 @@ REAL8 XLALLambdaQuadratic(REAL8 c0, REAL8 c1, REAL8 c2, REAL8 mass) {
     lambda = (lambda > 0.0) ? lambda : 0.0;
     return lambda;
 }
- 
+
 
 REAL8 XLALSimInspiralEOSQfromLambda(REAL8 lambda) {
     /* Quadrupole-monopole parameter calculated from love number;
@@ -107,7 +107,7 @@ REAL8 XLALSimInspiralEOSQfromLambda(REAL8 lambda) {
     REAL8 q, loglam;
     REAL8 tolerance = 5E-1;
     if(lambda<tolerance) { //printf("Love number is (nearly) zero; cannot compute QM parameter. Setting to 1.0 (BH value).\n");
-                      q = 1.0; } 
+                      q = 1.0; }
     else {
     loglam = log(lambda);
     q =  0.194 + 0.0936*loglam + 0.0474*loglam*loglam;
@@ -123,12 +123,12 @@ REAL8 XLALSimInspiralEOSQfromLambda(REAL8 lambda) {
 }
 
 REAL8 XLALSimInspiralEOSqmparameter(LALEquationOfState eos_type, REAL8 m_intr_msun){
-  
+
   REAL8 q = 0.0 ;
   REAL8 m = m_intr_msun ;
   REAL8 m2 = m*m ;
   REAL8 m3 = m2*m ;
-  
+
   switch (eos_type) {
   /*  */
   case LAL_SIM_INSPIRAL_EOS_A:
@@ -162,11 +162,11 @@ REAL8 XLALSimInspiralEOSqmparameter(LALEquationOfState eos_type, REAL8 m_intr_ms
     q = 1.0 ;
     break ;
   }
-  
+
   if (q < 1.0) {
     q = 1.0;
   }
-  
+
   return q ;
 }
 
@@ -175,7 +175,7 @@ REAL8 XLALSimInspiralEOSqmparameter(LALEquationOfState eos_type, REAL8 m_intr_ms
  * tidal deformability parameter, based on the "I-Love-Q forever" relation
  * of Maselli et al, arXiv:1304.2052v1.
  * To be used for masses within [1.2,2]M_sun, and preferably not for strange
- * quark stars (since the relation is calibrated for this mass range and for 
+ * quark stars (since the relation is calibrated for this mass range and for
  * the EoS APR4, MS1, H4).
  * For a BH, (lambda=0) it returns the Schwarzschild radius.
  * The arguments are:

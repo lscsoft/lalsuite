@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 122
+# serial 123
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -74,11 +74,11 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   ])
   LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[true],[
     # Python is required to configure Python wrappings
-    LALSUITE_REQUIRE_PYTHON([3.5])
+    LALSUITE_REQUIRE_PYTHON([3.6])
   ])
   AS_IF([test "${swig_build_iface}" = true],[
     # Python is required to run generate_swig_iface.py
-    LALSUITE_REQUIRE_PYTHON([3.5])
+    LALSUITE_REQUIRE_PYTHON([3.6])
   ])
   AC_CONFIG_COMMANDS_PRE([
     # used to include SWIG dependency files into lalsuite_swig.am

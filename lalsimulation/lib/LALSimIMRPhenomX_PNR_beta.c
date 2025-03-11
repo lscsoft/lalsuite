@@ -114,7 +114,7 @@ extern "C"
     /* evaluate blending window */
     double pnr_window = IMRPhenomX_PNR_AnglesWindow(pWF, pPrec);
     double msa_window = 1-pnr_window;
-    
+
     /* get beta connection frequencies */
     REAL8 Mf_beta_lower = betaParams->Mf_beta_lower;
     REAL8 Mf_beta_upper = betaParams->Mf_beta_upper;
@@ -143,7 +143,7 @@ extern "C"
     REAL8 MR_beta = IMRPhenomX_PNR_MR_beta_expression(Mf, betaParams);
     return IMRPhenomX_PNR_arctan_window(pnr_window * MR_beta + msa_window * beta_waveform);
   }
-  
+
   /**
    * We evaluate beta at the final Mf_beta_upper connection frequency
    * to approximate the final value of beta during ringdown. This

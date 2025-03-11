@@ -30,8 +30,8 @@ import math
 import sys
 
 
-from ligo.lw import lsctables
-from ligo.segments import PosInfinity
+from igwn_ligolw import lsctables
+from igwn_segments import PosInfinity
 from . import snglcoinc
 
 

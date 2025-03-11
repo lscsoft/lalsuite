@@ -34,7 +34,7 @@
 #include <lal/LALSimNoise.h>
 
 
-/* 
+/*
  * This routine generates a single segment of data.  Note that this segment is
  * generated in the frequency domain and is inverse Fourier transformed into
  * the time domain; consequently the data is periodic in the time domain.
@@ -179,7 +179,7 @@ int XLALSimNoise(
 
 	/* copy overlap region between the old and the new data to temporary storage */
 	memcpy(overlap->data, s->data->data + stride, overlap->length*sizeof(*overlap->data));
-	
+
 	/* generate the new data */
 	XLALSimNoiseSegment(s, psd, rng);
 

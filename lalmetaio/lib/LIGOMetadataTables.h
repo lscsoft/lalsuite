@@ -668,7 +668,7 @@ tagSegmentTable
   LIGOTimeGPS start_time;
   LIGOTimeGPS end_time;
   long segment_def_id;
-  INT4 segment_def_cdb; 
+  INT4 segment_def_cdb;
 }
 SegmentTable;
 

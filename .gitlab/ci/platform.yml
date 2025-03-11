@@ -27,17 +27,11 @@ platform:debian:bookworm:
     - .platform-test
   variables:
     CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
-    ENVIRONMENT_FILE: "common/conda/environment.yml"
+    ENVIRONMENT_FILE: "./conda-dev-env.yml"
   before_script:
+    - !reference [.build-init]
     # configure conda
-    - source ${CONDA_ROOT:-/opt/conda}/etc/profile.d/conda.sh
-    - conda config --file ${CONDARC} --set always_yes yes
-    - conda config --file ${CONDARC} --add channels conda-forge
-    - conda info --all
-    # print the manual overrides in the config
-    - conda config --show-sources
-    # then print the whole config
-    - conda config --show
+    - !reference [.conda-init]
     # install the dev environment for the default python version
     - sed -i.tmp "s/- python$/- python=${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
     # https://github.com/conda-forge/texlive-core-feedstock/issues/59
@@ -56,6 +50,8 @@ platform:conda:macos-x86_64:
   extends:
     - .platform-test:conda
     - .macos-x86_64
+  # allow jobs to fail due to current runner instability
+  allow_failure: true
 
 platform:conda:macos-arm64:
   extends:

@@ -1,7 +1,7 @@
 /*
  *  LALInferenceInjectedLike.c: Util bin to create an *injection file with the true parameters and the injected logL/P
  *
- *  Copyright (C) 2018 salvatore vitale 
+ *  Copyright (C) 2018 salvatore vitale
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]){
   }
   /* write down git information */
   fprintf(stdout,"\n\nLALInference version:%s,%s,%s,%s,%s\n\n", lalInferenceVCSInfo.vcsId,lalInferenceVCSInfo.vcsDate,lalInferenceVCSInfo.vcsBranch,lalInferenceVCSInfo.vcsAuthor,lalInferenceVCSInfo.vcsStatus);
-  
+
   /* initialise runstate based on command line */
   /* This includes reading in the data */
   /* And performing any injections specified */
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]){
       exit(1);
       }
   }
-    
+
     }
   if (state == NULL) {
       if (!helpflag) {
@@ -93,8 +93,8 @@ int main(int argc, char *argv[]){
     LALInferenceInjectInspiralSignal(data, state->commandLine);
   }
 
-  /* Simulate calibration errors. 
-  * NOTE: this must be called after both ReadData and (if relevant) 
+  /* Simulate calibration errors.
+  * NOTE: this must be called after both ReadData and (if relevant)
   * injectInspiralTD/FD are called! */
   LALInferenceApplyCalibrationErrors(data, procParams);
 

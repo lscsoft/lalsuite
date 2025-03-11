@@ -17,7 +17,7 @@ for k=1:N
     trigger_time=7+H1ctrig_foreground.peak_time_ns(k)*1e-9;
     [i1,j1]=find( t > (trigger_time-0.05) );
     [i2,j2]=find( t(j1) < (trigger_time+0.05) );
-    
+
     data_fileH1=['H1data',num2str(k),'.txt'];
     data_fileH2=['H2data',num2str(k),'.txt'];
     data_fileL1=['L1data',num2str(k),'.txt'];
@@ -34,4 +34,3 @@ for k=1:N
     subplot (3,1,3)
     plot(t(j1(j2)),L1data(j1(j2)),'r')
 end
-

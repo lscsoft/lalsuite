@@ -1,7 +1,7 @@
 #!/bin/sh
 # simple (naive?) script to produce the H+ and H- frames
 
-if [ $# != 2 ]; then 
+if [ $# != 2 ]; then
     exit 1
 fi
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 P. Ajith 
+ * Copyright (C) 2012 P. Ajith
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@
 #define LAL_ST5_RELATIVE_TOLERANCE 1.e-12
 
 /* terminate the ODE integration at or below this value of the PN parameter */
-#define PN_V_MAX 0.6 
+#define PN_V_MAX 0.6
 
 /**
  * Structure containing the non-dynamical coefficients needed
@@ -87,22 +87,22 @@ typedef struct SpinTaylorT5StructParams {
     double phiOrb7NonSpin;
     double v0;
     double vMax;
-	double phiRef; 
+	double phiRef;
 } SpinTaylorT5Params;
 
-/* declaration of static functions */ 
+/* declaration of static functions */
 static int XLALSimInspiralSpinTaylorT5Derivatives(
-		double t, 
+		double t,
 		const double y[],
-		double dy[], 
+		double dy[],
 		void *mParams
 		);
 
 static REAL8 XLALdEnergyByFluxSpinPrec(
-		double v, 
-		double *chi1, 
-		double *chi2, 
-        double *LNh, 
+		double v,
+		double *chi1,
+		double *chi2,
+        double *LNh,
 		SpinTaylorT5Params *params
 		);
 
@@ -121,33 +121,33 @@ static int polarizationsInRadiationFrame(
 	);
 
 static int computeOrbitalPhase(
-        SpinTaylorT5Params *params, 
-		REAL8TimeSeries *V, 
-		REAL8TimeSeries *LNhxVec, 
-		REAL8TimeSeries *LNhyVec, 
-		REAL8TimeSeries *LNhzVec, 
-		REAL8TimeSeries *S1xVec, 
-		REAL8TimeSeries *S1yVec, 
-		REAL8TimeSeries *S1zVec, 
-		REAL8TimeSeries *S2xVec, 
-		REAL8TimeSeries *S2yVec, 
-		REAL8TimeSeries *S2zVec, 
+        SpinTaylorT5Params *params,
+		REAL8TimeSeries *V,
+		REAL8TimeSeries *LNhxVec,
+		REAL8TimeSeries *LNhyVec,
+		REAL8TimeSeries *LNhzVec,
+		REAL8TimeSeries *S1xVec,
+		REAL8TimeSeries *S1yVec,
+		REAL8TimeSeries *S1zVec,
+		REAL8TimeSeries *S2xVec,
+		REAL8TimeSeries *S2yVec,
+		REAL8TimeSeries *S2zVec,
 		REAL8TimeSeries *orbPhase);
 
 static int spinTaylorT5Init(
-		REAL8 m1, 
-		REAL8 m2, 
-		REAL8 fStart, 
-		REAL8 deltaT, 
-		REAL8 phiRef, 
-		UINT4 phaseO, 
+		REAL8 m1,
+		REAL8 m2,
+		REAL8 fStart,
+		REAL8 deltaT,
+		REAL8 phiRef,
+		UINT4 phaseO,
 		SpinTaylorT5Params *mParams
 	);
 
 static int XLALSimInspiralSpinTaylorT5StoppingTest(
-		double t, 
+		double t,
 		const double y[],
-		double dy[], 
+		double dy[],
 		void *mParams
 	);
 
@@ -155,7 +155,7 @@ static double dotProduct(double a[3], double b[3]);
 static void crossProduct(double a[3], double b[3], double c[3]);
 static void rotateVector(double a[3], double b[3], double phi, double theta, double psi);
 
-/** 
+/**
  * @addtogroup LALSimInspiralSpinTaylor_c
  * @{
  */
@@ -186,34 +186,34 @@ int XLALSimInspiralSpinTaylorT5duplicate(
         XLAL_PRINT_DEPRECATION_WARNING("XLALSimInspiralSpinTaylorT5");
 	UINT4 i, intStatus, lenReturn;
 	LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
-	REAL8TimeSeries *orbPhase=NULL, *V=NULL, *LNhxVec=NULL, *LNhyVec=NULL, *LNhzVec=NULL; 
+	REAL8TimeSeries *orbPhase=NULL, *V=NULL, *LNhxVec=NULL, *LNhyVec=NULL, *LNhzVec=NULL;
 	REAL8TimeSeries *S1xVec=NULL, *S1yVec=NULL, *S1zVec=NULL, *S2xVec=NULL, *S2yVec=NULL, *S2zVec=NULL;
 	LALAdaptiveRungeKuttaIntegrator *integrator = NULL;     /* GSL integrator object */
     SpinTaylorT5Params *mParams;
     SpinTaylorT5Params SpinTaylorParameters;
-    REAL8 LNh[3], S1[3], S2[3], J[3], Jh[3], Lmag, Jmag, v; 
-    
+    REAL8 LNh[3], S1[3], S2[3], J[3], Jh[3], Lmag, Jmag, v;
+
     mParams = &SpinTaylorParameters;		/* structure containing various parameters and coefficients */
 	REAL8 yinit[LAL_NUM_ST5_VARIABLES];     /* initial values of parameters */
     REAL8Array *yout=NULL;	 				/* time series of variables returned from integrator */
 
 	/* initialize the mParams containing the the PN expansion parameters */
 	if (spinTaylorT5Init(m1, m2, fStart, deltaT, phiRef, phaseO, mParams) != XLAL_SUCCESS) {
-		XLALPrintError("XLAL Error - %s: Unable to initialize the mParams structure.\n", __func__); 
-        return XLAL_FAILURE; 
+		XLALPrintError("XLAL Error - %s: Unable to initialize the mParams structure.\n", __func__);
+        return XLAL_FAILURE;
 	}
-		
+
     /* Estimate length of waveform using Newtonian chirp time formula. give 10% extra time */
 	UINT4 dataLength = pow(2, ceil(log2(1.1*5*mParams->totalMass/(256.*pow(mParams->v0,8.)*mParams->eta)/deltaT)));
 
 	/* Adjust tStart so last sample is at time=0 */
     XLALGPSAdd(&tStart, -1.0*(dataLength-1)*deltaT);
 
-    /* binary parameters in a coordinate system whose z axis is along the initial 
+    /* binary parameters in a coordinate system whose z axis is along the initial
     orbital angular momentum  */
     LNh[0] = 0.;                		/* unit vector along Newt. ang. momtm  	*/
     LNh[1] = 0.;                		/* unit vector along Newt. ang. momtm  	*/
-    LNh[2] = 1.;                		/* unit vector along Newt. ang. momtm 	*/ 
+    LNh[2] = 1.;                		/* unit vector along Newt. ang. momtm 	*/
     S1[0]  = s1x*mParams->m1Sqr;     	/* spin vector of the first object		*/
     S1[1]  = s1y*mParams->m1Sqr;     	/* spin vector of the first object		*/
     S1[2]  = s1z*mParams->m1Sqr;     	/* spin vector of the first object		*/
@@ -225,23 +225,23 @@ int XLALSimInspiralSpinTaylorT5duplicate(
     Lmag = (mParams->eta*mParams->mSqr/mParams->v0)*(1. + (1.5+mParams->eta/6.)*mParams->v0*mParams->v0);     // magnitde of orb ang momentum (1PN)
     //Lmag = (mParams->eta*mParams->mSqr/mParams->v0);											/* magnitude of orb ang momentum (Newtonian) */
     for (i=0; i<3; i++) J[i] = Lmag*LNh[i] + S1[i] + S2[i];           // total angular momentum vec
-    Jmag = sqrt(J[0]*J[0] + J[1]*J[1] + J[2]*J[2]);                   // magnitude of tot ang momentum 
-    for (i=0; i<3; i++) Jh[i] = J[i]/Jmag;                            // unit vector along J 
-    
+    Jmag = sqrt(J[0]*J[0] + J[1]*J[1] + J[2]*J[2]);                   // magnitude of tot ang momentum
+    for (i=0; i<3; i++) Jh[i] = J[i]/Jmag;                            // unit vector along J
+
 	/* transform to the coordinate system defined by the initial total angular momentum */
 	REAL8 JIniTheta = -acos(Jh[2]);
     REAL8 JIniPhi = -atan2(Jh[1], Jh[0]);
 
 	/* if both objects are non-spinning, the coordinate system defined by the total angular
-	momentum (= orbital angular momentum) will cause the dynamical variables to hit 
+	momentum (= orbital angular momentum) will cause the dynamical variables to hit
 	coordinate singularities. Thus, for the case of non-spinning binaries, we avoid this
-	situlation by choosing a coordinate system which is misaligned by 45 degs with the 
-	total angular momentum direction. We also shift the inclination angle by this amount 
-	so that, at the end, the waveforms are not affected by this choice of coordinate 
+	situlation by choosing a coordinate system which is misaligned by 45 degs with the
+	total angular momentum direction. We also shift the inclination angle by this amount
+	so that, at the end, the waveforms are not affected by this choice of coordinate
 	system */
 	if (JIniTheta == 0) {
 		JIniTheta = LAL_PI/4.;
-		incAngle = incAngle+JIniTheta; 
+		incAngle = incAngle+JIniTheta;
 	}
 
 	rotateVector(LNh, LNh, JIniPhi, JIniTheta, 0.);
@@ -249,18 +249,18 @@ int XLALSimInspiralSpinTaylorT5duplicate(
     rotateVector(S2, S2, JIniPhi, JIniTheta, 0.);
     rotateVector(Jh, Jh, JIniPhi, JIniTheta, 0.);
 
-    // initialise the evolution variables. 
+    // initialise the evolution variables.
     yinit[0]  = v = mParams->v0;    // PN expansion parameter
-    yinit[1]  = LNh[0];    // unit vector along Newt. ang. momtm 
-    yinit[2]  = LNh[1];    // unit vector along Newt. ang. momtm 
-    yinit[3]  = LNh[2];    // unit vector along Newt. ang. momtm 
+    yinit[1]  = LNh[0];    // unit vector along Newt. ang. momtm
+    yinit[2]  = LNh[1];    // unit vector along Newt. ang. momtm
+    yinit[3]  = LNh[2];    // unit vector along Newt. ang. momtm
     yinit[4]  = S1[0];     // spin vector of the first object
     yinit[5]  = S1[1];     // spin vector of the first object
     yinit[6]  = S1[2];     // spin vector of the first object
-    yinit[7]  = S2[0];     // spin vector of the second object 
-    yinit[8]  = S2[1];     // spin vector of the second object 
-    yinit[9]  = S2[2];     // spin vector of the second object 
-	
+    yinit[7]  = S2[0];     // spin vector of the second object
+    yinit[8]  = S2[1];     // spin vector of the second object
+    yinit[9]  = S2[2];     // spin vector of the second object
+
     /* initialize the integrator */
     integrator = XLALAdaptiveRungeKutta4Init(LAL_NUM_ST5_VARIABLES,
             XLALSimInspiralSpinTaylorT5Derivatives,
@@ -291,8 +291,8 @@ int XLALSimInspiralSpinTaylorT5duplicate(
     if (intStatus != 0 && intStatus != LALSIMINSPIRAL_ST5_TEST_ENERGY
 		&& intStatus != LALSIMINSPIRAL_ST5_TEST_FREQBOUND) {
 			XLALPrintWarning("XLAL Warning - %s: integration terminated with code %d.\n \
-			Waveform parameters were m1 = %e, m2 = %e, S1 = [%e,%e,%e], S2 = [%e,%e,%e], LNh = [%e,%e,%e]\n", 
-				__func__, intStatus, m1/LAL_MSUN_SI, m2/LAL_MSUN_SI, S1[0], S1[1], S1[2], S2[0], 
+			Waveform parameters were m1 = %e, m2 = %e, S1 = [%e,%e,%e], S2 = [%e,%e,%e], LNh = [%e,%e,%e]\n",
+				__func__, intStatus, m1/LAL_MSUN_SI, m2/LAL_MSUN_SI, S1[0], S1[1], S1[2], S2[0],
 				S2[1], S2[2], LNh[0], LNh[1], LNh[2]);
     }
 
@@ -325,14 +325,14 @@ int XLALSimInspiralSpinTaylorT5duplicate(
 	/* Copy dynamical variables from yout array to output time series.
 	note that yout[0:dataLength=1] is time */
 	for (i = 0; i<lenReturn; i++) {
-        V->data->data[i] 	   = yout->data[lenReturn+ i]; 
-        LNhxVec->data->data[i] = yout->data[2*lenReturn+ i];  
+        V->data->data[i] 	   = yout->data[lenReturn+ i];
+        LNhxVec->data->data[i] = yout->data[2*lenReturn+ i];
         LNhyVec->data->data[i] = yout->data[3*lenReturn+ i];
         LNhzVec->data->data[i] = yout->data[4*lenReturn+ i];
-		S1xVec->data->data[i]  = yout->data[5*lenReturn+ i];  
+		S1xVec->data->data[i]  = yout->data[5*lenReturn+ i];
         S1yVec->data->data[i]  = yout->data[6*lenReturn+ i];
         S1zVec->data->data[i]  = yout->data[7*lenReturn+ i];
-		S2xVec->data->data[i]  = yout->data[8*lenReturn+ i];  
+		S2xVec->data->data[i]  = yout->data[8*lenReturn+ i];
         S2yVec->data->data[i]  = yout->data[9*lenReturn+ i];
         S2zVec->data->data[i]  = yout->data[10*lenReturn+ i];
 	}
@@ -340,24 +340,24 @@ int XLALSimInspiralSpinTaylorT5duplicate(
 	XLALDestroyREAL8Array(yout);
 
 	/* compute the orbital phase */
-	if (computeOrbitalPhase(mParams, V, LNhxVec, LNhyVec, LNhzVec, S1xVec, S1yVec, S1zVec, 
+	if (computeOrbitalPhase(mParams, V, LNhxVec, LNhyVec, LNhzVec, S1xVec, S1yVec, S1zVec,
 			S2xVec, S2yVec, S2zVec, orbPhase) != XLAL_SUCCESS) {
-		XLALPrintError("XLAL Error - %s: Unable to compute the orbital phase .\n", __func__); 
-        return XLAL_FAILURE; 
+		XLALPrintError("XLAL Error - %s: Unable to compute the orbital phase .\n", __func__);
+        return XLAL_FAILURE;
 	}
 
 	/* project the polarizations into the radiation frame */
 	switch (amplitudeO) {
-		case 0: 
-			if (polarizationsInRadiationFrame(hplus, hcross, V, orbPhase, LNhxVec, 
+		case 0:
+			if (polarizationsInRadiationFrame(hplus, hcross, V, orbPhase, LNhxVec,
 					LNhyVec, LNhzVec, m1, m2, r, incAngle) != XLAL_SUCCESS) {
-				XLALPrintError("XLAL Error - %s: Unable to project the waveforms into radiation frame.\n", __func__); 
-				return XLAL_FAILURE; 
+				XLALPrintError("XLAL Error - %s: Unable to project the waveforms into radiation frame.\n", __func__);
+				return XLAL_FAILURE;
 			}
-		break; 
-		default: 
+		break;
+		default:
 			XLALPrintError("XLAL Error - %s: Polarizations are currently computed only in amplitudeO = 0\n", __func__);
-        	return XLAL_FAILURE; 
+        	return XLAL_FAILURE;
 	}
 
 	/* clear memory */
@@ -382,9 +382,9 @@ int XLALSimInspiralSpinTaylorT5duplicate(
  * Evolution of dynamical variables in the SpinTaylorT5
  */
 static int XLALSimInspiralSpinTaylorT5Derivatives(
-		double t, 
+		double t,
 		const double y[],
-		double dydt[], 
+		double dydt[],
 		void *mParams
 	) {
 
@@ -413,49 +413,49 @@ static int XLALSimInspiralSpinTaylorT5Derivatives(
     S2[0]  = y[7];   /* spin vector of the second object  */
     S2[1]  = y[8];   /* spin vector of the second object  */
     S2[2]  = y[9];   /* spin vector of the second object  */
-    
+
 	/* comptute the dimensionless spins */
-	chi1[0] = S1[0]/params->m1Sqr; 
-	chi1[1] = S1[1]/params->m1Sqr; 
-	chi1[2] = S1[2]/params->m1Sqr; 
-	chi2[0] = S2[0]/params->m2Sqr; 
-	chi2[1] = S2[1]/params->m2Sqr; 
-	chi2[2] = S2[2]/params->m2Sqr; 
+	chi1[0] = S1[0]/params->m1Sqr;
+	chi1[1] = S1[1]/params->m1Sqr;
+	chi1[2] = S1[2]/params->m1Sqr;
+	chi2[0] = S2[0]/params->m2Sqr;
+	chi2[1] = S2[1]/params->m2Sqr;
+	chi2[2] = S2[2]/params->m2Sqr;
 
     /* compute energy and flux function */
     dEbyF = XLALdEnergyByFluxSpinPrec(v, chi1, chi2, LNh, params);
-        
+
     /* spin evolution equations - BBF Eq.(7.5 - 7.8) and Kesden et al 2010 Eq (2.2) */
     v2 = v*v;
 	om0 = v2*v2*v/m;
     S1dotLNh = dotProduct(S1, LNh);
     S2dotLNh = dotProduct(S2, LNh);
-    
+
     /* if low PN orders are used, set the higher order PN terms to zero */
     if (phaseO < 6) onePFpnFlag = 0;   /* 1.5 PN correction to leading order spin (3PN)  */
     if (phaseO < 5) onePNFlag = 0;     /* next to leading order in spin (2.5PN) */
     if (phaseO < 3) om0 = 0;           /* leading order spin (1.5PN) */
 
     for (i=0; i<3; i++) {
-        Omega1[i] = om0*((0.75 + eta/2. - 0.75*delta) * LNh[i] 
-             + onePNFlag * v *(-3.*(S2dotLNh + S1dotLNh*q) * LNh[i] + S2[i])/(2.*params->mSqr) 
-             + onePFpnFlag * v2 *(0.5625 + 1.25*eta - params->etaSqr/24. - 0.5625*delta 
+        Omega1[i] = om0*((0.75 + eta/2. - 0.75*delta) * LNh[i]
+             + onePNFlag * v *(-3.*(S2dotLNh + S1dotLNh*q) * LNh[i] + S2[i])/(2.*params->mSqr)
+             + onePFpnFlag * v2 *(0.5625 + 1.25*eta - params->etaSqr/24. - 0.5625*delta
                  + 0.625*params->deltaEta)*LNh[i]);
-         
-        Omega2[i] = om0*((0.75 + eta/2. + 0.75*delta) * LNh[i] 
-             + onePNFlag * v *(-3.*(S1dotLNh + S2dotLNh/q) * LNh[i] + S1[i])/(2.*params->mSqr) 
-             + onePFpnFlag * v2 *(0.5625 + 1.25*eta - params->etaSqr/24. + 0.5625*delta 
+
+        Omega2[i] = om0*((0.75 + eta/2. + 0.75*delta) * LNh[i]
+             + onePNFlag * v *(-3.*(S1dotLNh + S2dotLNh/q) * LNh[i] + S1[i])/(2.*params->mSqr)
+             + onePFpnFlag * v2 *(0.5625 + 1.25*eta - params->etaSqr/24. + 0.5625*delta
                  - 0.625*params->deltaEta)*LNh[i]);
     }
 
     crossProduct(Omega1, S1, dS1byDt);
     crossProduct(Omega2, S2, dS2byDt);
-    
+
     /* angular momentum evolution eqn (BCV2, Eq (9) */
     Lmag = (eta*params->mSqr/v)*(1. + (1.5+eta/6.)*v2);
-	dLNhByDt[0] = -(dS1byDt[0] + dS2byDt[0])/Lmag; 
-	dLNhByDt[1] = -(dS1byDt[1] + dS2byDt[1])/Lmag; 
-	dLNhByDt[2] = -(dS1byDt[2] + dS2byDt[2])/Lmag; 
+	dLNhByDt[0] = -(dS1byDt[0] + dS2byDt[0])/Lmag;
+	dLNhByDt[1] = -(dS1byDt[1] + dS2byDt[1])/Lmag;
+	dLNhByDt[2] = -(dS1byDt[2] + dS2byDt[2])/Lmag;
 
     /* evolve the variables  */
     dydt[0]  = -1./(dEbyF*m);
@@ -468,10 +468,10 @@ static int XLALSimInspiralSpinTaylorT5Derivatives(
     dydt[7]  = dS2byDt[0];
     dydt[8]  = dS2byDt[1];
     dydt[9]  = dS2byDt[2];
-	
+
     if (dEbyF > 0.0) 								/* energy test fails! (dE/F > 0) */
         return LALSIMINSPIRAL_ST5_TEST_ENERGY;
-	else 
+	else
 		return GSL_SUCCESS;
 
 }
@@ -481,21 +481,21 @@ static int XLALSimInspiralSpinTaylorT5Derivatives(
  * Compute the re-expanded (dEnergy/dv)/Flux for generic spinning binaries
  */
 static REAL8 XLALdEnergyByFluxSpinPrec(
-		double v, 
-		double *chi1, 
-		double *chi2, 
-        double *LNh, 
+		double v,
+		double *chi1,
+		double *chi2,
+        double *LNh,
 		SpinTaylorT5Params *params
 	) {
 
     REAL8 chi_s[3], chi_a[3];
-    REAL8 chisDotLNh, chiaDotLNh, chisDotChia, chisSqr, chiaSqr; 
-	REAL8 dEbF0 = 0., dEbF1 = 0., dEbF2 = 0., dEbF3 = 0., dEbF4 = 0., dEbF5 = 0., dEbF6 = 0.; 
+    REAL8 chisDotLNh, chiaDotLNh, chisDotChia, chisSqr, chiaSqr;
+	REAL8 dEbF0 = 0., dEbF1 = 0., dEbF2 = 0., dEbF3 = 0., dEbF4 = 0., dEbF5 = 0., dEbF6 = 0.;
 	REAL8 dEbF6L = 0., dEbF7 = 0.;
-	REAL8 v2, v3, v4, v5, v6, v7, v9; 
+	REAL8 v2, v3, v4, v5, v6, v7, v9;
 
-	REAL8 eta = params->eta; 
-	REAL8 delta = params->delta; 
+	REAL8 eta = params->eta;
+	REAL8 delta = params->delta;
 	UINT4 phaseO = params->phaseO;
 	REAL8 eta_p2 = eta*eta;
 
@@ -506,7 +506,7 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 	chi_a[0] = 0.5*(chi1[0]-chi2[0]);
 	chi_a[1] = 0.5*(chi1[1]-chi2[1]);
 	chi_a[2] = 0.5*(chi1[2]-chi2[2]);
-    
+
     /* dot products  */
     chisDotLNh  = dotProduct(chi_s, LNh);
     chiaDotLNh  = dotProduct(chi_a, LNh);
@@ -518,27 +518,27 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 		case -1: 	/* highest available PN order */
 		case 8: 	/* pseudo 4PN */
 		case 7: 	/* 3.5 PN */
-			dEbF7 = params->dEbF7NonSpin; 
+			dEbF7 = params->dEbF7NonSpin;
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case 6: 	/* 3 PN */
-			dEbF6 = params->dEbF6NonSpin; 
-			dEbF6L = params->dEbF6LogNonSpin; 
+			dEbF6 = params->dEbF6NonSpin;
+			dEbF6L = params->dEbF6LogNonSpin;
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case 5: 	/* 2.5 PN */
 			dEbF5 = params->dEbF5NonSpin
-					+ chiaDotLNh*delta*(72.71676587301587 + (7*eta)/2.) 
+					+ chiaDotLNh*delta*(72.71676587301587 + (7*eta)/2.)
 					+ chisDotLNh*(72.71676587301587 - (1213*eta)/18. - (17*eta_p2)/2.);
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case 4: 	/* 2 PN */
 			dEbF4 = params->dEbF4NonSpin
-					+ (233*chisDotChia*delta)/48. - (719*chiaDotLNh*chisDotLNh*delta)/48. 
-					+ chiaSqr*(2.4270833333333335 - 10*eta) + chisDotLNh*chisDotLNh*(-7.489583333333333 - eta/24.) 
+					+ (233*chisDotChia*delta)/48. - (719*chiaDotLNh*chisDotLNh*delta)/48.
+					+ chiaSqr*(2.4270833333333335 - 10*eta) + chisDotLNh*chisDotLNh*(-7.489583333333333 - eta/24.)
 					+ chisSqr*(2.4270833333333335 + (7*eta)/24.) + chiaDotLNh*chiaDotLNh*(-7.489583333333333 + 30*eta);
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
@@ -550,7 +550,7 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 			__attribute__ ((fallthrough));
 #endif
 		case 2: 	/* 1 PN */
-			dEbF2 = params->dEbF2NonSpin; 
+			dEbF2 = params->dEbF2NonSpin;
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
@@ -560,18 +560,18 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 			__attribute__ ((fallthrough));
 #endif
 		case 0: 	/* Newtonian */
-			dEbF0 = params->dEbF0NonSpin; 
-			break; 
-		default: 
+			dEbF0 = params->dEbF0NonSpin;
+			break;
+		default:
             XLALPrintError("XLAL Error - %s: Invalid phase. PN order %d\n", __func__, phaseO);
             XLAL_ERROR(XLAL_EINVAL);
 		break;
     }
 
-	v2 = v*v; v3 = v2*v; v4 = v2*v2; v5 = v4*v; v6 = v3*v3; v7 = v6*v; v9 = v7*v2; 
+	v2 = v*v; v3 = v2*v; v4 = v2*v2; v5 = v4*v; v6 = v3*v3; v7 = v6*v; v9 = v7*v2;
 
 	/* compute the re-expanded dEnerby/Flux function */
-	return (dEbF0/v9)*(1. + dEbF1*v + dEbF2*v2 + dEbF3*v3 + dEbF4*v4 + dEbF5*v5 
+	return (dEbF0/v9)*(1. + dEbF1*v + dEbF2*v2 + dEbF3*v3 + dEbF4*v4 + dEbF5*v5
 			+ (dEbF6 + dEbF6L*log(v))*v6 + dEbF7*v7);
 
 }
@@ -595,15 +595,15 @@ static int polarizationsInRadiationFrame(
 
     REAL8 deltaPhi, twoPhiS, alphaDot;
     REAL8 LNx, LNy, LNz, v2, LNx_p2, LNy_p2, LNz_p2, LN_xz;
-    UINT4 i; 
+    UINT4 i;
     REAL8Vector *alphaVec=NULL, *iVec=NULL;
 	REAL8 cos_TwoPhiS, sin_TwoPhiS;
 
-    UINT4 dataLength = V->data->length; 
-	REAL8 deltaT = V->deltaT; 
+    UINT4 dataLength = V->data->length;
+	REAL8 deltaT = V->deltaT;
 	REAL8 m = (m1+m2)*LAL_MTSUN_SI/LAL_MSUN_SI;
 	REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
-	REAL8 amp = 4.*eta*m/(r/LAL_C_SI); 
+	REAL8 amp = 4.*eta*m/(r/LAL_C_SI);
 
     /* allocate memory for the arrays */
     alphaVec = XLALCreateREAL8Vector(dataLength);
@@ -619,7 +619,7 @@ static int polarizationsInRadiationFrame(
             iVec->data[i] = acos(LNhzVec->data->data[i]);                         // called i in BCV2
         }
     }
-    
+
     /* unwrap the angles */
     XLALREAL8VectorUnwrapAngle(alphaVec, alphaVec);
     XLALREAL8VectorUnwrapAngle(iVec, iVec);
@@ -627,9 +627,9 @@ static int polarizationsInRadiationFrame(
     deltaPhi = 0.;
 
     /* Allocate polarization vectors and set to 0 */
-    *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &V->epoch, 
+    *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &V->epoch,
             0.0, V->deltaT, &lalStrainUnit, V->data->length );
-    *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch, 
+    *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch,
             0.0, V->deltaT, &lalStrainUnit, V->data->length );
     if ( ! hplus || ! hcross )	XLAL_ERROR(XLAL_EFUNC);
     memset((*hplus)->data->data, 0, (*hplus)->data->length*sizeof(*(*hplus)->data->data));
@@ -641,7 +641,7 @@ static int polarizationsInRadiationFrame(
 	REAL8 sin_TwoTheta = sin(2.*Theta);
 
     for (i=0; i<dataLength; i++) {
-    
+
         if (V->data->data[i]) {
 
             LNx = LNhxVec->data->data[i];
@@ -649,73 +649,73 @@ static int polarizationsInRadiationFrame(
             LNz = LNhzVec->data->data[i];
             v2 = V->data->data[i]*V->data->data[i];
 
-			LNx_p2 = LNx*LNx; 
-			LNy_p2 = LNy*LNy; 
-			LNz_p2 = LNz*LNz; 
-			LN_xz = LNx*LNz; 
-        
+			LNx_p2 = LNx*LNx;
+			LNy_p2 = LNy*LNy;
+			LNz_p2 = LNz*LNz;
+			LN_xz = LNx*LNz;
+
             /* compute d alpha/dt*/
             if (i == dataLength-1) alphaDot = (alphaVec->data[i] - alphaVec->data[i-1])/deltaT;
             else alphaDot = (alphaVec->data[i+1] - alphaVec->data[i])/deltaT;
 
             /* \int \cos(i) \alpha_dot deltaT  -- integrating Eq.(18) of BCV2 */
-            deltaPhi += LNz*alphaDot*deltaT;   
+            deltaPhi += LNz*alphaDot*deltaT;
 
             /* the phase measured in the detector */
-            twoPhiS = 2.*(Phi->data->data[i] - deltaPhi); 
+            twoPhiS = 2.*(Phi->data->data[i] - deltaPhi);
 
 			cos_TwoPhiS = cos(twoPhiS);
 			sin_TwoPhiS = sin(twoPhiS);
-    
+
 			/* compute the polarizations. For derivation, see the Mathematica notebook Precession_ProjectiontoRadiationFrame.nb*/
 			/* (based on Sec IIC of BCV2)*/
-            (*hplus)->data->data[i] = -(0.5*amp*v2*(cos_TwoPhiS*(-LNx_p2 + LNy_p2*LNz_p2 + ((LNy 
-					+ LN_xz)*cos_Theta + sin_Theta 
-					- LNz_p2*sin_Theta)*((LNy - LN_xz)*cos_Theta + (-1. + LNz_p2)*sin_Theta)) 
+            (*hplus)->data->data[i] = -(0.5*amp*v2*(cos_TwoPhiS*(-LNx_p2 + LNy_p2*LNz_p2 + ((LNy
+					+ LN_xz)*cos_Theta + sin_Theta
+					- LNz_p2*sin_Theta)*((LNy - LN_xz)*cos_Theta + (-1. + LNz_p2)*sin_Theta))
 					+ LNy*sin_TwoPhiS*(LN_xz*(3. + cos_TwoTheta) - (-1. + LNz_p2)*sin_TwoTheta)))/(-1. + LNz_p2);
-            
-            (*hcross)->data->data[i] = -(amp*v2*(cos_Theta*(-(LNx*LNy*(1 + LNz_p2)*cos_TwoPhiS) 
-					+ (-LNx_p2 + LNy_p2)*LNz*sin_TwoPhiS) 
+
+            (*hcross)->data->data[i] = -(amp*v2*(cos_Theta*(-(LNx*LNy*(1 + LNz_p2)*cos_TwoPhiS)
+					+ (-LNx_p2 + LNy_p2)*LNz*sin_TwoPhiS)
 					+ (-1. + LNz_p2)*(LNy*LNz*cos_TwoPhiS + LNx*sin_TwoPhiS)*sin_Theta))/(-1. + LNz_p2);
 
-        } 
-			
+        }
+
     }
 
     XLALDestroyREAL8Vector(alphaVec);
     XLALDestroyREAL8Vector(iVec);
 
-	return XLAL_SUCCESS; 
+	return XLAL_SUCCESS;
 }
 
 /*
  * Compute the orbital phase as an explicit function of v (TaylorT2 approximant)
- * Ref. Eq.(3.4) of http://arxiv.org/abs/1107.1267 
+ * Ref. Eq.(3.4) of http://arxiv.org/abs/1107.1267
  */
 static int computeOrbitalPhase(
-        SpinTaylorT5Params *params, 
-		REAL8TimeSeries *V, 
-		REAL8TimeSeries *LNhxVec, 
-		REAL8TimeSeries *LNhyVec, 
-		REAL8TimeSeries *LNhzVec, 
-		REAL8TimeSeries *S1xVec, 
-		REAL8TimeSeries *S1yVec, 
-		REAL8TimeSeries *S1zVec, 
-		REAL8TimeSeries *S2xVec, 
-		REAL8TimeSeries *S2yVec, 
-		REAL8TimeSeries *S2zVec, 
+        SpinTaylorT5Params *params,
+		REAL8TimeSeries *V,
+		REAL8TimeSeries *LNhxVec,
+		REAL8TimeSeries *LNhyVec,
+		REAL8TimeSeries *LNhzVec,
+		REAL8TimeSeries *S1xVec,
+		REAL8TimeSeries *S1yVec,
+		REAL8TimeSeries *S1zVec,
+		REAL8TimeSeries *S2xVec,
+		REAL8TimeSeries *S2yVec,
+		REAL8TimeSeries *S2zVec,
 		REAL8TimeSeries *orbPhase
 	) {
 
     REAL8 chi_s[3], chi_a[3], LNh[3];
-    REAL8 chisDotLNh, chiaDotLNh, chisDotChia, chisSqr, chiaSqr; 
+    REAL8 chisDotLNh, chiaDotLNh, chisDotChia, chisSqr, chiaSqr;
 	REAL8 v, v2, v3, v4, v5, v6, v7;
 	REAL8 phi0 = 0., phi1 = 0., phi2 = 0., phi3 = 0., phi4 = 0., phi5 = 0.;
 	REAL8 phi6 = 0., phi6L = 0., phi7 = 0.;
-	UINT4 i; 
+	UINT4 i;
 
-	REAL8 eta = params->eta; 
-	REAL8 delta = params->delta; 
+	REAL8 eta = params->eta;
+	REAL8 delta = params->delta;
 	UINT4 phaseO = params->phaseO;
 	REAL8 eta_p2 = eta*eta;
 
@@ -724,51 +724,51 @@ static int computeOrbitalPhase(
 		if (V->data->data[i]) {
 
 		   /* symmetric and anti-symmetric combinations of spin vectors */
-			chi_s[0] = 0.5*(S1xVec->data->data[i]/params->m1Sqr + S2xVec->data->data[i]/params->m2Sqr); 
-			chi_s[1] = 0.5*(S1yVec->data->data[i]/params->m1Sqr + S2yVec->data->data[i]/params->m2Sqr); 
-			chi_s[2] = 0.5*(S1zVec->data->data[i]/params->m1Sqr + S2zVec->data->data[i]/params->m2Sqr); 
-			chi_a[0] = 0.5*(S1xVec->data->data[i]/params->m1Sqr - S2xVec->data->data[i]/params->m2Sqr); 
-			chi_a[1] = 0.5*(S1yVec->data->data[i]/params->m1Sqr - S2yVec->data->data[i]/params->m2Sqr); 
-			chi_a[2] = 0.5*(S1zVec->data->data[i]/params->m1Sqr - S2zVec->data->data[i]/params->m2Sqr); 
+			chi_s[0] = 0.5*(S1xVec->data->data[i]/params->m1Sqr + S2xVec->data->data[i]/params->m2Sqr);
+			chi_s[1] = 0.5*(S1yVec->data->data[i]/params->m1Sqr + S2yVec->data->data[i]/params->m2Sqr);
+			chi_s[2] = 0.5*(S1zVec->data->data[i]/params->m1Sqr + S2zVec->data->data[i]/params->m2Sqr);
+			chi_a[0] = 0.5*(S1xVec->data->data[i]/params->m1Sqr - S2xVec->data->data[i]/params->m2Sqr);
+			chi_a[1] = 0.5*(S1yVec->data->data[i]/params->m1Sqr - S2yVec->data->data[i]/params->m2Sqr);
+			chi_a[2] = 0.5*(S1zVec->data->data[i]/params->m1Sqr - S2zVec->data->data[i]/params->m2Sqr);
 
 			LNh[0] = LNhxVec->data->data[i];
 			LNh[1] = LNhyVec->data->data[i];
 			LNh[2] = LNhzVec->data->data[i];
-			
+
 			/* dot products */
 			chisDotLNh  = dotProduct(chi_s, LNh);
 			chiaDotLNh  = dotProduct(chi_a, LNh);
 			chisDotChia = dotProduct(chi_s, chi_a);
 			chisSqr     = dotProduct(chi_s, chi_s);
 			chiaSqr     = dotProduct(chi_a, chi_a);
-			
+
 			v = V->data->data[i];
 
 			switch (phaseO) {
 				case -1: 	/* highest available PN order */
 				case 8: 	/* pseudo 4PN */
 				case 7: 	/* 3.5 PN */
-					phi7 = params->phiOrb7NonSpin; 
+					phi7 = params->phiOrb7NonSpin;
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 					__attribute__ ((fallthrough));
 #endif
 				case 6: 	/* 3 PN */
-					phi6 = params->phiOrb6NonSpin; 
-					phi6L = params->phiOrb6LogNonSpin; 
+					phi6 = params->phiOrb6NonSpin;
+					phi6L = params->phiOrb6LogNonSpin;
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 					__attribute__ ((fallthrough));
 #endif
 				case 5: 	/* 2.5 PN */
 					phi5 = params->phiOrb5LogNonSpin
-							+ chiaDotLNh*((-732985*delta)/2016. - (35*delta*eta)/2.) 
+							+ chiaDotLNh*((-732985*delta)/2016. - (35*delta*eta)/2.)
 							+ chisDotLNh*(-363.58382936507934 + (6065*eta)/18. + (85*eta_p2)/2.);
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 					__attribute__ ((fallthrough));
 #endif
 				case 4: 	/* 2 PN */
 					phi4 = params->phiOrb4NonSpin
-							+ (1165*chisDotChia*delta)/48. - (3595*chiaDotLNh*chisDotLNh*delta)/48. 
-							+ chiaSqr*(12.135416666666666 - 50*eta) + chisDotLNh*chisDotLNh*(-37.447916666666664 - (5*eta)/24.) 
+							+ (1165*chisDotChia*delta)/48. - (3595*chiaDotLNh*chisDotLNh*delta)/48.
+							+ chiaSqr*(12.135416666666666 - 50*eta) + chisDotLNh*chisDotLNh*(-37.447916666666664 - (5*eta)/24.)
 							+ chisSqr*(12.135416666666666 + (35*eta)/24.) + chiaDotLNh*chiaDotLNh*(-37.447916666666664 + 150*eta);
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 					__attribute__ ((fallthrough));
@@ -780,7 +780,7 @@ static int computeOrbitalPhase(
 					__attribute__ ((fallthrough));
 #endif
 				case 2: 	/* 1 PN */
-					phi2 = params->phiOrb2NonSpin; 
+					phi2 = params->phiOrb2NonSpin;
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 					__attribute__ ((fallthrough));
 #endif
@@ -790,9 +790,9 @@ static int computeOrbitalPhase(
 					__attribute__ ((fallthrough));
 #endif
 				case 0: 	/* Newtonian */
-					phi0 = params->phiOrb0NonSpin; 
-					break; 
-				default: 
+					phi0 = params->phiOrb0NonSpin;
+					break;
+				default:
 					XLALPrintError("XLAL Error - %s: Invalid phase. PN order %d\n", __func__, phaseO);
 					XLAL_ERROR(XLAL_EINVAL);
 				break;
@@ -801,33 +801,33 @@ static int computeOrbitalPhase(
 			v2 = v*v; v3 = v2*v; v4 = v2*v2; v5 = v4*v; v6 = v3*v3; v7 = v6*v;
 
 			/* compute the orbital phase */
-			orbPhase->data->data[i] = (phi0/v5)*(1. + phi1*v + phi2*v2 + phi3*v3 + phi4*v4 + phi5*log(v)*v5 
+			orbPhase->data->data[i] = (phi0/v5)*(1. + phi1*v + phi2*v2 + phi3*v3 + phi4*v4 + phi5*log(v)*v5
 					+ (phi6 + phi6L*log(v))*v6 + phi7*v7);
 		}
 	}
-			
+
 	/* apply a constant phase-shift such that phi_orb(v) = phiRef/2 at v = v_0 */
 	REAL8 phiOrb0 = orbPhase->data->data[0]-params->phiRef/2.;
 	for (i = 0; i<orbPhase->data->length; i++) orbPhase->data->data[i] -=  phiOrb0;
-    
-	return XLAL_SUCCESS; 
+
+	return XLAL_SUCCESS;
 }
 
 /**
  * Initialize the non-dynamical variables required for the SpinTaylorT5 evolution
  */
 static int spinTaylorT5Init(
-		REAL8 m1, 
-		REAL8 m2, 
-		REAL8 fStart, 
-		REAL8 deltaT, 
-		REAL8 phiRef, 
-		UINT4 phaseO, 
+		REAL8 m1,
+		REAL8 m2,
+		REAL8 fStart,
+		REAL8 deltaT,
+		REAL8 phiRef,
+		UINT4 phaseO,
 		SpinTaylorT5Params *mParams
 	) {
 
 	/* various parameters describing the binary */
-    mParams->mass1 = m1*LAL_MTSUN_SI/LAL_MSUN_SI;								/* m1 in seconds */ 
+    mParams->mass1 = m1*LAL_MTSUN_SI/LAL_MSUN_SI;								/* m1 in seconds */
     mParams->mass2 = m2*LAL_MTSUN_SI/LAL_MSUN_SI;								/* m2 in seconds */
     mParams->totalMass = mParams->mass1+mParams->mass2;							/* m1+m2 in seconds */
     mParams->eta = mParams->mass1*mParams->mass2/(mParams->totalMass*mParams->totalMass);
@@ -841,20 +841,20 @@ static int spinTaylorT5Init(
     mParams->deltaEta = mParams->delta*mParams->eta; 							/* delta * eta */
 	mParams->v0 = cbrt(LAL_PI*mParams->totalMass*fStart);						/* starting value for the PN parameter */
     mParams->vMax = cbrt(0.4*LAL_PI*mParams->totalMass/deltaT);				/* set an emperical maximum on the PN parameter (0.9 f_Nyquist) */
-	mParams->phiRef = phiRef; 
+	mParams->phiRef = phiRef;
 
 	/* coefficients of the reexpanded dEnergy/flux function (non-spinning) */
 	mParams->dEbF0NonSpin = -5./(32.*mParams->eta);
 	mParams->dEbF1NonSpin = 0.;
 	mParams->dEbF2NonSpin = 2.2113095238095237 + (11*mParams->eta)/4.;
-	mParams->dEbF3NonSpin = -4*LAL_PI; 
+	mParams->dEbF3NonSpin = -4*LAL_PI;
 	mParams->dEbF4NonSpin = 3.010315295099521 + (5429*mParams->eta)/1008. + (617*mParams->etaSqr)/144.;
 	mParams->dEbF5NonSpin = (-7729*LAL_PI)/672. + (13*mParams->eta*LAL_PI)/8.;
-	mParams->dEbF6NonSpin = -115.2253249962622 + (3147553127*mParams->eta)/1.2192768e7 - (15211*mParams->etaSqr)/6912. 
-							+ (25565*mParams->etaSqr*mParams->eta)/5184. + (1712*LAL_GAMMA)/105. + (32*LAL_PISQR)/3. 
-							- (451*mParams->eta*LAL_PISQR)/48. + (1712*log(4))/105.; 
+	mParams->dEbF6NonSpin = -115.2253249962622 + (3147553127*mParams->eta)/1.2192768e7 - (15211*mParams->etaSqr)/6912.
+							+ (25565*mParams->etaSqr*mParams->eta)/5184. + (1712*LAL_GAMMA)/105. + (32*LAL_PISQR)/3.
+							- (451*mParams->eta*LAL_PISQR)/48. + (1712*log(4))/105.;
 	mParams->dEbF6LogNonSpin = 16.304761904761904;
-	mParams->dEbF7NonSpin = (-15419335*LAL_PI)/1.016064e6 - (75703*mParams->eta*LAL_PI)/6048. 
+	mParams->dEbF7NonSpin = (-15419335*LAL_PI)/1.016064e6 - (75703*mParams->eta*LAL_PI)/6048.
 							+ (14809*mParams->etaSqr*LAL_PI)/3024.;
 
 	/* coefficients of the PN expansion of the orbital phase (non-spinning) */
@@ -864,15 +864,15 @@ static int spinTaylorT5Init(
 	mParams->phiOrb3NonSpin = -10*LAL_PI;
 	mParams->phiOrb4NonSpin = 15.051576475497606 + (27145*mParams->eta)/1008. + (3085*mParams->etaSqr)/144.;
 	mParams->phiOrb5LogNonSpin = (38645*LAL_PI)/672. - (65*mParams->eta*LAL_PI)/8.;
-	mParams->phiOrb6NonSpin = 657.6504345051205 - (15737765635*mParams->eta)/1.2192768e7 
-								+ (76055*mParams->etaSqr)/6912. - (127825*mParams->etaSqr*mParams->eta)/5184. 
-								- (1712*LAL_GAMMA)/21. - (160*LAL_PISQR)/3. + (2255*mParams->eta*LAL_PISQR)/48. 
+	mParams->phiOrb6NonSpin = 657.6504345051205 - (15737765635*mParams->eta)/1.2192768e7
+								+ (76055*mParams->etaSqr)/6912. - (127825*mParams->etaSqr*mParams->eta)/5184.
+								- (1712*LAL_GAMMA)/21. - (160*LAL_PISQR)/3. + (2255*mParams->eta*LAL_PISQR)/48.
 								- (1712*log(4))/21.;
-	mParams->phiOrb6LogNonSpin = -81.52380952380952; 
-	mParams->phiOrb7NonSpin = (77096675*LAL_PI)/2.032128e6 + (378515*mParams->eta*LAL_PI)/12096. 
+	mParams->phiOrb6LogNonSpin = -81.52380952380952;
+	mParams->phiOrb7NonSpin = (77096675*LAL_PI)/2.032128e6 + (378515*mParams->eta*LAL_PI)/12096.
 								- (74045*mParams->etaSqr*LAL_PI)/6048.;
 
-	return XLAL_SUCCESS; 
+	return XLAL_SUCCESS;
 }
 
 /*
@@ -882,9 +882,9 @@ static int spinTaylorT5Init(
  * 3) The orbital frequency becomes infinite
  */
 static int XLALSimInspiralSpinTaylorT5StoppingTest(
-		double t, 
+		double t,
 		const double y[],
-		double dy[], 
+		double dy[],
 		void *mParams
 	) {
 
@@ -903,14 +903,14 @@ static int XLALSimInspiralSpinTaylorT5StoppingTest(
     S2[0]  = y[7];   /* spin vector of the second object  */
     S2[1]  = y[8];   /* spin vector of the second object  */
     S2[2]  = y[9];   /* spin vector of the second object  */
-    
+
 	/* comptute the dimensionless spins */
-	chi1[0] = S1[0]/params->m1Sqr; 
-	chi1[1] = S1[1]/params->m1Sqr; 
-	chi1[2] = S1[2]/params->m1Sqr; 
-	chi2[0] = S2[0]/params->m2Sqr; 
-	chi2[1] = S2[1]/params->m2Sqr; 
-	chi2[2] = S2[2]/params->m2Sqr; 
+	chi1[0] = S1[0]/params->m1Sqr;
+	chi1[1] = S1[1]/params->m1Sqr;
+	chi1[2] = S1[2]/params->m1Sqr;
+	chi2[0] = S2[0]/params->m2Sqr;
+	chi2[1] = S2[1]/params->m2Sqr;
+	chi2[2] = S2[2]/params->m2Sqr;
 
     /* compute energy and flux function */
     dEbyF = XLALdEnergyByFluxSpinPrec(v, chi1, chi2, LNh, params);
@@ -918,7 +918,7 @@ static int XLALSimInspiralSpinTaylorT5StoppingTest(
     if (dEbyF > -1.e-10) 							/* energy test fails! (dE/F > 0) */
         return LALSIMINSPIRAL_ST5_TEST_ENERGY;
     else if (dy[0] < 0.0) 							/* dv/dt < 0! */
-        return LALSIMINSPIRAL_ST5_TEST_VDOT;		
+        return LALSIMINSPIRAL_ST5_TEST_VDOT;
     else if (isnan(v) || isinf(v))		 			/* v is nan! */
         return LALSIMINSPIRAL_ST5_TEST_VNAN;
     else if ((v < params->v0) || (v > params->vMax) || (v < 0.) || (v >= PN_V_MAX))
@@ -940,22 +940,22 @@ static void crossProduct(double a[3], double b[3], double c[3]) {
 }
 
 static void rotateVector(double a[3], double b[3], double phi, double theta, double psi) {
-/* rotate vector "a" by three Euler angles phi, theta, psi around axes 
+/* rotate vector "a" by three Euler angles phi, theta, psi around axes
  * z, y and x, respectively. b = R_x(psi) R_y(theta) R_z(phi) a */
 
-    double x = a[0]; 
+    double x = a[0];
     double y = a[1];
     double z = a[2];
 
-    b[0] = x*cos(phi)*cos(theta) - y*cos(theta)*sin(phi) 
+    b[0] = x*cos(phi)*cos(theta) - y*cos(theta)*sin(phi)
             + z*sin(theta);
-    
-    b[1] = -(z*cos(theta)*sin(psi)) + x*(cos(psi)*sin(phi) 
-            + cos(phi)*sin(psi)*sin(theta)) 
+
+    b[1] = -(z*cos(theta)*sin(psi)) + x*(cos(psi)*sin(phi)
+            + cos(phi)*sin(psi)*sin(theta))
             + y*(cos(phi)*cos(psi) - sin(phi)*sin(psi)*sin(theta));
-    
-    b[2] = z*cos(psi)*cos(theta) + x*(sin(phi)*sin(psi) 
-            - cos(phi)*cos(psi)*sin(theta)) 
+
+    b[2] = z*cos(psi)*cos(theta) + x*(sin(phi)*sin(psi)
+            - cos(phi)*cos(psi)*sin(theta))
             + y*(cos(phi)*sin(psi) + cos(psi)*sin(phi)*sin(theta));
 
 }

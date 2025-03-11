@@ -69,9 +69,16 @@ static const double NRSUR7DQ4_START_TIME = -4299.99999999; // The first time nod
 
 static const int NRSUR_LMAX = 4;
 
-// Surrogate model data, in LAL_DATA_PATH. File available in lalsuite-extra or at
+// Surrogate model data, make sure the files are in your LAL_DATA_PATH.
+//
+// The binary data for NRSur7dq2 (NRSur7dq2.h5) is available in lalsuite-extra or at
 // https://www.black-holes.org/surrogates
-// Also available on CIT at /home/lalsimulation_data and soon through CVMFS.
+// The binary data for NRSur7dq4 (NRSur7dq4_v1.0.h5) is available at:
+// https://git.ligo.org/waveforms/software/lalsuite-waveform-data.
+// Get the lalsuite-waveform-data repo or put the data into a location in your
+// LAL_DATA_PATH.
+// The NRSur7dq4 data is also available on CIT at /home/lalsimulation_data and and via CVMFS
+// at /cvmfs/shared.storage.igwn.org/igwn/shared/auxiliary/obs_sci/cbc/waveform/lalsimulation_data
 static const char NRSUR7DQ2_DATAFILE[] = "NRSur7dq2.h5";
 static const char NRSUR7DQ4_DATAFILE[] = "NRSur7dq4_v1.0.h5";
 
@@ -166,10 +173,10 @@ typedef struct tagPrecessingNRSurData {
 /***********************************************************************************/
 /****************************** Function declarations*******************************/
 /***********************************************************************************/
+#ifdef LAL_HDF5_ENABLED
 UNUSED static void NRSur7dq2_Init_LALDATA(void);
 UNUSED static void NRSur7dq4_Init_LALDATA(void);
 
-#ifdef LAL_HDF5_ENABLED
 static int PrecessingNRSur_Init(PrecessingNRSurData *data, LALH5File *file, UINT4 PrecessingNRSurVersion);
 static void PrecessingNRSur_LoadFitData(FitData **fit_data, LALH5File *sub, const char *name);
 static void NRSur7dq4_LoadVectorFitData(VectorFitData **vector_fit_data, LALH5File *sub, const char *name, const size_t size);

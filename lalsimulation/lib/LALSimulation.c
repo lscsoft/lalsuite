@@ -1051,7 +1051,7 @@ static int XLALSimComputeStrainSegmentREAL8TimeSeries(
 		COMPLEX16 Tx, Ty; /* x- and y-arm transfer functions */
 		COMPLEX16 gplus, gcross;
 		COMPLEX16 fac;
-		
+
 		/* phase for sub-sample time correction */
 		fac = cexp(-I * LAL_TWOPI * f * deltaT);
 		if (response)
@@ -1076,7 +1076,7 @@ static int XLALSimComputeStrainSegmentREAL8TimeSeries(
 	work1->data->data[0] = cabs(work1->data->data[0]);
 	work1->data->data[work1->data->length - 1] =
 		creal(work1->data->data[work1->data->length - 1]);
-	
+
 	/* return data to time domain */
 
 	if (XLALREAL8FreqTimeFFT(segment, work1, revplan) < 0)
@@ -1195,7 +1195,7 @@ static int XLALSimComputeStrainSegmentREAL4TimeSeries(
 		COMPLEX16 Tx, Ty; /* x- and y-arm transfer functions */
 		COMPLEX16 gplus, gcross;
 		COMPLEX16 fac;
-		
+
 		/* phase for sub-sample time correction */
 		fac = cexp(-I * LAL_TWOPI * f * deltaT);
 		if (response)
@@ -1220,7 +1220,7 @@ static int XLALSimComputeStrainSegmentREAL4TimeSeries(
 	work1->data->data[0] = cabs(work1->data->data[0]);
 	work1->data->data[work1->data->length - 1] =
 		creal(work1->data->data[work1->data->length - 1]);
-	
+
 	/* return data to time domain */
 
 	if (XLALREAL4FreqTimeFFT(segment, work1, revplan) < 0)
@@ -1296,7 +1296,7 @@ int XLALSimInjectDetectorStrainREAL8TimeSeries(
 		if (fabs(target->f0 - hplus->f0) > LAL_REAL8_EPS)
 			XLAL_ERROR(XLAL_EFREQ);
 	}
-			
+
 
 	/* constants describing the data segmentation: the length of the
 	 * segment must be a power of two and the segment duration is at least
@@ -1381,7 +1381,7 @@ int XLALSimInjectDetectorStrainREAL8TimeSeries(
 
 	/* create a Tukey window with tapers entirely within the padding */
 
-	window = XLALCreateTukeyREAL8Window(seglen, (double)padlen / seglen); 
+	window = XLALCreateTukeyREAL8Window(seglen, (double)padlen / seglen);
 
 
 	/* loop over steps, adding data from the current step to the strain */
@@ -1429,7 +1429,7 @@ int XLALSimInjectDetectorStrainREAL8TimeSeries(
 		h->data->data[j] *= fac;
 		h->data->data[h->data->length - 1 - j] *= fac;
 	}
-	
+
 
 	/* add computed strain to target time series */
 
@@ -1519,7 +1519,7 @@ int XLALSimInjectDetectorStrainREAL4TimeSeries(
 		if (fabs(target->f0 - hplus->f0) > LAL_REAL8_EPS)
 			XLAL_ERROR(XLAL_EFREQ);
 	}
-			
+
 
 	/* constants describing the data segmentation: the length of the
 	 * segment must be a power of two and the segment duration is at least
@@ -1604,7 +1604,7 @@ int XLALSimInjectDetectorStrainREAL4TimeSeries(
 
 	/* create a Tukey window with tapers entirely within the padding */
 
-	window = XLALCreateTukeyREAL4Window(seglen, (double)padlen / seglen); 
+	window = XLALCreateTukeyREAL4Window(seglen, (double)padlen / seglen);
 
 
 	/* loop over steps, adding data from the current step to the strain */
@@ -1652,7 +1652,7 @@ int XLALSimInjectDetectorStrainREAL4TimeSeries(
 		h->data->data[j] *= fac;
 		h->data->data[h->data->length - 1 - j] *= fac;
 	}
-	
+
 
 	/* add computed strain to target time series */
 
@@ -1778,7 +1778,7 @@ static int XLALSimComputeLWLStrainSegmentREAL8TimeSeries(
 	for (k = 0; k < work->data->length; ++k) {
 		double f = work->f0 + k * work->deltaF;
 		COMPLEX16 fac;
-		
+
 		/* phase for sub-sample time correction */
 		fac = cexp(-I * LAL_TWOPI * f * deltaT);
 		if (response)
@@ -1796,7 +1796,7 @@ static int XLALSimComputeLWLStrainSegmentREAL8TimeSeries(
 	work->data->data[0] = cabs(work->data->data[0]);
 	work->data->data[work->data->length - 1] =
 		creal(work->data->data[work->data->length - 1]);
-	
+
 	/* return data to time domain */
 
 	if (XLALREAL8FreqTimeFFT(segment, work, revplan) < 0)
@@ -1902,7 +1902,7 @@ static int XLALSimComputeLWLStrainSegmentREAL4TimeSeries(
 	for (k = 0; k < work->data->length; ++k) {
 		double f = work->f0 + k * work->deltaF;
 		COMPLEX8 fac;
-		
+
 		/* phase for sub-sample time correction */
 		fac = cexp(-I * LAL_TWOPI * f * deltaT);
 		if (response)
@@ -1920,7 +1920,7 @@ static int XLALSimComputeLWLStrainSegmentREAL4TimeSeries(
 	work->data->data[0] = cabs(work->data->data[0]);
 	work->data->data[work->data->length - 1] =
 		creal(work->data->data[work->data->length - 1]);
-	
+
 	/* return data to time domain */
 
 	if (XLALREAL4FreqTimeFFT(segment, work, revplan) < 0)
@@ -2000,7 +2000,7 @@ int XLALSimInjectLWLDetectorStrainREAL8TimeSeries(
 		if (fabs(target->f0 - hplus->f0) > LAL_REAL8_EPS)
 			XLAL_ERROR(XLAL_EFREQ);
 	}
-			
+
 
 	/* constants describing the data segmentation: the length of the
 	 * segment must be a power of two and the segment duration is at least
@@ -2083,7 +2083,7 @@ int XLALSimInjectLWLDetectorStrainREAL8TimeSeries(
 
 	/* create a Tukey window with tapers entirely within the padding */
 
-	window = XLALCreateTukeyREAL8Window(seglen, (double)padlen / seglen); 
+	window = XLALCreateTukeyREAL8Window(seglen, (double)padlen / seglen);
 
 
 	/* loop over steps, adding data from the current step to the strain */
@@ -2132,7 +2132,7 @@ int XLALSimInjectLWLDetectorStrainREAL8TimeSeries(
 		h->data->data[j] *= fac;
 		h->data->data[h->data->length - 1 - j] *= fac;
 	}
-	
+
 
 	/* add computed strain to target time series */
 
@@ -2225,7 +2225,7 @@ int XLALSimInjectLWLDetectorStrainREAL4TimeSeries(
 		if (fabs(target->f0 - hplus->f0) > LAL_REAL8_EPS)
 			XLAL_ERROR(XLAL_EFREQ);
 	}
-			
+
 
 	/* constants describing the data segmentation: the length of the
 	 * segment must be a power of two and the segment duration is at least
@@ -2308,7 +2308,7 @@ int XLALSimInjectLWLDetectorStrainREAL4TimeSeries(
 
 	/* create a Tukey window with tapers entirely within the padding */
 
-	window = XLALCreateTukeyREAL4Window(seglen, (double)padlen / seglen); 
+	window = XLALCreateTukeyREAL4Window(seglen, (double)padlen / seglen);
 
 
 	/* loop over steps, adding data from the current step to the strain */
@@ -2357,7 +2357,7 @@ int XLALSimInjectLWLDetectorStrainREAL4TimeSeries(
 		h->data->data[j] *= fac;
 		h->data->data[h->data->length - 1 - j] *= fac;
 	}
-	
+
 
 	/* add computed strain to target time series */
 

@@ -36,18 +36,14 @@ BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python3x
-BuildRequires: python-srpm-macros
-BuildRequires: python3-rpm-macros
-BuildRequires: epel-rpm-macros
-BuildRequires: python%{python3_pkgversion}
-BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-dateutil
-BuildRequires: python%{python3_pkgversion}-freezegun
-BuildRequires: python%{python3_pkgversion}-ligo-lw
-BuildRequires: python%{python3_pkgversion}-ligo-segments
-BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-BuildRequires: python%{python3_pkgversion}-pytest
-BuildRequires: python%{python3_pkgversion}-scipy
+BuildRequires: python3
+BuildRequires: python3-devel
+BuildRequires: python3dist(freezegun)
+BuildRequires: python3dist(igwn-segments)
+BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+BuildRequires: python3dist(pytest)
+BuildRequires: python3dist(python-dateutil)
+BuildRequires: python3dist(scipy)
 
 # octave
 BuildRequires: octave-devel
@@ -57,8 +53,7 @@ BuildRequires: octave-devel
 # lal
 Summary: LVK Algorithm Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
-Obsoletes: python2-%{name} <= 7.1.2-1
+Requires: python3-%{name} = %{version}-%{release}
 %description
 The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the runtime tools.
@@ -89,24 +84,16 @@ This package contains files needed build applications that use the LAL library
 as well as the documentation for the library.
 
 # python3x-lal
-%package -n python%{python3_pkgversion}-%{name}
+%package -n python3-%{name}
 Summary: Python %{python3_version} bindings for LAL
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-dateutil
-Requires: python%{python3_pkgversion}-ligo-lw
-Requires: python%{python3_pkgversion}-ligo-segments
-Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-Requires: python%{python3_pkgversion}-scipy
-Obsoletes: python2-%{name} <= 7.1.3-1
-# temporariliy commented out.  if it was said to be a requirement it would
-# create a dependency loop, but it's an optional runtime dependency.
-# unfortunately the "Recommends" key-word is not yet available in the
-# package management system of LDG clusters.  uncomment when the feature
-# becomes available.
-#Recommends: python%{python3_pkgversion}-ligo-lw
-%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-%description -n python%{python3_pkgversion}-%{name}
+Requires: python3
+Requires: python3dist(igwn-segments)
+Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+Requires: python3dist(python-dateutil)
+Requires: python3dist(scipy)
+Recommends: python3dist(python-igwn-ligolw)
+%description -n python3-%{name}
 The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings.
 
@@ -161,7 +148,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files -n python%{python3_pkgversion}-%{name}
+%files -n python3-%{name}
 %defattr(-,root,root)
 %doc README.md
 %license COPYING

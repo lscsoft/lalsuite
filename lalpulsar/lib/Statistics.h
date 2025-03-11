@@ -113,16 +113,3 @@ void LALHoughmapMeanVariance( LALStatus     *status,
 #endif
 
 #endif  /* end of double inclusion protection */
-
-
-
-
-
-
-
-
-
-
-
-
-

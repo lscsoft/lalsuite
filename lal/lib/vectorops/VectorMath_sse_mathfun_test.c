@@ -636,7 +636,7 @@ int main() {
  * The routine as implemented flags a TLOSS error
  * for x >= 2^24 and returns 0.0.
  */
-
+
 /*							cosf.c
  *
  *	Circular cosine
@@ -670,7 +670,7 @@ int main() {
  * arithmetic   domain      # trials      peak         rms
  *    IEEE    -8192,+8192   100,000      3.0e-7     3.0e-8
  */
-
+
 /*
 Cephes Math Library Release 2.2:  June, 1992
 Copyright 1985, 1987, 1988, 1992 by Stephen L. Moshier
@@ -929,7 +929,7 @@ float cephes_cosf( float xx )
  * expf overflow     x > MAXLOGF         MAXNUMF
  *
  */
-
+
 /*
 Cephes Math Library Release 2.2:  June, 1992
 Copyright 1984, 1987, 1989 by Stephen L. Moshier
@@ -1044,7 +1044,7 @@ return( x );
  * logf singularity:  x = 0; returns MINLOG
  * logf domain:       x < 0; returns MINLOG
  */
-
+
 /*
 Cephes Math Library Release 2.2:  June, 1992
 Copyright 1984, 1987, 1988, 1992 by Stephen L. Moshier

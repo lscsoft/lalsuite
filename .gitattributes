@@ -1,3 +1,4 @@
+lal/test/tools/resamp_10x4.eps filter=lfs diff=lfs merge=lfs -text
 lalapps/src/calibration/S4H1Filters.txt filter=lfs diff=lfs merge=lfs -text
 lalapps/src/calibration/S5H1_NoiseCompTimes.txt filter=lfs diff=lfs merge=lfs -text
 lalapps/src/calibration/S5L1_NoiseCompTimes.txt filter=lfs diff=lfs merge=lfs -text
@@ -11,6 +12,7 @@ lalapps/src/string/S5-V1-cat2.txt filter=lfs diff=lfs merge=lfs -text
 lalapps/src/string/S6-H1-cat2.txt filter=lfs diff=lfs merge=lfs -text
 lalapps/src/string/S6-L1-cat2.txt filter=lfs diff=lfs merge=lfs -text
 lalapps/src/string/S6-V1-cat2.txt filter=lfs diff=lfs merge=lfs -text
+lalburst/test/python/snglcoinc_coincs_verify_input.xml.gz filter=lfs diff=lfs merge=lfs -text
 lalframe/test/F-TEST-600000000-60.gwf filter=lfs diff=lfs merge=lfs -text
 lalframe/test/F-TEST-600000060-60.gwf filter=lfs diff=lfs merge=lfs -text
 lalframe/test/F-TEST-600000120-60.gwf filter=lfs diff=lfs merge=lfs -text
@@ -20,6 +22,11 @@ lalframe/test/L-CAL_FAC_V03-729273600-5094000.gwf filter=lfs diff=lfs merge=lfs 
 lalframe/test/L-CAL_REF_V03-731488397-64.gwf filter=lfs diff=lfs merge=lfs -text
 lalinference/test/data/2016_subset.xml.gz filter=lfs diff=lfs merge=lfs -text
 lalinspiral/test/SpaceCovering.par filter=lfs diff=lfs merge=lfs -text
+lalinspiral/test/python/test_thinca_correct_min1.xml.gz filter=lfs diff=lfs merge=lfs -text
+lalinspiral/test/python/test_thinca_correct_min2.xml.gz filter=lfs diff=lfs merge=lfs -text
+lalinspiral/test/python/test_thinca_input.xml.gz filter=lfs diff=lfs merge=lfs -text
+lalpulsar/bin/*/test*.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalpulsar/bin/CreateEphemeris/ephemMLDC.dat filter=lfs diff=lfs merge=lfs -text
 lalpulsar/lib/earth00-19-DE200.dat.gz filter=lfs diff=lfs merge=lfs -text
 lalpulsar/lib/earth00-19-DE405.dat.gz filter=lfs diff=lfs merge=lfs -text
 lalpulsar/lib/earth00-19-DE414.dat.gz filter=lfs diff=lfs merge=lfs -text
@@ -44,10 +51,3 @@ lalpulsar/test/earth98.dat filter=lfs diff=lfs merge=lfs -text
 lalsimulation/lib/lalsimburst_btlwnbexamples.svg filter=lfs diff=lfs merge=lfs -text
 lalsimulation/lib/lalsimburst_sinegaussianexamples.svg filter=lfs diff=lfs merge=lfs -text
 lalsimulation/test/reviewed_waveforms.asc filter=lfs diff=lfs merge=lfs -text
-lal/test/tools/resamp_10x4.eps filter=lfs diff=lfs merge=lfs -text
-lalburst/test/python/snglcoinc_coincs_verify_input.xml.gz filter=lfs diff=lfs merge=lfs -text
-lalinspiral/test/python/test_thinca_input.xml.gz filter=lfs diff=lfs merge=lfs -text
-lalinspiral/test/python/test_thinca_correct_min1.xml.gz filter=lfs diff=lfs merge=lfs -text
-lalinspiral/test/python/test_thinca_correct_min2.xml.gz filter=lfs diff=lfs merge=lfs -text
-lalpulsar/bin/CreateEphemeris/ephemMLDC.dat filter=lfs diff=lfs merge=lfs -text
-lalpulsar/bin/*/test*.tar.gz filter=lfs diff=lfs merge=lfs -text

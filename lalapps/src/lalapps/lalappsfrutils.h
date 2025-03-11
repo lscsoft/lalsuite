@@ -84,4 +84,3 @@ FrameH *fr_add_proc_COMPLEX8TimeSeries (
     const char                    *unit,
     const char                    *suffix
     );
-

@@ -47,9 +47,9 @@ extern "C" {
  static double interpolateQNMData_fdamp_22(double finalDimlessSpin);
 
 #endif
- 
+
 /*
- 	Data from: 
+ 	Data from:
  	Berti et al, CQG, 26, 163001, (2009); arXiv:0905.2975
  	https://pages.jh.edu/~eberti2/ringdown/
 */

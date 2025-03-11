@@ -1073,7 +1073,7 @@ REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceThreadState *thread,
     REAL8 scale, x;
     N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
     const char *localnames[N];
-    
+
     gsl_rng *rng = thread->GSLrandom;
 
     if (names == NULL) {

@@ -12,7 +12,7 @@
 
 void
 FUNC ( LALStatus *stat, VTYPE **vector, FILE *stream, BOOLEAN strict )
-{ 
+{
   UINT4 i;                 /* an index */
   CHARVector *line = NULL; /* a line of text stored as a CHARVector */
   BufferList head = empty; /* head of linked list of buffers */

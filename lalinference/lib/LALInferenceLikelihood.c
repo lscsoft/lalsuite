@@ -418,7 +418,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
   if(model->roq_flag && margtime) XLAL_ERROR_REAL8(XLAL_EINVAL,"ROQ does not support time marginalisation");
 
-  
+
   LALStatus status;
   memset(&status,0,sizeof(status));
 
@@ -844,7 +844,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     Rcplx += 0.5*this_ifo_d_inner_h;
 
     model->ifo_loglikelihoods[ifo] = creal(this_ifo_d_inner_h) - (0.5*this_ifo_s) + dataPtr->nullloglikelihood;
-    
+
     switch(marginalisationflags)
     {
     case GAUSSIAN:
@@ -861,7 +861,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     default:
       break;
     }
-    
+
 	char varname[VARNAME_MAX];
     if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_optimal_snr",dataPtr->name)))
     {
@@ -1071,7 +1071,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
           else
           {
             XLAL_TRY(model->ifo_loglikelihoods[ifo] = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(this_ifo_S), 2.0*creal(this_ifo_Rcplx), cosmology, margphi), errnum);
-          } 
+          }
           errnum&=~XLAL_EFUNC;
           if(errnum!=XLAL_SUCCESS)
           {
@@ -1160,7 +1160,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       /* This is marginalised over phase only for now */
       loglikelihood += -(S+D) + log(I0x) + R ;
       d_inner_h= 0.5*R;
-      
+
       if(margdist )
       {
         XLAL_TRY(loglikelihood = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), R, cosmology, margphi), errnum);
@@ -1182,7 +1182,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         loglikelihood -= D ;
         REAL8 distance_maxl = 2.0*S/R;
         LALInferenceAddVariable(currentParams, "distance_maxl", &distance_maxl, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-        
+
       }
       break;
     }
@@ -1210,7 +1210,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         loglikelihood -= D ;
         REAL8 distance_maxl = S/d_inner_h;
         LALInferenceAddVariable(currentParams, "distance_maxl", &distance_maxl, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-        
+
       }
       break;
     }
@@ -1249,7 +1249,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
                   angMax = atan2(dh_S_phase->data[i], dh_S->data[i]);
                   xMax=x;
               }
-              
+
               if(margdist)
               {
                 XLAL_TRY(dh_S->data[i]=LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), x, cosmology, margphi) + S, errnum);
@@ -1344,11 +1344,11 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   REAL8 OptimalSNR=sqrt(2.0*S);
   REAL8 MatchedFilterSNR = 0.;
 
-    
+
   /* Avoid nan's, since noise-only model has OptimalSNR == 0. */
   if (OptimalSNR > 0.)
       MatchedFilterSNR = 2.0*d_inner_h/OptimalSNR;
-    
+
   if(margdist) /* If margdist enabled, scale snr to optimal distance */
   {
       OptimalSNR/=LALInferenceGetREAL8Variable(currentParams,"distance_maxl");
@@ -1375,7 +1375,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
      REAL8 lambda1 = 0.0;
      REAL8 lambda2 = 0.0;
-     
+
      /*
      When using TimeMarginalised likelihood, the functions in LALInferenceTemplate.c appears not to be called
      for the first likelihood evaluation.
@@ -1433,7 +1433,7 @@ double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_ma
         }
         #pragma omp barrier
         if (!integrator) XLAL_ERROR(XLAL_EFUNC, "Unable to initialise distance marginalisation integrator");
-        
+
         if (isnan(OptimalSNR) || isnan(d_inner_h) || pmax<OptimalSNR)
         {
             loglikelihood=-INFINITY;

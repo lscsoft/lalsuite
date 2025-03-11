@@ -895,15 +895,15 @@ XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(
 static REAL8 UNUSED
 XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(
       REAL8 mByM /**< ratio of object mass to total mass */
-    ) 
+    )
 /*  literature: Agathos et al (arxiv 1503.0545) eq (5)
  * the coefficient mByM4 conversion & transformation (6.5PN, 7PN, 7.5PN):
  * mByM=mA/M: mA= mass star A, M is total mass (mA+mB)
- * Lambda (unitless) = lambda(m) / mA^5 
- * to call the function: 
- * Lambda * XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff 
- * lambda(m)*mByM^4/mA^5= lambda(m)*(mA/M)^4/(mA)^5= lambda/(M^4*mA) 
- * =lambda/(mByM*M^5) eq (5) 
+ * Lambda (unitless) = lambda(m) / mA^5
+ * to call the function:
+ * Lambda * XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff
+ * lambda(m)*mByM^4/mA^5= lambda(m)*(mA/M)^4/(mA)^5= lambda/(M^4*mA)
+ * =lambda/(mByM*M^5) eq (5)
  */
 {
   return mByM*mByM*mByM*mByM * 24.L*(12.L - 11.L*mByM)*LAL_PI;
@@ -933,7 +933,7 @@ XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(
       REAL8 mByM /**< ratio of object mass to total mass */
     )
 /* literature: Agathos et al (arxiv 1503.0545) eq (5)
- * conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above 
+ * conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above
  * --> corrected by the terms given in equation (4) of :
  * Tatsuya Narikawa, Nami Uchikata, Takahiro Tanaka,
  * "Gravitational-wave constraints on the GWTC-2 events by measuring

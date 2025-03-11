@@ -494,5 +494,3 @@ void LALDriveNRInject( LALStatus *status,	/**< pointer to LALStatus structure */
   RETURN(status);
 
 }
-
-

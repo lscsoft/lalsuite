@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Craig Robinson 
+*  Copyright (C) 2010 Craig Robinson
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -121,7 +121,7 @@ XLALCalculateNewtonianMultipole(
 
 /* In the calculation of the Newtonian multipole, we only use
  * the spherical harmonic with theta set to pi/2. Since this
- * is always the case, we can use this information to use a 
+ * is always the case, we can use this information to use a
  * faster version of the spherical harmonic code
  */
 
@@ -174,7 +174,7 @@ XLALAssociatedLegendreXIsZero( const int l,
     XLALPrintError( "l cannot be < 0\n" );
     XLAL_ERROR_REAL8( XLAL_EINVAL );
   }
-  
+
   if ( m < 0 || m > l )
   {
     XLALPrintError( "Invalid value of m!\n" );
@@ -386,9 +386,9 @@ CalculateThisMultipolePrefix(
    n = 0.0;
 
    totalMass = m1 + m2;
- 
+
    epsilon = ( l + m )  % 2;
- 
+
    x1 = m1 / totalMass;
    x2 = m2 / totalMass;
 
@@ -408,10 +408,10 @@ CalculateThisMultipolePrefix(
    /* Dependent on the value of epsilon, we get different n */
    if ( epsilon == 0 )
    {
-  
+
      n = crect( 0, m );
      n = cpow( n, (REAL8)l );
-  
+
      mult1 = 8.0 * LAL_PI / gsl_sf_doublefact(2u*l + 1u);
      mult2 = (REAL8)((l+1) * (l+2)) / (REAL8)(l * ((INT4)l - 1));
      mult2 = sqrt(mult2);
@@ -421,7 +421,7 @@ CalculateThisMultipolePrefix(
   }
   else if ( epsilon == 1 )
   {
-  
+
      n = crect( 0, m );
      n = cpow( n, (REAL8)l );
      n = -n;

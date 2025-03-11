@@ -188,7 +188,7 @@ size_t XLALSimReadDataFileNCol(double **data, size_t *ncol, LALFILE *fp)
                 XLAL_ERROR(XLAL_EIO, "Line %zd malformed\n", lnum);
             }
         }
-        
+
         ++nrow;
     }
 

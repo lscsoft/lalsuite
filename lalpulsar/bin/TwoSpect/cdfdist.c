@@ -828,5 +828,3 @@ REAL8 unitGaussianSNR( REAL8 value, REAL8 dof )
   REAL8 snr = ( value - dof ) / sqrt( 2.0 * dof );
   return snr;
 } /* unitGaussianSNR() */
-
-

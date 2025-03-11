@@ -346,7 +346,7 @@ XLALSimInspiralTaylorEtPhasingWrapper(
 /*
  * This function is used in the call to the GSL integrator.
  */
-static int 
+static int
 XLALSimInspiralTaylorEtPNEvolveOrbitIntegrand(double UNUSED t, const double y[], double ydot[], void *params)
 {
 	XLALSimInspiralTaylorEtPNEvolveOrbitParams* p = (XLALSimInspiralTaylorEtPNEvolveOrbitParams*)params;
@@ -363,7 +363,7 @@ XLALSimInspiralTaylorEtPNEvolveOrbitIntegrand(double UNUSED t, const double y[],
  *
  * Inputs given in SI units.
  */
-static int 
+static int
 XLALSimInspiralTaylorEtSetup(
 		expnCoeffsTaylorEt *ak,	/**< coefficients for TaylorEt evolution [modified] */
 		expnFuncTaylorEt *f,	/**< functions for TaylorEt evolution [modified] */
@@ -391,7 +391,7 @@ XLALSimInspiralTaylorEtSetup(
 	ak->z6 = XLALSimInspiralTaylorEtZeta_6PNCoeff(nu);
 	ak->z6l = XLALSimInspiralTaylorEtZeta_6PNLogCoeff(nu);
 	ak->z7 = XLALSimInspiralTaylorEtZeta_7PNCoeff(nu);
-    
+
 	/* Taylor co-efficients for v(zeta). */
 	ak->v1 = XLALSimInspiralTaylorEtVOfZeta_2PNCoeff(nu);
 	ak->v2 = XLALSimInspiralTaylorEtVOfZeta_4PNCoeff(nu);
@@ -447,7 +447,7 @@ XLALSimInspiralTaylorEtSetup(
 			XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", __func__);
 			XLAL_ERROR(XLAL_EINVAL);
 	}
-  
+
 	return 0;
 }
 

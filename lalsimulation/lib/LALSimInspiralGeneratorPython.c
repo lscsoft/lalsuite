@@ -180,7 +180,7 @@ static PyObject *PyDict_FromLALDict(LALDict *ldict, PyObject *quantity, LALDict 
 
 /* ROUTINES TO CONVERT NUMPY ARRAYS AS C ARRAYS */
 
-/* 
+/*
  * Store data from PyArrayObject in buf of size bufsz, returns number of bytes.
  * If buf is NULL then return the number of bytes in the array.
  * Routine fails if buf is not NULL and bufsz is not equal to the number of
@@ -701,7 +701,7 @@ static int initialize(LALSimInspiralGenerator *myself, LALDict *params)
     internal_data->quantity = PyObject_GetAttrString(result, "Quantity");
     XLAL_CHECK_FAIL(internal_data->quantity, XLAL_EFAILED, "Could not load Quantity from module astropy.units");
     Py_CLEAR(result);
-    
+
     /* import specified module */
     internal_data->module = PyImport_ImportModule(module_name);
     XLAL_CHECK_FAIL(internal_data->module, XLAL_EFAILED, "Could not find module %s", module_name);
@@ -726,7 +726,7 @@ static int initialize(LALSimInspiralGenerator *myself, LALDict *params)
     XLAL_CHECK_FAIL(internal_data->instance, XLAL_EFAILED, "Could not create instance of object %s in module %s", object_name, module_name);
     Py_CLEAR(args);
     Py_CLEAR(kwargs);
-    
+
     /* figure out what methods the object supports */
 
     /* generate_td_waveform */
@@ -787,8 +787,8 @@ XLAL_FAIL:
 /* Free memory */
 static int finalize(LALSimInspiralGenerator *myself)
 {
-    XLAL_CHECK(myself, XLAL_EFAULT); 
-    XLAL_CHECK(myself->internal_data, XLAL_EINVAL); 
+    XLAL_CHECK(myself, XLAL_EFAULT);
+    XLAL_CHECK(myself->internal_data, XLAL_EINVAL);
     free_internal_data(myself->internal_data);
     myself->generate_td_waveform = NULL;
     myself->generate_fd_waveform = NULL;

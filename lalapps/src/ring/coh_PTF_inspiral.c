@@ -148,7 +148,7 @@ int main(int argc, char **argv)
   SnglInspiralTable        *snglThisEvent           = NULL;
   UINT8                    eventId                  = 0;
   INT4                     timeDiff;
-  
+
   /*------------------------------------------------------------------------*
    * initialise                                                             *
    *------------------------------------------------------------------------*/
@@ -209,7 +209,7 @@ int main(int argc, char **argv)
    * read the data, generate segments and the PSD                           *
    *------------------------------------------------------------------------*/
 
-  
+
   numSegments = coh_PTF_data_condition(params,channel,invspec,segments,\
                          fwdplan,psdplan,revplan,&timeSlideVectors,startTime);
 
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
                                   &time_slide_map_head,&segment_table_head,\
                                   &longTimeSlideList,&shortTimeSlideList,\
                                   timeSlideVectors,numSegments);
-                             
+
   /*------------------------------------------------------------------------*
    * Determine the list of sky points.                                      *
    * Determine time delays and response functions for central point         *
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
     eventList[i] = NULL;
     thisEvent[i] = NULL;
   }
-  
+
 
   /* loop over ifos if doing triggered search and determine the time-offset */
   /* and detector responses for the "preferred" sky location. For GRBs where */
@@ -365,7 +365,7 @@ int main(int argc, char **argv)
   /*------------------------------------------------------------------------*
    * Initialise bank veto - This function does the following:
    *  - Generate the set of bank veto templates and store \tilde{h}
-   *  - Calculate the overlaps between each pair of templates 
+   *  - Calculate the overlaps between each pair of templates
    *------------------------------------------------------------------------*/
 
   if (params->doBankVeto)
@@ -385,7 +385,7 @@ int main(int argc, char **argv)
     timeStepPoints = coh_PTF_initialize_auto_veto(params,&autoTempOverlaps,\
                                                   startTime);
   }
-   
+
   /*------------------------------------------------------------------------*
    * find gravitational waves
    *------------------------------------------------------------------------*/
@@ -470,7 +470,7 @@ int main(int argc, char **argv)
           cohSNR,nullSNR,traceSNR,bankVeto,\
           autoVeto,chiSquare,snrComps,pValues,gammaBeta,numSpinTmplts);
       verbose("Initialized storage arrays for segment %d at %ld\n",\
-          j, timeval_subtract(&startTime));     
+          j, timeval_subtract(&startTime));
 
       /* Calculate single detector filters */
       coh_PTF_calculate_single_detector_filters(params,fcTmplt,invspec,PTFM,\
@@ -506,7 +506,7 @@ int main(int argc, char **argv)
           "Calculated null stream filters for segment %d template %d at %ld\n",\
           j, i, timeval_subtract(&startTime));
       }
-      
+
       verbose("Begin loop over sky points at %ld \n",
               timeval_subtract(&startTime));
 
@@ -525,7 +525,7 @@ int main(int argc, char **argv)
         {
 /*          if (! ((slideNum == 30) || (slideNum == 21)))
           {
-            continue; 
+            continue;
           }*/
           /* Update the offsets */
           for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
@@ -557,9 +557,9 @@ int main(int argc, char **argv)
                          slidTimeOffsets, Fplus, Fcross,
                          j, pValues, gammaBeta, snrComps, nullSNR,
                          traceSNR, bankVeto, autoVeto,
-                         chiSquare, subBankSize, bankOverlaps, 
+                         chiSquare, subBankSize, bankOverlaps,
                          bankNormOverlaps, dataOverlaps, autoTempOverlaps,
-                         fcTmplt, invspec, segments, invplan, 
+                         fcTmplt, invspec, segments, invplan,
                          &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
                          frequencyRangesCross, overlapCont, snglOverlapCont,
                          startTime,
@@ -570,7 +570,7 @@ int main(int argc, char **argv)
           verbose("Made coherent statistic for segment %d, template %d, "
                   "sky point %d at %ld \n", j, i, sp,
                   timeval_subtract(&startTime));
-          
+
           currAnalStart = shortTimeSlideList[slideNum].analStartPoint - \
                       params->analStartPoint;
           currAnalEnd = shortTimeSlideList[slideNum].analEndPoint - \
@@ -603,7 +603,7 @@ int main(int argc, char **argv)
           /* FIXME: Also part of the faceAway + faceOn hack */
           if (params->faceAwayAnalysis && params->faceOnAnalysis)
           {
-            params->faceOnStatistic = 2; 
+            params->faceOnStatistic = 2;
 
             numAcceptPoints = coh_PTF_statistic(\
                          cohSNR, PTFM, PTFqVec, params, spinTemplate,
@@ -797,7 +797,7 @@ UINT4 coh_PTF_statistic(
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     UNUSED REAL4TimeSeries         *gammaBeta[2],
-/* NOTE: This is unused because the spin record extrinsic parameters function 
+/* NOTE: This is unused because the spin record extrinsic parameters function
  * is broken. When fixed, this will be used, so DO NOT DELETE */
     REAL4TimeSeries         *snrComps[LAL_NUM_IFO],
     REAL4TimeSeries         *nullSNR,
@@ -975,7 +975,7 @@ UINT4 coh_PTF_statistic(
     i = currPointLoc + params->analStartPoint;
     /* Check if point is going to be rejected */
     if (snrData[currPointLoc])
-    { 
+    {
       /* First sbv to be calculated is the null stream SNR. */
       if (params->doNullStream)
       {
@@ -1027,9 +1027,9 @@ UINT4 coh_PTF_statistic(
                       dataOverlaps,bankNormOverlaps,PTFqVec,PTFM,\
                       timeOffsetPoints,NULL,NULL,k,1,1);
             }
-          }            
+          }
         }
-      }   
+      }
 
       /* Now we do the auto veto */
       if (params->doAutoVeto)
@@ -1037,7 +1037,7 @@ UINT4 coh_PTF_statistic(
         if (params->numIFO!=1)
         {
           /* As with bank_veto, we begin by calculating the various coherent
-           * overlaps that are needed. Same caveats as with bank veto */ 
+           * overlaps that are needed. Same caveats as with bank veto */
           coh_PTF_auto_veto_coh_setup(params,&Autoeigenvecs,&Autoeigenvals,\
               &autoCohOverlaps,autoTempOverlaps,Fplus,Fcross,PTFM,\
               csVecLength,csVecLengthTwo,vecLength);
@@ -1096,14 +1096,14 @@ UINT4 coh_PTF_statistic(
         /* If no problems then calculate chi squared */
         if (params->numIFO != 1)
         {
-          /* As with bank_veto, we begin by calculating the various coherent 
-           * overlaps that are needed. Same caveats as with bank veto 
+          /* As with bank_veto, we begin by calculating the various coherent
+           * overlaps that are needed. Same caveats as with bank veto
            * For chi square there are two types of variables here some of the
            * variables are only calculated once for all sky points, at the first
            * sky point they are needed. This includes the computationally
            * expensive filters, which means we must also use the same frequency
            * ranges for all sky points. Because of this we recalculate the
-           * unequal power bins each time. 
+           * unequal power bins each time.
            */
           coh_PTF_chi_square_coh_setup(params,&Autoeigenvecs,\
               &Autoeigenvals,frequencyRangesPlus,frequencyRangesCross,\
@@ -1123,7 +1123,7 @@ UINT4 coh_PTF_statistic(
         {
           /* Begin with the setup, this is only done once. As with the
            * coherent chi squared, the filters are reused for every sky point
-           */ 
+           */
           coh_PTF_chi_square_sngl_setup(params,frequencyRangesPlus,\
               frequencyRangesCross,powerBinsPlus,powerBinsCross,\
               snglOverlapCont,&chisqSnglOverlaps,fcTmplt,invspec,segments,\
@@ -1276,7 +1276,7 @@ UINT8 coh_PTF_add_triggers(
         LALFree(currEvent);
         continue;
       }
-      currTimeDiff = (currEvent->end_time.gpsSeconds - startTime); 
+      currTimeDiff = (currEvent->end_time.gpsSeconds - startTime);
       currStorageID = timeDiff * slideNum + currTimeDiff;
       /* And add the trigger to the lists. IF it passes clustering! */
       if (!eventList[currStorageID])
@@ -1396,7 +1396,7 @@ void coh_PTF_cluster_triggers(
         else
         {
           currEvent2 = currEvent->next;
-          LALFree(currEvent);  
+          LALFree(currEvent);
           currEvent = currEvent2;
         }
         triggerNum+=1;
@@ -1411,7 +1411,7 @@ void coh_PTF_cluster_triggers(
   {
     newEvent->next = NULL;
   }
-} 
+}
 
 UINT4 coh_PTF_accept_trig_check(
     struct coh_PTF_params   *params,
@@ -1482,4 +1482,3 @@ UINT4 coh_PTF_accept_trig_check(
 
   return 1;
 }
-

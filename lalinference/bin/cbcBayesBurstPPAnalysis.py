@@ -23,10 +23,10 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import table
-from ligo.lw import utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import table
+from igwn_ligolw import utils
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as pp
@@ -305,4 +305,3 @@ if __name__ == '__main__':
         skypp=True
 
     output_html(options.outdir, ks_pvalues, Ninj,skypp= skypp )
-

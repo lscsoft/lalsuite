@@ -68,13 +68,7 @@
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
 static const char ROMDataHDF5[] = "SEOBNRv5HMROM_v1.0.hdf5";
-static const INT4 ROMDataHDF5_VERSION_MAJOR = 1;
-static const INT4 ROMDataHDF5_VERSION_MINOR = 0;
-static const INT4 ROMDataHDF5_VERSION_MICRO = 0;
 static const char ROM22DataHDF5[] = "SEOBNRv5ROM_v1.0.hdf5";
-static const INT4 ROM22DataHDF5_VERSION_MAJOR = 1;
-static const INT4 ROM22DataHDF5_VERSION_MINOR = 0;
-static const INT4 ROM22DataHDF5_VERSION_MICRO = 0;
 #endif
 
 #include <lal/LALSimInspiral.h>
@@ -475,7 +469,13 @@ UNUSED static void SEOBNRv5HMROM_Init_LALDATA(void)
 #define datafile ROMDataHDF5
   char *path = XLAL_FILE_RESOLVE_PATH(datafile);
   if (path==NULL){
-    XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
+      XLAL_ERROR_VOID(XLAL_EIO,
+        "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
+        "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
+        "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
+        "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
+        "https://git.ligo.org/lscsoft/lalsuite-extra\n",
+        datafile);
   }
   char *dir = dirname(path);
 
@@ -733,18 +733,12 @@ int SEOBNRROMdataDS_Init(
   if (use_hm == true){
     PrintInfoStringAttribute(file, "Email");
     PrintInfoStringAttribute(file, "Description");
-    ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR,
-                                  ROMDataHDF5_VERSION_MINOR,
-                                  ROMDataHDF5_VERSION_MICRO);
-    ret |= ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
+    ret = ROM_check_canonical_file_basename(file,ROMDataHDF5,"CANONICAL_FILE_BASENAME");
   }
   else{
     PrintInfoStringAttribute(file, "Email");
     PrintInfoStringAttribute(file, "Description");
-    ret = ROM_check_version_number(file, ROM22DataHDF5_VERSION_MAJOR,
-                                  ROM22DataHDF5_VERSION_MINOR,
-                                  ROM22DataHDF5_VERSION_MICRO);
-    ret |= ROM_check_canonical_file_basename(file,ROM22DataHDF5,"CANONICAL_FILE_BASENAME");
+    ret = ROM_check_canonical_file_basename(file,ROM22DataHDF5,"CANONICAL_FILE_BASENAME");
   }
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->highf, dir, "highf",index_mode,use_hm);
@@ -2514,7 +2508,7 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
         }
       }
     }
-    else {  
+    else {
     // Loop over frequency points in sequence
       for (UINT4 i=0; i < freqs->length; i++) {
         double f = freqs->data[i];
@@ -2565,14 +2559,20 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
 /**
  * @addtogroup LALSimIMRSEOBNRv5HMROM_c
  *
- * \author Lorenzo Pompili, Roberto Cotesta, Sylvain Marsat, Michael Puerrer 
+ * \author Lorenzo Pompili, Roberto Cotesta, Sylvain Marsat, Michael Puerrer
  *
- * \brief C code for SEOBNRv5HM reduced order model * 
+ * \brief C code for SEOBNRv5HM reduced order model *
  *
- * This is a frequency domain model that approximates the time domain SEOBNRv5HM model described in ...
+ * This is a frequency domain model that approximates the time domain SEOBNRv5HM model
+ * described in Phys.Rev.D 108 (2023) 12, 124035, https://arxiv.org/abs/2303.18039.
  *
- * The binary data HDF5 files (SEOBNRv5ROM_v1.0.hdf5, SEOBNRv5HMROM_v1.0.hdf5)
- * are available on CIT at /home/lalsimulation_data and soon through CVMFS.
+ * The binary data files (SEOBNRv5ROM_v1.0.hdf5, SEOBNRv5HMROM_v1.0.hdf5)
+ * are available at:
+ * https://git.ligo.org/waveforms/software/lalsuite-waveform-data.
+ * Get the lalsuite-waveform-data repo or put the data into a location in your
+ * LAL_DATA_PATH.
+ * The data is also available on CIT at /home/lalsimulation_data and via CVMFS
+ * at /cvmfs/shared.storage.igwn.org/igwn/shared/auxiliary/obs_sci/cbc/waveform/lalsimulation_data
  * Make sure the files are in your LAL_DATA_PATH.
  * Data can also be downloaded from https://dcc.ligo.org/LIGO-T2300128, https://dcc.ligo.org/LIGO-T2400174.
  *
@@ -2612,7 +2612,7 @@ int XLALSimIMRSEOBNRv5HMROM(
   UNUSED UINT4 nModes,                                 /**< Number of modes to use. This should be 1 for SEOBNRv5_ROM and 7 for SEOBNRv5HM_ROM */
   bool use_hybridization,                              /**< Whether the ROM should be hybridized */
   LALDict *LALParams, /**< Additional lal parameters including the tidal deformability*/
-  NRTidal_version_type NRTidal_version /**< only NRTidalv3_V or NoNRT_V in case of BBH baseline */	
+  NRTidal_version_type NRTidal_version /**< only NRTidalv3_V or NoNRT_V in case of BBH baseline */
 )
 {
   REAL8 sign_odd_modes = 1.;
@@ -3249,7 +3249,7 @@ int XLALSimIMRSEOBNRv5ROMTimeOfFrequency(
   double Mf = frequency * (m1SI + m2SI) * LAL_MTSUN_SI / LAL_MSUN_SI;
 
   int ret = SEOBNRv5ROMTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final,
-                                          &Mtot_sec, m1SI, m2SI, chi1, chi2, Mf, 
+                                          &Mtot_sec, m1SI, m2SI, chi1, chi2, Mf,
                                           &Mf_ROM_min, &Mf_ROM_max);
   if(ret != 0)
     XLAL_ERROR(ret);

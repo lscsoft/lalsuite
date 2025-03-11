@@ -53,7 +53,7 @@ int main ( int argc, char *argv[])
 
     while ( arg < argc ) {
         /*********************************************************
-         * File containing veto information metadata 
+         * File containing veto information metadata
          *********************************************************/
         if ( !strcmp( argv[arg], "--help" ) ) {
             fprintf(stderr,  USAGE, *argv );
@@ -100,7 +100,7 @@ int main ( int argc, char *argv[])
     mtot = m1+m2;
     eta = m1*m2/(mtot*mtot);
     mu = eta * mtot;
-    ins_amp = (LAL_MTSUN_SI * LAL_C_SI / (1.0e6 *  LAL_PC_SI)) 
+    ins_amp = (LAL_MTSUN_SI * LAL_C_SI / (1.0e6 *  LAL_PC_SI))
         * sqrt( 5.0*mu / 96.0 ) * ( pow( mtot/(LAL_PI*LAL_PI) , 0.33333 ) /
             pow(LAL_MTSUN_SI, 1.0 / 6.0) ) ;
 

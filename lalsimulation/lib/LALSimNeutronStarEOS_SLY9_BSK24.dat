@@ -6,7 +6,7 @@
 #
 #1073	number of points
 #
-#  n_B [1/fm^3]   eps[g/cm^3]   P[dyn/cm^2] mu_B [MeV] mu_e [MeV] log-enthalpy H [dimensionless] Y_e+Y_mu[dimensionless] cs2[speed of sound squared] 
+#  n_B [1/fm^3]   eps[g/cm^3]   P[dyn/cm^2] mu_B [MeV] mu_e [MeV] log-enthalpy H [dimensionless] Y_e+Y_mu[dimensionless] cs2[speed of sound squared]
 #
 0	9.9986875816895989e-12	1.6586122468902155e+04	1.6736726261730990e+19	9.3041428045287444e+02	9.4999999999999996e-01		1.0000000000000000e-10	4.6428571428571430e-01	2.2740380039713359e-06
 1	1.0861047693117965e-11	1.8016632999929971e+04	1.9660408595578561e+19	9.3041447575718030e+02	9.4999999999999996e-01		1.8844342305146984e-07	4.6428571428571430e-01	2.3564221735832015e-06

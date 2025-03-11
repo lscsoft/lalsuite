@@ -47,11 +47,11 @@ all: SFTtest
 # -----------------------------------------------------------
 #  produce object files
 
-SFTbin.o: SFTbin.c SFTbin.h 
+SFTbin.o: SFTbin.c SFTbin.h
 	$(CC) -c $(CFLAGS)  SFTbin.c
 
 
-SFTbinTest.o: SFTbinTest.c SFTbin.h 
+SFTbinTest.o: SFTbinTest.c SFTbin.h
 	$(CC) -c $(CFLAGS) SFTbinTest.c
 
 # -----------------------------------------------------------
@@ -67,4 +67,3 @@ clean:
 	rm -f  SFTbin.o SFTbinTest.o SFTtest
 
 # -----------------------------------------------------------
-

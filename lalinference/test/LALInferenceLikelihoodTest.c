@@ -1,4 +1,4 @@
-/* 
+/*
  *  LALInferenceLikelihoodTest.c:  Unit tests for LALInference.c library code
  *
  *  Copyright (C) 2011 Ben Aylott, Ilya Mandel, Chiara Mingarelli Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch, Will Vousden
@@ -110,5 +110,5 @@ int main(void){
 //	LALInferenceTimeDomainNullLogLikelihoodNullTest();
 //	LALInferenceIntegrateSeriesProductNullTest();
 //	LALInferenceConvolveTimeSeriesNullTest();
-	return 0;                                
-}                                    
+	return 0;
+}

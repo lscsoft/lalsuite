@@ -107,7 +107,7 @@ static SphHarmFrequencySeries *XLALSimInspiralChooseFDModes_legacy(
     Approximant approximant
 );
 
-/** 
+/**
  * Method to initialize generator. This activates the conditioning for proper Fourier transform in the option `condition` is on in the LALDict
  */
 
@@ -130,7 +130,7 @@ static int initialize(LALSimInspiralGenerator * myself, LALDict *params)
 /**
  * Define waveform generator methods to generate polarizations or modes in time or Fourier domain for legacy approximants
  */
- 
+
 /** Fourier domain modes */
 static int generate_fd_modes(
     SphHarmFrequencySeries **hlm,
@@ -159,7 +159,7 @@ static int generate_fd_waveform(
     LALSimInspiralGenerator *myself
 )
 {
-    REAL8 m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaF, f_min, f_max, f_ref; 
+    REAL8 m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaF, f_min, f_max, f_ref;
     Approximant approximant;
 
     /* approximant for this generator */
@@ -211,7 +211,7 @@ static int generate_td_waveform(
     return XLALSimInspiralChooseTDWaveform_legacy(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
 }
 
-/** 
+/**
  * Define which methods are supported by every legacy approximant
  */
 
@@ -893,7 +893,7 @@ static int XLALSimInspiralChooseTDWaveform_legacy(
           XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
         /* Call the waveform driver routine */
         polariz+=-LAL_PI/2.;
-        //R.C. this rotation of -pi/2 is needed to go from the EOB wave frame to the LAL wave frame, see slide 9 of https://git.ligo.org/waveforms/reviews/SEOBNRv4HM/blob/master/tests/conventions/con \ventions.pdf                                                                                                                                                                                                
+        //R.C. this rotation of -pi/2 is needed to go from the EOB wave frame to the LAL wave frame, see slide 9 of https://git.ligo.org/waveforms/reviews/SEOBNRv4HM/blob/master/tests/conventions/con \ventions.pdf
         if(approximant == SEOBNRv4HM_PA) SpinAlignedEOBversion = 4111;
         if(approximant == pSEOBNRv4HM_PA) SpinAlignedEOBversion = 4112;
 
@@ -1122,17 +1122,17 @@ static int XLALSimInspiralChooseTDWaveform_legacy(
             XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
         if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
             XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-            
+
         // generate TD waveforms with zero inclincation so that amplitude can be
         // calculated from hplus and hcross, apply inclination-dependent factors
         // in loop below
             polariz = 0;
-            
+
         ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef,
                 longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
-                
+
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            
+
             break;
 
     case IMRPhenomXAS_NRTidalv3:
@@ -1140,18 +1140,18 @@ static int XLALSimInspiralChooseTDWaveform_legacy(
             XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
         if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
             XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-            
+
         // generate TD waveforms with zero inclincation so that amplitude can be
         // calculated from hplus and hcross, apply inclination-dependent factors
         // in loop below
             polariz = 0;
-            
+
         ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef,
                 longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
-                
+
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            
-            break;       
+
+            break;
 
     case IMRPhenomXHM:
         if (!XLALSimInspiralWaveformParamsFlagsAreDefault(params))
@@ -1855,7 +1855,7 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
         INT2Sequence *modeseq = NULL;
         UINT4 nmodes = 7;
         UINT2 eobmodesv5hm = 7;
-    
+
         if(params == NULL){
             pars_aux = XLALCreateDict();
         }
@@ -1872,32 +1872,32 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
                 nmodes == 2 &&
                 modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
                 modeseq->data[2] == 3 && abs(modeseq->data[3]) == 3)
-            {   
+            {
                 eobmodesv5hm = 2;
             }
             if (
                 nmodes == 3 &&
                 modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
-                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
+                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 &&
                 modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1)
-            {   
+            {
                 eobmodesv5hm = 3;
             }
             if (
                 nmodes == 4 &&
                 modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
-                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
-                modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
+                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 &&
+                modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 &&
                 modeseq->data[6] == 4 && abs(modeseq->data[7]) == 4)
-            {   
+            {
                 eobmodesv5hm = 4;
             }
             if (
                 nmodes == 5 &&
                 modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
-                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
-                modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
-                modeseq->data[6] == 4 && abs(modeseq->data[7]) == 4 && 
+                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 &&
+                modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 &&
+                modeseq->data[6] == 4 && abs(modeseq->data[7]) == 4 &&
                 modeseq->data[8] == 5 && abs(modeseq->data[9]) == 5)
             {
                 eobmodesv5hm = 5;
@@ -1905,10 +1905,10 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
             if (
                 nmodes == 6 &&
                 modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
-                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
-                modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
-                modeseq->data[8] == 4 && abs(modeseq->data[9]) == 4 && 
-                modeseq->data[10] == 5 && abs(modeseq->data[11]) == 5 && 
+                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 &&
+                modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 &&
+                modeseq->data[8] == 4 && abs(modeseq->data[9]) == 4 &&
+                modeseq->data[10] == 5 && abs(modeseq->data[11]) == 5 &&
                 modeseq->data[6] == 3 && abs(modeseq->data[7]) == 2)
             {
                 eobmodesv5hm = 6;
@@ -2271,31 +2271,31 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
             XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
         if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
             XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-        
+
         LALDict *LALparams_aux;
                 if (params == NULL)
                             LALparams_aux = XLALCreateDict();
                 else
                             LALparams_aux = XLALDictDuplicate(params);
-                        
+
         /* PhenomXTidalFlag maps to the NRTidalv* version used: 2-> NRTidalv2 */
         XLALSimInspiralWaveformParamsInsertPhenomXTidalFlag(LALparams_aux,2);
-        
+
         /* to employ multibanding, we need to call XHM: hence, we activate a reduced mode array */
         LALValue *ModeArray = XLALSimInspiralCreateModeArray();
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
         XLALSimInspiralWaveformParamsInsertModeArray(LALparams_aux, ModeArray);
-                                    
+
         ret = XLALSimIMRPhenomXHM(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALparams_aux);
-                            
+
         XLALDestroyValue(ModeArray);
-        
+
         if (ret == XLAL_FAILURE)
                         XLAL_ERROR(XLAL_EFUNC);
-                    
+
         XLALDestroyDict(LALparams_aux);
-                
+
             break;
 	}
 
@@ -2306,31 +2306,31 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
             XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
         if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
             XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-        
+
         LALDict *LALparams_aux;
                 if (params == NULL)
                             LALparams_aux = XLALCreateDict();
                 else
                             LALparams_aux = XLALDictDuplicate(params);
-                        
+
         /* PhenomXTidalFlag maps to the NRTidalv* version used: 3-> NRTidalv3 */
         XLALSimInspiralWaveformParamsInsertPhenomXTidalFlag(LALparams_aux,3);
-        
+
         /* to employ multibanding, we need to call XHM: hence, we activate a reduced mode array */
         LALValue *ModeArray = XLALSimInspiralCreateModeArray();
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
         XLALSimInspiralWaveformParamsInsertModeArray(LALparams_aux, ModeArray);
-                                    
+
         ret = XLALSimIMRPhenomXHM(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALparams_aux);
-                            
+
         XLALDestroyValue(ModeArray);
-        
+
         if (ret == XLAL_FAILURE)
                         XLAL_ERROR(XLAL_EFUNC);
-                    
+
         XLALDestroyDict(LALparams_aux);
-                
+
             break;
 	}
 
@@ -2408,9 +2408,9 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
 
 
     case IMRPhenomXP_NRTidalv2:
-        
+
         {
-            
+
         /* Waveform-specific sanity checks */
         if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(params) )
         {
@@ -2422,45 +2422,45 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
             /* Default is (2,2) or l=2 modes. */
             XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
         }
-            
+
         LALDict *LALparams_aux;
         if (params == NULL) LALparams_aux = XLALCreateDict();
         else LALparams_aux = XLALDictDuplicate(params);
-                            
+
         /* PhenomXTidalFlag maps to the NRTidalv* version used: 2-> NRTidalv2 */
         XLALSimInspiralWaveformParamsInsertPhenomXTidalFlag(LALparams_aux,2);
-        
+
         /* to employ multibanding, we need to call XPHM: hence, we activate a reduced mode array */
         LALValue *ModeArray = XLALSimInspiralCreateModeArray();
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
         XLALSimInspiralWaveformParamsInsertModeArray(LALparams_aux, ModeArray);
-        
+
 	    // Insert quadrupole parameters for use in twisting up
         ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALparams_aux);
         XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set quadrupole parameters from lambdas for IMRPhenomXP_NRTidalv2");
-            
+
         if(f_ref==0.0)
         {
             /* Default reference frequency is minimum frequency */
             f_ref = f_min;
         }
-            
+
         ret = XLALSimIMRPhenomXPHM(hptilde, hctilde, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination,phiRef, f_min, f_max, deltaF, f_ref, LALparams_aux);
-        
+
         XLALDestroyValue(ModeArray);
-    
+
         if (ret == XLAL_FAILURE)    XLAL_ERROR(XLAL_EFUNC);
-                        
+
         XLALDestroyDict(LALparams_aux);
-            
+
         }
         break;
 
     case IMRPhenomXP_NRTidalv3:
-        
+
         {
-            
+
         /* Waveform-specific sanity checks */
         if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(params) )
         {
@@ -2472,38 +2472,38 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
             /* Default is (2,2) or l=2 modes. */
             XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
         }
-            
+
         LALDict *LALparams_aux;
         if (params == NULL) LALparams_aux = XLALCreateDict();
         else LALparams_aux = XLALDictDuplicate(params);
-                            
+
         /* PhenomXTidalFlag maps to the NRTidalv* version used: 3-> NRTidalv3 */
         XLALSimInspiralWaveformParamsInsertPhenomXTidalFlag(LALparams_aux,3);
-        
+
         /* to employ multibanding, we need to call XPHM: hence, we activate a reduced mode array */
         LALValue *ModeArray = XLALSimInspiralCreateModeArray();
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
         XLALSimInspiralWaveformParamsInsertModeArray(LALparams_aux, ModeArray);
-        
+
 	    // Insert quadrupole parameters for use in twisting up
         ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALparams_aux);
         XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set quadrupole parameters from lambdas for IMRPhenomXP_NRTidalv3");
-            
+
         if(f_ref==0.0)
         {
             /* Default reference frequency is minimum frequency */
             f_ref = f_min;
         }
-            
+
         ret = XLALSimIMRPhenomXPHM(hptilde, hctilde, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination,phiRef, f_min, f_max, deltaF, f_ref, LALparams_aux);
-        
+
         XLALDestroyValue(ModeArray);
-    
+
         if (ret == XLAL_FAILURE)    XLAL_ERROR(XLAL_EFUNC);
-                        
+
         XLALDestroyDict(LALparams_aux);
-            
+
         }
         break;
 
@@ -2542,7 +2542,7 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
         }
 
         break;
-        
+
     case IMRPhenomXO4a:
     {
         LALDict *params_aux;
@@ -2555,7 +2555,7 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
 
         /* XO4 uses previous version of XHM */
         XLALSimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(params_aux, 122019);
-	
+
     		/* Waveform-specific sanity checks */
     		if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(params_aux) )
     		{
@@ -2872,7 +2872,7 @@ static SphHarmTimeSeries *XLALSimInspiralChooseTDModes_legacy(
         /* Call the waveform driver routine. */
         hlm = XLALSimIMRPhenomTPHM_ChooseTDModes(m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, r, deltaT, f_min, f_ref, LALpars);
         break;
-    
+
     case SEOBNRv4HM_PA:
     case pSEOBNRv4HM_PA:
         /* Waveform-specific sanity checks */
@@ -2935,7 +2935,7 @@ static SphHarmTimeSeries *XLALSimInspiralChooseTDModes_legacy(
 
         UINT2 TGRflag = 0;
         if (approximant == pSEOBNRv4HM_PA) TGRflag = 1;
-        
+
         XLALSimInspiralWaveformParamsInsertDOmega220(TGRParams, domega220);
         XLALSimInspiralWaveformParamsInsertDTau220(TGRParams, dtau220);
         XLALSimInspiralWaveformParamsInsertDOmega210(TGRParams, domega210);
@@ -2974,14 +2974,14 @@ static SphHarmTimeSeries *XLALSimInspiralChooseTDModes_legacy(
         if(dynamicsHi) XLALDestroyREAL8Vector(dynamicsHi);
         XLALDestroyDict(PAParams);
         XLALDestroyDict(TGRParams);
-        
+
         UINT4 i;
         UINT4 modeArrayCreated = 0;
 
         LALValue *modeArray = XLALSimInspiralWaveformParamsLookupModeArray(
             LALpars
         );
-        
+
             if (modeArray == NULL) {
                 modeArray = XLALSimInspiralCreateModeArray();
                 modeArrayCreated = 1;
@@ -3022,18 +3022,18 @@ static SphHarmTimeSeries *XLALSimInspiralChooseTDModes_legacy(
             if (XLALSimInspiralModeArrayIsModeActive(
                 modeArray, modes->l, modes->m
             ) == 1) {
-                
+
                 for (i = 0; i < modes->mode->data->length; i++)
                     modes->mode->data->data[i] *= -1;
             }
-            
+
             modes = modes->next;
         }
 
         if (modeArrayCreated) {
             XLALDestroyValue(modeArray);
         }
-        
+
         XLALDestroyCOMPLEX16TimeSeries(tmpMode);
 
         break;
@@ -3273,7 +3273,7 @@ static SphHarmFrequencySeries *XLALSimInspiralChooseFDModes_legacy(
 
         /* XO4 uses previous version of XHM */
         XLALSimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(params_aux, 122019);
-	
+
   			/* Waveform-specific sanity checks */
   			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(params_aux) )
   					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
@@ -3655,32 +3655,32 @@ static SphHarmFrequencySeries *XLALSimInspiralChooseFDModes_legacy(
             nmodes == 2 &&
             modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
             modeseq->data[2] == 3 && abs(modeseq->data[3]) == 3)
-        {   
+        {
             eobmodesv5hm = 2;
         }
         if (
             nmodes == 3 &&
             modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
-            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
+            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 &&
             modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1)
-        {   
+        {
             eobmodesv5hm = 3;
         }
         if (
             nmodes == 4 &&
             modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
-            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
-            modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
+            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 &&
+            modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 &&
             modeseq->data[6] == 4 && abs(modeseq->data[7]) == 4)
-        {   
+        {
             eobmodesv5hm = 4;
         }
         if (
             nmodes == 5 &&
             modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
-            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
-            modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
-            modeseq->data[6] == 4 && abs(modeseq->data[7]) == 4 && 
+            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 &&
+            modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 &&
+            modeseq->data[6] == 4 && abs(modeseq->data[7]) == 4 &&
             modeseq->data[8] == 5 && abs(modeseq->data[9]) == 5)
         {
             eobmodesv5hm = 5;
@@ -3688,10 +3688,10 @@ static SphHarmFrequencySeries *XLALSimInspiralChooseFDModes_legacy(
         if (
             nmodes == 6 &&
             modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
-            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
-            modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
-            modeseq->data[8] == 4 && abs(modeseq->data[9]) == 4 && 
-            modeseq->data[10] == 5 && abs(modeseq->data[11]) == 5 && 
+            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 &&
+            modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 &&
+            modeseq->data[8] == 4 && abs(modeseq->data[9]) == 4 &&
+            modeseq->data[10] == 5 && abs(modeseq->data[11]) == 5 &&
             modeseq->data[6] == 3 && abs(modeseq->data[7]) == 2)
         {
             eobmodesv5hm = 6;
