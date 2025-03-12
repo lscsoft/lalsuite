@@ -441,18 +441,6 @@ int main( int argc, char *argv[] )
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /* calculate the psd and normalize the SFTs */
-  if ( ( multiPSDs =  XLALNormalizeMultiSFTVect( inputSFTs, uvar.rngMedBlock, NULL ) ) == NULL ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /* compute the noise weights for the AM coefficients */
-  if ( ( multiWeights = XLALComputeMultiNoiseWeights( multiPSDs, uvar.rngMedBlock, 0 ) ) == NULL ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALComputeMultiNoiseWeights() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-  XLALDestroyMultiPSDVector( multiPSDs );
 
   /* read the timestamps from the SFTs */
   if ( ( multiTimes = XLALExtractMultiTimestampsFromSFTs( inputSFTs ) ) == NULL ) {
@@ -465,6 +453,50 @@ int main( int argc, char *argv[] )
     LogPrintf( LOG_CRITICAL, "%s: XLALMultiLALDetectorFromMultiSFTs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
+
+  /* inject signals for demod if specified (resamp injects them later) */
+  if ( XLALUserVarWasSet( &uvar.injectionSources ) && ( uvar.resamp != TRUE ) ) {
+    PulsarParamsVector *injectSources = NULL;
+    if ( ( injectSources = XLALPulsarParamsFromUserInput( uvar.injectionSources, NULL ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALPulsarParamsFromUserInput() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    CWMFDataParams XLAL_INIT_DECL( MFDparams );
+    const SFTtype *sft = &inputSFTs->data[0]->data[0];
+    MFDparams.fMin = sft->f0;
+    MFDparams.Band = sft->data->length * sft->deltaF;
+    MFDparams.multiIFO = multiDetectors;
+    MFDparams.multiTimestamps = multiTimes;
+
+    MFDparams.multiNoiseFloor.length = multiDetectors.length;
+
+    MultiSFTVector *fakeMultiSFTs = NULL;
+    if ( XLALCWMakeFakeMultiData( &fakeMultiSFTs, NULL, injectSources, &MFDparams, config.edat ) != XLAL_SUCCESS ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCWMakeFakeMultiData() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+
+    if ( XLALMultiSFTVectorAdd( inputSFTs, fakeMultiSFTs ) != XLAL_SUCCESS ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALMultiSFTVectorAdd() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+
+    XLALDestroyMultiSFTVector( fakeMultiSFTs );
+    XLALDestroyPulsarParamsVector( injectSources );
+  }
+
+  /* calculate the psd and normalize the SFTs */
+  if ( ( multiPSDs =  XLALNormalizeMultiSFTVect( inputSFTs, uvar.rngMedBlock, NULL ) ) == NULL ) {
+    LogPrintf( LOG_CRITICAL, "%s: XLALNormalizeMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  /* compute the noise weights for the AM coefficients */
+  if ( ( multiWeights = XLALComputeMultiNoiseWeights( multiPSDs, uvar.rngMedBlock, 0 ) ) == NULL ) {
+    LogPrintf( LOG_CRITICAL, "%s: XLALComputeMultiNoiseWeights() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+  XLALDestroyMultiPSDVector( multiPSDs );
 
   /* Find the detector state for each SFT */
   /* Offset by Tsft/2 to get midpoint as timestamp */
