@@ -39,18 +39,6 @@ static double cpart(double complex z, int i)
 }
 
 
-static double complex crect(double real, double imag)
-{
-    return real + imag * I;
-}
-
-
-static double complex cpolar(double amp, double arg)
-{
-    return amp * crect(cos(arg), sin(arg));
-}
-
-
 static double to_phase_angle(double arg)
 {
     arg = fmod(arg, 2 * M_PI);
