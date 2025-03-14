@@ -630,6 +630,7 @@ EOD`]
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_python_cflags}
       -Wno-address
+      -Wno-deprecated-declarations
       -Wno-format-extra-args
       -Wno-stringop-overflow
       -Wno-tautological-compare
