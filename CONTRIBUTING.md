@@ -34,6 +34,32 @@ one of the project maintainers.
 If you wish to contribute new code, or changes to existing code, please follow
 this development workflow:
 
+### Configure Git
+
+You should first ensure that Git is correctly configured on your machine. In
+particular, you should set your name and email address; these will appear on any
+commits made to the LALSuite repository. To do this, run these commands:
+
+1. ```bash
+   git config --global user.name "..."
+   ```
+
+   where `...` is replaced with your name (i.e. your human name, not your
+   computer user/login name).
+
+1. ```bash
+   git config --global user.email "..."
+   ```
+
+   where `...` is replaced with your email address, preferably a `@ligo.org`
+   address if you have one.
+
+You only need to do this **once for every machine** you will use to develop
+LALSuite.
+
+For a complete guide to configuring Git for the first time, see
+[here][gitsetup].
+
 ### Make a fork (copy) of LALSuite
 
 You only need to do this **once**.
@@ -414,6 +440,7 @@ The pre-commit hooks will check that your local changes are pretty-formatted cor
 [forkworkflow]:  https://git.ligo.org/help/user/project/repository/forking_workflow.html
 [githelp]:       https://git.ligo.org/help
 [gitlfs]:        https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client
+[gitsetup]:      https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
 [helpdesk]:      mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
 [lalsuiteforks]: https://git.ligo.org/lscsoft/lalsuite/-/forks/new
 [lalsuiterepo]:  https://git.ligo.org/lscsoft/lalsuite
