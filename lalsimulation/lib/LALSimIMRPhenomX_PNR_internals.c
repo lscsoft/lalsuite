@@ -65,12 +65,29 @@ extern "C"
     REAL8 m1 = pWF->m1 * pWF->Mtot;
     REAL8 m2 = pWF->m2 * pWF->Mtot;
     REAL8 q = pWF->q;
-    REAL8 chi1x = pPrec->chi1x;
-    REAL8 chi1y = pPrec->chi1y;
-    REAL8 chi2x = pPrec->chi2x;
-    REAL8 chi2y = pPrec->chi2y;
 
-    REAL8 chieff = pWF->chiEff;
+    REAL8 chi1x;
+    REAL8 chi1y;
+    REAL8 chi2x;
+    REAL8 chi2y;
+    REAL8 chieff;
+    if(pPrec->IMRPhenomXPrecVersion == 330)
+    {
+      chi1x = pPrec->chi1x_evolved;
+      chi1y = pPrec->chi1y_evolved;
+      chi2x = pPrec->chi2x_evolved;
+      chi2y = pPrec->chi2y_evolved;
+      chieff = XLALSimIMRPhenomXchiEff(pWF->eta,pPrec->chi1z_evolved,pPrec->chi2z_evolved);
+    }
+    else
+    {
+      chi1x = pPrec->chi1x;
+      chi1y = pPrec->chi1y;
+      chi2x = pPrec->chi2x;
+      chi2y = pPrec->chi2y;
+      chieff = XLALSimIMRPhenomXchiEff(pWF->eta,pPrec->chi1z,pPrec->chi2z);
+    }
+
     REAL8 chipar = pWF->Mtot * chieff / m1;
     REAL8 chiperp = 0.0;
     REAL8 costheta = 0.0;
@@ -78,19 +95,33 @@ extern "C"
     REAL8 theta_antisymmetric = 0.0;
 
     /* compute effective in-plane spin contribution from Eq. 17 of arXiv:2107.08876 */
-    if (q <= 1.5)
-    {
-      REAL8 chis = sqrt((m1 * m1 * chi1x + m2 * m2 * chi2x) * (m1 * m1 * chi1x + m2 * m2 * chi2x) + (m1 * m1 * chi1y + m2 * m2 * chi2y) * (m1 * m1 * chi1y + m2 * m2 * chi2y)) / (m1 * m1);
-      chiperp = sin((q - 1.0) * LAL_PI) * sin((q - 1.0) * LAL_PI) * pPrec->chi_p + cos((q - 1.0) * LAL_PI) * cos((q - 1.0) * LAL_PI) * chis;
+    /* for XO4a this contribution is only used for mass ratios below 1.5 */
+    /* in versions of the model where we use the evolved spin values, we use this contribution at all mass ratios */
+    if(pPrec->IMRPhenomXPrecVersion == 330){
+          REAL8 chis = sqrt((m1 * m1 * chi1x + m2 * m2 * chi2x) * (m1 * m1 * chi1x + m2 * m2 * chi2x) + (m1 * m1 * chi1y + m2 * m2 * chi2y) * (m1 * m1 * chi1y + m2 * m2 * chi2y)) / (m1 * m1);
+	  chiperp = chis;
+    }
+    else{
+      if (q <= 1.5)
+	{
+	  REAL8 chis = sqrt((m1 * m1 * chi1x + m2 * m2 * chi2x) * (m1 * m1 * chi1x + m2 * m2 * chi2x) + (m1 * m1 * chi1y + m2 * m2 * chi2y) * (m1 * m1 * chi1y + m2 * m2 * chi2y)) / (m1 * m1);
+	  chiperp = sin((q - 1.0) * LAL_PI) * sin((q - 1.0) * LAL_PI) * pPrec->chi_p + cos((q - 1.0) * LAL_PI) * cos((q - 1.0) * LAL_PI) * chis;
+	}
+      else
+	{
+	  chiperp = pPrec->chi_p;
+	}
+    }
 
-      REAL8 antisymmetric_chis = sqrt((m1 * m1 * chi1x - m2 * m2 * chi2x) * (m1 * m1 * chi1x - m2 * m2 * chi2x) + (m1 * m1 * chi1y - m2 * m2 * chi2y) * (m1 * m1 * chi1y - m2 * m2 * chi2y)) / (m1 * m1);
-      chiperp_antisymmetric = sin((q - 1.0) * LAL_PI) * sin((q - 1.0) * LAL_PI) * pPrec->chi_p + cos((q - 1.0) * LAL_PI) * cos((q - 1.0) * LAL_PI) * antisymmetric_chis;
-    }
+    if (q <= 1.5)
+      {
+	REAL8 antisymmetric_chis = sqrt((m1 * m1 * chi1x - m2 * m2 * chi2x) * (m1 * m1 * chi1x - m2 * m2 * chi2x) + (m1 * m1 * chi1y - m2 * m2 * chi2y) * (m1 * m1 * chi1y - m2 * m2 * chi2y)) / (m1 * m1);
+	chiperp_antisymmetric = sin((q - 1.0) * LAL_PI) * sin((q - 1.0) * LAL_PI) * pPrec->chi_p + cos((q - 1.0) * LAL_PI) * cos((q - 1.0) * LAL_PI) * antisymmetric_chis;
+      }
     else
-    {
-      chiperp = pPrec->chi_p;
-      chiperp_antisymmetric = pPrec->chi_p;
-    }
+      {
+	chiperp_antisymmetric = pPrec->chi_p;
+      }
 
     /* get the total magnitude, Eq. 18 of arXiv:2107.08876 */
     REAL8 chi_mag = sqrt(chipar * chipar + chiperp * chiperp);
@@ -199,6 +230,25 @@ extern "C"
 
     INT4 status = 0;
 
+    /* Use an auxiliar laldict to not overwrite the input argument */
+    LALDict *lalParams_aux;
+
+    /* setup mode array */
+    if (lalParams == NULL)
+    {
+      lalParams_aux = XLALCreateDict();
+    }
+    else{
+      lalParams_aux = XLALDictDuplicate(lalParams);
+    }
+
+
+    int pflag = pPrec->IMRPhenomXPrecVersion;
+    // unless prec version was single-spin NNLO, force single-spin pPrec to take in MSA default flag
+    if(pflag!=101&&pflag!=102&&pflag!=103&&pflag!=104)
+    XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(lalParams_aux,223);
+
+
     /* check for two-spin effects, if so generate associated single-spin structs */
     if (IMRPhenomX_PNR_CheckTwoSpin(pPrec))
     {
@@ -206,24 +256,24 @@ extern "C"
       REAL8 costheta = pPrec->costheta_singleSpin;
       *pWF_SingleSpin = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
       status = IMRPhenomXSetWaveformVariables(
-          *pWF_SingleSpin,
-          pWF->m1_SI,
-          pWF->m2_SI,
-          pWF->chi1L,
-          pWF->chi2L,
-          pWF->deltaF,
-          pWF->fRef,
-          pWF->phi0,
-          pWF->fMin,
-          pWF->fMax,
-          pWF->distance,
-          pWF->inclination,
-          lalParams,
-          DEBUG);
+					      *pWF_SingleSpin,
+					      pWF->m1_SI,
+					      pWF->m2_SI,
+					      pWF->chi1L,
+					      pWF->chi2L,
+					      pWF->deltaF,
+					      pWF->fRef,
+					      pWF->phi0,
+					      pWF->fMin,
+					      pWF->fMax,
+					      pWF->distance,
+					      pWF->inclination,
+					      lalParams,
+					      DEBUG);
       XLAL_CHECK(
-          XLAL_SUCCESS == status,
-          XLAL_EFUNC,
-          "Error: IMRPhenomXSetWaveformVariables failed.\n");
+		 XLAL_SUCCESS == status,
+		 XLAL_EFUNC,
+		 "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
       /* the only needed changes for the single-spin mapping in pWF
        * are to set the condition PNR_SINGLE_SPIN to overcome the
@@ -232,23 +282,24 @@ extern "C"
       (*pWF_SingleSpin)->chiEff = XLALSimIMRPhenomXchiEff(pWF->eta, chi * costheta, 0.0);
 
       *pPrec_SingleSpin = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
+
       status = IMRPhenomXGetAndSetPrecessionVariables(
-          *pWF_SingleSpin,
-          *pPrec_SingleSpin,
-          pWF->m1_SI,
-          pWF->m2_SI,
-          chi * sin(acos(costheta)),
-          0.0,
-          chi * costheta,
-          0.0,
-          0.0,
-          0.0,
-          lalParams,
-          DEBUG);
+						      *pWF_SingleSpin,
+						      *pPrec_SingleSpin,
+						      pWF->m1_SI,
+						      pWF->m2_SI,
+						      chi * sin(acos(costheta)),
+						      0.0,
+						      chi * costheta,
+						      0.0,
+						      0.0,
+						      0.0,
+						      lalParams_aux,
+						      DEBUG);
       XLAL_CHECK(
-          XLAL_SUCCESS == status,
-          XLAL_EFUNC,
-          "Error: IMRPhenomXGetAndSetPrecessionVariables failed.\n");
+		 XLAL_SUCCESS == status,
+		 XLAL_EFUNC,
+		 "Error: IMRPhenomXGetAndSetPrecessionVariables failed.\n");
     }
 
     /* generate alpha parameters */
@@ -260,10 +311,12 @@ extern "C"
         "Error: IMRPhenomX_PNR_precompute_alpha_coefficients failed.\n");
 
     status = IMRPhenomX_PNR_alpha_connection_parameters(*alphaParams, pWF, pPrec);
-    XLAL_CHECK(
+     XLAL_CHECK(
         XLAL_SUCCESS == status,
         XLAL_EFUNC,
         "Error: IMRPhenomX_PNR_alpha_connection_parameters failed.\n");
+
+    pPrec->Mf_alpha_lower=(*alphaParams)->Mf_alpha_lower;
 
     /* generate beta parameters */
     *betaParams = XLALMalloc(sizeof(IMRPhenomX_PNR_beta_parameters));
@@ -273,16 +326,26 @@ extern "C"
         XLAL_EFUNC,
         "Error: IMRPhenomX_PNR_precompute_beta_coefficients failed.\n");
 
-    status = IMRPhenomX_PNR_beta_connection_parameters(*betaParams, pWF, pPrec, *pWF_SingleSpin, *pPrec_SingleSpin);
-    XLAL_CHECK(
-        XLAL_SUCCESS == status,
-        XLAL_EFUNC,
-        "Error: IMRPhenomX_PNR_beta_connection_parameters failed.\n");
+    if(pflag==330){
+      status = IMRPhenomX_ST_PNR_beta_connection_parameters(*betaParams, pWF, pPrec, *pWF_SingleSpin, *pPrec_SingleSpin);
+      XLAL_CHECK(
+                 XLAL_SUCCESS == status,
+                 XLAL_EFUNC,
+                 "Error: IMRPhenomX_ST_PNR_beta_connection_parameters failed.\n");
+    }
+    else{
+      status = IMRPhenomX_PNR_beta_connection_parameters(*betaParams, pWF, pPrec, *pWF_SingleSpin, *pPrec_SingleSpin);
+      XLAL_CHECK(
+		 XLAL_SUCCESS == status,
+		 XLAL_EFUNC,
+		 "Error: IMRPhenomX_PNR_beta_connection_parameters failed.\n");
+    }
 
 #if DEBUG == 1
     IMRPhenomX_PNR_AngleParameterDebugPrint(*alphaParams, *betaParams);
 #endif
 
+    XLALDestroyDict(lalParams_aux);
     return XLAL_SUCCESS;
   }
 
@@ -577,6 +640,37 @@ extern "C"
      * in the magnitude of the total spin computed by the MSA expansion */
     if (IMRPhenomX_PNR_CheckTwoSpin(pPrec))
     {
+      int precessing_tag = (pPrec->IMRPhenomXPrecVersion-(pPrec->IMRPhenomXPrecVersion%100))/100;
+
+      /* if user selected one of the SpinTaylor versions, temporarily overwrite PrecVersion to initialise relevant MSA quantities. This is
+      not nice, and we should consider moving the integration of the PN equations inside the PNR interpolation routines. */
+      if(precessing_tag==3){
+
+        double eta=pPrec->eta, delta=pWF->delta;
+        //double eta2 = eta*eta;
+        double chi1L = pPrec->chi1z, chi2L = pPrec->chi2z;
+
+        pPrec->L0   = 1.0;
+        pPrec->L1   = 0.0;
+        pPrec->L2   = 3.0/2. + eta/6.0;
+        pPrec->L3   = (5*(chi1L*(-2 - 2*delta + eta) + chi2L*(-2 + 2*delta + eta)))/6.;
+        pPrec->L4   = (81 + (-57 + eta)*eta)/24.;
+        pPrec->L5   = (-7*(chi1L*(72 + delta*(72 - 31*eta) + eta*(-121 + 2*eta)) + chi2L*(72 + eta*(-121 + 2*eta) + delta*(-72 + 31*eta))))/144.;
+        pPrec->L6   = (10935 + eta*(-62001 + eta*(1674 + 7*eta) + 2214*powers_of_lalpi.two))/1296.;
+        pPrec->L7   = 0.0;
+        pPrec->L8   = 0.0;
+        // This is the log(x) term
+        pPrec->L8L  = 0.0;
+
+        int user_version = pPrec->IMRPhenomXPrecVersion;
+        // temporarily overwrite precession version to initialise MSA variables needed by this function
+        pPrec->IMRPhenomXPrecVersion=223;
+        IMRPhenomX_Initialize_MSA_System(pWF,pPrec,pPrec->ExpansionOrder);
+
+        pPrec->IMRPhenomXPrecVersion=user_version;
+        // version requested by user has been restored. Continue...
+      }
+
       /* we have a well-behaved MSA expansion, so we grab precomputed terms */
       REAL8 g0 = pPrec->g0;
       REAL8 deltam = pPrec->delta_qq;
@@ -1118,7 +1212,6 @@ extern "C"
 
   }
 
-
   /* Compute window function which controls use of PNR coprecessing deviations. NOTE that it only makes sense to use this function inside of LALSimIMRPhenomX_precession.c */
   REAL8 IMRPhenomX_PNR_CoprecWindow(
     IMRPhenomXWaveformStruct *pWF
@@ -1126,26 +1219,13 @@ extern "C"
 
     // NOTE that it only makes sense to use this function inside of LALSimIMRPhenomX_precession.c
 
-    // Set window parameters based on selected model version
-    double window_q_boundary;
-    double width_window_q;
-
     // Location of boundaries
-    window_q_boundary     = 10.0; // LEGACY VALUE --->  8.0;
+    double window_q_boundary     = 10.0; // LEGACY VALUE --->  8.0;
     // Width of the transition AFTER the boundary location
-    width_window_q        = 10.0; // LEGACY VALUE --->  0.50;
-
-    // // Location of boundaries
-    // double window_theta_boundary = 150.0*LAL_PI/180.0;
-    // double window_a1_boundary    = 0.8;
-
-    // // Width of the transition AFTER the boundary location
-    // double width_window_theta = 0.50;
-    // double width_window_a1    = 0.02;
-
+    double width_window_q        = 10.0; // LEGACY VALUE --->  0.50;
+    // Define parameter that the window depends on
     double window_q_argument     = (pWF->q   - window_q_boundary     )/ width_window_q;
-    // double window_theta_argument = (pWF->theta_LS - window_theta_boundary )/ width_window_theta;
-    // double window_a1_argument    = (pWF->a1       - window_a1_boundary    )/ width_window_a1;
+
 
     // When the arguments are <=0, then the model is on
     // when they are between 0 and 1, the model is turning off
@@ -1161,31 +1241,10 @@ extern "C"
       window_q_value = 1;
     } //
 
-    // // For theta
-    // double window_theta_value;
-    // if ( (window_theta_argument>0) && (window_theta_argument<=1) ){
-    //   window_theta_value = 0.5*cos( window_theta_argument     * LAL_PI ) + 0.5;
-    // } else if ( window_theta_argument>1  ) {
-    //   window_theta_value = 0;
-    // } else {
-    //   window_theta_value = 1;
-    // } //
-
-    // // For a1
-    // double window_a1_value;
-    // if ( (window_a1_argument>0) && (window_a1_argument<=1) ){
-    //   window_a1_value = 0.5*cos( window_a1_argument     * LAL_PI ) + 0.5;
-    // } else if ( window_a1_argument>1  ) {
-    //   window_a1_value = 0;
-    // } else {
-    //   window_a1_value = 1;
-    // } //
-
-    // the NET window will be the product of the individual windows so that any one parameter may turn the model off. We're only interested in this if PNR is desired via the pflag option.
+    // the NET window is simply that associated with q; it was previously more complex; we keep this code structure for ease of comparison across code versions
     double pnr_window = window_q_value;
-    // double pnr_window = window_q_value * window_theta_value * window_a1_value;
 
-    //
+    // Return the window
     return pnr_window;
 
   }
@@ -1569,13 +1628,24 @@ INT4 IMRPhenomX_PNR_GetAndSetCoPrecParams(
      to be unchanged from the value used during tuning e.g. a1*sin(theta)
     << ------------------------------------------------------ */
 
-    // Flatten mass-ratio dependence to limit extrapolation artifacts outside of calibration region
-    double coprec_eta = ( pWF->eta >= 0.09876 ) ? pWF->eta : 0.09876;
-    // Flatten spin dependence to limit extrapolation artifacts outside of calibration region
+    double coprec_eta;
     double coprec_a1 = pWF->a1;
-    coprec_a1  = ( coprec_a1  <= 0.8     ) ? coprec_a1  : 0.8;
-	  coprec_a1  = ( coprec_a1  >= 0.2     ) ? coprec_a1  : 0.2;
+    if (pPrec->IMRPhenomXPrecVersion==330){
+      // Flatten mass-ratio dependence to limit extrapolation artifacts outside of calibration region
+      coprec_eta = ( pWF->eta >= 0.09876 ) ? pWF->eta : 0.09876 - ( 0.09876 - pWF->eta ) * 0.1641;
 
+      // Flatten spin dependence to limit extrapolation artifacts outside of calibration region
+      coprec_a1  = ( coprec_a1  <= 0.8 ) ? coprec_a1  : 0.8 + (coprec_a1 - 0.8) / 12.0 ;
+      coprec_a1  = ( coprec_a1  >= 0.2 ) ? coprec_a1  : 0.2;
+    }
+    else{
+      // Flatten mass-ratio dependence to limit extrapolation artifacts outside of calibration region
+      coprec_eta = ( pWF->eta >= 0.09876 ) ? pWF->eta : 0.09876;
+
+      // Flatten spin dependence to limit extrapolation artifacts outside of calibration region
+      coprec_a1  = ( coprec_a1  <= 0.8     ) ? coprec_a1  : 0.8;
+      coprec_a1  = ( coprec_a1  >= 0.2     ) ? coprec_a1  : 0.2;
+    }
 
     /* MU1 modifies pAmp->v1RD */
     pWF->MU1     = XLALSimIMRPhenomXCP_MU1_l2m2(   theta_LS, coprec_eta, coprec_a1 );
@@ -1592,7 +1662,7 @@ INT4 IMRPhenomX_PNR_GetAndSetCoPrecParams(
     /* MU4 modifies V2 for the intermediate amplitude
     for the DEFAULT value of IMRPhenomXIntermediateAmpVersion
     use in IMRPhenomXPHM */
-    // pWF->MU4     = XLALSimIMRPhenomXCP_MU4_l2m2(   theta_LS, coprec_eta, coprec_a1 );
+    // pWF->MU4     = IMRPhenomXCP_MU4_l2m2(   theta_LS, coprec_eta, coprec_a1 );
 
     /* NU0 modifies the output of IMRPhenomX_TimeShift_22() */
     pWF->NU0     = XLALSimIMRPhenomXCP_NU0_l2m2(   theta_LS, coprec_eta, coprec_a1 );

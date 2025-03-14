@@ -72,7 +72,7 @@ extern "C"
     INT4 IMRPhenomX_PNR_PopulateStructs(
         IMRPhenomXWaveformStruct **pWF_SingleSpin,
         IMRPhenomXPrecessionStruct **pPrec_SingleSpin,
-        IMRPhenomX_PNR_alpha_parameters **alphaParams,
+	IMRPhenomX_PNR_alpha_parameters **alphaParams,
         IMRPhenomX_PNR_beta_parameters **betaParams,
         IMRPhenomXWaveformStruct *pWF,
         IMRPhenomXPrecessionStruct *pPrec,

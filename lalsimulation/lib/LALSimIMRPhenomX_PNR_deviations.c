@@ -85,7 +85,7 @@ double XLALSimIMRPhenomXCP_MU2_l2m2( double theta, double eta, double a1 ){
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
 	*/
 
-	// // Flatten in eta
+        // // Flatten in eta
 	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
 	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
 	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
@@ -117,7 +117,7 @@ double XLALSimIMRPhenomXCP_MU3_l2m2( double theta, double eta, double a1 ){
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
 	*/
 
-	// // Flatten in eta
+       	// // Flatten in eta
 	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
 	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
 	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
@@ -149,7 +149,7 @@ double XLALSimIMRPhenomXCP_NU4_l2m2( double theta, double eta, double a1 ){
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
 	*/
 
-	// // Flatten in eta
+        //// Flatten in eta
 	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
 	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
 	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
@@ -181,7 +181,7 @@ double XLALSimIMRPhenomXCP_NU5_l2m2( double theta, double eta, double a1 ){
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
 	*/
 
-	// // Flatten in eta
+   	// // Flatten in eta
 	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
 	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
 	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
