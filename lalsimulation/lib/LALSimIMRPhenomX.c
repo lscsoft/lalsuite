@@ -159,7 +159,6 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
   *
   */
 
-
 /**
  *  Driver routine to calculate an IMRPhenomX aligned-spin,
  *  inspiral-merger-ringdown phenomenological waveform model
@@ -976,7 +975,7 @@ int IMRPhenomXPGenerateFD(
  *
  * This is a precessing frequency domain model.
  * See Pratten, García-Quirós, Colleoni et al arXiv:2004.06503 for details.
-*  Studies using this model are kindly asked
+ *  Studies using this model are kindly asked
  * to cite Pratten et al arXiv:2001.11412, García-Quirós et al arXiv:2001.10914
  * and Pratten, García-Quirós, Colleoni et al arXiv:2004.06503.
  *
@@ -1011,7 +1010,7 @@ int IMRPhenomXPGenerateFD(
  *     - 320 : Numerical integration of SpinTaylor equations, analytical continuation in merger-ringdown
  *     - 321 : Numerical integration of SpinTaylor equations, analytical continuation in merger-ringdown, without tidal and non-black hole spin-induced quadrupole terms in the SpinTaylor equations
  *             when used in IMRPhenomXP_NRTidalv2, for comparison
-
+ *     - 330 : Numerical integration of SpinTaylor equations, analytical connection to PNR angles
  *
  *   PhenomXPExpansionOrder:
  *     - -1, 0, 1, 2, 3, 4, 5. Controls the expansion order of the leading-order MSA terms for both \f$\zeta\f$ and \f$\phi_z\f$. [Default is 5].
@@ -1023,6 +1022,11 @@ int IMRPhenomXPGenerateFD(
  *     - 3 : Modify final spin using precession-averaged couplings from MSA analysis. Only works with MSA Euler angles (versions 220, 221, 222, 223 and 224). If MSA fails to initialize
  *           or called with NNLO angles, default to version 0. [Default]
  *     - 4: Modify final spin estimating the total in-plane spin from the PN spin-evolution equations.
+ *     - 5: Modify final spin based on \f$\chi_p\f$; unlike version 0, the sign is given by that of cos(betaRD) as predicted by the PNR model.
+ *     - 6: Return the same spin that would be computed by the aligned-spin model PhenomXHM. Used for developing purposes only.
+ *     - 7: Modify final spin magnitude using norm of total in-plane spin vector (as in version 2); the sign of the spin is given by cos(betaRD) as predicted by the PNR model.
+ *
+ *
  *
  *   PhenomXPConvention (App. C and Table IV of arXiv:2004.06503):
  *     - 0 : Conventions defined as following https://dcc.ligo.org/LIGO-T1500602
@@ -1031,8 +1035,6 @@ int IMRPhenomXPGenerateFD(
  *     - 6 : Conventions defined following App. C, see Table II of arXiv:2004.06503 for specific details.
  *     - 7 : Conventions defined following App. C, see Table II of arXiv:2004.06503 for specific details.
  */
-
-
 /*
  *  Prototype wrapper function:
 
@@ -1184,7 +1186,7 @@ int XLALSimIMRPhenomXPGenerateFD(
 
   /* If user chose SpinTaylor angles, set bounds for interpolation of angles */
   int pflag = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
-  if(pflag==310||pflag==311||pflag==320||pflag==321)
+  if(pflag==310||pflag==311||pflag==320||pflag==321||pflag==330)
   pPrec->M_MIN = 2, pPrec->M_MAX = 2;
 
   status = IMRPhenomXGetAndSetPrecessionVariables(
@@ -1373,7 +1375,7 @@ int XLALSimIMRPhenomXPGenerateFD(
 
   /* If user chose SpinTaylor angles, set bounds for interpolation of angles */
   int pflag = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
-  if(pflag==310||pflag==311||pflag==320||pflag==321)
+  if(pflag==310||pflag==311||pflag==320||pflag==321||pflag==330)
   {
   pPrec->M_MIN = 2, pPrec->M_MAX = 2;
   }
@@ -1547,7 +1549,7 @@ int XLALSimIMRPhenomXPGenerateFD(
         }
         else /* don't attach MR tuning to beta */
         {
-          betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, pWF, pPrec);
+          betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, betaParams, pWF, pPrec);
         }
       }
       /* inside transition region */
@@ -1560,13 +1562,13 @@ int XLALSimIMRPhenomXPGenerateFD(
         }
         else /* don't attach MR tuning to beta */
         {
-          betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, pWF, pPrec);
+          betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, betaParams, pWF, pPrec);
         }
       }
       /* fully in outside calibration region */
       else
       {
-        betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, pWF, pPrec);
+        betaPNR_ref = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf_ref, betaParams, pWF, pPrec);
       }
 
       status = IMRPhenomX_PNR_RemapThetaJSF(betaPNR_ref, pWF, pPrec, lalParams);

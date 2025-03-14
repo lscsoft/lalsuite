@@ -330,6 +330,7 @@ DEFINE_GENERATOR_TEMPLATE(IMRPhenomHM, generate_fd_modes, generate_fd_waveform, 
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomXHM, generate_fd_modes, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomXPHM, generate_fd_modes, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomXO4a, generate_fd_modes, generate_fd_waveform, NULL, generate_td_waveform)
+DEFINE_GENERATOR_TEMPLATE(IMRPhenomXPNR, generate_fd_modes, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(SEOBNRv5HM_ROM, generate_fd_modes, generate_fd_waveform, NULL, generate_td_waveform)
 
 
@@ -1253,6 +1254,11 @@ static int XLALSimInspiralChooseTDWaveform_legacy(
     	 		polariz = 0;
     			ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
     			break;
+
+    case IMRPhenomXPNR:
+                        polariz = 0;
+                        ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
+                  	break;
 
     default:
         XLALPrintError("TD version of approximant not implemented in lalsimulation\n");
@@ -2646,6 +2652,120 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
 
     		break;
     }
+
+    case IMRPhenomXPNR:
+    {
+        LALDict *params_aux;
+        if (params == NULL){
+            params_aux = XLALCreateDict();
+        }
+        else{
+            params_aux = XLALDictDuplicate(params);
+        }
+
+        /* XO4 uses previous version of XHM */
+        XLALSimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(params_aux, 122019);
+
+    		/* Waveform-specific sanity checks */
+    		if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(params_aux) )
+    		{
+    			/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+    			XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.");
+    		}
+    		if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(params_aux))
+    		{
+    			/* Default is (2,2) or l=2 modes. */
+    			XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
+    		}
+    		if( !checkTidesZero(lambda1, lambda2) )
+    		{
+    			XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+    		}
+    		if(f_ref==0.0)
+    		{
+    			/* Default reference frequency is minimum frequency */
+    			f_ref = f_min;
+    		}
+
+    		/* Call the main waveform driver. Note that we pass the full spin vectors
+    			 with XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame being
+    			 effectively called in the initialization of the pPrec struct
+    		*/
+
+        /* Toggle on PNR angles */
+        if(!XLALDictContains(params_aux, "PNRUseTunedAngles")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedAngles(params_aux, 1);
+        }
+
+        /* Toggle on tuned coprecessing strain */
+        if(!XLALDictContains(params_aux, "PNRUseTunedCoprec")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedCoprec(params_aux, 1);
+        }
+        if(!XLALDictContains(params_aux, "PNRForceXHMAlignment")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPNRForceXHMAlignment(params_aux, 0);
+        }
+
+        /* Toggle on antisymmetric contributions */
+        if(!XLALDictContains(params_aux, "AntisymmetricWaveform")){
+            XLALSimInspiralWaveformParamsInsertPhenomXAntisymmetricWaveform(params_aux, 1);
+        }
+
+        if(XLALSimInspiralWaveformParamsLookupPhenomXAntisymmetricWaveform(params_aux))
+        {
+            if(!XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedAngles(params_aux))
+            {
+                XLAL_ERROR(XLAL_EFUNC,"Error: Antisymmetric waveform generation not supported without PNR angles, please turn on PNR angles to produce waveform with asymmetries in the (2,2) and (2,-2) modes \n");
+            }
+        }
+
+        /* Toggle on reviewed PrecVersion and FinalSpinMod */
+        if(!XLALDictContains(params_aux, "PrecVersion")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(params_aux, 330);
+        }
+
+        if(!XLALDictContains(params_aux, "FinalSpinMod")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPFinalSpinMod(params_aux, 7);
+        }
+
+        /* Toggle the conditional precession multibanding */
+        if(!XLALDictContains(params_aux, "MBandPrecVersion")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPHMMBandVersion(params_aux, 2);
+        }
+
+    		usemodes = XLALSimInspiralWaveformParamsLookupPhenomXPHMUseModes(params_aux);
+
+    		if(usemodes == 0){
+    			ret = XLALSimIMRPhenomXPHM(
+    				hptilde, hctilde,
+    				m1, m2,
+    				S1x, S1y, S1z,
+    				S2x, S2y, S2z,
+    				distance, inclination,
+    				phiRef, f_min, f_max, deltaF, f_ref, params_aux
+    			);
+    		}
+    		else{
+    			ret = XLALSimIMRPhenomXPHMFromModes(
+    				hptilde, hctilde,
+    				m1, m2,
+    				S1x, S1y, S1z,
+    				S2x, S2y, S2z,
+    				distance, inclination,
+    				phiRef, f_min, f_max, deltaF, f_ref, params_aux
+    			);
+    		}
+
+        XLALDestroyDict(params_aux);
+
+
+    		if (ret == XLAL_FAILURE)
+    		{
+    			XLAL_ERROR(XLAL_EFUNC);
+    		}
+
+    		break;
+    }
+
     default:
         XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
         XLAL_ERROR(XLAL_EINVAL);
@@ -3314,6 +3434,76 @@ static SphHarmFrequencySeries *XLALSimInspiralChooseFDModes_legacy(
         /* Toggle on reviewed PrecVersion and FinalSpinMod */
         if(!XLALDictContains(params_aux, "PrecVersion")){
             XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(params_aux, 300);
+        }
+
+	      /* Compute individual modes in the J-frame from IMRPhenomXPHM */
+        XLALSimIMRPhenomXPHMModes(&hlms, m1, m2, S1x, S1y, S1z,	S2x, S2y, S2z, deltaF, f_min, f_max, f_ref, phiRef, distance, inclination, params_aux);
+
+        XLALDestroyDict(params_aux);
+
+        break;
+
+
+    case IMRPhenomXPNR:
+        if (params == NULL){
+            params_aux = XLALCreateDict();
+        }
+        else{
+            params_aux = XLALDictDuplicate(params);
+        }
+
+        /* XO4 uses previous version of XHM */
+        XLALSimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(params_aux, 122019);
+
+  			/* Waveform-specific sanity checks */
+  			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(params_aux) )
+  					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+  			if( !checkTidesZero(lambda1, lambda2) )
+  					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+        /* Toggle on PNR angles */
+        if(!XLALDictContains(params_aux, "PNRUseTunedAngles")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedAngles(params_aux, 1);
+        }
+
+        /* Toggle on tuned coprecessing strain */
+        if(!XLALDictContains(params_aux, "PNRUseTunedCoprec")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedCoprec(params_aux, 1);
+        }
+
+        /* Ensure that 33 tuning is set to preferred value */
+        if(!XLALDictContains(params_aux, "PNRUseTunedCoprec33")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedCoprec33(params_aux, 0);
+        }
+        if(!XLALDictContains(params_aux, "PNRForceXHMAlignment")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPNRForceXHMAlignment(params_aux, 0);
+        }
+
+        /* Toggle on antisymmetric contributions */
+        if(!XLALDictContains(params_aux, "AntisymmetricWaveform")){
+            XLALSimInspiralWaveformParamsInsertPhenomXAntisymmetricWaveform(params_aux, 1);
+        }
+
+        if(XLALSimInspiralWaveformParamsLookupPhenomXAntisymmetricWaveform(params_aux))
+        {
+            if(!XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedAngles(params_aux))
+            {
+                XLAL_ERROR_NULL(XLAL_EFUNC,"Error: Antisymmetric waveform generation not supported without PNR angles, please turn on PNR angles to produce waveform with asymmetries in the (2,2) and (2,-2) modes \n");
+            }
+        }
+
+        /* Toggle on reviewed PrecVersion and FinalSpinMod */
+        if(!XLALDictContains(params_aux, "PrecVersion")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(params_aux, 330);
+        }
+
+        if(!XLALDictContains(params_aux, "FinalSpinMod")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPFinalSpinMod(params_aux, 7);
+        }
+
+        /* Toggle the conditional precession multibanding */
+        if(!XLALDictContains(params_aux, "MBandPrecVersion")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPHMMBandVersion(params_aux, 2);
         }
 
 	      /* Compute individual modes in the J-frame from IMRPhenomXPHM */

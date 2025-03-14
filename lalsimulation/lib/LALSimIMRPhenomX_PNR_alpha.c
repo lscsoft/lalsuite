@@ -167,6 +167,13 @@ extern "C"
 
       break;
     }
+    case 330:
+    {
+      alpha = alpha_SpinTaylor_IMR(Mf,pWF,pPrec);
+      if(isnan(alpha) || isinf(alpha)) XLAL_ERROR(XLAL_EDOM, "Error in %s: alpha_SpinTaylor_IMR returned invalid value.\n",__func__);
+      break;
+    }
+
     default:
     {
       XLAL_ERROR(XLAL_EINVAL, "Error: IMRPhenomXPrecessionVersion not recognized in IMRPhenomX_PNR_GetPNAlphaAtFreq.\n");
@@ -194,7 +201,20 @@ extern "C"
 
     /* Grab the single-spin MR parameters */
     REAL8 eta = pWF->eta;
-    REAL8 chi = pPrec->chi_singleSpin;
+    if( pPrec->IMRPhenomXPrecVersion==330 ){
+      eta = ( pWF->eta >= 0.09 ) ? pPrec->eta : 0.09;
+    }
+    else{
+      eta = pWF->eta;
+    }
+    REAL8 chiboundary = 0.80 - 0.20 * exp( -pow((pWF->q - 6.0)/1.5, 8) );
+    REAL8 chi;
+    if( pPrec->IMRPhenomXPrecVersion==330 ){
+      chi = ( pPrec->chi_singleSpin <= chiboundary ) ? pPrec->chi_singleSpin : chiboundary;
+    }
+    else{
+      chi = pPrec->chi_singleSpin;
+    }
     REAL8 costheta = pPrec->costheta_singleSpin;
 
     /* Evaluate coefficients as described in Sec. 8D in arXiv:2107.08876 */
@@ -370,6 +390,16 @@ extern "C"
       Mf_alpha_upper = 100.0;
     }
 
+    /* catch cases where Mf_alpha_lower lies below the starting frequency of the integration of the PN spin-precession eqs */
+    if (( pPrec->IMRPhenomXPrecVersion==330)&&(Mf_alpha_lower-2.*dMf < pPrec->Mfmin_integration) )
+    {
+      Mf_alpha_lower = 100.0;
+      Mf_alpha_upper = 100.0;
+    }
+
+    alphaParams->Mf_alpha_lower = Mf_alpha_lower;
+    alphaParams->Mf_alpha_upper = Mf_alpha_upper;
+
     /* evaluate expressions for alpha at and around the connection frequencies */
     REAL8 a1 = IMRPhenomX_PNR_GetPNAlphaAtFreq(Mf_alpha_lower - dMf, pWF, pPrec);
     REAL8 alpha_lower = IMRPhenomX_PNR_GetPNAlphaAtFreq(Mf_alpha_lower, pWF, pPrec);
@@ -400,8 +430,6 @@ extern "C"
     REAL8 alpha_MR_offset = alpha_upper - MR_alpha_at_Mf_upper;
 
     /* save alpha values into the struct */
-    alphaParams->Mf_alpha_lower = Mf_alpha_lower;
-    alphaParams->Mf_alpha_upper = Mf_alpha_upper;
     alphaParams->alpha_lower = alpha_lower;
     alphaParams->alpha_upper = alpha_upper;
     alphaParams->derivative_alpha_lower = derivative_alpha_lower;

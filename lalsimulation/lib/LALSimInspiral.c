@@ -186,6 +186,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomTP),
     INITIALIZE_NAME(IMRPhenomTPHM),
     INITIALIZE_NAME(IMRPhenomXO4a),
+    INITIALIZE_NAME(IMRPhenomXPNR),
     INITIALIZE_NAME(IMRPhenomXAS_NRTidalv2),
     INITIALIZE_NAME(IMRPhenomXP_NRTidalv2),
     INITIALIZE_NAME(IMRPhenomXAS_NRTidalv3),
@@ -317,6 +318,7 @@ const LALSimInspiralGenerator *lalSimInspiralGeneratorTemplates[NumApproximants]
     [IMRPhenomXAS_NRTidalv3] = &lalIMRPhenomXAS_NRTidalv3GeneratorTemplate,
     [IMRPhenomXP_NRTidalv3] = &lalIMRPhenomXP_NRTidalv3GeneratorTemplate,
     [IMRPhenomXO4a] = &lalIMRPhenomXO4aGeneratorTemplate,
+    [IMRPhenomXPNR] = &lalIMRPhenomXPNRGeneratorTemplate,
     [Lackey_Tidal_2013_SEOBNRv2_ROM] = &lalLackey_Tidal_2013_SEOBNRv2_ROMGeneratorTemplate,
     [NRHybSur3dq8] = &lalNRHybSur3dq8GeneratorTemplate,
     [NRSur4d2s] = &lalNRSur4d2sGeneratorTemplate,
@@ -2393,6 +2395,15 @@ int XLALSimInspiralPolarizationsFromChooseFDModes(
         XLAL_CHECK(XLAL_SUCCESS == ret, XLAL_EFUNC, "Error: XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame failed.\n");
         azimuthal = 0.;
         break;
+
+        case IMRPhenomXPNR:
+        phiRef_modes = phiRef;
+        d1=0, d2=0, d3=0, d4=0, d5=0;
+        ret = XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame(&d1, &d2, &d3, &theta, &d4, &d5, &zeta_polarization, m1, m2, f_ref, phiRef, inclination, S1x,S1y,S1z, S2x,S2y,S2z, LALparams);
+        XLAL_CHECK(XLAL_SUCCESS == ret, XLAL_EFUNC, "Error: XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame failed.\n");
+        azimuthal = 0.;
+        break;
+
         case SEOBNRv4HM_ROM:
 
         break;
@@ -4026,6 +4037,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case IMRPhenomTP:
         case IMRPhenomTPHM:
         case IMRPhenomXO4a:
+	case IMRPhenomXPNR:
         case ExternalPython:
         case SEOBNRv4HM_PA:
         case pSEOBNRv4HM_PA:
@@ -4100,6 +4112,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomPv3HM:
         case ExternalPython:
         case IMRPhenomXO4a:
+	case IMRPhenomXPNR:
             return 1;
 
         default:
@@ -4510,6 +4523,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomTP:
     case IMRPhenomTPHM:
     case IMRPhenomXO4a:
+    case IMRPhenomXPNR:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:
@@ -4639,6 +4653,7 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case IMRPhenomTP:
     case IMRPhenomTPHM:
     case IMRPhenomXO4a:
+    case IMRPhenomXPNR:
       spin_freq=LAL_SIM_INSPIRAL_SPINS_F_REF;
       break;
     case FindChirpPTF:
@@ -4831,6 +4846,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NumApproximants:
     case SEOBNRv4HM_PA:
     case IMRPhenomXO4a:
+    case IMRPhenomXPNR:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
     case TaylorF2:

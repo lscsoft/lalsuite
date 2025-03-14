@@ -451,6 +451,7 @@ typedef enum tagApproximant {
    IMRPhenomXP_NRTidalv3,         /**< Tidal extension of IMRPhenomXP based on NRTidalv3. */
    SEOBNRv5_ROM_NRTidalv3, /**< based on NRTidalv3 (arXiv:2311.07456);
                              * @remarks Implemented in lalsimulation (time domain and frequency domain). */
+   IMRPhenomXPNR,    /**< Frequency domain, precessing with subdominant modes phenomenological IMR waveform model with SpinTaylor and NR-tuned precession angles. */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -983,6 +984,7 @@ extern const LALSimInspiralGenerator lalIMRPhenomXASGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXHMGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXPHMGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXO4aGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXPNRGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXPGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXAS_NRTidalv2GeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXAS_NRTidalv3GeneratorTemplate;

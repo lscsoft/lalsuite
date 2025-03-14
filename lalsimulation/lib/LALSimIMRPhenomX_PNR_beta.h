@@ -39,7 +39,7 @@ extern "C"
         REAL8 B4;
         REAL8 B5;
 
-        // connection values
+        // connection values with fixed spins
         REAL8 Mf_beta_lower;
         REAL8 Mf_beta_upper;
         REAL8 beta_lower;
@@ -48,6 +48,16 @@ extern "C"
         REAL8 derivative_beta_upper;
         REAL8 beta_rescale_1;
         REAL8 beta_rescale_2;
+
+        // connection values with evolved spins
+        REAL8 beta_interp_0;
+        REAL8 beta_interp_1;
+        REAL8 beta_interp_2;
+        REAL8 beta_interp_3;
+
+        // rescaled PNR beta spline
+        //gsl_spline *beta_rescale_spl;
+        //gsl_interp_accel *beta_rescale_acc;
 
     } IMRPhenomX_PNR_beta_parameters;
 
@@ -69,6 +79,7 @@ extern "C"
 
     REAL8 IMRPhenomX_PNR_GeneratePNRBetaNoMR(
         REAL8 Mf,
+	const IMRPhenomX_PNR_beta_parameters *betaParams,
         IMRPhenomXWaveformStruct *pWF,
         IMRPhenomXPrecessionStruct *pPrec);
 
@@ -87,7 +98,8 @@ extern "C"
     REAL8 IMRPhenomX_PNR_GetPNBetaAtFreq_fulltwospin(
         REAL8 Mf,
         IMRPhenomXWaveformStruct *pWF,
-        IMRPhenomXPrecessionStruct *pPrec);
+        IMRPhenomXPrecessionStruct *pPrec,
+	const IMRPhenomX_PNR_beta_parameters *betaParams);
 
     REAL8 IMRPhenomX_PNR_PNWaveformBetaWrapper(
         REAL8 Mf,
@@ -126,6 +138,18 @@ extern "C"
         IMRPhenomXPrecessionStruct *pPrec,
         IMRPhenomXWaveformStruct *pWF_SingleSpin,
         IMRPhenomXPrecessionStruct *pPrec_SingleSpin);
+
+    int IMRPhenomX_ST_PNR_beta_connection_parameters(
+        IMRPhenomX_PNR_beta_parameters *betaParams,
+	IMRPhenomXWaveformStruct *pWF,
+	IMRPhenomXPrecessionStruct *pPrec,
+	IMRPhenomXWaveformStruct *pWF_SingleSpin,
+        IMRPhenomXPrecessionStruct *pPrec_SingleSpin);
+
+    REAL8 IMRPhenomX_ST_PNR_beta_coeffs_0( REAL8 Mf1, REAL8 Mf2, REAL8 beta1, REAL8 beta2, REAL8 dbeta1, REAL8 dbeta2 );
+    REAL8 IMRPhenomX_ST_PNR_beta_coeffs_1( REAL8 Mf1, REAL8 Mf2, REAL8 beta1, REAL8 beta2, REAL8 dbeta1, REAL8 dbeta2 );
+    REAL8 IMRPhenomX_ST_PNR_beta_coeffs_2( REAL8 Mf1, REAL8 Mf2, REAL8 beta1, REAL8 beta2, REAL8 dbeta1, REAL8 dbeta2 );
+    REAL8 IMRPhenomX_ST_PNR_beta_coeffs_3( REAL8 Mf1, REAL8 Mf2, REAL8 beta1, REAL8 beta2, REAL8 dbeta1, REAL8 dbeta2 );
 
     REAL8 IMRPhenomX_PNR_arctan_window(REAL8 beta);
 

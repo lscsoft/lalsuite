@@ -23,7 +23,7 @@ extern "C"
 #endif
 
   /**
-   * \author Eleanor Hamilton, Sebastian Khan, Jonathan E. Thompson
+   * \author Eleanor Hamilton, Sebastian Khan, Jonathan E. Thompson, Marta Colleoni
    *
    */
 
@@ -60,10 +60,22 @@ extern "C"
     REAL8 Mf_beta_lower = betaParams->Mf_beta_lower;
     REAL8 Mf_beta_upper = betaParams->Mf_beta_upper;
 
+    REAL8 beta_lower = betaParams->beta_lower;
+    REAL8 beta_upper = betaParams->beta_upper;
+
     if (Mf <= Mf_beta_lower)
     { /* Below Mf_beta_lower, we use a rescaled form of the PN beta.
        * In the case of a two-spin system, the PN beta used may have the two-spin
        * oscillations tapered away to connect nicely at Mf_beta_lower */
+
+       if ((pPrec->IMRPhenomXPrecVersion==223) && (beta_lower < 0.01 * beta_upper))
+       {
+          /* Catch cases in the almost anti-aligned spin limit where beta drops
+           * to almost zero before reaching Mf_beta_lower */
+          REAL8 MR_beta = IMRPhenomX_PNR_MR_beta_expression(Mf_beta_lower, betaParams);
+          return IMRPhenomX_PNR_arctan_window(MR_beta);
+       }
+
       REAL8 betaPN = IMRPhenomX_PNR_GetPNBetaAtFreq(Mf, betaParams, pWF, pPrec, pWF_SingleSpin, pPrec_SingleSpin);
       REAL8 beta_waveform = IMRPhenomX_PNR_PNWaveformBetaWrapper(Mf, betaPN, pWF, pPrec);
       REAL8 rescaled_beta = beta_waveform * IMRPhenomX_PNR_rescale_beta_expression(Mf, betaParams);
@@ -79,7 +91,8 @@ extern "C"
     /* in between we evaluate the MR Ansatz */
     REAL8 MR_beta = IMRPhenomX_PNR_MR_beta_expression(Mf, betaParams);
     return IMRPhenomX_PNR_arctan_window(MR_beta);
-  }
+}
+
 
   /**
    * This function evaluates only the rescaled inspiral beta given in
@@ -88,19 +101,24 @@ extern "C"
    */
   REAL8 IMRPhenomX_PNR_GeneratePNRBetaNoMR(
       REAL8 Mf,                         /**< geometric frequency */
+      const IMRPhenomX_PNR_beta_parameters *betaParams, /**< beta parameter struct */
       IMRPhenomXWaveformStruct *pWF,    /**< PhenomX wavefrom struct */
       IMRPhenomXPrecessionStruct *pPrec /**< PhenomX precession struct */
   )
   {
+
     /* generate scaled PN beta without MR contributions */
-    REAL8 pn_beta = IMRPhenomX_PNR_GetPNBetaAtFreq_fulltwospin(Mf, pWF, pPrec);
+    REAL8 waveform_beta;
+    REAL8 pn_beta = IMRPhenomX_PNR_GetPNBetaAtFreq_fulltwospin(Mf, pWF, pPrec, betaParams);
     REAL8 pn_waveform_beta = IMRPhenomX_PNR_PNWaveformBetaWrapper(Mf, pn_beta, pWF, pPrec);
 
-    return IMRPhenomX_PNR_arctan_window(pn_waveform_beta);
+    waveform_beta = pn_waveform_beta;
+
+    return IMRPhenomX_PNR_arctan_window(waveform_beta);
   }
 
   /**
-   * This function generates beta with the tuned angles and PN expressions blended during merger-ringdown
+   *  This function generates beta with the tuned angles and PN expressions blended during merger-ringdown
    */
   REAL8 IMRPhenomX_PNR_GenerateMergedPNRBetaAtMf(
       REAL8 Mf,                                         /**< geometric frequency */
@@ -109,7 +127,7 @@ extern "C"
       IMRPhenomXPrecessionStruct *pPrec,                /**< PhenomX precession struct */
       IMRPhenomXWaveformStruct *pWF_SingleSpin,         /**< PhenomX waveform struct with approximate single spin */
       IMRPhenomXPrecessionStruct *pPrec_SingleSpin      /**< PhenomX waveform struct with approximate single spin */
-  )
+						  )
   {
     /* evaluate blending window */
     double pnr_window = IMRPhenomX_PNR_AnglesWindow(pWF, pPrec);
@@ -118,32 +136,48 @@ extern "C"
     /* get beta connection frequencies */
     REAL8 Mf_beta_lower = betaParams->Mf_beta_lower;
     REAL8 Mf_beta_upper = betaParams->Mf_beta_upper;
-
     if (Mf <= Mf_beta_lower)
-    { /* Below Mf_beta_lower, we use a rescaled form of the PN beta.
-       * In the case of a two-spin system, the PN beta used may have the two-spin
-       * oscillations tapered away to connect nicely at Mf_beta_lower */
-      REAL8 betaPN = IMRPhenomX_PNR_GetPNBetaAtFreq(Mf, betaParams, pWF, pPrec, pWF_SingleSpin, pPrec_SingleSpin);
-      REAL8 beta_waveform = IMRPhenomX_PNR_PNWaveformBetaWrapper(Mf, betaPN, pWF, pPrec);
-      REAL8 rescaled_beta = beta_waveform * IMRPhenomX_PNR_rescale_beta_expression(Mf, betaParams);
-      return IMRPhenomX_PNR_arctan_window(pnr_window * rescaled_beta + msa_window * beta_waveform);
-    }
+      { /* Below Mf_beta_lower, we use a rescaled form of the PN beta.
+	 * In the case of a two-spin system, the PN beta used may have the two-spin
+	 * oscillations tapered away to connect nicely at Mf_beta_lower */
+	REAL8 pnr_beta, pn_beta;
+	if (pPrec->IMRPhenomXPrecVersion!=330){
+	  REAL8 betaPN = IMRPhenomX_PNR_GetPNBetaAtFreq(Mf, betaParams, pWF, pPrec, pWF_SingleSpin, pPrec_SingleSpin);
+	  REAL8 beta_waveform = IMRPhenomX_PNR_PNWaveformBetaWrapper(Mf, betaPN, pWF, pPrec);
+	  REAL8 rescaled_beta = beta_waveform * IMRPhenomX_PNR_rescale_beta_expression(Mf, betaParams);
+	  pnr_beta = rescaled_beta;
+	  pn_beta = beta_waveform;
+	}
+	else{
+	  pPrec->UseMRbeta = 1;
+	  REAL8 betaPN1 = IMRPhenomX_PNR_GetPNBetaAtFreq(Mf, betaParams, pWF, pPrec, pWF_SingleSpin, pPrec_SingleSpin);
+	  REAL8 beta_waveform1 = IMRPhenomX_PNR_PNWaveformBetaWrapper(Mf, betaPN1, pWF, pPrec);
+	  REAL8 rescaled_beta1 = beta_waveform1 * IMRPhenomX_PNR_rescale_beta_expression(Mf, betaParams);
+	  pPrec->UseMRbeta = 0;
+	  REAL8 betaPN2 = IMRPhenomX_PNR_GetPNBetaAtFreq(Mf, betaParams, pWF, pPrec, pWF_SingleSpin, pPrec_SingleSpin);
+	  REAL8 beta_waveform2 = IMRPhenomX_PNR_PNWaveformBetaWrapper(Mf, betaPN2, pWF, pPrec);
+	  pnr_beta = rescaled_beta1;
+	  pn_beta = beta_waveform2;
+	}
+	return IMRPhenomX_PNR_arctan_window(pnr_window * pnr_beta + msa_window * pn_beta);
+      }
 
     if (Mf >= Mf_beta_upper)
-    { /* above Mf_beta_upper, attach the final value of beta*/
-      REAL8 betaPN = IMRPhenomX_PNR_GetPNBetaAtFreq(Mf, betaParams, pWF, pPrec, pWF_SingleSpin, pPrec_SingleSpin);
-      REAL8 beta_waveform = IMRPhenomX_PNR_PNWaveformBetaWrapper(Mf, betaPN, pWF, pPrec);
-      REAL8 final_beta = IMRPhenomX_PNR_MR_beta_expression(Mf_beta_upper, betaParams);
-      return IMRPhenomX_PNR_arctan_window(pnr_window * final_beta + msa_window * beta_waveform);
-    }
+      { /* above Mf_beta_upper, attach the final value of beta*/
+	pPrec->UseMRbeta = 0;
+	REAL8 betaPN = IMRPhenomX_PNR_GetPNBetaAtFreq(Mf, betaParams, pWF, pPrec, pWF_SingleSpin, pPrec_SingleSpin);
+	REAL8 beta_waveform = IMRPhenomX_PNR_PNWaveformBetaWrapper(Mf, betaPN, pWF, pPrec);
+	REAL8 final_beta = IMRPhenomX_PNR_MR_beta_expression(Mf_beta_upper, betaParams);
+	return IMRPhenomX_PNR_arctan_window(pnr_window * final_beta + msa_window * beta_waveform);
+      }
 
     /* in between we evaluate the MR Ansatz */
+    pPrec->UseMRbeta = 0;
     REAL8 betaPN = IMRPhenomX_PNR_GetPNBetaAtFreq(Mf, betaParams, pWF, pPrec, pWF_SingleSpin, pPrec_SingleSpin);
     REAL8 beta_waveform = IMRPhenomX_PNR_PNWaveformBetaWrapper(Mf, betaPN, pWF, pPrec);
     REAL8 MR_beta = IMRPhenomX_PNR_MR_beta_expression(Mf, betaParams);
     return IMRPhenomX_PNR_arctan_window(pnr_window * MR_beta + msa_window * beta_waveform);
   }
-
   /**
    * We evaluate beta at the final Mf_beta_upper connection frequency
    * to approximate the final value of beta during ringdown. This
@@ -186,7 +220,7 @@ extern "C"
       IMRPhenomXPrecessionStruct *pPrec,                /**< PhenomX precession struct */
       IMRPhenomXWaveformStruct *pWF_SingleSpin,         /**< PhenomX waveform struct with approximate single spin */
       IMRPhenomXPrecessionStruct *pPrec_SingleSpin      /**< PhenomX waveform struct with approximate single spin */
-  )
+				       )
   {
 
     REAL8 beta;
@@ -196,142 +230,189 @@ extern "C"
     const double omega_cbrt = cbrt(omega);
 
     switch (pPrec->IMRPhenomXPrecVersion)
-    {
-    /* ~~~~~ Use NNLO PN Euler Angles - Appendix G of arXiv:2004.06503 and https://dcc.ligo.org/LIGO-T1500602 ~~~~~ */
-    case 101:
-    case 102:
-    case 103:
-    case 104:
-    {
-      REAL8 L = XLALSimIMRPhenomXLPNAnsatz(omega_cbrt, pWF->eta / omega_cbrt, pPrec->L0, pPrec->L1, pPrec->L2, pPrec->L3, pPrec->L4, pPrec->L5, pPrec->L6, pPrec->L7, pPrec->L8, pPrec->L8L);
+      {
+	/* ~~~~~ Use NNLO PN Euler Angles - Appendix G of arXiv:2004.06503 and https://dcc.ligo.org/LIGO-T1500602 ~~~~~ */
+      case 101:
+      case 102:
+      case 103:
+      case 104:
+	{
+	  REAL8 L = XLALSimIMRPhenomXLPNAnsatz(omega_cbrt, pWF->eta / omega_cbrt, pPrec->L0, pPrec->L1, pPrec->L2, pPrec->L3, pPrec->L4, pPrec->L5, pPrec->L6, pPrec->L7, pPrec->L8, pPrec->L8L);
 
-      /*
-        Comment from IMRPhenomX_precession.c:
-        We ignore the sign of L + SL below:
-          s := Sp / (L + SL)
-      */
-      REAL8 s = pPrec->Sperp / (L + pPrec->SL);
-      REAL8 s2 = s * s;
-      beta = acos(copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2));
+	  /*
+	    Comment from IMRPhenomX_precession.c:
+	    We ignore the sign of L + SL below:
+	    s := Sp / (L + SL)
+	  */
+	  REAL8 s = pPrec->Sperp / (L + pPrec->SL);
+	  REAL8 s2 = s * s;
+	  beta = acos(copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2));
 
-      break;
-    }
-    case 220:
-    case 221:
-    case 222:
-    case 223:
-    case 224:
-    {
-      vector vangles = {0., 0., 0.};
+	  break;
+	}
+      case 220:
+      case 221:
+      case 222:
+      case 223:
+      case 224:
+	{
+	  vector vangles = {0., 0., 0.};
 
-      /* ~~~~~ Euler Angles from Chatziioannou et al, PRD 95, 104004, (2017), arXiv:1703.03967 ~~~~~ */
-      /* First we grab the full MSA angle with possible two-spin oscillations */
-      vangles = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(omega_cbrt, pWF, pPrec);
-      REAL8 beta_full = acos(vangles.z);
+	  /* ~~~~~ Euler Angles from Chatziioannou et al, PRD 95, 104004, (2017), arXiv:1703.03967 ~~~~~ */
+	  /* First we grab the full MSA angle with possible two-spin oscillations */
+	  vangles = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(omega_cbrt, pWF, pPrec);
+	  REAL8 beta_full = acos(vangles.z);
 
-      /* lower connection frequency as target for taper */
-      REAL8 Mf_beta_lower = betaParams->Mf_beta_lower;
+	  /* lower connection frequency as target for taper */
+	  REAL8 Mf_beta_lower = betaParams->Mf_beta_lower;
 
-      /* check if we have meaningful two-spin contributions */
-      if (IMRPhenomX_PNR_CheckTwoSpin(pPrec))
-      { /* we do */
-        /* compute an effective single-spin beta that averages through oscillations */
-        const vector vangles_SingleSpin = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(omega_cbrt, pWF_SingleSpin, pPrec_SingleSpin);
-        REAL8 beta_SingleSpin = acos(vangles_SingleSpin.z);
+	  /* check if we have meaningful two-spin contributions */
+	  if (IMRPhenomX_PNR_CheckTwoSpin(pPrec))
+	    { /* we do */
+	      /* compute an effective single-spin beta that averages through oscillations */
+	      const vector vangles_SingleSpin = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(omega_cbrt, pWF_SingleSpin, pPrec_SingleSpin);
+	      REAL8 beta_SingleSpin = acos(vangles_SingleSpin.z);
 
-        /* if we are below the connection frequency, taper the oscillations */
-        if (Mf <= Mf_beta_lower)
-        {
-          /* tapering is described in Eq. 45 of arXiv:2107.08876 */
-          REAL8 oscillations = beta_full - beta_SingleSpin;
-          REAL8 envelope = cos(2.0 * LAL_PI * Mf / (4.0 * Mf_beta_lower)) * cos(2.0 * LAL_PI * Mf / (4.0 * Mf_beta_lower));
-          beta = (beta_SingleSpin + oscillations * envelope);
-        }
-        else
-        { /* otherwise just return single-spin beta */
-          beta = beta_SingleSpin;
-        }
+	      /* if we are below the connection frequency, taper the oscillations */
+	      if (Mf <= Mf_beta_lower)
+		{
+		  /* tapering is described in Eq. 45 of arXiv:2107.08876 */
+		  REAL8 oscillations = beta_full - beta_SingleSpin;
+		  REAL8 envelope = cos(2.0 * LAL_PI * Mf / (4.0 * Mf_beta_lower)) * cos(2.0 * LAL_PI * Mf / (4.0 * Mf_beta_lower));
+		  beta = (beta_SingleSpin + oscillations * envelope);
+		}
+	      else
+		{ /* otherwise just return single-spin beta */
+		  beta = beta_SingleSpin;
+		}
+	    }
+	  else
+	    { /* no oscillations, just return full beta */
+	      beta = beta_full;
+	    }
+
+	  break;
+	}
+      case 330:
+	{
+
+	  REAL8 beta_full= beta_SpinTaylor_IMR(Mf,pWF,pPrec,betaParams);
+    if(isnan(beta_full) || isinf(beta_full)) XLAL_ERROR(XLAL_EINVAL, "Error in %s: beta_SpinTaylor_IMR returned invalid value.\n",__func__);
+
+	  /* lower connection frequency as target for taper */
+	  REAL8 Mf_beta_lower = betaParams->Mf_beta_lower;
+
+
+	  /* check if we have meaningful two-spin contributions */
+	  if (IMRPhenomX_PNR_CheckTwoSpin(pPrec))
+	    { /* we do */
+	      /* compute an effective single-spin beta that averages through oscillations */
+	      const vector vangles_SingleSpin = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(omega_cbrt, pWF_SingleSpin, pPrec_SingleSpin);
+	      REAL8 beta_SingleSpin = acos(vangles_SingleSpin.z);
+
+	      /* if we are below the connection frequency, taper the oscillations */
+	      if (Mf <= Mf_beta_lower)
+		{
+		  /* tapering is described in Eq. 45 of arXiv:2107.08876 */
+		  REAL8 oscillations = beta_full - beta_SingleSpin;
+		  REAL8 envelope = cos(2.0 * LAL_PI * Mf / (4.0 * Mf_beta_lower)) * cos(2.0 * LAL_PI * Mf / (4.0 * Mf_beta_lower));
+		  beta = (beta_SingleSpin + oscillations * envelope);
+		}
+	      else
+		{ /* otherwise just return single-spin beta */
+		  beta = beta_SingleSpin;
+		}
+	    }
+	  else
+	    { /* no oscillations, just return full beta */
+	      beta = beta_full;
+	    }
+
+	  break;
+	}
+      default:
+	{
+	  XLAL_ERROR(XLAL_EINVAL, "Error: IMRPhenomXPrecessionVersion not recognized in IMRPhenomX_PNR_GetPNBetaAtFreq.\n");
+	  break;
+	}
       }
-      else
-      { /* no oscillations, just return full beta */
-        beta = beta_full;
-      }
 
-      break;
-    }
-    default:
-    {
-      XLAL_ERROR(XLAL_EINVAL, "Error: IMRPhenomXPrecessionVersion not recognized in IMRPhenomX_PNR_GetPNBetaAtFreq.\n");
-      break;
-    }
-    }
+     return beta;
+   }
 
-    return beta;
-  }
+   /**
+    * A wrapper to produce either the NNLO or MSA beta depending on the IMRPhenomXPrecVersion.
+    *
+    * This version does not modify the two-spin oscillations.
+    */
 
-  /**
-   * A wrapper to produce either the NNLO or MSA beta depending on the IMRPhenomXPrecVersion.
-   *
-   * This version does not modify the two-spin oscillations.
-   */
+   REAL8 IMRPhenomX_PNR_GetPNBetaAtFreq_fulltwospin(
+       REAL8 Mf,                          /**< geometric frequency */
+       IMRPhenomXWaveformStruct *pWF,     /**< PhenomX waveform struct */
+       IMRPhenomXPrecessionStruct *pPrec, /**< PhenomX precession struct */
+       const IMRPhenomX_PNR_beta_parameters *betaParams /**< beta parameter struct */
+						    )
+   {
+     REAL8 beta;
 
-  REAL8 IMRPhenomX_PNR_GetPNBetaAtFreq_fulltwospin(
-      REAL8 Mf,                         /**< geometric frequency */
-      IMRPhenomXWaveformStruct *pWF,    /**< PhenomX waveform struct */
-      IMRPhenomXPrecessionStruct *pPrec /**< PhenomX precession struct */
-  )
-  {
-    REAL8 beta;
+     /* get PN expansion parameter v = (pi M f)^(1/3) */
+     const double omega = LAL_PI * Mf;
+     const double omega_cbrt = cbrt(omega);
 
-    /* get PN expansion parameter v = (pi M f)^(1/3) */
-    const double omega = LAL_PI * Mf;
-    const double omega_cbrt = cbrt(omega);
+     switch (pPrec->IMRPhenomXPrecVersion)
+       {
+	 /* ~~~~~ Use NNLO PN Euler Angles - Appendix G of arXiv:2004.06503 and https://dcc.ligo.org/LIGO-T1500602 ~~~~~ */
+       case 101:
+       case 102:
+       case 103:
+       case 104:
+	 {
 
-    switch (pPrec->IMRPhenomXPrecVersion)
-    {
-    /* ~~~~~ Use NNLO PN Euler Angles - Appendix G of arXiv:2004.06503 and https://dcc.ligo.org/LIGO-T1500602 ~~~~~ */
-    case 101:
-    case 102:
-    case 103:
-    case 104:
-    {
+	   const REAL8 L = XLALSimIMRPhenomXLPNAnsatz(omega_cbrt, pWF->eta / omega_cbrt, pPrec->L0, pPrec->L1, pPrec->L2, pPrec->L3, pPrec->L4, pPrec->L5, pPrec->L6, pPrec->L7, pPrec->L8, pPrec->L8L);
 
-      const REAL8 L = XLALSimIMRPhenomXLPNAnsatz(omega_cbrt, pWF->eta / omega_cbrt, pPrec->L0, pPrec->L1, pPrec->L2, pPrec->L3, pPrec->L4, pPrec->L5, pPrec->L6, pPrec->L7, pPrec->L8, pPrec->L8L);
+	   /*  Comment from IMRPhenomX_precession.c:
+	       We ignore the sign of L + SL below:
+	       s := Sp / (L + SL)
+	   */
+	   REAL8 s = pPrec->Sperp / (L + pPrec->SL);
+	   REAL8 s2 = s * s;
+	   beta = acos(copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2));
 
-      /*  Comment from IMRPhenomX_precession.c:
-          We ignore the sign of L + SL below:
-          s := Sp / (L + SL)
-      */
-      REAL8 s = pPrec->Sperp / (L + pPrec->SL);
-      REAL8 s2 = s * s;
-      beta = acos(copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2));
+	   break;
+	 }
+       case 220:
+       case 221:
+       case 222:
+       case 223:
+       case 224:
+	 {
+	   vector vangles = {0., 0., 0.};
 
-      break;
-    }
-    case 220:
-    case 221:
-    case 222:
-    case 223:
-    case 224:
-    {
-      vector vangles = {0., 0., 0.};
+	   /* ~~~~~ Euler Angles from Chatziioannou et al, PRD 95, 104004, (2017), arXiv:1703.03967 ~~~~~ */
+	   vangles = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(omega_cbrt, pWF, pPrec);
 
-      /* ~~~~~ Euler Angles from Chatziioannou et al, PRD 95, 104004, (2017), arXiv:1703.03967 ~~~~~ */
-      vangles = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(omega_cbrt, pWF, pPrec);
+	   beta = acos(vangles.z);
 
-      beta = acos(vangles.z);
+	   break;
+	 }
+       case 330:
+	 {
 
-      break;
-    }
-    default:
-    {
-      XLAL_ERROR(XLAL_EINVAL, "Error: IMRPhenomXPrecessionVersion not recognized in IMRPhenomX_PNR_GetPNBetaAtFreq_fulltwospin.\n");
-      break;
-    }
-    }
+	   beta= beta_SpinTaylor_IMR(Mf,pWF,pPrec,betaParams);
+     if(isnan(beta) || isinf(beta)) XLAL_ERROR(XLAL_EINVAL, "Error in %s: beta_SpinTaylor_IMR returned invalid value.\n",__func__);
 
-    return beta;
-  }
+	   break;
+
+	 }
+       default:
+	 {
+	   XLAL_ERROR(XLAL_EINVAL, "Error: IMRPhenomXPrecessionVersion not recognized in IMRPhenomX_PNR_GetPNBetaAtFreq_fulltwospin.\n");
+	   break;
+	 }
+       }
+
+     return beta;
+   }
 
   /**
    * A wrapper to generate the "waveform" PN beta from Eq. 41 of arXiv:2107.08876.
@@ -479,7 +560,20 @@ extern "C"
 
     /* get effective single spin parameters */
     REAL8 eta = pWF->eta;
-    REAL8 chi = pPrec->chi_singleSpin;
+    if( pPrec->IMRPhenomXPrecVersion==330 ){
+      eta = ( pWF->eta >= 0.09 ) ? pPrec->eta : 0.09;
+    }
+    else{
+      eta = pWF->eta;
+    }
+    REAL8 chiboundary = 0.80 - 0.20 * exp( -pow((pWF->q - 6.0)/1.5, 8) );
+    REAL8 chi;
+    if( pPrec->IMRPhenomXPrecVersion==330 ){
+      chi = ( pPrec->chi_singleSpin <= chiboundary ) ? pPrec->chi_singleSpin : chiboundary;
+    }
+    else{
+      chi = pPrec->chi_singleSpin;
+    }
     REAL8 costheta = pPrec->costheta_singleSpin;
 
     /* approximate orientation of final spin */
@@ -1049,6 +1143,9 @@ extern "C"
     /* generate beta connection frequencies*/
     IMRPhenomX_PNR_BetaConnectionFrequencies(betaParams);
 
+    if((pPrec->IMRPhenomXPrecVersion==330)&&(betaParams->Mf_beta_lower-2.*dMf<pPrec->Mfmin_integration))
+      betaParams->Mf_beta_lower = 100.;
+
     /* evaluate expressions for beta at lower connection frequency */
     REAL8 Mf_beta_lower = betaParams->Mf_beta_lower;
 
@@ -1088,6 +1185,222 @@ extern "C"
 
     return XLAL_SUCCESS;
   }
+
+  /**
+   * Function to calculate beta and first derivative at connection frequency between SpinTaylor and PNR angles
+   */
+
+  int IMRPhenomX_ST_PNR_beta_connection_parameters(
+      IMRPhenomX_PNR_beta_parameters *betaParams,  /**< beta parameter struct */
+      IMRPhenomXWaveformStruct *pWF,               /**< PhenomX waveform struct */
+      IMRPhenomXPrecessionStruct *pPrec,           /**< PhenomX precession struct */
+      IMRPhenomXWaveformStruct *pWF_SingleSpin,       /**< PhenomX waveform struct with max-spin mapping */
+      IMRPhenomXPrecessionStruct *pPrec_SingleSpin    /**< PhenomX precession struct with max-spin mapping */
+
+  )
+  {
+    /* may we continue? Single-spin structs might be NULL */
+    XLAL_CHECK(betaParams != NULL, XLAL_EFAULT);
+    XLAL_CHECK(pPrec != NULL, XLAL_EFAULT);
+
+    /* define frequency spacing over which to calculate derivatives */
+    /* here set to be 0.0005Mf */
+    REAL8 dMf = 0.0005;
+
+    /* generate beta connection frequencies*/
+    IMRPhenomX_PNR_BetaConnectionFrequencies(betaParams);
+
+    /* frequencies marking beginning and end of interpolation region */
+    REAL8 ftrans = ( pPrec->ftrans_MRD <= 0.9*betaParams->Mf_beta_lower ) ? pPrec->ftrans_MRD : 0.9*betaParams->Mf_beta_lower;
+    REAL8 MfA = ( ftrans-dMf  < pPrec->Mfmin_integration + 2.*dMf ? pPrec->Mfmin_integration + 2*dMf : ftrans - dMf );
+    REAL8 MfB = betaParams->Mf_beta_lower;
+
+    /* evaulate SpinTaylor angles around lower connection frequency */
+    REAL8 cosbeta=0.;
+    int status=GSL_SUCCESS;
+
+    status=gsl_spline_eval_e(pPrec->cosbeta_spline, MfA - dMf, pPrec->cosbeta_acc,&cosbeta);
+    XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "%s: error in beta interpolation for q=%.12f, Mtot=%.12f and chi1=[%.12f, %.12f,%.12f], chi2=[%.12f, %.12f,%.12f]\n",__func__,pWF->q,pWF->M, pPrec->chi1x,pPrec->chi1y,pPrec->chi1z,pPrec->chi2x,pPrec->chi2y,pPrec->chi2z);
+    REAL8 bA1 = acos(MAX(-1, MIN(1, cosbeta)));
+
+    status=gsl_spline_eval_e(pPrec->cosbeta_spline, MfA, pPrec->cosbeta_acc,&cosbeta);
+    XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "%s: error in beta interpolation for q=%.12f, Mtot=%.12f and chi1=[%.12f, %.12f,%.12f], chi2=[%.12f, %.12f,%.12f]\n",__func__,pWF->q,pWF->M, pPrec->chi1x,pPrec->chi1y,pPrec->chi1z,pPrec->chi2x,pPrec->chi2y,pPrec->chi2z);
+    REAL8 bA = acos(MAX(-1, MIN(1, cosbeta)));
+
+    status=gsl_spline_eval_e(pPrec->cosbeta_spline, MfA + dMf, pPrec->cosbeta_acc,&cosbeta);
+    XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "%s: error in beta interpolation for q=%.12f, Mtot=%.12f and chi1=[%.12f, %.12f,%.12f], chi2=[%.12f, %.12f,%.12f]\n",__func__,pWF->q,pWF->M, pPrec->chi1x,pPrec->chi1y,pPrec->chi1z,pPrec->chi2x,pPrec->chi2y,pPrec->chi2z);
+    REAL8 bA2 = acos(MAX(-1, MIN(1, cosbeta)));
+
+    /* evaluate single-spin MSA angles at upper connection frequency */
+    const double omega = LAL_PI * MfB;
+    const double domega = LAL_PI * dMf;
+
+    REAL8 bB1, bB, bB2;
+    if (IMRPhenomX_PNR_CheckTwoSpin(pPrec))
+      {
+	const vector vangles_SingleSpin1 = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(cbrt(omega - domega), pWF_SingleSpin, pPrec_SingleSpin);
+	bB1 = acos(vangles_SingleSpin1.z);
+
+	const vector vangles_SingleSpin2 = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(cbrt(omega), pWF_SingleSpin, pPrec_SingleSpin);
+	bB = acos(vangles_SingleSpin2.z);
+
+	const vector vangles_SingleSpin3 = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(cbrt(omega + domega), pWF_SingleSpin, pPrec_SingleSpin);
+	bB2 = acos(vangles_SingleSpin3.z);
+      }
+    else
+      {
+	int user_version = pPrec->IMRPhenomXPrecVersion;
+        pPrec->IMRPhenomXPrecVersion=223;
+        IMRPhenomX_Initialize_MSA_System(pWF,pPrec,pPrec->ExpansionOrder);
+        pPrec->IMRPhenomXPrecVersion=user_version;
+
+        const vector vangles_SingleSpin1 = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(cbrt(omega - domega), pWF, pPrec);
+        bB1 = acos(vangles_SingleSpin1.z);
+
+        const vector vangles_SingleSpin2 = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(cbrt(omega), pWF, pPrec);
+        bB = acos(vangles_SingleSpin2.z);
+
+        const vector vangles_SingleSpin3 = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(cbrt(omega + domega), pWF, pPrec);
+        bB2 = acos(vangles_SingleSpin3.z);
+      }
+
+    /* compute numerical gradient */
+    REAL8 dbA = (bA2-bA1)/(2.0*dMf);
+    REAL8 dbB = (bB2-bB1)/(2.0*dMf);
+
+    /* compute and store connection co-efficients */
+    REAL8 b0 = IMRPhenomX_ST_PNR_beta_coeffs_0( MfA, MfB, bA, bA, dbA, dbB );
+    REAL8 b1 = IMRPhenomX_ST_PNR_beta_coeffs_1( MfA, MfB, bA, bA, dbA, dbB );
+    REAL8 b2 = IMRPhenomX_ST_PNR_beta_coeffs_2( MfA, MfB, bA, bA, dbA, dbB );
+    REAL8 b3 = IMRPhenomX_ST_PNR_beta_coeffs_3( MfA, MfB, bA, bA, dbA, dbB );
+
+    betaParams->beta_interp_0 = b0;
+    betaParams->beta_interp_1 =	b1;
+    betaParams->beta_interp_2 =	b2;
+    betaParams->beta_interp_3 =	b3;
+
+    /* Now parameters for rescaling */
+
+    REAL8 bBnew = IMRPhenomX_PNR_CheckTwoSpin(pPrec) ? bB : bA;
+    // MSA value if two spin because already tapered to this point
+    // SpinTaylor otherwise to avoid introducing kink in beta where ST and MSA apparoximants disagree
+
+    REAL8 bC1 = IMRPhenomX_PNR_PNWaveformBetaWrapper(MfB - dMf, bB1, pWF, pPrec);
+    REAL8 bC  = IMRPhenomX_PNR_PNWaveformBetaWrapper(MfB, bBnew, pWF, pPrec);
+    REAL8 bC2 = IMRPhenomX_PNR_PNWaveformBetaWrapper(MfB + dMf, bB2, pWF, pPrec);
+
+    REAL8 bD1 = IMRPhenomX_PNR_MR_beta_expression(MfB - dMf, betaParams);
+    REAL8 bD  = IMRPhenomX_PNR_MR_beta_expression(MfB, betaParams);
+    REAL8 bD2 = IMRPhenomX_PNR_MR_beta_expression(MfB + dMf, betaParams);
+
+    /* calculate derivative of beta at connection frequencies using central finite difference method */
+    REAL8 dbC = (bC2 - bC1) / (2.0 * dMf);
+    REAL8 dbD = (bD2 - bD1) / (2.0 * dMf);
+
+    /* compute the inspiral rescaling */
+    REAL8 beta_rescale_1 = IMRPhenomX_PNR_beta_rescaling_1(MfB, bC, bD, dbC, dbD);
+    REAL8 beta_rescale_2 = IMRPhenomX_PNR_beta_rescaling_2(MfB, bC, bD, dbC, dbD);
+
+    beta_rescale_1 = isnan(beta_rescale_1) ? 0.0 : beta_rescale_1;
+    beta_rescale_2 = isnan(beta_rescale_2) ? 0.0 : beta_rescale_2;
+
+    /* save beta values to the parameter dict */
+    betaParams->beta_lower = bC;
+    betaParams->beta_upper = bD;
+    betaParams->derivative_beta_lower = dbC;
+    betaParams->derivative_beta_upper = dbD;
+    betaParams->beta_rescale_1 = beta_rescale_1;
+    betaParams->beta_rescale_2 = beta_rescale_2;
+
+    //printf("%f, %f \n", beta_rescale_1, beta_rescale_2);
+    //printf("%f, %f, %f, %f, %f, %f \n", MfA, MfB, bA, bB, dbA, dbB);
+    //printf("%f, %f, %f, %f\n", betaParams->beta_interp_0, betaParams->beta_interp_1, betaParams->beta_interp_2, betaParams->beta_interp_3);
+    //printf("-------\n");
+
+    return XLAL_SUCCESS;
+  }
+
+  /**
+   * Series of functions to calculation co-efficients in beta interpolation function
+   * These expressions come from enforcing C(1) connectivity to the ST and PNR expressions
+   * See discussion below Eq. (19) in https://dcc.ligo.org/LIGO-T2400368
+   */
+
+  REAL8 IMRPhenomX_ST_PNR_beta_coeffs_0(
+      REAL8 Mf1,     /**< geometric frequency at lower connection point */
+      REAL8 Mf2,     /**< geometric frequency at lower connection point */
+      REAL8 beta1,  /**< PN beta evaluated at Mf1 */
+      REAL8 beta2,  /**< MR beta evaluated at Mf2 */
+      REAL8 dbeta1, /**< derivative of PN beta at Mf1 */
+      REAL8 dbeta2  /**< derivative of MR beta at Mf2 */
+  )
+  {
+    REAL8 Mf1_2 = Mf1*Mf1;
+    REAL8 Mf1_3 = Mf1_2*Mf1;
+
+    REAL8 Mf2_2 = Mf2*Mf2;
+    REAL8 Mf2_3 = Mf2_2*Mf2;
+
+    REAL8 N = -beta2*Mf1_3 + 3*beta2*Mf1_2*Mf2 + dbeta2*Mf1_3*Mf2 - 3*beta1*Mf1*Mf2_2 + dbeta1*Mf1_2*Mf2_2 - dbeta2*Mf1_2*Mf2_2 + beta1*Mf2_3 - dbeta1*Mf1*Mf2_3;
+    REAL8 D = (Mf1-Mf2)*(Mf1-Mf2)*(Mf1-Mf2);
+
+    return -N/D;
+  }
+
+  REAL8 IMRPhenomX_ST_PNR_beta_coeffs_1(
+      REAL8 Mf1,     /**< geometric frequency at lower connection point */
+      REAL8 Mf2,     /**< geometric frequency at lower connection point */
+      REAL8 beta1,  /**< PN beta evaluated at Mf1 */
+      REAL8 beta2,  /**< MR beta evaluated at Mf2 */
+      REAL8 dbeta1, /**< derivative of PN beta at Mf1 */
+      REAL8 dbeta2  /**< derivative of MR beta at Mf2 */
+  )
+  {
+    REAL8 Mf1_2 = Mf1*Mf1;
+    REAL8 Mf1_3 = Mf1_2*Mf1;
+
+    REAL8 Mf2_2 = Mf2*Mf2;
+    REAL8 Mf2_3 = Mf2_2*Mf2;
+
+    REAL8 N = -dbeta2*Mf1_3 + 6*beta1*Mf1*Mf2 - 6*beta2*Mf1*Mf2 - 2*dbeta1*Mf1_2*Mf2 - dbeta2*Mf1_2*Mf2 + dbeta1*Mf1*Mf2_2 + 2*dbeta2*Mf1*Mf2_2 + dbeta1*Mf2_3;
+    REAL8 D = (Mf1-Mf2)*(Mf1-Mf2)*(Mf1-Mf2);
+
+    return -N/D;
+    }
+
+  REAL8 IMRPhenomX_ST_PNR_beta_coeffs_2(
+      REAL8 Mf1,     /**< geometric frequency at lower connection point */
+      REAL8 Mf2,     /**< geometric frequency at lower connection point */
+      REAL8 beta1,  /**< PN beta evaluated at Mf1 */
+      REAL8 beta2,  /**< MR beta evaluated at Mf2 */
+      REAL8 dbeta1, /**< derivative of PN beta at Mf1 */
+      REAL8 dbeta2  /**< derivative of MR beta at Mf2 */
+    )
+    {
+      REAL8 Mf1_2 = Mf1*Mf1;
+      REAL8 Mf2_2 = Mf2*Mf2;
+
+      REAL8 N = -3*(beta1 - beta2)*(Mf1 + Mf2) + (dbeta1 + 2*dbeta2)*Mf1_2 + (dbeta1 - dbeta2)*Mf1*Mf2 - (2*dbeta1 + dbeta2)*Mf2_2;
+      REAL8 D = (Mf1-Mf2)*(Mf1-Mf2)*(Mf1-Mf2);
+
+      return -N/D;
+    }
+
+    REAL8 IMRPhenomX_ST_PNR_beta_coeffs_3(
+        REAL8 Mf1,     /**< geometric frequency at lower connection point */
+        REAL8 Mf2,     /**< geometric frequency at lower connection point */
+        REAL8 beta1,  /**< PN beta evaluated at Mf1 */
+	REAL8 beta2,  /**< MR beta evaluated at Mf2 */
+        REAL8 dbeta1, /**< derivative of PN beta at Mf1 */
+	REAL8 dbeta2  /**< derivative of MR beta at Mf2 */
+    )
+    {
+
+      REAL8 N = 2*(beta1-beta2) - (dbeta1+dbeta2)*(Mf1-Mf2);
+      REAL8 D = (Mf1-Mf2)*(Mf1-Mf2)*(Mf1-Mf2);
+
+      return -N/D;
+    }
 
   /**
    * Utility function to compute the arctan windowing described

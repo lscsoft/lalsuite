@@ -42,6 +42,8 @@ extern "C" {
 #include "LALSimIMRPhenomXHM.h"
 #include "LALSimIMRPhenomXHM_internals.h"
 
+//#include "LALSimIMRPhenomX_PNR_beta.h"
+
 #include <lal/LALStdlib.h>
 #include <lal/LALSimIMR.h>
 #include <lal/LALConstants.h>
@@ -434,8 +436,8 @@ typedef struct tagIMRPhenomXPrecessionStruct
         gsl_interp_accel *gamma_acc;
 
         REAL8 Mfmax_angles;
-        REAL8 alpha_ref;
-        REAL8 gamma_ref;
+        REAL8 alpha_ref; /**< Record value of alpha at f_ref */
+        REAL8 gamma_ref; /**< Record value of gamma at f_ref */
         REAL8 alpha_ftrans; /**< Record value of alpha at end of inspiral, used in IMRPhenomXPHMTwistUp and IMRPhenomXPHMTwistUpOneMode */
         REAL8 cosbeta_ftrans; /**< Record value of cosbeta at end of inspiral, used in IMRPhenomXPHMTwistUp and IMRPhenomXPHMTwistUpOneMode */
         REAL8 gamma_ftrans; /**< Record value of gamma at end of inspiral, used in IMRPhenomXPHMTwistUp and IMRPhenomXPHMTwistUpOneMode */
@@ -448,7 +450,11 @@ typedef struct tagIMRPhenomXPrecessionStruct
         REAL8 deltaf_interpolation;
         INT4 M_MIN;
         INT4 M_MAX;
+        INT4 L_MAX_PNR;
         PhenomXPInspiralArrays *PNarrays;
+        REAL8 integration_buffer; /**< Buffer region for integration of SpinTaylor equations: added so that interpolated angles cover the frequency range requested by user  */
+        REAL8 fmin_integration; /**< Minimum frequency covered by the integration of PN spin-precessing equations for SpinTaylor models  */
+        REAL8 Mfmin_integration; /**< Minimum frequency covered by the integration of PN spin-precessing equations for SpinTaylor models  */
 
         INT4 MSA_ERROR; /**< Flag to track errors in initialization of MSA system. */
 
@@ -456,6 +462,16 @@ typedef struct tagIMRPhenomXPrecessionStruct
         REAL8 chi_singleSpin; /**< Magnitude of effective single spin used for tapering two-spin angles, Eq. 18 of arXiv:2107.08876 */
         REAL8 costheta_singleSpin; /**< Polar angle of effective single spin, Eq. 19 or arXiv:2107.08876 */
         REAL8 costheta_final_singleSpin; /**< Polar angle of approximate final spin, see technical document FIXME: add reference */
+
+	      REAL8 chi_maxSpin;
+        REAL8 costheta_maxSpin;
+
+        REAL8 chi1x_evolved; /**< x-component of spin on primary at end of SpinTaylor evolution */
+        REAL8 chi1y_evolved; /**< y-component of spin on primary at end of SpinTaylor evolution */
+        REAL8 chi1z_evolved; /**< z-component of spin on primary at end of SpinTaylor evolution */
+        REAL8 chi2x_evolved; /**< x-component of spin on secondary at end of SpinTaylor evolution */
+        REAL8 chi2y_evolved; /**< y-component of spin on secondary at end of SpinTaylor evolution */
+        REAL8 chi2z_evolved; /**< z-component of spin on secondary at end of SpinTaylor evolution */
 
         REAL8 chi_singleSpin_antisymmetric; /**< magnitude of effective single spin of a two spin system for the antisymmetric waveform */
         REAL8 theta_antisymmetric; /**< Polar angle effective single spin for antisymmetric waveform */
@@ -491,6 +507,17 @@ typedef struct tagIMRPhenomXPrecessionStruct
         REAL8 betaPNR;
         REAL8 gammaPNR;
 
+        /* flag to use MR beta or analytic continuation with PNR angles */
+        UINT4 UseMRbeta;
+
+        REAL8 Mf_alpha_lower;
+
+        /* flag to toggle conditional precession multibanding */
+        UINT4 conditionalPrecMBand;
+
+        LALDict *LALparams;
+
+
 } IMRPhenomXPrecessionStruct;
 
 double IMRPhenomX_L_norm_3PN_of_v(const double v, const double v2, const double L_norm, IMRPhenomXPrecessionStruct *pPrec);
@@ -515,7 +542,8 @@ REAL8 XLALSimIMRPhenomXLPNAnsatz(REAL8 v, REAL8 LN, REAL8 L0, REAL8 L1, REAL8 L2
 /* Function to check the maximum opening angle */
 int IMRPhenomXPCheckMaxOpeningAngle(
 	IMRPhenomXWaveformStruct *pWF,      /**< IMRPhenomX Waveform Struct */
-  IMRPhenomXPrecessionStruct *pPrec   /**< IMRPhenomX Precession Struct */
+  IMRPhenomXPrecessionStruct *pPrec,   /**< IMRPhenomX Precession Struct */
+  LALDict *lalParams /**< LAL dictionary */
 );
 
 /* ~~~~~~~~~~ Wigner Functions ~~~~~~~~~~ */
@@ -674,6 +702,7 @@ int IMRPhenomX_InterpolateGamma_SpinTaylor(REAL8 fmin, REAL8 fmax,IMRPhenomXWave
 int IMRPhenomX_SpinTaylorAnglesSplinesAll(REAL8 fmin,REAL8 fmax, IMRPhenomXWaveformStruct *pWF,IMRPhenomXPrecessionStruct *pPrec,LALDict *LALparams);
 int IMRPhenomX_InspiralAngles_SpinTaylor(
             PhenomXPInspiralArrays *arrays, /**< [out] Struct containing solutions returned by PNEvolveOrbit   */
+            double* fmin_PN, /**< [out] Minimum frequency in PN solutions array   */
             REAL8 chi1x,   /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) at fRef */
             REAL8 chi1y,   /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) at fRef */
             REAL8 chi1z,   /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) at fRef */
@@ -691,12 +720,12 @@ void IMRPhenomX_GetandSetModes(LALValue *ModeArray,IMRPhenomXPrecessionStruct *p
 
 int betaMRD_coeff(gsl_spline spline_cosb, gsl_interp_accel accel_cosb, double fmaxPN, IMRPhenomXWaveformStruct *pWF, IMRPhenomXPrecessionStruct *pPrec);
 double betaMRD(double Mf, IMRPhenomXWaveformStruct *pWF,PhenomXPbetaMRD *beta_params);
-
 int alphaMRD_coeff(gsl_spline spline_alpha, gsl_interp_accel accel_alpha, double fmaxPN, IMRPhenomXWaveformStruct *pWF, PhenomXPalphaMRD *alpha_params);
 double alphaMRD(double Mf, PhenomXPalphaMRD *alpha_params);
 double dalphaMRD(double Mf, PhenomXPalphaMRD *alpha_params);
+REAL8 alpha_SpinTaylor_IMR(REAL8 Mf,IMRPhenomXWaveformStruct *pWF,IMRPhenomXPrecessionStruct *pPrec);
 int gamma_from_alpha_cosbeta(double *gamma, double Mf, double deltaMf,IMRPhenomXWaveformStruct *pWF,IMRPhenomXPrecessionStruct *pPrec);
-
+double get_deltaF_from_wfstruct(IMRPhenomXWaveformStruct *pWF);
 
 #ifdef __cplusplus
 }

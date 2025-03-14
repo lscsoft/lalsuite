@@ -101,6 +101,9 @@ extern "C"
         XLAL_EFUNC,
         "Error: XLALIMRPhenomXPCheckMassesAndSpins failed in XLALSimIMRPhenomX_PNR_GeneratePNRAngles.\n");
 
+    status = IMRPhenomX_Initialize_Powers(&powers_of_lalpi, LAL_PI);
+    XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initialize useful powers of LAL_PI.");
+
     /* Ensure we have a dictionary */
     LALDict *lalParams_aux;
     if (lalParams == NULL)
@@ -188,6 +191,12 @@ extern "C"
     /* Initialize PhenomX Precession struct and check that it generated successfully */
     IMRPhenomXPrecessionStruct *pPrec;
     pPrec = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
+
+    /* If user chose SpinTaylor angles, set bounds for interpolation of angles */
+    int pflag = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
+    if(pflag==330)
+    pPrec->M_MIN = 2, pPrec->M_MAX = 2;
+
     status = IMRPhenomXGetAndSetPrecessionVariables(
         pWF,
         pPrec,
@@ -202,6 +211,18 @@ extern "C"
         lalParams_aux,
         DEBUG);
     XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
+
+    // overwrite the precessing version to account for fallbacks
+    XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(lalParams_aux,pPrec->IMRPhenomXPrecVersion);
+
+    /* If user selected SpinTaylor angles, compute all the splines for the Euler angles */
+    if(pPrec->IMRPhenomXPrecVersion==330){
+
+         status = IMRPhenomX_SpinTaylorAnglesSplinesAll(f_min_eval, f_max_eval, pWF, pPrec,lalParams_aux);
+         XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Error in %s: IMRPhenomX_SpinTaylorAnglesSplinesAll failed.\n",__func__);
+
+     }
+
 
     /* See if PNR angles were turned off in pPrec check */
     UsePNR = pPrec->IMRPhenomXPNRUseTunedAngles;
@@ -278,7 +299,7 @@ extern "C"
         *gammaPNR_ref = -(pPrec->epsilon_offset);
       }
     }
-
+    // CHECK ME: make sure all memory is freed when calling SpinTaylor model
     /* Clean up memory allocation */
     LALFree(pPrec);
     LALFree(pWF);
@@ -290,7 +311,7 @@ extern "C"
   /**
    * This is an external wrapper to generate the (l,m) PNR angles,
    * following the prescriptions outlined in arXiv:2107.08876
-   * and arXiv:##### FIXME: add reference,
+   * and arxiv.org:2312.10025,
    * given the standard inputs given to generate FD waveforms.
    */
   int XLALSimIMRPhenomX_PNR_GeneratePNRAnglesHM(
@@ -320,6 +341,13 @@ extern "C"
   {
     /* Simple check on masses and spins */
     UINT4 status = 0;
+
+    /* Initialize useful powers of pi for the higher modes internal code. */
+    status = IMRPhenomX_Initialize_Powers(&powers_of_lalpiHM, LAL_PI);
+    XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initialize useful powers of LAL_PI.");
+    status = IMRPhenomX_Initialize_Powers(&powers_of_lalpi, LAL_PI);
+    XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initialize useful powers of LAL_PI.");
+
     status = XLALIMRPhenomXPCheckMassesAndSpins(&m1_SI, &m2_SI, &chi1x, &chi1y, &chi1z, &chi2x, &chi2y, &chi2z);
     XLAL_CHECK(
         XLAL_SUCCESS == status,
@@ -375,15 +403,25 @@ extern "C"
         XLAL_EFUNC,
         "Error: deltaF needs to be a positive number!\n");
 
+    /* Specify arbitrary parameters for the angle generation */
+    REAL8 distance = 1.0;
+    REAL8 phiRef = 0.0;
+
+    /* Initialize PhenomX Waveform struct and check that it initialized correctly */
+    IMRPhenomXWaveformStruct *pWF;
+    pWF = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
+    status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, DEBUG);
+    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
+
+    /* Use the true minimum and maximum frequency values */
+    REAL8 f_min_eval = pWF->fMin;
+    REAL8 f_max_eval = pWF->f_max_prime;
+
     /* Generate a uniformly sampled frequency grid of spacing deltaF. */
     /* Frequencies will be set using only the lower and upper bounds that we passed */
-    size_t iStart = (size_t)(f_min / deltaF);
-    size_t iStop = (size_t)(f_max / deltaF) + 1;
-
-    XLAL_CHECK(
-        (iStart <= iStop),
-        XLAL_EDOM,
-        "Error: the starting frequency index is greater than the stopping index! Please ensure that f_min <= f_max.\n");
+    REAL8 df = (pWF->deltaF == 0.0) ? deltaF : pWF->deltaF;
+    size_t iStart = (size_t)(f_min_eval / df);
+    size_t iStop = (size_t)(f_max_eval / df) + 1;
 
     /* Allocate memory for frequency array and terminate if this fails */
     *freqs = XLALCreateREAL8Sequence(iStop - iStart);
@@ -410,26 +448,18 @@ extern "C"
     /* Populate frequency array */
     for (UINT4 i = iStart; i < iStop; i++)
     {
-      (*freqs)->data[i - iStart] = i * deltaF;
+      (*freqs)->data[i - iStart] = i * df;
     }
-
-    /* Specify arbitrary parameters for the angle generation */
-    REAL8 distance = 1.0;
-    REAL8 phiRef = 0.0;
-
-    /* Use the true minimum and maximum frequency values */
-    REAL8 f_min_eval = (*freqs)->data[0];
-    REAL8 f_max_eval = (*freqs)->data[(*freqs)->length - 1];
-
-    /* Initialize PhenomX Waveform struct and check that it initialized correctly */
-    IMRPhenomXWaveformStruct *pWF;
-    pWF = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-    status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min_eval, f_max_eval, distance, inclination, lalParams_aux, DEBUG);
-    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
     /* Initialize PhenomX Precession struct and check that it generated successfully */
     IMRPhenomXPrecessionStruct *pPrec;
     pPrec = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
+
+    /* If user chose SpinTaylor angles, set bounds for interpolation of inspiral angles */
+    int pflag = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
+    if(pflag==330)
+    pPrec->M_MIN = 1; pPrec->M_MAX = emmprime;
+
     status = IMRPhenomXGetAndSetPrecessionVariables(
         pWF,
         pPrec,
@@ -444,6 +474,15 @@ extern "C"
         lalParams_aux,
         DEBUG);
     XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
+
+    // overwrite the precessing version to account for fallbacks
+    XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(lalParams_aux,pPrec->IMRPhenomXPrecVersion);
+
+    /* If user selected SpinTaylor angles, compute all the splines for the angles and the relevant offsets */
+    if(pPrec->IMRPhenomXPrecVersion==330){
+        status=IMRPhenomX_Initialize_Euler_Angles(pWF,pPrec,lalParams_aux);
+        XLAL_CHECK(status==XLAL_SUCCESS, XLAL_EDOM, "%s: Error in IMRPhenomX_Initialize_Euler_Angles.\n",__func__);
+      }
 
     /* See if PNR angles were turned off in pPrec check */
     UsePNR = pPrec->IMRPhenomXPNRUseTunedAngles;
@@ -462,9 +501,16 @@ extern "C"
       {
         for (size_t i = 0; i < (*freqs)->length; i++)
         {
-          (*alphaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->alpha_spline, (*freqs)->data[i], hm_angle_spline->alpha_acc);
-          (*betaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->beta_spline, (*freqs)->data[i], hm_angle_spline->beta_acc);
-          (*gammaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->gamma_spline, (*freqs)->data[i], hm_angle_spline->gamma_acc);
+          if((*freqs)->data[i] <= pWF->f_max_prime){
+            (*alphaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->alpha_spline, (*freqs)->data[i], hm_angle_spline->alpha_acc);
+            (*betaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->beta_spline, (*freqs)->data[i], hm_angle_spline->beta_acc);
+            (*gammaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->gamma_spline, (*freqs)->data[i], hm_angle_spline->gamma_acc);
+          }
+          else{
+            (*alphaPNR)->data[i] = 0.0;
+            (*betaPNR)->data[i] = 0.0;
+            (*gammaPNR)->data[i] = 0.0;
+          }
         }
       }
       else
@@ -502,13 +548,19 @@ extern "C"
         for (size_t i = 0; i < (*freqs)->length; i++)
         {
           REAL8 Mf = XLALSimIMRPhenomXUtilsHztoMf((*freqs)->data[i], M);
-          /* Calculate the mapped frequency */
-          REAL8 Mf_mapped = IMRPhenomX_PNR_LinearFrequencyMap(Mf, ell, emmprime, Mf_low, Mf_high, Mf_RD_22, Mf_RD_lm, toggleInspiralScaling);
-          REAL8 f_mapped = XLALSimIMRPhenomXUtilsMftoHz(Mf_mapped, M);
+          if(Mf <= (pWF->f_max_prime * pWF->M_sec)){
+            /* Calculate the mapped frequency */
+            REAL8 Mf_mapped = IMRPhenomX_PNR_LinearFrequencyMap(Mf, ell, emmprime, Mf_low, Mf_high, Mf_RD_22, Mf_RD_lm, toggleInspiralScaling);
+            REAL8 f_mapped = XLALSimIMRPhenomXUtilsMftoHz(Mf_mapped, M);
 
-          (*alphaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->alpha_spline, f_mapped, hm_angle_spline->alpha_acc);
-          (*betaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->beta_spline, f_mapped, hm_angle_spline->beta_acc);
-          (*gammaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->gamma_spline, f_mapped, hm_angle_spline->gamma_acc);
+            (*alphaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->alpha_spline, f_mapped, hm_angle_spline->alpha_acc);
+            (*betaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->beta_spline, f_mapped, hm_angle_spline->beta_acc);
+            (*gammaPNR)->data[i] = gsl_spline_eval(hm_angle_spline->gamma_spline, f_mapped, hm_angle_spline->gamma_acc);
+          }else{
+            (*alphaPNR)->data[i] = 0.0;
+            (*betaPNR)->data[i] = 0.0;
+            (*gammaPNR)->data[i] = 0.0;
+          }
         }
       }
 
@@ -702,6 +754,7 @@ extern "C"
           XLAL_EFUNC,
           "Error: IMRPhenomX_PNR_GeneratePNRAngles_UniformFrequencies failed in IMRPhenomX_PNR_GeneratePNRAngles.");
 
+
       /* Here we assign the reference values of alpha and gamma to their values in the precession struct.
        * For the uniformly-sampled arrays, we linearly interpolate the angles between the
        * next-to-nearest frequencies to get the reference values. */
@@ -847,6 +900,7 @@ extern "C"
       UINT4 attach_MR_beta = IMRPhenomX_PNR_AttachMRBeta(betaParams);
       if (attach_MR_beta) /* yes we do! */
 	{
+	  pPrec->UseMRbeta = 1;
 	  for (size_t i = 0; i < freqs->length; i++)
 	    {
 	      Mf = XLALSimIMRPhenomXUtilsHztoMf(freqs->data[i], M);
@@ -857,13 +911,14 @@ extern "C"
 	}
       else /* don't attach MR tuning to beta */
 	{
+	  pPrec->UseMRbeta = 0;
 	  for (size_t i = 0; i < freqs->length; i++)
 	    {
 	      Mf = XLALSimIMRPhenomXUtilsHztoMf(freqs->data[i], M);
 
 	      /* generate alpha, generate beta with no MR tuning */
 	      alphaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRAlphaAtMf(Mf, alphaParams, pWF, pPrec);
-	      betaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf, pWF, pPrec);
+	      betaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf, betaParams, pWF, pPrec);
 	    }
 	}
     }
@@ -884,26 +939,28 @@ extern "C"
         }
       else /* don't attach MR tuning to beta */
         {
+	  pPrec->UseMRbeta = 0;
           for (size_t i = 0; i < freqs->length; i++)
             {
               Mf = XLALSimIMRPhenomXUtilsHztoMf(freqs->data[i], M);
 
               /* generate alpha, generate beta with no MR tuning */
               alphaPNR->data[i] = IMRPhenomX_PNR_GenerateMergedPNRAlphaAtMf(Mf, alphaParams, pWF, pPrec);
-              betaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf, pWF, pPrec);
+              betaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf, betaParams, pWF, pPrec);
             }
         }
 
       }
     /* fully in outside calibration region */
     else{
+      pPrec->UseMRbeta = 0;
       for (size_t i = 0; i < freqs->length; i++)
             {
               Mf = XLALSimIMRPhenomXUtilsHztoMf(freqs->data[i], M);
 
               /* generate MSA alpha, generate beta with no MR tuning */
               alphaPNR->data[i] = IMRPhenomX_PNR_GetPNAlphaAtFreq(Mf, pWF, pPrec);
-              betaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf, pWF, pPrec);
+              betaPNR->data[i] = IMRPhenomX_PNR_GeneratePNRBetaNoMR(Mf, betaParams, pWF, pPrec);
             }
     }
 
@@ -1078,10 +1135,16 @@ extern "C"
       REAL8 fMinFromDeltaF = iStart*pWF->deltaF;
       f_min_22 = (fMinFromDeltaF < f_min_22) ? fMinFromDeltaF : f_min_22;
     }
+    else{
+      f_max_22 = pWF->fMax;
+    }
 
     /* Grab the mode array to find the minimum and maximum
      * frequency values that need to be interpolated. */
     LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalparams);
+
+    REAL8 f_min = f_min_22;
+    REAL8 f_max = f_max_22;
 
     if (ModeArray != NULL)
     {
@@ -1101,8 +1164,8 @@ extern "C"
 
               REAL8 MfCoarseFMax = coarseFreqs->data[coarseFreqs->length-1];
               REAL8 coarseFMax = XLALSimIMRPhenomXUtilsMftoHz(MfCoarseFMax, pWF->Mtot);
-              if(coarseFMax > f_max_22){
-                f_max_22 = coarseFMax;
+              if(coarseFMax > f_max){
+                f_max = coarseFMax;
               }
 
               XLALDestroyREAL8Sequence(coarseFreqs);
@@ -1139,14 +1202,14 @@ extern "C"
               REAL8 coarseFMin = XLALSimIMRPhenomXUtilsMftoHz(MfMinMapped, pWF->Mtot);
               REAL8 coarseFMax = XLALSimIMRPhenomXUtilsMftoHz(MfMaxMapped, pWF->Mtot);
 
-              if(coarseFMin < f_min_22)
+              if(coarseFMin < f_min)
               {
-                f_min_22 = coarseFMin;
+                f_min = coarseFMin;
               }
 
-              if(coarseFMax > f_max_22)
+              if(coarseFMax > f_max)
               {
-                f_max_22 = coarseFMax;
+                f_max = coarseFMax;
               }
 
               XLALDestroyREAL8Sequence(coarseFreqs);
@@ -1162,23 +1225,20 @@ extern "C"
               REAL8 FMin = XLALSimIMRPhenomXUtilsMftoHz(MfMinMapped, pWF->Mtot);
               REAL8 FMax = XLALSimIMRPhenomXUtilsMftoHz(MfMaxMapped, pWF->Mtot);
 
-              if(FMin < f_min_22)
+              if(FMin < f_min)
               {
-                f_min_22 = FMin;
+                f_min = FMin;
               }
 
-              if(FMax > f_max_22)
+              if(FMax > f_max)
               {
-                f_max_22 = FMax;
+                f_max = FMax;
               }
             }
           }
         }
       }
     } /* Otherwise f_min and f_max are already set to the (2,2) values */
-
-    REAL8 f_min = f_min_22;
-    REAL8 f_max = f_max_22;
 
     /* Get appropriate frequency spacing */
     REAL8 deltaF_int = IMRPhenomX_PNR_HMInterpolationDeltaF(f_min, pWF, pPrec);
@@ -1246,6 +1306,62 @@ extern "C"
     for (UINT4 i = iStart; i < iStop; i++)
     {
       freqs_22->data[i - iStart] = i * deltaF_int;
+    }
+
+    /*
+    If using SpinTaylor angles in the inspiral, we check whether the starting frequency of the inspiral angles is above the one requested by the PNR model
+    In a limited number of cases, this will not be true, so we reintegrate the spin-precession equations accordingly.
+     */
+
+    if((pPrec->IMRPhenomXPrecVersion==330)&& pPrec->fmin_integration>freqs_22->data[0]){
+
+    pPrec->PNarrays = XLALMalloc(sizeof(PhenomXPInspiralArrays));
+    int success = IMRPhenomX_InspiralAngles_SpinTaylor(pPrec->PNarrays, &pPrec->fmin_integration, pPrec->chi1x,pPrec->chi1y,pPrec->chi1z,pPrec->chi2x,pPrec->chi2y,pPrec->chi2z,freqs_22->data[0],pPrec->IMRPhenomXPrecVersion,pWF,lalparams);
+
+    if(success==XLAL_FAILURE) {
+                            XLALFree(pPrec->PNarrays);
+                            XLAL_PRINT_WARNING("Warning: due to a failure in the SpinTaylor routines, the model will default to MSA angles.");
+                            pPrec->IMRPhenomXPrecVersion=223;
+                            }
+
+    LALFree(pPrec->alpha_params);
+    LALFree(pPrec->beta_params);
+
+    gsl_spline_free(pPrec->alpha_spline);
+    gsl_spline_free(pPrec->cosbeta_spline);
+    gsl_spline_free(pPrec->gamma_spline);
+
+    gsl_interp_accel_free(pPrec->alpha_acc);
+    gsl_interp_accel_free(pPrec->gamma_acc);
+    gsl_interp_accel_free(pPrec->cosbeta_acc);
+
+    success=IMRPhenomX_Initialize_Euler_Angles(pWF,pPrec,lalparams);
+    XLAL_CHECK(success==XLAL_SUCCESS, XLAL_EDOM, "%s: Error in IMRPhenomX_Initialize_Euler_Angles.\n",__func__);
+
+    pPrec->Mfmin_integration = XLALSimIMRPhenomXUtilsHztoMf(pPrec->fmin_integration,pWF->Mtot);
+
+    IMRPhenomX_PNR_FreeStructs(
+        &pWF_SingleSpin,
+        &pPrec_SingleSpin,
+        &alphaParams,
+        &betaParams);
+
+    pWF_SingleSpin = NULL;
+    pPrec_SingleSpin = NULL;
+    alphaParams = NULL;
+    betaParams = NULL;
+
+    status = IMRPhenomX_PNR_PopulateStructs(
+        &pWF_SingleSpin,
+        &pPrec_SingleSpin,
+        &alphaParams,
+        &betaParams,
+        pWF,
+        pPrec,
+        lalparams);
+    XLAL_CHECK(XLAL_SUCCESS == status,
+        XLAL_EFUNC,"Error: IMRPhenomX_PNR_PopulateStructs failed!\n");
+
     }
 
     /* Generate the (2,2) angles on this uniform frequency grid.
@@ -1333,7 +1449,7 @@ extern "C"
    * External wrapper for IMRPhenomX_PNR_GenerateEffectiveRingdownFreq
    *
    * Computes the effective ringdown frequency for a given (l,m) multipole
-   * following the prescription given in arXiv:##### FIXME: add citation
+   * following the prescription given in Thompson et al., arXiv:2312.10025
    *
    */
   REAL8 XLALSimIMRPhenomX_PNR_GenerateEffectiveRingdownFreq(
@@ -1487,9 +1603,9 @@ extern "C"
 
   /* Function for testing deltaF spacing for interpolation */
   int XLALSimIMRPhenomX_PNR_InterpolationDeltaF(
-      INT4 *twospin, /**< UNDOCUMENTED */
-      INT4 *precversion, /**< UNDOCUMENTED */
-      REAL8 *deltaF, /**< UNDOCUMENTED */
+      INT4 *twospin, /**< [out] integer taking a value of 1 if two-spin effects are present, 0 otherwise  */
+      INT4 *precversion, /**< [out] one of the precession prescription described in IMRPhenomX.c */
+      REAL8 *deltaF, /**< [out] frequency spacing to be used when generating the angles interpolants */
       REAL8 m1_SI, /**< mass of companion 1 (kg) */
       REAL8 m2_SI, /**< mass of companion 2 (kg) */
       REAL8 chi1x, /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */

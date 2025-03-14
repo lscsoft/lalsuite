@@ -57,9 +57,34 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 #define DEBUG 1
 #endif
 
+/**
+  * @addtogroup LALSimIMRPhenomX_c
+  * @{
+  *
+  * @name Routines for mode asymmetry in the dominant quadrupole mode
+  * @{
+  *
+  * @author Shrobhana Ghosh
+  *
+  * @brief C code for modelling asymmetry in the dominant (2,±2) modes in PhenomXO4a and PhenomXPNR
+  *
+  * This model is described in Ghosh et al., PRD 109, 024061 (2024), studies using this model are kindly asked
+  * to cite this paper.
+  *
+  * @note The model is tuned to single-spin numerical-relativity simulations up to mass-ratio 8 and spin magnitudes of 0.8.
+  * Mode asymmetry can only be used together with PNR angles, which are activated by the flag PhenomXPNRUseTunedAngles.
+  *
+  * @attention For more information, see the review wiki
+  * under https://git.ligo.org/waveforms/reviews/imrphenomxo4a/wikis/home
+  *
+  *
+  * Waveform flags:
+  *   IMRPhenomXAntisymmetricWaveform
+  *   - 0: Mode asymmetry switched off
+  *   - 1: Mode asymmetry siwtched on
+  */
+
   /**
-   * @author Shrobana Ghosh
-   **
    *   EXTERNAL GENERATE antisymmetric waveform
    * This is an external wrapper to generate the (2,2) and (2,-2) antisymmetric waveform,
    * with the standard inputs given to generate FD waveforms.
@@ -602,6 +627,9 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 
     return XLAL_SUCCESS;
   }
+
+/** @} */
+/** @} */
 
 #ifdef __cplusplus
 }
