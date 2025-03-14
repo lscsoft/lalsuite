@@ -489,14 +489,14 @@ EOF
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_octave_cxxflags}
       -Wno-address
+      -Wno-deprecated-declarations
+      -Wno-format-extra-args
+      -Wno-stringop-overflow
+      -Wno-tautological-compare
       -Wno-uninitialized
-      -Wno-unused-variable
       -Wno-unused-but-set-variable
       -Wno-unused-result
-      -Wno-format-extra-args
-      -Wno-tautological-compare
-      -Wno-deprecated-declarations
-      -Wno-stringop-overflow
+      -Wno-unused-variable
       -fno-strict-aliasing
       -O0
       -Wp[,]-U_FORTIFY_SOURCE
@@ -630,13 +630,13 @@ EOD`]
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_python_cflags}
       -Wno-address
+      -Wno-format-extra-args
+      -Wno-stringop-overflow
+      -Wno-tautological-compare
       -Wno-uninitialized
-      -Wno-unused-variable
       -Wno-unused-but-set-variable
       -Wno-unused-result
-      -Wno-format-extra-args
-      -Wno-tautological-compare
-      -Wno-stringop-overflow
+      -Wno-unused-variable
       -fno-strict-aliasing
       ],[SWIG_PYTHON_CFLAGS="${SWIG_PYTHON_CFLAGS} ${flag}"]
     )
