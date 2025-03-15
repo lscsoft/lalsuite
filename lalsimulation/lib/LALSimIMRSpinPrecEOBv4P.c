@@ -4746,7 +4746,7 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
   // Check Nyquist frequency
   UINT4 ellMaxForNyquistCheck = 2;
   UINT4 ell_max = SEOBGetLMaxInModeArray(modearray, _SEOB_MODES_LMAX);
-  
+
   // Set the max ell to use for Nyquist check
   // If the value is not set, simply use the largest L in the mode array
   // which will give 2 for SEOBNRv4P and 5 for SEOBNRv4PHM

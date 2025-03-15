@@ -5,7 +5,7 @@ xeq=2*10^(7);  %value of x at aeq
 c=1;            %Average no of cusps per oscillation
 Gamma = 50;     %Gravitational back reaction constant
 f=500;           % high frequency cutoff
-fl=40;          %low freq cutoff 
+fl=40;          %low freq cutoff
 
 p=1;            %Probability of reconnection
 
@@ -36,4 +36,3 @@ loglog(Gmu,hMine,'r');
 loglog(Gmu,4*1.7*10^(-22),'k:'); hold on
 xlabel('G\mu')
 ylabel('Strain')
-

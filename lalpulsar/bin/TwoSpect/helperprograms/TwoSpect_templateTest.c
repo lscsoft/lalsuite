@@ -2334,6 +2334,3 @@ INT4 readTwoSpectInputParams( inputParamsStruct *params, struct gengetopt_args_i
   return 0;
 
 } /* readTwoSepctInputParams() */
-
-
-

@@ -3,6 +3,11 @@
 This directory contains common code used by the constituent LALSuite
 packages. It also contains miscellaneous scripts useful for maintenance.
 
+## `common/code-quality-scripts`: Code quality scripts
+
+This directory contains various scripts used to check code quality issues. They
+are generally run from a CI `lint:` job (see `.gitlab/ci/lint.yml`).
+
 ## `common/conda/`: LALSuite Conda packages
 
 This directory contains common code for Conda packages.
@@ -25,26 +30,7 @@ customisations for each subpackage can be added in
 
 ## `common/maintainer-scripts`: Maintainer scripts
 
-This directory contains miscellaneous scripts useful for maintenance:
-
-- `check_library_dependencies`: check for consistent library dependencies across
-  `.gitlab-ci.yml`, autotools, and the Conda, Debian, and RPM packages. This
-  script is run by the `lint:depends` GitLab CI job
-
-- `cleanup_mailmap_entries`: perform some cleanup operations on the Git `.mailmap` file:
-  - sync `.mailmap` with Git log entries;
-  - provide unique author/email mappings;
-  - prefer `ligo.org` email addresses.
-
-- `get_library_dependencies_from_c_headers`: determine library dependencies by
-  tracking C header usage between libraries. This might be useful during major
-  reorganisation where one wanted to confirm library dependencies. Will muck up
-  a local build since it stores preprocessed code in `.o` files.
-
-- `xlalify_function_calls`: attempt to convert old `LALStatus`-type LAL
-  functions to XLAL functions, as well as calls to those functions. Relies on
-  regular expression matching based on common coding patterns in old `LALStatus`
-  code. Call without arguments for usage. Use at your own risk!!
+This directory contains miscellaneous scripts useful for maintenance.
 
 ## `common/swig`: LALSuite SWIG Bindings
 

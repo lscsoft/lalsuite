@@ -1171,7 +1171,7 @@ void read_time_data( char* filename)
   FILE   *fp;
   int n = 0;
   INT4 this_time = 0;
-  
+
   fp=fopen( filename, "r" );
   if ( ! fp )
     {
@@ -1181,12 +1181,12 @@ void read_time_data( char* filename)
 	       filename );
       exit( 1 );
     }
-  
+
   /* count the number of lines in the file */
   n_times=0;
   while ( fgets( line, sizeof( line ), fp ) )
     ++n_times;
-  
+
   /* alloc space for the data */
   inj_times = LALCalloc( n_times, sizeof(*inj_times) );
   if ( !inj_times )
@@ -1194,10 +1194,10 @@ void read_time_data( char* filename)
       fprintf( stderr, "Allocation error for inj_times\n" );
       exit( 1 );
     }
-  
+
   /* 'rewind' the file */
   rewind( fp );
-  
+
   /* read the file finally */
   while ( fgets( line, sizeof( line ), fp ) )
     {
@@ -1216,7 +1216,7 @@ void read_time_data( char* filename)
       // printf("%d Time: %d\t%d\n", n, inj_times[n].gpsSeconds, inj_times[n].gpsNanoSeconds);
       n++;
     }
-  
+
   /* close the file */
   fclose( fp );
 }
@@ -2768,7 +2768,7 @@ int main( int argc, char *argv[] )
         srcComplete = 1;
         srcCompleteDist = (REAL8) atof( LALoptarg );
         this_proc_param = this_proc_param->next =
-          next_process_param( long_options[option_index].name, 
+          next_process_param( long_options[option_index].name,
               "string", "%s", LALoptarg );
         break;
 
@@ -3859,12 +3859,12 @@ int main( int argc, char *argv[] )
     if (spinDistr==gaussianSpinDist && ( minSpin1 - meanSpin1 > 2.0*Spin1Std || meanSpin1 - maxSpin1 > 2.0*Spin2Std ))
     {
       fprintf(stderr,"Mean of |spin1| distribution is way out of range.\n");
-      exit( 1 );		
+      exit( 1 );
 	}
     if (spinDistr==gaussianSpinDist && ( minSpin2 - meanSpin2 > 2.0*Spin2Std || meanSpin2 - maxSpin2 > 2.0*Spin2Std ))
     {
       fprintf(stderr,"Mean of |spin2| distribution is way out of range.\n");
-      exit( 1 );		
+      exit( 1 );
 	}
 
     /* check that selection criteria for kappa are unique */
@@ -3927,14 +3927,14 @@ int main( int argc, char *argv[] )
     {
       fprintf(stderr, "No filename for injection GPStimes is given. Use --time-file.\n");
     }
-  
+
   if ( injtimesFileName && tDistr != LALINSPIRAL_FILE_TIME_DIST )
     {
       fprintf( stderr,
 	       "Cannot specify an injection times file for your choice of --t-distr.\n" );
       exit( 1 );
     }
-  
+
   if (timeInterval > 0. && (tDistr == LALINSPIRAL_EXPONENTIAL_TIME_DIST || tDistr == LALINSPIRAL_FILE_TIME_DIST) )
   {
     fprintf( stderr,
@@ -4481,13 +4481,13 @@ int main( int argc, char *argv[] )
   if (!xmlfp) XLAL_ERROR(XLAL_EIO);
 
   XLALGPSTimeNow(&(proctable->end_time));
-  
+
   int retcode = XLALWriteLIGOLwXMLProcessTable(xmlfp, proctable);
   if (retcode != XLAL_SUCCESS)
   {
     XLAL_ERROR(retcode);
   }
-  
+
   if ( procparams )
   {
     retcode = XLALWriteLIGOLwXMLProcessParamsTable(xmlfp, procparams);
@@ -4608,7 +4608,7 @@ static void scale_lalsim_distance(SimInspiralTable *inj,
       if (SNRs[j]<single_IFO_SNR_threshold*ratio)
       above_threshold--;
     }
-    /* Set the min to the proposed SNR, so that next drawing for */ 
+    /* Set the min to the proposed SNR, so that next drawing for */
     /* this event (if necessary) will give higher SNR            */
     local_min=proposedSNR;
 

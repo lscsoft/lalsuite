@@ -94,7 +94,7 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, UNUSED int measur
     cufftPlan1d( &plan->plan, createSize, CUFFT_C2R, 1 );
   /* LAL_FFTW_WISDOM_UNLOCK; */
   /* check to see success of plan creation */
-	
+
   /* "Plan=0" Bugfix by Wiesner, K.: plan->plan is an integer handle not a pointer and 0 is a valid handle
       So checking against 0 and occasionaly destroy the plan is a bug.
 
@@ -104,7 +104,7 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, UNUSED int measur
          XLAL_ERROR_NULL( XLAL_EFAILED );
       }
   */
-	
+
   /* Allocate memory in the GPU */
   plan->d_real = XLALCudaMallocReal(size);
   plan->d_complex = XLALCudaMallocComplex(size/2 + 1);
@@ -199,7 +199,7 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input, const
 {
   if ( ! output || ! input || ! plan )
     XLAL_ERROR( XLAL_EFAULT );
-  /* Plan=0 Bugfix 
+  /* Plan=0 Bugfix
      if ( ! plan->plan || ! plan->size || plan->sign != 1 )
    */
   if ( ! plan->size || plan->sign != 1 )
@@ -306,7 +306,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
 
   if ( ! spec || ! data || ! plan )
     XLAL_ERROR( XLAL_EFAULT );
-  /* Plan=0 Bugfix  
+  /* Plan=0 Bugfix
      if ( ! plan->plan || ! plan->size )
   */
   if (! plan->size )
@@ -594,7 +594,7 @@ int XLALREAL8PowerSpectrum( REAL8Vector *spec, const REAL8Vector *data,
 
   if ( ! spec || ! data || ! plan )
     XLAL_ERROR( XLAL_EFAULT );
-  /* Plan=0 Bugfix  
+  /* Plan=0 Bugfix
      if ( ! plan->plan || ! plan->size )
   */
   if ( ! plan->size )

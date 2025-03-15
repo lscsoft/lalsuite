@@ -246,7 +246,7 @@ lalmetaio (1.0.3-1) unstable; urgency=low
   * LALMetaIO 1.0.3
   * update to automake-1.11.2
   * packaging updates
-	
+
  -- Adam Mercer <adam.mercer@ligo.org>  Fri, 06 Jan 2012 09:40:10 -0600
 
 lalmetaio (1.0.2-1) unstable; urgency=low

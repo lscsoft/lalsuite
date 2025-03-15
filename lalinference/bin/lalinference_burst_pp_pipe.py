@@ -218,5 +218,3 @@ maindag.write_script()
 # End of program
 print('Successfully created DAG file.')
 print('Now run condor_submit_dag %s\n'%(outerdag.get_dag_file()))
-
-

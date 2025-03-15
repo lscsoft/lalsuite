@@ -439,4 +439,3 @@ void LALStereo2SkyLocation (LALStatus  *status,
   /* normal exit */
   RETURN (status);
 }
-

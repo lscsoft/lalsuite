@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSimulation],[6.0.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALSimulation],[6.1.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALSimulationConfig.h])
 AC_CONFIG_SRCDIR([lib/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -19,9 +19,9 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[37])
+AC_SUBST([LIBCURRENT],[38])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
   [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR],[${LIBCURRENT}])],
@@ -119,7 +119,7 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([3.5])
+LALSUITE_CHECK_PYTHON([3.6])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -157,7 +157,7 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 PKG_CHECK_MODULES([PYTHON3_EMBED],[python-${PYTHON_VERSION}-embed],[have_python3_embed=true],[have_python3_embed=false])
 if test "x$have_python3_embed" = xtrue; then
 
-    # separate out -l and -L LIBS 
+    # separate out -l and -L LIBS
     AC_SUBST([PYTHON3_EMBED_LIBADD],[])
     for flag in ${PYTHON3_EMBED_LIBS}; do
        case $flag in
@@ -217,9 +217,6 @@ LALSUITE_USE_SWIG
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
-
-# check for pretty code formatters
-LALSUITE_PROG_PRETTY_CODE
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS

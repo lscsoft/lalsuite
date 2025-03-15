@@ -8,17 +8,17 @@ grup_max=800;
 f0_band=0.1;
 
 for grup=grup_min:grup_Band:grup_max;
-    
+
 	f0_grup=grup;
 
     follow_up_file=sprintf('../O1/follow_up_%g.mat',grup);
     data_top_file=sprintf('../O1/data_top_%g.mat',grup);
     g_top_file=sprintf('../O1/g_Toplist_%g.mat',grup);
-    
+
     load(follow_up_file)
     load(data_top_file)
     load(g_top_file)
-    
+
 if f0_grup>=50;
 A1=0.4902
 A2=1.414
@@ -44,14 +44,14 @@ chisquare_STD_veto = 5.3;
 end
 
         chi2_STD = @(x,y,p) (y-(p-1)-A1*x.^A2)./(sqrt(2*p-2)+B1*x.^B2);
-    
+
     kmax=ceil(grup_Band/f0_band-1);
     for k=1:500;
         data={'Name' 'f0' 'alpha' 'delta' 'f1' 'significance' 'chi2'};
         x=1;y=1;
         for iter=1:4;
             if ~isempty(x) && ~isempty(y)
-                
+
 		if iter==4;
                     I= ( f0_grup + k*f0_band <= follow_up(:,1)) & (f0_grup + (k+1)*f0_band >= follow_up(:,1));
                     a=follow_up(I,:);
@@ -89,10 +89,10 @@ end
                     Ch1y=chi2_STD(y(:,5),y(:,7),16);
                     percentaje_chi2y=(sum(Ch1y>6))/(length(Ch1y))*100;
                     A=[y(:,1:5),y(:,7)];
-                end                
+                end
                 data=cat(1,data,[repmat({name},[length(A(:,1)) 1]),num2cell(A)]);
             end
-	end	            
+	end
             name=sprintf('data/f0_%.1f.tsv',f0_grup + k*f0_band);
             fid = fopen(name,'wt');
             if fid>0
@@ -106,7 +106,7 @@ end
                 fclose(fid);
             end
     end
-    grup    
+    grup
 end
 
 data={'id' 'f0' 'alpha' 'delta' 'f1' 'sig_mean' 's_old' 'sig_sum' 'length' 'xdeg' 'ydeg' 'xchi2' 'ychi2'};
@@ -116,7 +116,7 @@ data=cat(1,data,num2cell([[1:1:sum(F(:,1)>0)]',F(F(:,1)>0,:)]));
 name=sprintf('data/follow_up.csv');
 fig = fopen(name,'wt');
 if fid>0
-    
+
     for k=1:size(data,1)
         if k==1;
             fprintf(fid,'%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n',data{k,:});
@@ -124,7 +124,7 @@ if fid>0
             fprintf(fid,'%.0f,%.8f,%.8f,%.8f,%.8e,%.2f,%.2f,%.2f,%.f,%.f,%.f,%.1f,%.1f\n',data{k,:});
         end
     end
-    
+
     fclose(fid);
 end
 
@@ -134,7 +134,7 @@ data=cat(1,data,num2cell(T));
 name=sprintf('data/Total.csv');
 fid = fopen(name,'wt');
 if fid>0
-    
+
     for k=1:size(data,1)
         if k==1;
             fprintf(fid,'%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n',data{k,:});
@@ -142,7 +142,7 @@ if fid>0
             fprintf(fid,'%.8f,%.3f,%.3f,%.8f,%.8f,%.3f,%.8f,%.3f,%.3f,%.8f,%.8f,%.3f\n',data{k,:});
         end
     end
-    
+
     fclose(fid);
 end
 end

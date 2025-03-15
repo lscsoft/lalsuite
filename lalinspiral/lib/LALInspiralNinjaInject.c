@@ -298,7 +298,7 @@ void XLALSimInjectNinjaSignals(
   /* New REAL8, NINJA-2 code */
   UINT4 j;
   SimInspiralTable *thisInj = NULL;
-  
+
   REAL8TimeSeries *tempStrain = NULL;
   REAL8TimeSeries *tempChan   = NULL;
 
@@ -337,4 +337,3 @@ void XLALSimInjectNinjaSignals(
 
   XLALDestroyREAL8TimeSeries(tempChan);
 }
-

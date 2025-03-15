@@ -25,4 +25,3 @@ function retval = mismatchPosition(mismatch, lambda, alpha, delta)
   retval(2) = asin(y(3));
 
 endfunction
-

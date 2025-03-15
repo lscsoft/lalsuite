@@ -54,7 +54,7 @@ tempoutdir=/scratch/tmp/$iam/$1.H1INJECT.run
 # set a trap so if the job ends some cleanup is done
 trap "/bin/rm -rf ${tempoutdir}; exit 0" 0 1 2 9 15
 
-# make the temporary directory where we work 
+# make the temporary directory where we work
 mkdir -p $tempoutdir
 
 # make the temporary output directory where results are stored
@@ -83,7 +83,7 @@ echo finished copying stuff
 
 
 #temp=`mult $1 $freqband`
-#freq=`add $temp $startfreq` 
+#freq=`add $temp $startfreq`
 freq=$startfreq
 echo frequency analysed is $freqband Hz band starting from $freq
 
@@ -100,5 +100,4 @@ echo finished running driver
 mkdir -p ${workdir}/H1.P9
 rsync -a ${tempoutdir}/H1.P9 $workdir
 
-echo done!  
-
+echo done!

@@ -47,9 +47,9 @@ from matplotlib import pyplot as plt
 from lalinference import bayespputils as bppu
 
 from lalinference import git_version
-from ligo.lw import table
-from ligo.lw import ligolw
-from ligo.lw import lsctables
+from igwn_ligolw import table
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
 
 try:
   os.environ['PATH'] = os.environ['PATH'] + ':/usr/texbin'
@@ -330,9 +330,9 @@ def cbcBayesBurstPostProc(
     if injfile and eventnum is not None:
         print('Looking for event %i in %s\n'%(eventnum,injfile))
         import itertools
-        from ligo.lw import ligolw
-        from ligo.lw import lsctables
-        from ligo.lw import utils
+        from igwn_ligolw import ligolw
+        from igwn_ligolw import lsctables
+        from igwn_ligolw import utils
         xmldoc = utils.load_filename(injfile,contenthandler=LIGOLWContentHandlerExtractSimBurstTable)
         got_burst_table=1
         try:
@@ -405,9 +405,9 @@ def cbcBayesBurstPostProc(
 
     if eventnum is None and injfile is not None:
         import itertools
-        from ligo.lw import ligolw
-        from ligo.lw import lsctables
-        from ligo.lw import utils
+        from igwn_ligolw import ligolw
+        from igwn_ligolw import lsctables
+        from igwn_ligolw import utils
         if got_inspiral_table==1:
             injections = lsctables.SimInspiralTable.get_table(
                             utils.load_filename(injfile,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))

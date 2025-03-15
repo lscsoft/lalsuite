@@ -7,6 +7,8 @@ from ..core.waveform import LALCompactBinaryCoalescenceGenerator
 def gwsignal_get_waveform_generator(waveform_approximant):
     if waveform_approximant == "SEOBNRv5HM":
         wf_gen = pyseobnr_model.SEOBNRv5HM()
+    elif waveform_approximant == "SEOBNRv5EHM":
+        wf_gen = pyseobnr_model.SEOBNRv5EHM()
     elif waveform_approximant == "SEOBNRv5PHM":
         wf_gen = pyseobnr_model.SEOBNRv5PHM()
     else:

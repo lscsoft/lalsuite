@@ -88,13 +88,13 @@ int IMRPhenomD_NRTidal_Core(
     double m1temp = m1_SI;
     double chi1temp = chi1;
     double lambda1temp = lambda1;
-    double dquadmon1temp = dquadmon1;  
+    double dquadmon1temp = dquadmon1;
     m1_SI = m2_SI;
     chi1 = chi2;
     m2_SI = m1temp;
     chi2 = chi1temp;
 
-    if (lambda1 != lambda2){ 
+    if (lambda1 != lambda2){
       lambda1 = lambda2;
       XLALSimInspiralWaveformParamsInsertTidalLambda1(extraParams, lambda1);
       lambda2 = lambda1temp;
@@ -209,7 +209,7 @@ int IMRPhenomD_NRTidal_Core(
   amp_tidal = XLALCreateREAL8Sequence(freqs->length);
   phi_tidal = XLALCreateREAL8Sequence(freqs->length);
   planck_taper = XLALCreateREAL8Sequence(freqs->length);
-  if (NRTidal_version == NRTidalv2_V) { 
+  if (NRTidal_version == NRTidalv2_V) {
     ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, 0.0, 0.0, NRTidalv2NoAmpCorr_V);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
     XLALSimInspiralGetHOSpinTerms(&SS_3p5PN, &SSS_3p5PN, X_A, X_B, chi1, chi2, dquadmon1+1., dquadmon2+1.);
@@ -296,7 +296,7 @@ int XLALSimIMRPhenomDNRTidalFrequencySequence(
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
   LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
-  NRTidal_version_type NRTidal_version          /**< Version of NRTides; can be any one of NRTidal_V (arXiv:1706.02969), NRTidalv2_V (arXiv:1905.06011) or NRTidalv2NoAmpCorr_V (arXiv:1905.06011, without amplitude corrections) */ 
+  NRTidal_version_type NRTidal_version          /**< Version of NRTides; can be any one of NRTidal_V (arXiv:1706.02969), NRTidalv2_V (arXiv:1905.06011) or NRTidalv2NoAmpCorr_V (arXiv:1905.06011, without amplitude corrections) */
 ) {
   if (!freqs) XLAL_ERROR(XLAL_EFAULT);
 
@@ -332,7 +332,7 @@ int XLALSimIMRPhenomDNRTidal(
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
   LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
-  NRTidal_version_type NRTidal_version          /**< Version of NRTides; can be any one of NRTidal_V (arXiv:1706.02969), NRTidalv2_V (arXiv:1905.06011) or NRTidalv2NoAmpCorr_V (arXiv:1905.06011, without amplitude corrections) */ 
+  NRTidal_version_type NRTidal_version          /**< Version of NRTides; can be any one of NRTidal_V (arXiv:1706.02969), NRTidalv2_V (arXiv:1905.06011) or NRTidalv2NoAmpCorr_V (arXiv:1905.06011, without amplitude corrections) */
 ) {
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequence we only transfer the boundaries and let

@@ -6,8 +6,7 @@ dag :
 	    ligolw_segments --verbose --coalesce --comment "S5 string cusp search chunk $$n" --name segments --insert-from-segwizard H1=segments/S5-H1segments-cat1_c$$n.txt --insert-from-segwizard H2=segments/S5-H2segments-cat1_c$$n.txt --insert-from-segwizard L1=segments/S5-L1segments-cat1_c$$n.txt --insert-from-segwizard V1=segments/S5-V1segments-cat1_c$$n.txt --output segments_c$$n.xml.gz ; \
 	    mkdir -p dag_c$$n ; pushd dag_c$$n ; lalapps_cosmicstring_pipe --verbose --config-file ../S5_StringDag.ini --log-path $(TMPDIR) --segments-file ../segments_c$$n.xml.gz --vetoes-file ../vetoes.xml.gz --injection-time-slides ../injection_time_slides.xml.gz --background-time-slides ../background_time_slides_0.xml.gz ; popd ; \
 	    n=$$(($$n + 1)) ; \
-	done 
+	done
 
 clean :
 	rm -Rvf vetoes.xml.gz segments*.gz *_time_slides_*.xml.gz dag_c*
-

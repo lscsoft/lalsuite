@@ -68,6 +68,3 @@ def compute_total_prior_vol(posterior_files, comb_file):
 args = parser.parse_args()
 
 combine_posterior_files(args.posteriors)
-
-
-

@@ -31,7 +31,7 @@ int main(void) {
 	//fclose(fref);
 
 	LIGOTimeGPS ep = {0, 0};
-	
+
 	REAL8TimeSeries *ts = XLALCreateREAL8TimeSeries("intrp test", &ep, 0.0, dt*0.9, &lalDimensionlessUnit, len);
 
 	int ret = XLALREAL8TimeSeriesInterpolation(ts, fcn, sample_time, NULL, len, gsl_interp_cspline);

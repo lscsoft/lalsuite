@@ -109,7 +109,7 @@ int XLALFrFileCksumValid(LALFrFile * frfile);
  */
 size_t XLALFrFileQueryNFrame(const LALFrFile * frfile);
 
-/** 
+/**
  * @brief Query a frame file for the start time of a particular frame.
  * @param[out] start Pointer to a \c LIGOTimeGPS structure containing the start time.
  * @param[in] frfile Pointer to a ::LALFrFile structure associated with a frame file.
@@ -119,7 +119,7 @@ size_t XLALFrFileQueryNFrame(const LALFrFile * frfile);
  */
 LIGOTimeGPS *XLALFrFileQueryGTime(LIGOTimeGPS * start, const LALFrFile * frfile, size_t pos);
 
-/** 
+/**
  * @brief Query a frame file for the duration of a particular frame.
  * @param[in] frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param[in] pos The index of the frame in the frame file.
@@ -128,7 +128,7 @@ LIGOTimeGPS *XLALFrFileQueryGTime(LIGOTimeGPS * start, const LALFrFile * frfile,
  */
 double XLALFrFileQueryDt(const LALFrFile * frfile, size_t pos);
 
-/** 
+/**
  * @brief Query a frame file for the data type of a channel in a frame.
  * @param[in] frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param[in] chname String containing the name of the channel.
@@ -150,7 +150,7 @@ double XLALFrFileQueryDt(const LALFrFile * frfile, size_t pos);
  */
 LALTYPECODE XLALFrFileQueryChanType(const LALFrFile * frfile, const char *chname, size_t pos);
 
-/** 
+/**
  * @brief Query a frame file for the number of data points in a channel in a frame.
  * @param[in] frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param[in] chname String containing the name of the channel.

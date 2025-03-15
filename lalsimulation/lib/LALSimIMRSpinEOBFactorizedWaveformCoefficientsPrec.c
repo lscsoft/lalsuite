@@ -379,7 +379,7 @@ if (SpinAlignedEOBversion == 4)
 	coeffs->delta33vh3 = 13. / 10.;
 	coeffs->delta33vh6 = (-81. * aDelta) / 20. + (39. * LAL_PI) / 7.;
 	coeffs->delta33vh9 = -227827. / 3000. + (78. * LAL_PI * LAL_PI) / 7.;
-	coeffs->delta33v5 = -80897. * eta / 2430.; 
+	coeffs->delta33v5 = -80897. * eta / 2430.;
 	if (dM2) {
 		coeffs->rho33v2 = -7. / 6. + (2. * eta) / 3.;
 		//coeffs->rho33v3 = (chiS * dM * (-4. + 5. * eta) + chiA * (-4. + 19. * eta)) / (6. * dM);

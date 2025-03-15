@@ -38,7 +38,7 @@ nL1found=histc(log(L1foundpeaks),lnA);
 nH1made=histc(log(H1madepeaks),lnA);
 nH2made=histc(log(H2madepeaks),lnA);
 nL1made=histc(log(L1madepeaks),lnA);
- 
+
 eH1=nH1found./nH1made;
 eH2=nH2found./nH2made;
 eL1=nL1found./nL1made;
@@ -106,11 +106,11 @@ epsilon=1;     %smal-scale structure pre-factor (as in Damour and Vilenkin, 2005
 A=exp(lnA)*10^(-20);  %turn vector of ln(A) into A; and re-scale by 10^-20 factor
 
 for i=1:size(Gmu,2)
-        
+
     alpha=epsilon*(Gamma*Gmu(i))^n;   %value of the size of the small-scale structure
-    a=A./(t0^(-1/3)*Gmu(i)*(alpha^(2/3)));   %Reduced amplitude vector      
+    a=A./(t0^(-1/3)*Gmu(i)*(alpha^(2/3)));   %Reduced amplitude vector
     b=10^2 * c * alpha^(-5/3)*(p*Gamma*Gmu(i))^(-1) * t0^(-1) * (f*t0)^(-2/3);
-    dRdlnA=b*aeq^(33/40)*a.^(-11/5) .* ((1+1/aeq*a).^(33/40)).*(1+a).^(-13/8); %Rate per logarithmic interval of amplitude 
+    dRdlnA=b*aeq^(33/40)*a.^(-11/5) .* ((1+1/aeq*a).^(33/40)).*(1+a).^(-13/8); %Rate per logarithmic interval of amplitude
 
     %apply theta fn cutoff
     theta0=(alpha*f*t0).^(-1/3);
@@ -120,8 +120,8 @@ for i=1:size(Gmu,2)
 
     R(i)=dlnA*sum(eH1p.*dRdlnA');
 
-%    R(i)=R(i)+dRdlnA(size(dRdlnA,2));   
-                             %This last addition is for events with amplitude larger than the largest amplitude 
+%    R(i)=R(i)+dRdlnA(size(dRdlnA,2));
+                             %This last addition is for events with amplitude larger than the largest amplitude
                              %(which I assume we detect with efficiency 1);
                              %it makes no difference whether we add it in or
                              %not actually

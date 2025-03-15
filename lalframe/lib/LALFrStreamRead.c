@@ -48,7 +48,7 @@ int XLALFrStreamGetVectorLength(const char *chname, LALFrStream * stream)
     return XLALFrFileQueryChanVectorLength(stream->file, chname, stream->pos);
 }
 
-/** 
+/**
  * @brief Returns the type code for the data type of channel @p chname in the
  * current frame in frame stream @p stream.
  * @param chname String containing the name of the channel.
@@ -210,7 +210,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -228,7 +228,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -246,7 +246,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -264,7 +264,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -282,7 +282,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -300,7 +300,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -318,7 +318,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -336,7 +336,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -354,7 +354,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -372,7 +372,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -390,7 +390,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
@@ -407,7 +407,7 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration, and performs any needed type conversion.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.  If the channel being read is not
@@ -483,7 +483,7 @@ REAL8TimeSeries *XLALFrStreamInputREAL8TimeSeries(LALFrStream * stream,
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration, and performs any needed type conversion.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.  If the channel being read is not
@@ -594,7 +594,7 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * contained in a frame spanning the specified epoch.
  * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
@@ -609,7 +609,7 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * contained in a frame spanning the specified epoch.
  * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
@@ -624,7 +624,7 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * contained in a frame spanning the specified epoch.
  * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
@@ -639,7 +639,7 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * contained in a frame spanning the specified epoch.
  * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
@@ -653,7 +653,7 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch, and performs any needed type conversion.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * contained in a frame spanning the specified epoch.  If the channel being
  * read is not REAL8, the data is converted to type REAL8.
  * @param stream Pointer to the \c LALFrStream stream.
@@ -698,7 +698,7 @@ REAL8FrequencySeries *XLALFrStreamInputREAL8FrequencySeries(LALFrStream *
  * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch, and performs any needed type conversion.
  * @details
- * This routine reads data from a specified channel from a \c LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream
  * contained in a frame spanning the specified epoch.  If the channel being
  * read is not COMPLEX16, the data is converted to type COMPLEX16.
  * @param stream Pointer to the \c LALFrStream stream.
@@ -793,7 +793,7 @@ COMPLEX16FrequencySeries
  * data read from @p stream.  The channel name of the data to be read is given
  * by `stream->name` and the amount of data to be read is given by
  * `stream->data->length`.  The remaining metadata quantities in @p stream
- * are populated: `stream->epoch`, `stream->deltaT`, `stream->sampleUnits`. 
+ * are populated: `stream->epoch`, `stream->deltaT`, `stream->sampleUnits`.
  * If `stream->data` is NULL or `stream->data->length` is 0, only the
  * metadata is read; otherwise `stream->data->data` is populated with the
  * channel data.  The data begins at the current position of the stream,
@@ -953,7 +953,7 @@ COMPLEX16FrequencySeries
  * @brief Reads frequency series data from the current frame in a \c LALFrStream
  * stream.
  * @details
- * This routine is provided a frequency series @p series that will be populated 
+ * This routine is provided a frequency series @p series that will be populated
  * with data read from the current frame in @p stream.  The channel name of
  * the data to read is given by `series->name`. The metadata contained in
  * @p series is over-written with the metadata of the named frequency series in

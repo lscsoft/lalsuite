@@ -5,8 +5,8 @@
 # Model computed at temperature 0.0  MeV
 #
 #1000	number of points in H
-# This table has been interpolated from the original one in H 
-#  n_B [1/fm^3]   eps[g/cm^3]   P[dyn/cm^2] mu_B [MeV] mu_e [MeV] log-enthalpy H [dimensionless] Y_e+Y_mu[dimensionless] cs2[speed of sound squared] 
+# This table has been interpolated from the original one in H
+#  n_B [1/fm^3]   eps[g/cm^3]   P[dyn/cm^2] mu_B [MeV] mu_e [MeV] log-enthalpy H [dimensionless] Y_e+Y_mu[dimensionless] cs2[speed of sound squared]
 #
 0	1.0180745657339717e-11	1.6586122468902155e+04	1.6736726261730990e+19	9.3041428045287444e+02	9.4999999999999996e-01	1.0000000000000000e-10	4.6428571428571430e-01	2.2362879491571580e-06
 1	1.0000011135798643e-11	1.6586140938900844e+04	1.6741931798950656e+19	9.3041428045540431e+02	9.4999999999999996e-01	1.0243425117683012e-10	4.6428571428571430e-01	2.2362890227889175e-06

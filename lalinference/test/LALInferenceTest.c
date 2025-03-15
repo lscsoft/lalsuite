@@ -1,8 +1,8 @@
-/* 
+/*
  *  LALInferenceTest.c:  Unit tests for LALInference.c library code
  *
  *  Copyright (C) 2011 Ben Aylott, Ilya Mandel, Chiara Mingarelli Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch, Will Vousden
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -33,7 +33,7 @@
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LALInferenceInit.h>
-#include <lal/LALInferenceReadData.h> 
+#include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferencePrior.h>
@@ -60,7 +60,7 @@ int LALInferenceProcessParamLine_TEST_CHARFILE(void);
 int LALInferenceExecuteFTTEST_NULLPLAN(void);
 
 int main(void){
-    
+
 	int failureCount = 0;
 
 	failureCount += LALInferenceParseCommandLineTEST_NODBLDASH();
@@ -91,23 +91,23 @@ int LALInferenceParseCommandLineTEST_NODBLDASH(void){
     int errnum,i;
     const int number=3;
     ProcessParamsTable *answer;
-    
+
     char** list=(char**)XLALCalloc(3,sizeof(char*));
     for(i=0;i<number;i++){
         list[i]=(char*)XLALCalloc(10,sizeof(char));
     }
-    
+
     strcpy(list[0],"foo");
     strcpy(list[1],"bar");
     strcpy(list[2],"baz");
-   
+
     XLAL_TRY(answer=LALInferenceParseCommandLine(number,list), errnum);
     (void)number;
-    
+
     if (errnum == XLAL_SUCCESS||answer!=NULL)
     {
         TEST_FAIL("Did not use double dash on fist input, should fail; XLAL error code: %i.", errnum);
-    } 
+    }
 
     TEST_FOOTER();
 
@@ -119,21 +119,21 @@ int LALInferenceParseCommandLineTEST_STDINPUT(void){
     int errnum,i;
     ProcessParamsTable *answer;
     const int number=3;
-    
+
     char** list=(char**)XLALCalloc(3,sizeof(char*));
     for(i=0;i<number;i++){
         list[i]=(char*)XLALCalloc(10,sizeof(char));
     }
-    
+
     strcpy(list[0],"filename");
     strcpy(list[1],"--bar");
     strcpy(list[2],"--baz");
-   
+
     XLAL_TRY(answer=LALInferenceParseCommandLine(number,list), errnum);
     if (errnum == XLAL_SUCCESS||answer!=NULL)
     {
         printf("Standard input woking ... \n ");
-    } 
+    }
     else{
       TEST_FAIL("Input error; XLAL error code: %i.", errnum);
     }
@@ -148,16 +148,16 @@ int LALInferenceParseCommandLineTEST_DASHINPUT(void){
     int errnum,i;
     ProcessParamsTable *answer;
     const int number=3;
-    
+
     char** list=(char**)XLALCalloc(3,sizeof(char*));
     for(i=0;i<number;i++){
         list[i]=(char*)XLALCalloc(10,sizeof(char));
     }
-    
+
     strcpy(list[0],"foo");
     strcpy(list[1],"-bar");
     strcpy(list[2],"-baz");
-   
+
     XLAL_TRY(answer=LALInferenceParseCommandLine(number,list), errnum);
     if (errnum == XLAL_SUCCESS||answer!=NULL)
     {
@@ -252,19 +252,19 @@ int LALInferenceProcessParamLine_TEST_CHARFILE(void){
 
     FILE *file;
     LALInferenceVariables *vars;
-    
+
     char** headers=(char**)XLALCalloc(4,sizeof(char*));
-    
+
     for(i=0;i<3;i++){
         headers[i]=(char*)XLALCalloc(10,sizeof(char));
     }
-    
+
     strcpy(headers[0],"foo");
     strcpy(headers[1],"barbie");
     strcpy(headers[2],"baz");
     headers[3]=NULL;
     vars=XLALCalloc(1,sizeof(LALInferenceVariables));
-    
+
     // Create a temporary file, populate it, and rewind to the beginning before using it.
     file=tmpfile();
     fprintf(file, "2.99 3.01 b");
@@ -286,81 +286,81 @@ int LALInferenceProcessParamLine_TEST_CHARFILE(void){
 /* Test that LALInferenceExecuteFT fails if the FFT plan is NULL .*/
 
 int LALInferenceExecuteFTTEST_NULLPLAN(void){
-    
+
     TEST_HEADER();
-    
+
     UINT4 i, length;
     REAL8 deltaF;
     LIGOTimeGPS epoch={0,0};
     int errnum;
-    
+
     length = 1;
-    
+
     deltaF=0.1;
-    
+
     LALInferenceIFOData *testIFOData=(LALInferenceIFOData*)LALCalloc(1, sizeof(LALInferenceIFOData));
     LALInferenceModel *testModel = (LALInferenceModel *) LALCalloc(1, sizeof(LALInferenceModel));
     //LALInferenceIFOData  *testNULLIFOData = NULL;
-    
+
     REAL8TimeSeries *timeModelhPlus=(REAL8TimeSeries*)XLALCalloc(1, sizeof(REAL8TimeSeries));
     REAL8TimeSeries *timeModelhCross=(REAL8TimeSeries*)XLALCalloc(1, sizeof(REAL8TimeSeries));
     REAL8TimeSeries *TData=(REAL8TimeSeries*)XLALCreateREAL8TimeSeries("timeData",&epoch,0.0,0.1,&lalDimensionlessUnit,length);
-    
+
     REAL8Sequence *TimedataPlus=XLALCreateREAL8Sequence(length);
     REAL8Sequence *TimedataCross=XLALCreateREAL8Sequence(length);
-    
+
     REAL8Window *window=XLALCalloc(1, sizeof(REAL8Window));
     REAL8Sequence *Windowdata=XLALCreateREAL8Sequence(length);
-    
+
     COMPLEX16Sequence *Freqdata=XLALCreateCOMPLEX16Sequence(length);
-    
+
     COMPLEX16FrequencySeries *freqData=XLALCalloc(1, sizeof(COMPLEX16FrequencySeries));
-    
+
     testIFOData->freqData=freqData;
     testIFOData->freqData->deltaF=deltaF;
     testIFOData->freqData->data=Freqdata;
-    
+
     testIFOData->freqData->data->length=length;
-    
+
     testModel->timehPlus=timeModelhPlus;
     testModel->timehPlus->data=TimedataPlus;
     testModel->timehPlus->data->length=length;
-    
+
     testModel->timehCross=timeModelhCross;
     testModel->timehCross->data=TimedataCross;
     testModel->timehCross->data->length=length;
-    
+
     testIFOData->timeData=TData;
     testIFOData->timeData->epoch=epoch;
-    
+
     testIFOData->window=window;
-    
+
     testIFOData->window->data=Windowdata;
-    
+
     testModel->timeToFreqFFTPlan=NULL;
 
     for (i=0; i<length; ++i){
-        testModel->timehPlus->data->data[i]  = 0.0; 
+        testModel->timehPlus->data->data[i]  = 0.0;
         testModel->timehCross->data->data[i] = 0.0;
     }
 
-    if (testIFOData!=NULL && testModel!=NULL){            
+    if (testIFOData!=NULL && testModel!=NULL){
         XLAL_TRY(LALInferenceExecuteFT(testModel), errnum);
-        
+
         if( errnum == XLAL_SUCCESS ){
           TEST_FAIL("Should not pass; timeToFreqFFTPlan is NULL!");
         }
     }
-    
+
     TEST_FOOTER();
 
 }
 
 
 /******************************************
- * 
+ *
  * Old tests
- * 
+ *
  ******************************************/
 
 LALInferenceVariables variables;
@@ -375,7 +375,7 @@ COMPLEX8 numberC8;
 COMPLEX16 numberC16;
 REAL8 likelihood, nulllikelihood;
 
-LALStatus status;	
+LALStatus status;
 ProcessParamsTable *ppt, *ptr;
 LALInferenceRunState *runstate=NULL;
 int i, j, k;
@@ -408,7 +408,7 @@ void PTMCMCTest(void);
 //{
 //	REAL8 loglikeli, totalChiSquared=0.0;
 //	LALInferenceIFOData *ifoPtr=data;
-//	
+//
 //	/* loop over data (different interferometers): */
 //	while (ifoPtr != NULL) {
 //		totalChiSquared+=ComputeFrequencyDomainOverlap(ifoPtr, ifoPtr->freqData->data, ifoPtr->freqData->data);
@@ -429,7 +429,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	unsigned long int randomseed;
 	struct timeval tv;
 	FILE *devrandom;
-	
+
 	irs = XLALCalloc(1, sizeof(LALInferenceRunState));
     LALInferenceInitCBCThreads(irs, 1);
     thread = &irs->threads[0];
@@ -444,17 +444,17 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 
 	if (irs->data != NULL) {
 		fprintf(stdout, " initialize(): successfully read data.\n");
-		
+
 		fprintf(stdout, " LALInferenceInjectInspiralSignal(): started.\n");
 		LALInferenceInjectInspiralSignal(irs->data,commandLine);
 		fprintf(stdout, " LALInferenceInjectInspiralSignal(): finished.\n");
-		
+
 		thread->currentIFOLikelihoods[0]=LALInferenceNullLogLikelihood(irs->data);
 		printf("Injection Null Log Likelihood: %g\n", thread->currentIFOLikelihoods[0]);
 	}
 	else
 		fprintf(stdout, " initialize(): no data read.\n");
-	
+
 	/* set up GSL random number generator: */
 	gsl_rng_env_setup();
 	irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
@@ -470,7 +470,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 		if ((devrandom = fopen("/dev/urandom","r")) == NULL) {
 			gettimeofday(&tv, 0);
 			randomseed = tv.tv_sec + tv.tv_usec;
-		} 
+		}
 		else {
 			if(!fread(&randomseed, sizeof(randomseed), 1, devrandom))
                 exit(1);
@@ -479,7 +479,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	}
 	fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
 	gsl_rng_set(irs->GSLrandom, randomseed);
-	
+
 	return(irs);
 }
 
@@ -514,18 +514,18 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
     logLikelihoodProposed = -HUGE_VAL;
 
   // determine acceptance probability:
-  logAcceptanceProbability = (logLikelihoodProposed - logLikelihoodCurrent) 
+  logAcceptanceProbability = (logLikelihoodProposed - logLikelihoodCurrent)
                              + (logPriorProposed - logPriorCurrent)
                              + logProposalRatio;
 
   // accept/reject:
-  if ((logAcceptanceProbability > 0) 
+  if ((logAcceptanceProbability > 0)
       || (log(gsl_rng_uniform(thread->GSLrandom)) < logAcceptanceProbability)) {   //accept
     LALInferenceCopyVariables(&proposedParams, thread->currentParams);
     thread->currentLikelihood = logLikelihoodProposed;
   }
 
-  LALInferenceClearVariables(&proposedParams);	
+  LALInferenceClearVariables(&proposedParams);
 }
 
 
@@ -601,13 +601,13 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
 /*  - allow to supply starting simplex?                                             */
 /*  - allow to specify stop criteria from outside.                                  */
 /*  - get rid of text output.                                                       */
-/*  - somehow allow parameters like phase or rightascension to wrap around          */ 
+/*  - somehow allow parameters like phase or rightascension to wrap around          */
 /*    (i.e. let the simplex move across parameter space bounds)                     */
 /************************************************************************************/
 {
   int ML = 1; // ML==1 --> Maximum-Likelihood (ML);  ML==0 --> Maximum-A-Posteriori (MAP).
   //REAL8 e = sqrt(LAL_REAL8_EPS); // stop criterion
-  REAL8 epsilon = 0.001;  // stop criterion 
+  REAL8 epsilon = 0.001;  // stop criterion
   int maxiter = 500;      // also stop criterion
 
   //int i, j;
@@ -625,7 +625,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
   int iteration;
   int terminate=0;
   int mini, maxi;
-  
+
   LALInferenceThreadState *thread = &runState->threads[0];
 
   printf(" NelderMeadAlgorithm(); current parameter values:\n");
@@ -698,7 +698,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
       // compute prior & likelihood:
       NelderMeadEval(runState, nameVec, &simplex[i*nmDim], nmDim, &logprior, &loglikelihood);
       val_simplex[i] = ML ? loglikelihood : logprior+loglikelihood;
-    }    
+    }
   }
   // determine minimum & maximum in simplex:
   mini = maxi = 0;
@@ -785,7 +785,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
       if (val_simplex[i] < val_simplex[mini]) mini = i;
       if (val_simplex[i] > val_simplex[maxi]) maxi = i;
     }
-    printf(" iter=%d,  maxi=%f,  range=%f\n", 
+    printf(" iter=%d,  maxi=%f,  range=%f\n",
            iteration, val_simplex[maxi], val_simplex[maxi]-val_simplex[mini]);
     // termination condition:
     terminate = ((val_simplex[maxi]-val_simplex[mini]<epsilon) || (iteration>=maxiter));
@@ -818,7 +818,7 @@ void LALVariablesTest(void)
   five=5.0;
   variables.head=NULL;
   variables.dimension=0;
-	
+
   memset(&status,0,sizeof(status));
   LALInferenceAddVariable(&variables, "number", &number, LALINFERENCE_REAL4_t,LALINFERENCE_PARAM_FIXED);
   numberR8 = 7.0;
@@ -856,7 +856,7 @@ void LALVariablesTest(void)
 
   LALInferenceRemoveVariable(&variables,"number");
   fprintf(stdout,"Removed, Checkvariable?: %i\n",LALInferenceCheckVariable(&variables,"number"));
-  
+
   fprintf(stdout,"LALInferenceCompareVariables?: %i\n",
           LALInferenceCompareVariables(&variables,&variables2));
   LALInferenceClearVariables(&variables);
@@ -869,19 +869,19 @@ void LALVariablesTest(void)
 void DataTest(void)
 {
 	fprintf(stdout," data found --> trying some template computations etc.\n");
-    
+
     /* print some information on individual "runstate->data" elements: */
     IfoPtr = runstate->data;  i = 1;
     while (IfoPtr != NULL) {
       if (IfoPtr->timeData)
-        fprintf(stdout, " [%d] timeData (\"%s\"): length=%d, deltaT=%f, epoch=%.3f\n", 
-                i, IfoPtr->timeData->name, IfoPtr->timeData->data->length, IfoPtr->timeData->deltaT, 
+        fprintf(stdout, " [%d] timeData (\"%s\"): length=%d, deltaT=%f, epoch=%.3f\n",
+                i, IfoPtr->timeData->name, IfoPtr->timeData->data->length, IfoPtr->timeData->deltaT,
                 XLALGPSGetREAL8(&IfoPtr->timeData->epoch));
       if (IfoPtr->freqData)
-        fprintf(stdout, "     freqData (\"%s\"): length=%d, deltaF=%f\n", 
+        fprintf(stdout, "     freqData (\"%s\"): length=%d, deltaF=%f\n",
                 IfoPtr->freqData->name, IfoPtr->freqData->data->length, IfoPtr->freqData->deltaF);
-      fprintf(stdout, "     fLow=%.1f Hz,  fHigh=%.1f Hz  (%d freq bins w/in range)\n", 
-              IfoPtr->fLow, IfoPtr->fHigh, 
+      fprintf(stdout, "     fLow=%.1f Hz,  fHigh=%.1f Hz  (%d freq bins w/in range)\n",
+              IfoPtr->fLow, IfoPtr->fHigh,
               ((int) (floor(IfoPtr->fHigh / IfoPtr->freqData->deltaF) - ceil(IfoPtr->fLow / IfoPtr->freqData->deltaF)))+1);
       fprintf(stdout, "     detector location: (%.1f, %.1f, %.1f)\n",
               IfoPtr->detector->location[0], IfoPtr->detector->location[1], IfoPtr->detector->location[2]);
@@ -897,7 +897,7 @@ void DataTest(void)
 
     IfoPtr=runstate->data;
 	SimInspiralTable *injTable= XLALSimInspiralTableFromLIGOLw(LALInferenceGetProcParamVal(ppt,"--injXML")->value);
-	
+
 	REAL8 mc = injTable->mchirp;
 	REAL8 eta = injTable->eta;
     REAL8 iota = injTable->inclination;
@@ -908,13 +908,13 @@ void DataTest(void)
 	REAL8 dec_current = injTable->latitude;
 	REAL8 psi_current = injTable->polarization;
 	REAL8 distMpc_current = injTable->distance;
-	
-	
+
+
 	LALInferenceAddVariable(&currentParams, "chirpmass",       &mc,              LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(&currentParams, "eta",       &eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(&currentParams, "inclination",     &iota,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(&currentParams, "phase",           &phi,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-    LALInferenceAddVariable(&currentParams, "time",            &tc   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
+    LALInferenceAddVariable(&currentParams, "time",            &tc   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(&currentParams, "rightascension",  &ra_current,      LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
     LALInferenceAddVariable(&currentParams, "declination",     &dec_current,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(&currentParams, "polarisation",    &psi_current,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
@@ -930,7 +930,7 @@ printf("Likelihood %g NullLikelihood %g RelativeLikelihood %g\n", likelihood, nu
 /*
     LALTemplateGeneratePPN(runstate->data);
 	  executeFT(runstate->data);
-	  
+
 	  FILE *testout=fopen("test_FD.txt","w");
 	  for (i=0;i<runstate->data->freqModelhPlus->data->length;i++){
 		  fprintf(testout,"%g %g %g %g %g\n",i*runstate->data->freqModelhPlus->deltaF,
@@ -970,8 +970,8 @@ printf("Likelihood %g NullLikelihood %g RelativeLikelihood %g\n", likelihood, nu
 				  //runstate->data->freqData->data->data[i].re,
 				  runstate->data->freqData->data->data[i].im);
 	  }
-	  
-*/	  
+
+*/
     fprintf(stdout," ----------\n");
 }
 
@@ -984,31 +984,31 @@ void SingleIFOLikelihoodTest(void)
 	//COMPLEX16Vector *freqModel1=XLALCreateCOMPLEX16Vector(runstate->data->freqData->data->length);
 	//COMPLEX16Vector *freqModel2=XLALCreateCOMPLEX16Vector(runstate->data->freqData->data->length);
 	numberI4 = LAL_PNORDER_TWO;
-    LALInferenceSetVariable(&currentParams, "LAL_PNORDER",     &numberI4);	
+    LALInferenceSetVariable(&currentParams, "LAL_PNORDER",     &numberI4);
 	numberI4 = TaylorT1;
-    LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);														  																  
+    LALInferenceSetVariable(&currentParams, "LAL_APPROXIMANT", &numberI4);
     //LALInferenceComputeFreqDomainResponse(&currentParams, runstate->data, runstate->model, freqModel1);
     //freqModel2=runstate->data->freqData->data;
 	//ComputeFreqDomainResponse(&currentParams, runstate->data, templateLAL, freqModel2);
 	//FILE * freqModelFile=fopen("freqModelFile.dat", "w");
 	/*for(i=0; i<(int)runstate->data->freqData->data->length; i++){
-		fprintf(freqModelFile, "%g\t %g\t %g\t %g\t %g\t %g\n", 
+		fprintf(freqModelFile, "%g\t %g\t %g\t %g\t %g\t %g\n",
 		((double)i)*1.0/ (((double)runstate->data->timeData->data->length) * runstate->data->timeData->deltaT),
 		creal(freqModel1->data[i]), cimag(freqModel1->data[i]), creal(freqModel2->data[i]), cimag(freqModel2->data[i]),
 		runstate->data->oneSidedNoisePowerSpectrum->data->data[i]);
 		}*/
-	/*fprintf(stdout, "overlap=%g\n", 
+	/*fprintf(stdout, "overlap=%g\n",
 		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2));
-	fprintf(stdout, "<d|d>=%g, <d|h>=%g, <h|h>=%g, <d|h>-1/2<h|h>=%g\n", 
+	fprintf(stdout, "<d|d>=%g, <d|h>=%g, <h|h>=%g, <d|h>-1/2<h|h>=%g\n",
 		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel2),
 		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel2),
 		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1),
 		LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel2, freqModel1)
 			-0.5*LALInferenceComputeFrequencyDomainOverlap(runstate->data, freqModel1, freqModel1)
-			);*/				
+			);*/
 	//fprintf(stdout, "likelihood %g\n",
 	//	LALInferenceFreqDomainLogLikelihood(&currentParams, runstate->data, runstate->model));
-	fprintf(stdout, "undecomposed likelihood %g \n", 
+	fprintf(stdout, "undecomposed likelihood %g \n",
 		LALInferenceUndecomposedFreqDomainLogLikelihood(&currentParams, runstate->data, thread->model));
 	fprintf(stdout, "null likelihood %g decomposed null likelihood %g\n",
 		LALInferenceNullLogLikelihood(runstate->data),
@@ -1032,7 +1032,7 @@ void TemplateDumpTest(void)
     LALInferenceDumptemplateTimeDomain(&currentParams, thread->model, "test_TTemplate3525TD.csv");
 
     fprintf(stdout," ----------\n");
-	 
+
 	 double mass1=10.;
 	 double mass2=1.4;
     LALInferenceAddVariable(&currentParams, "m1",       &mass1,              LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
@@ -1052,12 +1052,12 @@ void TemplateDumpTest(void)
 	  double shift0 = 0.3;
 	  LALInferenceAddVariable(&currentParams, "shift0",       &shift0,              LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	  double coa_phase = 0.1;
-	  LALInferenceAddVariable(&currentParams, "coa_phase",    &coa_phase,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);	  
+	  LALInferenceAddVariable(&currentParams, "coa_phase",    &coa_phase,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	  double PNorder = 3.5;
-	  LALInferenceAddVariable(&currentParams, "PNorder",      &PNorder,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);	  
+	  LALInferenceAddVariable(&currentParams, "PNorder",      &PNorder,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 	  LALInferenceDumptemplateTimeDomain(&currentParams, thread->model, "test_TTemplateXLALSimInspiralChooseWaveformSTPN.csv");
 
-	  
+
     /* These are the LAL templates that (...seem to...) work right now: */
     /* TaylorT1, TaylorT2, TaylorT3, TaylorF2, IMRPhenomA, PadeT1, EOB  */
     numberI4 = LAL_PNORDER_TWO;
@@ -1143,10 +1143,10 @@ void PTMCMCTest(void)
 	runstate->likelihood=LALInferenceUndecomposedFreqDomainLogLikelihood;
 	//runstate->likelihood=GaussianLikelihood;
 	thread->model->templt=LALInferenceTemplateXLALSimInspiralChooseWaveform;
-	
-	
+
+
 	SimInspiralTable *injTable= XLALSimInspiralTableFromLIGOLw(LALInferenceGetProcParamVal(ppt,"--injXML")->value);
-	
+
 	REAL8 mc = injTable->mchirp;
 	REAL8 eta = injTable->eta;
     REAL8 iota = injTable->inclination;
@@ -1157,32 +1157,30 @@ void PTMCMCTest(void)
 	REAL8 dec_current = injTable->latitude;
 	REAL8 psi_current = injTable->polarization;
 	REAL8 distMpc_current = injTable->distance;
-	
+
     numberI4 = TaylorF2;
     LALInferenceAddVariable(&currentParams, "LAL_APPROXIMANT", &numberI4,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
     numberI4 = LAL_PNORDER_TWO;
     LALInferenceAddVariable(&currentParams, "LAL_PNORDER",     &numberI4,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
-	
+
 	LALInferenceAddVariable(&currentParams, "chirpmass",       &mc,              LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(&currentParams, "eta",       &eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(&currentParams, "inclination",     &iota,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
     LALInferenceAddVariable(&currentParams, "phase",           &phi,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
-    LALInferenceAddVariable(&currentParams, "time",            &tc   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
+    LALInferenceAddVariable(&currentParams, "time",            &tc   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(&currentParams, "rightascension",  &ra_current,      LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
     LALInferenceAddVariable(&currentParams, "declination",     &dec_current,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
     LALInferenceAddVariable(&currentParams, "polarisation",    &psi_current,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
     LALInferenceAddVariable(&currentParams, "distance",        &distMpc_current, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	
-	
+
+
 	REAL8 x0 = 0.9;
 	LALInferenceAddVariable(&currentParams, "x0", &x0,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	
-	
-	
-	
+
+
+
+
 	thread->currentParams=&currentParams;
 	//PTMCMCAlgorithm(runstate);
 	fprintf(stdout, "End of PTMCMC test\n");
 }
-
-

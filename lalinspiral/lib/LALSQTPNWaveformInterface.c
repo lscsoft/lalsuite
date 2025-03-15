@@ -10,7 +10,7 @@
 #include <lal/LALSQTPNWaveformInterface.h>
 #include <lal/LALSQTPNWaveform.h>
 
-void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1, 
+void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1,
 		REAL4Vector *signalvec2, InspiralTemplate *params) {
 
 	XLAL_PRINT_DEPRECATION_WARNING("XLALSQTPNWaveformTemplates");
@@ -24,14 +24,14 @@ void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1,
 	RETURN(status);
 }
 
-int XLALSQTPNWaveformTemplates (REAL4Vector *signalvec1, 
+int XLALSQTPNWaveformTemplates (REAL4Vector *signalvec1,
 		REAL4Vector *signalvec2, InspiralTemplate *params) {
 
 	// Check the relevant pointers
-	if( !signalvec1 || !signalvec1->data || !signalvec2 
+	if( !signalvec1 || !signalvec1->data || !signalvec2
 			|| !signalvec2->data || !params )
 		XLAL_ERROR(XLAL_EFAULT);
-	
+
 	// Check the parameters are sane
 	if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0 			|| params->tSampling <= 0 || params->totalMass <= 0.)
 		XLAL_ERROR(XLAL_EINVAL);
@@ -78,7 +78,7 @@ int XLALSQTPNWaveform (REAL4Vector *signalvec, InspiralTemplate *params){
 	// Check the relevant pointers
 	if( !signalvec || !signalvec->data || !params )
 		XLAL_ERROR(XLAL_EFAULT);
-	
+
 	// Check the parameters are sane
 	if( params->nStartPad < 0 || params->nEndPad < 0 || params->fLower <= 0 			|| params->tSampling <= 0 || params->totalMass <= 0.)
 		XLAL_ERROR(XLAL_EINVAL);
@@ -126,7 +126,7 @@ void LALSQTPNWaveformForInjection(LALStatus *status, CoherentGW *waveform,
 
 
 
-int XLALSQTPNWaveformForInjection(CoherentGW *waveform, 
+int XLALSQTPNWaveformForInjection(CoherentGW *waveform,
 		InspiralTemplate *params, PPNParamStruc *ppnParams) {
 
 	// Check the relevant pointers
@@ -184,14 +184,14 @@ int XLALSQTPNWaveformForInjection(CoherentGW *waveform,
 			waveform->a->data->length = 2 * wave.length;
 			for (i = 0; i < wave.length; i++) {
 				// (PPNParamStruct)ppnParams->phi === (InspiralTemplate)params->startPhase === (SimInspiralTable)injparams/this_event->coa_phase it is set to 0 in LALSQTPNWaveformTest.c at line 83.
-				waveform->phi->data->data[i] 
-					= waveform->phi->data->data[i] 
-					- waveform->phi->data->data[wave.length-1] 
+				waveform->phi->data->data[i]
+					= waveform->phi->data->data[i]
+					- waveform->phi->data->data[wave.length-1]
 					+ ppnParams->phi;
 			}
-			waveform->a->deltaT = waveform->f->deltaT 
+			waveform->a->deltaT = waveform->f->deltaT
 					= waveform->phi->deltaT
-					= waveform->shift->deltaT 
+					= waveform->shift->deltaT
 					= 1. / params->tSampling;
 
 			waveform->a->sampleUnits = lalStrainUnit;
@@ -206,7 +206,7 @@ int XLALSQTPNWaveformForInjection(CoherentGW *waveform,
 					"STPN inspiral amplitudes");
 			snprintf(waveform->f->name, LALNameLength,
 					"STPN inspiral frequency");
-			snprintf(waveform->phi->name, LALNameLength, 
+			snprintf(waveform->phi->name, LALNameLength,
 					"STPN inspiral phase");
 			snprintf(waveform->shift->name, LALNameLength,
 					"STPN inspiral polshift");
@@ -214,9 +214,9 @@ int XLALSQTPNWaveformForInjection(CoherentGW *waveform,
 		// --- fill some output ---
 		ppnParams->tc = (REAL8) (wave.length - 1) / params->tSampling;
 		ppnParams->length = wave.length;
-		ppnParams->dfdt 
+		ppnParams->dfdt
 			= ((REAL4) (waveform->f->data->data[wave.length - 1]
-			- waveform->f->data->data[wave.length - 2])) 
+			- waveform->f->data->data[wave.length - 2]))
 			* ppnParams->deltaT;
 		ppnParams->fStop = params->fFinal;
 		ppnParams->termCode = GENERATEPPNINSPIRALH_EFSTOP;
@@ -345,4 +345,3 @@ void XLALSQTPNFillParams(LALSQTPNWaveformParams *wave, InspiralTemplate *params)
 	printf("order: %d\n", wave->order);
 	printf("spin: %d\n", wave->interaction);*/
 }
-

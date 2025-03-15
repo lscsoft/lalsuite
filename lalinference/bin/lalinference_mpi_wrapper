@@ -54,4 +54,3 @@ $MPIRUN -np $NP $EXE $MCMCARGS
 MPI_EXIT_CODE=$?
 echo "MPI exited with code ${MPI_EXIT_CODE}"
 exit $MPI_EXIT_CODE
-

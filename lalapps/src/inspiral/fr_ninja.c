@@ -476,7 +476,7 @@ INT4 main(INT4 argc, CHAR **argv)
         hplusREAL8[l][m] = NULL;
         hcrossREAL8[l][m] = NULL;
         waveformsREAL8[l][m] = NULL;
-        
+
         /* initilise waveform time series */
         hplusREAL8[l][m] = XLALCreateREAL8TimeSeries(plus_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
         hcrossREAL8[l][m] = XLALCreateREAL8TimeSeries(cross_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
@@ -486,7 +486,7 @@ INT4 main(INT4 argc, CHAR **argv)
         hplus[l][m] = NULL;
         hcross[l][m] = NULL;
         waveforms[l][m] = NULL;
-      
+
         /* initilise waveform time series */
         hplus[l][m] = XLALCreateREAL4TimeSeries(plus_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
         hcross[l][m] = XLALCreateREAL4TimeSeries(cross_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);

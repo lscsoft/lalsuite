@@ -46,7 +46,7 @@ int XLALSimBurstImg(
 
 	nrow = image->dimLength->data[0];
 	ncol = image->dimLength->data[1];
-	
+
 	/* make a time series that has some padding at start and end */
 	pad = floor(15.0 * dt / deltaT);
 	length = floor((ncol - 1.) * dt / deltaT) + 2 * pad;

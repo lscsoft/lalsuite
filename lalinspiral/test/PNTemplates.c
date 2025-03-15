@@ -287,4 +287,3 @@ GetInspiralMoments (
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
-

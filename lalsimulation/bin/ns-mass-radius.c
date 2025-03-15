@@ -28,7 +28,7 @@
 
 int usage(const char *program);
 int parseargs(int argc, char *argv[]);
-int output(const char *fmt, double c, double m, double r, double w, double z, double k2); 
+int output(const char *fmt, double c, double m, double r, double w, double z, double k2);
 
 /* global variables  */
 
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
             z = fabs(J1/(J2 + J3) - 1.0); /* GRV2 (dimesionless) */
 
             output(global_fmt, c, m, r, w, z, k2);
-        }   
+        }
     }
 
     XLALDestroySimNeutronStarEOS(global_eos);

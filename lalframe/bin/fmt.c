@@ -34,7 +34,7 @@
  * standard output.  The `file` operands are processed in command-line order.
  * If `file` is a single dash (`-`) or absent, `lalfr-fmt` reads from the
  * standard input.
- * 
+ *
  * If `file` contains only one column of data, each row is interpreted as a
  * sample of a single channel having a sample rate of 16384 Hz.  If there are
  * more than one column in `file` then the first column is interpreted as the

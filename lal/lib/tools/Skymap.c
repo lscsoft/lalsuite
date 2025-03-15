@@ -337,11 +337,11 @@ void XLALSkymapUncertainKernelConstruct(
         XLALSkymapKernelType* kernel
         )
 {
-	
+
     int i, j, k;
-	
+
     double a[XLALSKYMAP_N][XLALSKYMAP_N];
-	
+
     // compute the signal covariance matrix
 
     for (i = 0; i != plan->n; ++i)
@@ -445,5 +445,3 @@ void XLALSkymapApply(
     *posterior = 0.5 * a + kernel->logNormalization;
 
 }
-
-

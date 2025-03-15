@@ -231,7 +231,7 @@ static COMPLEX16 XLALSimInspiralSF2Polarization(
             plus_fac = 0.;
             cross_fac = 0.;
     }
-    
+
     return plus_fac*cos(2.*psiJ) + cross_fac*sin(2.*psiJ);
 }
 
@@ -252,7 +252,7 @@ static void XLALSimInspiralSF2Emission(
     emission[3] = (1.-cosbeta)*sinbeta/4.;
     emission[4] = (1.-cosbeta)*(1.-cosbeta)/4.;
 
-    return; 
+    return;
 }
 
 
@@ -269,7 +269,7 @@ static size_t CeilPow2(double n) {
     if (signif == 0.5)
         exponent -= 1;
     return ((size_t) 1) << exponent;
-} */ 
+} */
 
 /**
  * @addtogroup LALSimInspiralSpinTaylor_c

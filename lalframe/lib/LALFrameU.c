@@ -74,7 +74,7 @@ enum {
 #define FRAME_LIBRARY_SELECT_REAL8(function, ...) FRAME_LIBRARY_SELECT_VAL(XLAL_REAL8_FAIL_NAN, function, __VA_ARGS__)
 #define FRAME_LIBRARY_SELECT(function, ...) FRAME_LIBRARY_SELECT_VAL(XLAL_FAILURE, function, __VA_ARGS__)
 
-/* 
+/*
  * Routine that returns selected frame library:
  * if LAL_FRAME_LIBRARY is set, use the value from that environment;
  * otherwise use the default value.

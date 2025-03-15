@@ -41,7 +41,7 @@ import tempfile
 from configparser import ConfigParser
 
 
-from ligo.segments import utils as segmentsUtils
+from igwn_segments import utils as segmentsUtils
 from glue import pipeline
 import lal
 from lal.utils import CacheEntry

@@ -17,13 +17,13 @@
 *  MA  02110-1301  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: chirplen.c
  *
  * Author: Brown, D. A. and Brady, P. R.
- * 
- * 
+ *
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -114,7 +114,7 @@ int main ( int argc, char *argv[] )
     {"specfile",                required_argument, 0,                'o'},
     {"chisq-bins",              required_argument, 0,                'p' },
     {"wavefile",                required_argument, 0,                'q'},
-    {"help",                    no_argument,       0,                'h'}, 
+    {"help",                    no_argument,       0,                'h'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
   };
@@ -122,7 +122,7 @@ int main ( int argc, char *argv[] )
 
 
   /*
-   * 
+   *
    * initialize things
    *
    */
@@ -138,7 +138,7 @@ int main ( int argc, char *argv[] )
     int LALoptarg_len = 0;
 
     c = LALgetopt_long_only( argc, argv,
-        "f:m:n:o:p:hV", long_options, 
+        "f:m:n:o:p:hV", long_options,
 	&option_index );
 
     /* detect the end of the options */
@@ -146,7 +146,7 @@ int main ( int argc, char *argv[] )
     {
       break;
     }
-    
+
     switch ( c )
     {
       case 0:
@@ -183,7 +183,7 @@ int main ( int argc, char *argv[] )
         specFile = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
         memcpy( specFile, LALoptarg, LALoptarg_len );
         break;
- 
+
       case 'p':
         /* number of chisq bins */
         numChisqBins=atof(LALoptarg);
@@ -205,7 +205,7 @@ int main ( int argc, char *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "Compute some basic properties of inspiral signals\n" 
+        fprintf( stdout, "Compute some basic properties of inspiral signals\n"
             "Patrick R Brady and Duncan Brown\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
@@ -232,7 +232,7 @@ int main ( int argc, char *argv[] )
       exit(1);
     }
   }
-  
+
   /* maul input and print out some information */
   if ( m1 <= 0.0 || m2 <= 0.0 ){
     fprintf(stderr, "Mass parameters m1 and m2 must be positive\n");
@@ -246,14 +246,14 @@ int main ( int argc, char *argv[] )
 
   if (verbose){
     fprintf( stdout, "m1 = %e\tm2 = %e\tfLow = %e\n", m1, m2, fstart );
-    fprintf( stdout, "eta = %0.2f\tm = %0.2f\tmchirp = %0.2f\n", 
+    fprintf( stdout, "eta = %0.2f\tm = %0.2f\tmchirp = %0.2f\n",
         eta, mtot, mchirp);
     fprintf( stdout, "isco freq = %e Hz\n", f_max );
   }
 
-  
+
   /***************************************************************************
-   * this is independent code to compute the duration of the chirp 
+   * this is independent code to compute the duration of the chirp
    **************************************************************************/
   c0 = 5*mtot*LAL_MTSUN_SI/(256*eta);
   c2 = 743.0/252.0 + eta*11.0/3.0;
@@ -310,21 +310,21 @@ int main ( int argc, char *argv[] )
    * Print out the information that's wanted for the inspiral group
    *******************************************************************/
   if (machine) {
-    
+
     fprintf( stdout, "%e %e %e %e %e %e\n", m1, m2,
-        ppnParams.fStart, ppnParams.fStop, ppnParams.tc, 
-        (float)(0.5/LAL_PI) * (waveform.phi->data->data[waveform.phi->data->length-1] 
+        ppnParams.fStart, ppnParams.fStop, ppnParams.tc,
+        (float)(0.5/LAL_PI) * (waveform.phi->data->data[waveform.phi->data->length-1]
                                - waveform.phi->data->data[0]) );
-  
+
   } else {
 
     fprintf( stdout, "fStart according to Tev = %e Hz\n", ppnParams.fStart );
     fprintf( stdout, "fStop  according to Tev = %e Hz\n", ppnParams.fStop );
     fprintf( stdout, "length according to Tev = %e seconds\n", ppnParams.tc );
-    fprintf( stdout, "Ncycle according to Tev = %f \n", 
-        (float)(0.5/LAL_PI) * (waveform.phi->data->data[waveform.phi->data->length-1] 
+    fprintf( stdout, "Ncycle according to Tev = %f \n",
+        (float)(0.5/LAL_PI) * (waveform.phi->data->data[waveform.phi->data->length-1]
                                - waveform.phi->data->data[0]));
-  
+
   }
 
   /***********************************************************************
@@ -343,8 +343,8 @@ int main ( int argc, char *argv[] )
     spectrum.deltaF = df;
     spectrum.data = NULL;
 
-    LAL_CALL( LALCreateVector( &status, &(spectrum.data), 
-          1 + (INT4)( (ppnParams.fStop - ppnParams.fStart)/spectrum.deltaF ) ), 
+    LAL_CALL( LALCreateVector( &status, &(spectrum.data),
+          1 + (INT4)( (ppnParams.fStop - ppnParams.fStart)/spectrum.deltaF ) ),
         &status );
 
     LAL_CALL( LALReadNoiseSpectrum( &status, &spectrum, specFile), &status);
@@ -353,14 +353,14 @@ int main ( int argc, char *argv[] )
     norm = (spectrum.data->data[0] * spectrum.data->data[0]);
     for ( k=0 ; k<spectrum.data->length ; k++){
       freq = spectrum.f0 + k * df;
-      sum += norm * pow(freq, -7.0/3.0) / 
+      sum += norm * pow(freq, -7.0/3.0) /
         (spectrum.data->data[k] * spectrum.data->data[k]);
     }
 
     chisqSum = 0.0;
     for ( k=0 ; k<spectrum.data->length ; k++){
       freq = spectrum.f0 + k * df;
-      chisqSum += norm * pow(freq, -7.0/3.0) 
+      chisqSum += norm * pow(freq, -7.0/3.0)
         / (spectrum.data->data[k] * spectrum.data->data[k]);
       if ( chisqSum/sum >= 1.0/numChisqBins ){
         fprintf(stdout,"%f ",freq);
@@ -383,7 +383,7 @@ int main ( int argc, char *argv[] )
     for(i = 0; i<waveform.phi->data->length ; i++)
     {
       float tmper =  0.5/LAL_PI;
-      fprintf(fpout,"%e %e %e\n", i*ppnParams.deltaT, 
+      fprintf(fpout,"%e %e %e\n", i*ppnParams.deltaT,
           waveform.f->data->data[i] ,
           tmper * waveform.phi->data->data[i] );
     }

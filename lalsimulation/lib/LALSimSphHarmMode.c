@@ -141,11 +141,11 @@ int XLALSimAddModeAngleTimeSeries(
 
 /**
  * Helper function to add a mode to hplus, hcross in Fourier domain
- * copies the function XLALSimAddMode, which was done only for TD structures 
+ * copies the function XLALSimAddMode, which was done only for TD structures
  *
  * If sym is non-zero, symmetrically add the m and -m terms assuming
  * that \f$h(l,-m)(f) = (-1)^l h(l,m)*(-f) with f > 0 *\f$.
- * Since the output is an array with positive frequencies, in the case of 
+ * Since the output is an array with positive frequencies, in the case of
  * sym = 1 the modes that are passed should be the modes with negative m
  * that have support for positive frequencies
  */
@@ -162,7 +162,7 @@ int XLALSimAddModeFD(
     COMPLEX16 Y;
     UINT4 j;
     COMPLEX16 hlm; /* helper variable that contain a single point of hlmtilde */
-	
+
 
 
     INT4 minus1l; /* (-1)^l */
@@ -269,8 +269,8 @@ int XLALSimAddModeFromModesAngleTimeSeries(
 }
 
 /**
- * Returns the h+, hx waveforms constructed from all valid TimeSeries 
- * contained within hmode structure. 
+ * Returns the h+, hx waveforms constructed from all valid TimeSeries
+ * contained within hmode structure.
  *
  * @sa XLALSimAddModeFromModes() and XLALSimAddMode()
  */

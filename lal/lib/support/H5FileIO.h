@@ -40,7 +40,7 @@ extern "C" {
  * writing HDF5 files.
  *
  * ### EXAMPLE ###
- * 
+ *
  * @code
  * #include <lal/H5FileIO.h>
  * ...
@@ -93,7 +93,7 @@ struct tagLALH5File;
 typedef struct tagLALH5File LALH5File;
 
 struct tagLALH5Dataset;
-/** 
+/**
  * @brief Incomplete type for a HDF5 dataset.
  * @details
  * The ::LALH5Dataset is a structure that is associated with a HDF5 dataset.
@@ -101,7 +101,7 @@ struct tagLALH5Dataset;
  */
 typedef struct tagLALH5Dataset LALH5Dataset;
 
-/** 
+/**
  * @brief Incomplete type for a pointer to an HDF5 file or group or dataset.
  * @details
  * The \c LALH5Generic is a union that is associated with a HDF5 file or

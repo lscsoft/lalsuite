@@ -54,7 +54,7 @@ for bandnumber = 1:Nbands; %the  current frequency band
    fmin = BandList(bandnumber, 1);
    fmax = BandList(bandnumber, 2);
 
-   %maximum doppler shift for this band 
+   %maximum doppler shift for this band
    dopp_wing(bandnumber)  = fmax*0.0001;
    dopp = dopp_wing(bandnumber);
 % this is not very elegant but should work for now
@@ -75,7 +75,7 @@ filepre = strcat(filepre,Detector);
 filepre = strcat(filepre,'_');
 
   nh0=10;
-  
+
 for bandnumber=0:Nbands-1
   bn=bandnumber+1;
   basestring = strcat(filepre, int2str( bandnumber ) );
@@ -85,22 +85,22 @@ for bandnumber=0:Nbands-1
   parvals = load(parstring);
 
 
-  MC_FreqVals = parvals( 1:length(Ncount0(:,1)) , 2); 	
+  MC_FreqVals = parvals( 1:length(Ncount0(:,1)) , 2);
 
 
-  clear parvals     
-  
+  clear parvals
+
   %use doppler wing calculated earlier--note that here the band index
   %starts from 0 and not from 1 as before
   dopp = dopp_wing(bandnumber + 1);
-  vetoindices = find((mod(MC_FreqVals,1) > dopp & mod(MC_FreqVals,1) < 0.25-dopp) | (mod(MC_FreqVals,1) > 0.25+dopp & mod(MC_FreqVals,1) < 0.50+dopp) | (mod(MC_FreqVals,1) > 0.50+dopp &mod(MC_FreqVals,1) < 0.75-dopp) | (mod(MC_FreqVals,1) > 0.75+dopp & mod(MC_FreqVals,1) < 1.00-dopp)); 
-  
+  vetoindices = find((mod(MC_FreqVals,1) > dopp & mod(MC_FreqVals,1) < 0.25-dopp) | (mod(MC_FreqVals,1) > 0.25+dopp & mod(MC_FreqVals,1) < 0.50+dopp) | (mod(MC_FreqVals,1) > 0.50+dopp &mod(MC_FreqVals,1) < 0.75-dopp) | (mod(MC_FreqVals,1) > 0.75+dopp & mod(MC_FreqVals,1) < 1.00-dopp));
+
   clear MC_FreqVals
 
 
   nMonteCarlos=length(vetoindices);
 
-  
+
 
    for h0num=1:nh0
      x=Ncount0(vetoindices, h0num+1);
@@ -109,12 +109,10 @@ for bandnumber=0:Nbands-1
    end
    bandnumber
    CH
-   
+
    fprintf(fid,'%d %d %d %d %d %d %d %d %d %d %d %d %d %d\n',bn-1, ...
            BandList(bn,1),BandList(bn, 2), Nmax(bn), CH);
 end
 
 fclose(fid);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-

@@ -28,7 +28,7 @@ Initialisation arguments:\n\
 	unsigned long int randomseed;
 	struct timeval tv;
 	FILE *devrandom;
-	
+
 	irs = XLALCalloc(1, sizeof(LALInferenceRunState));
 	/* read data from files: */
 	fprintf(stdout, " readData(): started.\n");
@@ -47,16 +47,16 @@ Initialisation arguments:\n\
 	fprintf(stdout, " LALInferenceReadData(): finished.\n");
 	if (irs->data != NULL) {
 		fprintf(stdout, " initialize(): successfully read data.\n");
-		
+
 		fprintf(stdout, " LALInferenceInjectInspiralSignal(): started.\n");
 		LALInferenceInjectInspiralSignal(irs->data,commandLine);
 		fprintf(stdout, " LALInferenceInjectInspiralSignal(): finished.\n");
-		
+
 		ifoPtr = irs->data;
 		ifoListStart = irs->data;
 		while (ifoPtr != NULL) {
 			/*If two IFOs have the same sampling rate, they should have the same timeModelh*,
-			 freqModelh*, and modelParams variables to avoid excess computation 
+			 freqModelh*, and modelParams variables to avoid excess computation
 			 in model waveform generation in the future*/
 			LALInferenceIFOData * ifoPtrCompare=ifoListStart;
 			int foundIFOwithSameSampleRate=0;
@@ -64,10 +64,10 @@ Initialisation arguments:\n\
 				if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
 					ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
 					ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
-					ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;				
-					ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;				
-					ifoPtr->modelParams=ifoPtrCompare->modelParams;	
-					foundIFOwithSameSampleRate=1;	
+					ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;
+					ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;
+					ifoPtr->modelParams=ifoPtrCompare->modelParams;
+					foundIFOwithSameSampleRate=1;
 					break;
 				}
 			}
@@ -123,7 +123,7 @@ Initialisation arguments:\n\
 		if ((devrandom = fopen("/dev/urandom","r")) == NULL) {
 			gettimeofday(&tv, 0);
 			randomseed = tv.tv_sec + tv.tv_usec;
-		} 
+		}
 		else {
 			if(1!=fread(&randomseed, sizeof(randomseed), 1, devrandom)){
 			  fprintf(stderr,"Error: Unable to read random seed from /dev/urandom\n");
@@ -134,7 +134,7 @@ Initialisation arguments:\n\
 	}
 	fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
 	gsl_rng_set(irs->GSLrandom, randomseed);
-	
+
 	return(irs);
 }
 
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
   char help[]="\
   Usage: e.g.\
   LALInferenceInjectionTest --ifo [IFO] --cache [LALLIGO] --channel [dummy] --0noise --inj injection.xml --psdstart 0 --psdlength 100 --seglen 10 --template <template> \n";
-  
+
  LALInferenceRunState *state;
  ProcessParamsTable *procParams=LALInferenceParseCommandLine(argc,argv);
  state=initialize(procParams);

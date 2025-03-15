@@ -268,4 +268,3 @@ COMPLEX8FrequencySeries *generateActuation(
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif
-

@@ -133,7 +133,7 @@ typedef struct tagIMRPhenomXWaveformStruct
 	REAL8 M;
 	REAL8 m1_2;
 	REAL8 m2_2;
-	
+
     /* Matter parameters */
     REAL8 lambda1;
     REAL8 lambda2;
@@ -141,8 +141,8 @@ typedef struct tagIMRPhenomXWaveformStruct
     REAL8 quadparam2;
     REAL8 kappa2T;
     REAL8 fmerger;
-        
-    
+
+
 	/* Useful Powers (?) */
 	REAL8 eta2;
 	REAL8 eta3;
@@ -311,7 +311,7 @@ typedef struct tagIMRPhenomXPhaseCoefficients
 
 	/* These are the inspiral phenomenological coefficients 		*/
 	REAL8 a0, a1, a2, a3, a4;
-    
+
 	/* Coefficients enterting tidal phase */
     REAL8 c2PN_tidal, c3PN_tidal, c3p5PN_tidal;
 

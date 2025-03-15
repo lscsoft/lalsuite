@@ -9,17 +9,17 @@ cd /scratch2/xavi/CosmicStrings0/slides/
 A1=[];
 A2=[];
 for i=1:N
-   
+
     i
     file_neg=['H1_M',num2str(i),'.xml'];
     file_pos=['H1_P',num2str(i),'.xml'];
 
     H1ctrig_neg = readMeta(char(file_neg),'sngl_burst');
     H1ctrig_pos = readMeta(char(file_pos),'sngl_burst');
-    
+
     A1=[A1;abs(H1ctrig_neg.amplitude)];
     A2=[A2;abs(H1ctrig_pos.amplitude)];
-    
+
 end
 
 Amin=min(min(A1),min(A2))
@@ -32,22 +32,22 @@ A=Amin:dA:1.5*Amax;
 histA1=[];
 histA2=[];
 for i=1:N
-       
+
     file_neg=['H1_M',num2str(i),'.xml'];
     file_pos=['H1_P',num2str(i),'.xml'];
 
     H1ctrig_neg = readMeta(char(file_neg),'sngl_burst');
     H1ctrig_pos = readMeta(char(file_pos),'sngl_burst');
-    
+
     histA1=[histA1,histc(abs(H1ctrig_neg.amplitude),A)];
     histA2=[histA2,histc(abs(H1ctrig_pos.amplitude),A)];
-    
+
 end
 
 histA=[histA1,histA2];
 
 meanhistA=mean(histA,2);
-stdhistA=std(histA,0,2); %the 0 is a flag to divide by N-1 
+stdhistA=std(histA,0,2); %the 0 is a flag to divide by N-1
 
 % Now make the plot
 ymin=0.01;
@@ -133,4 +133,3 @@ text(xtext,y,'Background spread (rms)','FontSize',legendfont);
 
 line([0 8 8 0 0],[ymin ymin ymax ymax ymin], ...
      'LineWidth',1.5,'Color',[0 0 0]);
-

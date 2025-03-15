@@ -1,4 +1,4 @@
-/*  
+/*
  *  Copyright (C) 2005-2008 Badri Krishnan, Alicia Sintes, Bernd Machenschalk
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -12,10 +12,10 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *  MA  02110-1301  USA
- * 
+ *
  */
 
 
@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include <errno.h> 
+#include <errno.h>
 
 #include <lal/UserInput.h>
 #include <lal/LALStdlib.h>
@@ -56,11 +56,11 @@
 #include <lal/Velocity.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/Date.h>
-#include <lal/LALHough.h> 
+#include <lal/LALHough.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
 #include <lal/Statistics.h>
-#include <lal/GeneratePulsarSignal.h> 
+#include <lal/GeneratePulsarSignal.h>
 #include <lal/LogPrintf.h>
 #include <lal/DopplerScan.h>
 #include <lal/LALPulsarVCSInfo.h>
@@ -80,7 +80,7 @@ extern "C" {
 /******************************************************
  *  Error codes and messages.
  */
- 
+
 #define HIERARCHICALSEARCH_ENORM 0
 #define HIERARCHICALSEARCH_ESUB  1
 #define HIERARCHICALSEARCH_EARG  2
@@ -136,7 +136,7 @@ extern "C" {
     REAL8 patchSizeX;          /**< Size of semicoherent sky-patch */
     REAL8 patchSizeY;          /**< Size of semicoherent sky-patch */
     REAL8 fdot;                /**< spindown value of demodulation point */
-    UINT4 nfdot;               /**< number of fdot values to search over */ 
+    UINT4 nfdot;               /**< number of fdot values to search over */
     REAL8 dfdot;               /**< resolution in residual spindowns */
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
     BOOLEAN useToplist;        /**< Use a toplist for producing candidates? */
@@ -160,7 +160,7 @@ extern "C" {
     REAL8 deltaBest;   /**< delta for best candidate in hough map */
     REAL8 meanSig;     /**< mean of significance values in hough map */
     REAL8 varianceSig; /**< variance of significance values in Hough map */
-  } SemiCohCandidate;  
+  } SemiCohCandidate;
 
   /** structure for storing candidates produced by Hough search */
   typedef struct tagSemiCohCandidateList {
@@ -189,15 +189,15 @@ extern "C" {
 			    REAL4FrequencySeriesVector *FstatVect,
 			    REAL4  thr);
 
-  void SetUpStacks(LALStatus *status, 
-		 SFTCatalogSequence  *out,  
+  void SetUpStacks(LALStatus *status,
+		 SFTCatalogSequence  *out,
 		 REAL8 tStack,
 		 SFTCatalog  *in,
 		 UINT4 nStacks);
 
   void PrintHmap2file(LALStatus *status,
-		      HOUGHMapTotal *ht, 
-		      CHAR *fnameOut, 
+		      HOUGHMapTotal *ht,
+		      CHAR *fnameOut,
 		      INT4 iHmap);
 
   extern
@@ -223,15 +223,14 @@ extern "C" {
 				  REAL8 fdot);
 
   void GetChkPointIndex( LALStatus *status,
-			 INT4 *loopindex, 
+			 INT4 *loopindex,
 			 const CHAR *fnameChkPoint);
 
 
-  
+
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif
 
 
 #endif     /* Close double-include protection _HIERARCHICALSEARCH_H */
-

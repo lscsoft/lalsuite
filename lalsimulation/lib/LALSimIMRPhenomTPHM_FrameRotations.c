@@ -75,7 +75,7 @@ void IMRPhenomTPHM_SetPrecomputedSqrt(PhenomT_precomputed_sqrt *SQRT);
 
 /* Function to set the PhenomTPWignerStruct given some Euler angles.
 Sign of beta has to be passed independently since this information is lost in cosBeta.
-globalRot flag specifies how many coefficients have to be computed, since for the time dependent 
+globalRot flag specifies how many coefficients have to be computed, since for the time dependent
 rotation between the co-precessing and the J-frame not all are needed. */
 void IMRPhenomTPHM_SetWignerDStruct(  PhenomTPWignerStruct *wS, /**< Wigner struct */
                                       PhenomT_precomputed_sqrt *SQRT, /**< Precomputed squared roots */
@@ -210,7 +210,7 @@ void IMRPhenomTPHM_SetWignerDStruct(PhenomTPWignerStruct *wS, PhenomT_precompute
 
       break;
     }
-    
+
 
     case 4:
     {
@@ -250,9 +250,9 @@ void IMRPhenomTPHM_SetWignerDStruct(PhenomTPWignerStruct *wS, PhenomT_precompute
         wS->wignerdL4[6][i] = 0.0;
         wS->wignerdL4[7][i] = 0.0;
         wS->wignerdL4[8][i] = d44[i];
-        } 
+        }
 
-      break;   
+      break;
     }
 
     case 5:
@@ -301,7 +301,7 @@ void IMRPhenomTPHM_SetWignerDStruct(PhenomTPWignerStruct *wS, PhenomT_precompute
         wS->wignerdL4[6][i] = 0.0;
         wS->wignerdL4[7][i] = 0.0;
         wS->wignerdL4[8][i] = d44[i];
-        } 
+        }
 
       for(UINT4 i=0; i<11; i++){
         wS->wignerdL5[0][i] = d5m5[i];

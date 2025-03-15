@@ -17,13 +17,13 @@
 *  MA  02110-1301  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: crinj.c
  *
  * Author: Ravi Kumar and Chad Hanna
- * 
- * 
+ *
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -101,10 +101,10 @@ void read_source_data( char *sourceFileName )
   while ( fgets( line, sizeof( line ), fp ) )
     if ( line[0] == '#' )
       continue;
-    else 
+    else
       ++num_source;
   rewind( fp );
-  
+
   source_data = calloc( num_source, sizeof( *source_data ) );
 
   if ( ! source_data )
@@ -164,8 +164,8 @@ int main( int argc, char *argv[] )
   double sumDIST =0;
   double sumRA = 0;
   double sumcosDEC =0;
-  
- 
+
+
   char   NAME[16];
   double RA = 0;
   double DEC = 0;
@@ -184,9 +184,9 @@ int main( int argc, char *argv[] )
   double cDIST = 0;
   double cLUM = 0;
   char bigNAME[16];
- 
+
   int num_c = 0;
-  
+
 
 /*
   struct bin_source_data *bin_source_data = NULL;
@@ -276,15 +276,15 @@ int main( int argc, char *argv[] )
 
   read_source_data( sourceFileName );
 
-  printf("finished reading sourcelist...numsource = %d\n",num_source); 
+  printf("finished reading sourcelist...numsource = %d\n",num_source);
   bin_source_data = calloc(num_source, sizeof(*bin_source_data));
-  
+
 
   /* binning code */
-   i=0; 
+   i=0;
   /* bin the source file */
   for (i=0;i < num_source; i++){
-    
+
   memcpy(bin_source_data[i].NAME,source_data[i].name,sizeof(source_data[i].name));
 
     bin_source_data[i].LUM = source_data[i].lum;
@@ -299,14 +299,14 @@ int main( int argc, char *argv[] )
     bin_source_data[i].RAbin = floor(bin_source_data[i].RA/RAbinsize);
     bin_source_data[i].cosDECbin = floor((1.0+bin_source_data[i].cosDEC)/cosDECbinsize);
     bin_source_data[i].logDISTbin = floor(bin_source_data[i].logDIST/logDISTbinsize);
-    bin_source_data[i].ID = 10000*bin_source_data[i].RAbin + 
+    bin_source_data[i].ID = 10000*bin_source_data[i].RAbin +
                          100*bin_source_data[i].cosDECbin +
                          1000000*bin_source_data[i].logDISTbin;
 
     }
 
   /* Sort the list */
-    
+
     for(n = 0; n < num_source; n++){
       for(m = (n+1); m < num_source; m++){
         if (bin_source_data[m].ID < bin_source_data[n].ID){
@@ -350,7 +350,7 @@ int main( int argc, char *argv[] )
 
   /* Clustering and write it to a file called ClusterList.dat*/
 
- 
+
   n = 0;
   CFP = fopen("ClusterList.dat", "w");
   if (CFP == NULL){
@@ -358,7 +358,7 @@ int main( int argc, char *argv[] )
     return 1;
     }
 
-  
+
   fprintf(CFP, "# Clustered galaxy list\n");
   fprintf(CFP, "# NAME\t\t RA\t\t DEC\t\t DIST\t\t LUM\t\t FUDGE\n");
 
@@ -367,7 +367,7 @@ int main( int argc, char *argv[] )
   sumRA = bin_source_data[0].RA * bin_source_data[0].LUM;
   sumcosDEC = bin_source_data[0].cosDEC * bin_source_data[0].LUM;
   memcpy(bigNAME, bin_source_data[0].NAME,sizeof(bin_source_data[0].NAME));
-  
+
   for(n=1; n<num_source; n++){
       if (bin_source_data[n].ID != bin_source_data[n-1].ID){
         num_c++;
@@ -380,12 +380,12 @@ int main( int argc, char *argv[] )
           cDEC = acos(sumcosDEC/totalLUM);
         cDIST = sumDIST/totalLUM;
         memcpy(cNAME, bigNAME,sizeof(bigNAME));
-        fprintf(CFP, "c%-10s\t %+02d:%0.2f\t %+02d:%0.2f\t %8.1f\t %8.3f\t %.2f\n", 
+        fprintf(CFP, "c%-10s\t %+02d:%0.2f\t %+02d:%0.2f\t %8.1f\t %8.3f\t %.2f\n",
                 cNAME,
-                (int) floor(cRA*12.0/LAL_PI), 
+                (int) floor(cRA*12.0/LAL_PI),
                 (fmod(cRA*12.0/LAL_PI,1.0)*60.0),
-                (int) floor(cDEC*180.0/LAL_PI), 
-                (fabs(fmod(cDEC*180.0/LAL_PI,1.0)*60.0)), 
+                (int) floor(cDEC*180.0/LAL_PI),
+                (fabs(fmod(cDEC*180.0/LAL_PI,1.0)*60.0)),
                 cDIST, cLUM, 1.00 );
         /* initialize */
         memcpy(bigNAME, bin_source_data[n].NAME,sizeof(bin_source_data[n].NAME));
@@ -395,7 +395,7 @@ int main( int argc, char *argv[] )
         sumcosDEC = bin_source_data[n].cosDEC*bin_source_data[n].LUM;
       }
       else
-        { 
+        {
         if (bin_source_data[n].LUM > bin_source_data[n-1].LUM)
           memcpy(bigNAME, bin_source_data[n].NAME,sizeof(bin_source_data[n].NAME));
         totalLUM += bin_source_data[n].LUM;

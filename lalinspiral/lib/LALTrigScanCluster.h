@@ -96,4 +96,3 @@ void XLALTrigScanDestroyCluster( TrigScanCluster *cluster,
 /** @} */ /* end:LALTrigScanCluster_h */
 
 #endif /* _LALTRIGSCANCLUSTER_H */
-

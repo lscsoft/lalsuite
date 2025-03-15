@@ -119,7 +119,7 @@ static int XLALWriteLIGOLwXMLTimeSlideSegmentMapTable(
 
 
 /* routine to output events as LIGOLw XML file */
-int coh_PTF_output_events_xml( 
+int coh_PTF_output_events_xml(
     char               *outputFile,
     MultiInspiralTable  *events,
     SnglInspiralTable *snglEvents,
@@ -256,7 +256,7 @@ ProcessTable *coh_PTF_create_process_table( struct coh_PTF_params *params )
               "%s", params->ifoName[0] );
   }
   else if( params->numIFO == 2 )
-  {   
+  {
     XLALStringPrint( processTable->ifos, LIGOMETA_IFOS_MAX,\
               "%s%s", params->ifoName[0], params->ifoName[1] );
   }
@@ -271,7 +271,7 @@ ProcessTable *coh_PTF_create_process_table( struct coh_PTF_params *params )
     XLALStringPrint( processTable->ifos, LIGOMETA_IFOS_MAX,\
               "%s%s%s%s", params->ifoName[0], params->ifoName[1],
               params->ifoName[2], params->ifoName[3]);
-  } 
+  }
 
   processTable->start_time = params->jobStartTime;
   XLALGPSTimeNow(&processTable->end_time);
@@ -295,7 +295,7 @@ SearchSummaryTable *coh_PTF_create_search_summary( struct coh_PTF_params *params
   searchSummary->nnodes = 1;
 
   /* compute the start and end times of data analyzed */
-  outStartTimeNS  = epoch_to_ns( &params->startTime ) 
+  outStartTimeNS  = epoch_to_ns( &params->startTime )
     + sec_to_ns( params->analStartPoint / (REAL4)params->sampleRate );
   outEndTimeNS    = epoch_to_ns( &params->endTime )
     - sec_to_ns( (params->numTimePoints - params->analEndPoint)

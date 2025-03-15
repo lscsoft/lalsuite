@@ -24,8 +24,8 @@
 #include <math.h>
 
 /* hard-coded resampling filter length, see LALSimulation.c
- * the filter is 19 samples long, resampling can produce ringing 
- * up to 9 samples away from an abrupt jump 
+ * the filter is 19 samples long, resampling can produce ringing
+ * up to 9 samples away from an abrupt jump
  */
 const UINT4 LALSIMULATION_RINGING_EXTENT = 19;
 

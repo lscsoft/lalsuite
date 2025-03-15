@@ -178,4 +178,3 @@ void SFTtoUCHARPeakGram( LALStatus        *status,              /**< pointer to 
 #endif
 
 #endif     /* Close double-include protection _PEAKSELECT_H */
-

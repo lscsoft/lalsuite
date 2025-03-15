@@ -195,4 +195,3 @@ NumRelGroup XLALParseNumRelGroupName( CHAR *name);
 #endif
 
 #endif           /* Close double-include protection _NRWAVEINJECT_H */
-

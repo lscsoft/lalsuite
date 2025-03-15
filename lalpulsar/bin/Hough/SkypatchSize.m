@@ -52,7 +52,7 @@ DeltaSearch = DeltaSignal;
 FreqSearch = FreqSignal;
 fdotSearch = fdotSignal;
 
-%% search with weights 
+%% search with weights
 
 mismatchWeight = 0:0.01:0.6;
 
@@ -70,25 +70,25 @@ for index = 1:length(mismatchWeight)
   --weighAM=1 --weighNoise=1", outputDir, "*.sft", fStart, fBand, \
 		    AlphaSearch, DeltaSearch, FreqSearch, fdotSearch, \
 		    AlphaWeight, DeltaWeight);
-  
+
 
   [output,status] = system(cmdline);
-  
+
   load tempout;
-  
+
   numberCount = tempout(1)
   mean = tempout(2)
   sigma = tempout(3)
-  
+
   sigWeight(index) = (numberCount - mean)/sigma
 
 endfor
 
-%% search without weights 
+%% search without weights
 cmdline = sprintf("./ValidateHoughMulti --sftDir=%s%s \
 --fStart=%.12g --fSearchBand=%.12g  --Alpha=%.12g --Delta=%.12g \
 --Freq=%.12g --fdot=%.12g --weighAM=0 --weighNoise=0", outputDir,
-		  "*.sft", fStart, fBand, \ 
+		  "*.sft", fStart, fBand, \
 		  AlphaSearch, DeltaSearch, FreqSearch, fdotSearch);
 
 
@@ -113,4 +113,3 @@ ylabel("Significance")
 
 
 ##mismatchPosition(0.1,0,1,1)
-

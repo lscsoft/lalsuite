@@ -684,6 +684,19 @@ XLALComputeFstatResampCUDA( FstatResults *Fstats,
     XLAL_CHECK_CUDA_CALL( cudaMemcpy( Fstats->Fb, ws->Fb_k, sizeof( cuComplex )*numFreqBins, cudaMemcpyDeviceToHost ) );
   }
 
+  if ( whatToCompute & FSTATQ_FAFB_CUDA ) {
+    if ( Fstats->Fa_CUDA == NULL ) {
+      XLAL_CHECK( cudaMalloc( ( void ** )&Fstats->Fa_CUDA, sizeof( cuComplex )*numFreqBins ) == cudaSuccess, XLAL_ENOMEM );
+    }
+
+    if ( Fstats->Fb_CUDA == NULL ) {
+      XLAL_CHECK( cudaMalloc( ( void ** )&Fstats->Fb_CUDA, sizeof( cuComplex )*numFreqBins ) == cudaSuccess, XLAL_ENOMEM );
+    }
+
+    XLAL_CHECK_CUDA_CALL( cudaMemcpy( Fstats->Fa_CUDA, ws->Fa_k, sizeof( cuComplex )*numFreqBins, cudaMemcpyDeviceToDevice ) );
+    XLAL_CHECK_CUDA_CALL( cudaMemcpy( Fstats->Fb_CUDA, ws->Fb_k, sizeof( cuComplex )*numFreqBins, cudaMemcpyDeviceToDevice ) );
+  }
+
   if ( collectTiming ) {
     Tau->SumFabX /= numDetectors;
     Tau->Fab2F /= numDetectors;
@@ -1070,7 +1083,7 @@ __global__ void CUDASincInterp( cuComplex *out,
   REAL8 t = t_out[l] - tmin;            // measure time since start of input timeseries
 
   // samples outside of input timeseries are returned as 0
-  if ( ( t < 0 ) || ( t > ( numSamplesIn - 1 )*dt ) ) { // avoid any extrapolations!
+  if ( ( t < 0 ) || ( t > ( numSamplesIn - 1 ) * dt ) ) { // avoid any extrapolations!
     out[l] = make_cuComplex( 0, 0 );
     return;
   }

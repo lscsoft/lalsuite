@@ -40,8 +40,8 @@ extern "C" {
 
 
 
-/** 
- * XLAL function to determine burst approximant from a string.  The string need not 
+/**
+ * XLAL function to determine burst approximant from a string.  The string need not
  * match exactly, only contain a member of the BurstApproximant enum.
  */
 int XLALGetBurstApproximantFromString(const CHAR *inString);
@@ -64,12 +64,12 @@ typedef enum tagBurstApproximant {
 
 char* XLALGetStringFromBurstApproximant(BurstApproximant approximant);
 
-int XLALSimBurstImplementedTDApproximants( 
+int XLALSimBurstImplementedTDApproximants(
 BurstApproximant approximant /**< Burst approximant (see enum in LALInferenceBurst.h) */
     );
-int XLALSimBurstImplementedFDApproximants( 
+int XLALSimBurstImplementedFDApproximants(
 BurstApproximant approximant /**< Burst approximant (see enum in LALInferenceBurst.h) */
-    );    
+    );
     /** Enumeration to specify time or frequency domain */
 
 int XLALInferenceBurstSineGaussian(
@@ -102,7 +102,7 @@ int XLALInferenceBurstSineGaussianFFast(
   REAL8 centre_frequency,
   REAL8 hrss,
   REAL8 eccentricity,
-  REAL8 phase,  
+  REAL8 phase,
   REAL8 deltaF,
   REAL8 deltaT
 );
@@ -135,7 +135,7 @@ int XLALInferenceBurstDampedSinusoidF(
   REAL8 centre_frequency,
   REAL8 hrss,
   REAL8 eccentricity,
-  REAL8 phase,  
+  REAL8 phase,
   REAL8 deltaF,
   REAL8 deltaT
 );
@@ -175,10 +175,10 @@ typedef struct tagLALSimBurstExtraParam
  * Function that creates the head node of the extra burst parameters linked list.
  * It is initialized with a single parameter with given name and value
  */
- 
+
 #ifdef SWIG   // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(LALSimBurstExtraParam**, parameter));
-#endif 
+#endif
 
 LALSimBurstExtraParam *XLALSimBurstCreateExtraParam(
         const char *name, /**< Name of first parameter in new linked list */
@@ -320,7 +320,7 @@ int XLALSimBurstChooseFDWaveform(
     LALSimBurstExtraParam *extraParams, /**< Linked list of non-GR parameters. Pass in NULL (or None in python) to neglect these */
     BurstApproximant approximant                 /**< Burst approximant  */
     );
-    
+
 int XLALSimBurstChooseTDWaveform(
     REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
     REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
@@ -343,5 +343,3 @@ int XLALSimBurstChooseTDWaveform(
 }
 #endif
 #endif
-
-

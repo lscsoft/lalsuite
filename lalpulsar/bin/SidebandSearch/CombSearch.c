@@ -692,4 +692,3 @@ int OutputCstats( UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fsta
   return XLAL_SUCCESS;
 
 } /* OutputCstats */
-

@@ -105,6 +105,3 @@ positional arguments:
     with open(options.evfile, 'w') as out:
         out.write('# ln-Z delta-ln-Z\n')
         out.write(str(evidence) + ' ' + str(devidence))
-
-
-

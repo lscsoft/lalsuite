@@ -29,7 +29,7 @@ from tqdm import tqdm
 import traceback
 
 
-from ligo.lw import lsctables
+from igwn_ligolw import lsctables
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

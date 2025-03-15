@@ -942,7 +942,7 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated when frequency stalled\n", __func__);
 			break;
 		}
-	
+
 		/* save current values in vectors but first make sure we don't write past end of vectors */
 
 		if ( j >= (*V)->data->length ) {
@@ -1062,13 +1062,13 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT3PNModes(
 	/* Sanity check fRef value */
 	if( fRef < 0. )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
 				__func__, fRef);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
@@ -1132,13 +1132,13 @@ COMPLEX16TimeSeries *XLALSimInspiralTaylorT3PNMode(
 	/* Sanity check fRef value */
 	if( fRef < 0. )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
 				__func__, fRef);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}

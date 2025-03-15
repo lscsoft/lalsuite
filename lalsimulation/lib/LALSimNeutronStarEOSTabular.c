@@ -205,7 +205,7 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
     log_cs2 = gsl_interp_eval(eos->data.tabular->log_cs2_of_log_h_interp,
     eos->data.tabular->log_hdat, eos->data.tabular->log_cs2dat, log_h,
     eos->data.tabular->log_cs2_of_log_h_acc);
-    
+
     return pow(exp(log_cs2), -0.5);
 }
 
@@ -300,7 +300,7 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
     return hMinAcausal;
 }
 
-static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat, 
+static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
 {
     LALSimNeutronStarEOS *eos;
@@ -347,7 +347,7 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
             data->log_edat[i] = log(edat[i]);
         }
         /* compute pseudo-enthalpy h from dhdp */
-        /* Integrate in log space: 
+        /* Integrate in log space:
         dhdp = 1 / [e(p) + p]
         h(p) = h(p0) + \int_p0^p dhdp dp
         h(p) = h(p0) + \int_ln(p0)^ln(p) exp[ln(p) + ln(dhdp)] dln(p)
@@ -446,7 +446,7 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
         eos_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
 
 //    printf("%e\n", XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(eos->pmax, eos));
-//    
+//
 //    printf("datatype = %d\n", eos->datatype);
 //    printf("pmax = %e\n", eos->pmax);
 //    printf("hmax = %e\n", eos->hmax);
@@ -505,8 +505,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
     hdat = LALMalloc(ndat * sizeof(*hdat));
     yedat = LALMalloc(ndat * sizeof(*yedat));
     cs2dat = LALMalloc(ndat * sizeof(*cs2dat));
-    
-    
+
+
     if (ncol > 2)
     {
         for (size_t i = 0 ; i < ndat ; i++) {
@@ -538,7 +538,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
         fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
         exit(1);
     }
-    
+
 
     eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
 
@@ -551,7 +551,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
     LALFree(hdat);
     LALFree(yedat);
     LALFree(cs2dat);
-    
+
     snprintf(eos->name, sizeof(eos->name), "%s", fname);
     return eos;
 }
@@ -562,8 +562,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * must belong to the sample of equations of state from the old frame work or
  *  added for the new framework.
  * @details A known, installed, named tabulated equation of state data file, whose name
- * is included in the old EOS framework names or the new ones, is read and then used to 
- * create the equation of state structure.  
+ * is included in the old EOS framework names or the new ones, is read and then used to
+ * create the equation of state structure.
  * The equations of state for the OLD framework available are the representative sample drawn from
  * http://xtreme.as.arizona.edu/NeutronStars/ they are:
  * - ALF1
@@ -634,8 +634,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * - SLY9
  * And we include HQC18 from http://user.numazu-ct.ac.jp/~sumi/eos/HQC18_submit
  * - HQC18
- * 
- * 
+ *
+ *
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.
  */
@@ -643,7 +643,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
 {
     static const char fname_base[] = "LALSimNeutronStarEOS_";
     static const char fname_extn[] = ".dat";
-    
+
     size_t n = XLAL_NUM_ELEM(lalSimNeutronStarEOSNames);
     size_t i;
     char fname[FILENAME_MAX];

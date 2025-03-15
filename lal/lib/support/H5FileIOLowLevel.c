@@ -2199,7 +2199,7 @@ int XLALH5AttributeQueryStringValue(char UNUSED *value, size_t UNUSED size, cons
 		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO);
 	}
-	
+
 	if (vlen) { /* variable length string */
 		if (threadsafe_H5Aread(attr_id, memtype_id, &str) < 0) {
 			threadsafe_H5Tclose(memtype_id);

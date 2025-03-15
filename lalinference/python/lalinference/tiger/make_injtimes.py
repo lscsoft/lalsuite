@@ -632,4 +632,3 @@ if __name__ == "__main__":
     if dumpunvetoed:
       tripleIFO._unvetoed.printToFile(os.path.join(outfolder, 'segments', tripleIFO._name + '_unvetoed_segs.dat'))
       figseg = tripleIFO._unvetoed.plotSegments(os.path.join(outfolder, 'segments', tripleIFO._name + '_unvetoed_segs.pdf'), title=tripleIFO._name + ' unvetoed segments')
-

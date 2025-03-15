@@ -102,6 +102,8 @@ outputs:
       error_overlinking: true
       ignore_run_exports:
         - python
+        # extras to help the solver
+        - icu *
       script_env:
         - CI_COMMIT_TAG
         - CI_PIPELINE_SOURCE
@@ -124,6 +126,8 @@ outputs:
         - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
+        # extras to help the solver
+        - icu *
       run:
         - {{ pin_subpackage('liblalframe', exact=True) }}
         - numpy

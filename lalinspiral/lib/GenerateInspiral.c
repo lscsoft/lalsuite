@@ -300,7 +300,7 @@ XLALGenerateInspiralPopulatePPN(
   }
   else
   {
-    XLALPrintError( 
+    XLALPrintError(
         "f_lower must be specified in the injection file generation.\n" );
     XLAL_ERROR( XLAL_EINVAL );
   }

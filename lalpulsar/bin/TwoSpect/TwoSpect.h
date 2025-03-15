@@ -44,6 +44,3 @@ INT4 readTwoSpectInputParams( UserInput_t *uvar, int argc, char *argv[] );
 INT4 printREAL4Vector2File( const REAL4Vector *vector, const CHAR *directory, const CHAR *filename );
 
 #endif
-
-
-

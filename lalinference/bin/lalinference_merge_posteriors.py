@@ -55,5 +55,3 @@ if __name__=='__main__':
     # Write output file
     if opts.output is not None:
         outObj.write_to_file(opts.output)
-
-

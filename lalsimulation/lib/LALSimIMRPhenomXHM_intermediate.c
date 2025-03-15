@@ -1899,7 +1899,7 @@ static double IMRPhenomXHM_Intermediate_Amp_delta5(double d1, double d4, double 
 // Build the polynomial with the coefficients given and return the inverse of the polynomial (this is the ansatz)
 static double IMRPhenomXHM_Intermediate_Amp_Ansatz(IMRPhenomX_UsefulPowers *powers_of_f, IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXHMAmpCoefficients *pAmp)
 {
-    if(pWFHM->IMRPhenomXHMReleaseVersion != 122019){ 
+    if(pWFHM->IMRPhenomXHMReleaseVersion != 122019){
         double result = 0., fpower = 1.;
         /* Ansatz = f^(-7/6) * polynomial */
         for (UINT2 i = 0; i < pAmp->nCoefficientsInter; i++){
@@ -2498,7 +2498,7 @@ static void IMRPhenomXHM_Intermediate_Amp_CollocationPoints(IMRPhenomXHMAmpCoeff
         }
         // FIXME: throw error here if pAmp->VersionCollocPtsInter[i] == 2, cannot use derivatives if you don't have the parameter space fit
     }
-    
+
     tmp_factor = pAmp->RDRescaleFactor;
     pAmp->RDRescaleFactor = pAmp->InterRescaleFactor;
     IMRPhenomX_UsefulPowers powers_of_fRD;

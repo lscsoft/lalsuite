@@ -612,7 +612,7 @@ int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
 }
 
 
-/* 
+/*
  * Binary search compare function: to locate the first entry containing the
  * wanted time, or the first file after the requested time if the time is
  * before the beginning or in a gap.
@@ -646,7 +646,7 @@ static int XLALCacheEntryBsearchCompare(const void *key, const void *ptr)
     return 0;
 }
 
-/* 
+/*
  * Finds the first entry that contains the requested time, or the first entry
  * after the time if the time is in a gap or before the first entry.  Returns
  * NULL if the time is after the last entry.

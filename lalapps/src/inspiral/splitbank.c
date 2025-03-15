@@ -17,13 +17,13 @@
 *  MA  02110-1301  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: splitbank.c
  *
  * Author: Brown, D. A.
- * 
- * 
+ *
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -198,7 +198,7 @@ int main ( int argc, char *argv[] )
   char outBankFileName[FILENAME_MAX];
   CHAR bankFileNameHead[FILENAME_MAX];
   CHAR bankFileNameTail[FILENAME_MAX];
-  CHAR comment[LIGOMETA_COMMENT_MAX];  
+  CHAR comment[LIGOMETA_COMMENT_MAX];
   CHAR *userTag = NULL;
   SnglInspiralTable *thisTmplt = NULL;
   SnglInspiralTable *tmpTmplt = NULL;
@@ -210,8 +210,8 @@ int main ( int argc, char *argv[] )
     {"version",                 no_argument,       0,                'V'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
-    {"comment",                 required_argument, 0,                's'},    
-    {"help",                    no_argument,       0,                'h'}, 
+    {"comment",                 required_argument, 0,                's'},
+    {"help",                    no_argument,       0,                'h'},
     {"bank-file",               required_argument, 0,                'v'},
     {"number-of-banks",         required_argument, 0,                'n'},
     {"minimal-match",           required_argument, 0,                'M'},
@@ -221,7 +221,7 @@ int main ( int argc, char *argv[] )
 
 
   /*
-   * 
+   *
    * initialize things
    *
    */
@@ -254,7 +254,7 @@ int main ( int argc, char *argv[] )
     size_t LALoptarg_len;
 
     c = LALgetopt_long_only( argc, argv,
-        "i:n:VZ:hs:M:", 
+        "i:n:VZ:hs:M:",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -296,24 +296,24 @@ int main ( int argc, char *argv[] )
         if ( numOutBanks < 0 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "Number of output banks must be greater than zero:" 
+              "Number of output banks must be greater than zero:"
               "(%d specified)\n",
               long_options[option_index].name, numOutBanks );
           exit( 1 );
         }
         else if ( numOutBanks > 99 )
         {
-          fprintf( stderr, 
+          fprintf( stderr,
               "Warning: generating more than 99 banks is not reccomended!\n" );
         }
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
             "%s", PROGRAM_NAME );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
-        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
             "--%s", long_options[option_index].name );
-        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%d", 
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%d",
             numOutBanks );
         break;
 
@@ -339,7 +339,7 @@ int main ( int argc, char *argv[] )
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
@@ -359,7 +359,7 @@ int main ( int argc, char *argv[] )
         }
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" );
         snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s",
@@ -370,7 +370,7 @@ int main ( int argc, char *argv[] )
 
       case 'V':
         /* print version information and exit */
-        fprintf( stdout, "Inspiral Template Bank Splitter\n" 
+        fprintf( stdout, "Inspiral Template Bank Splitter\n"
             "Duncan Brown <duncan@gravity.phys.uwm.edu>\n");
         XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
@@ -429,7 +429,7 @@ int main ( int argc, char *argv[] )
   inputBank = XLALSnglInspiralTableFromLIGOLw( bankFileName );
   if ( !inputBank )
   {
-    fprintf( stderr, "error: unable to read templates from %s\n", 
+    fprintf( stderr, "error: unable to read templates from %s\n",
         bankFileName );
     exit( 1 );
   }
@@ -439,7 +439,7 @@ int main ( int argc, char *argv[] )
   for(numTmplts = 0, row = inputBank; row; numTmplts++, row = row->next);
   }
 
-  if ( vrbflg ) fprintf( stdout, "read %d templates from %s\n", 
+  if ( vrbflg ) fprintf( stdout, "read %d templates from %s\n",
       numTmplts, bankFileName );
 
   /* find the hypen just before the GPS start time of the bank */
@@ -460,8 +460,8 @@ int main ( int argc, char *argv[] )
   }
 
   /* store the name of the template bank file */
-  memcpy( bankFileNameHead, bankFileName, 
-      (size_t) gpsHyphen - (size_t) bankFileName < FILENAME_MAX ? 
+  memcpy( bankFileNameHead, bankFileName,
+      (size_t) gpsHyphen - (size_t) bankFileName < FILENAME_MAX ?
       (gpsHyphen - bankFileName) * sizeof(CHAR) : FILENAME_MAX * sizeof(CHAR) );
   strncpy( bankFileNameTail, gpsHyphen + 1, FILENAME_MAX - 1 );
 
@@ -471,36 +471,36 @@ int main ( int argc, char *argv[] )
     fprintf( stdout, "tail of bank file name is %s\n", bankFileNameTail );
   }
 
-  
+
   /*
    *
    * write out the individual tempate bank files
    *
    */
-  
+
 
   /* compute the number of templates per output file */
   numPerFile = floor( ( numTmplts - 0.5 )/ numOutBanks + 1 );
   thisTmplt = inputBank;
-  if ( vrbflg ) fprintf( stdout, "writing around %d templates per file\n", 
+  if ( vrbflg ) fprintf( stdout, "writing around %d templates per file\n",
       numPerFile );
 
   for ( i = 0; i < numOutBanks; ++i )
   {
     /* open the output xml file */
     memset( outBankFileName, 0, FILENAME_MAX * sizeof(CHAR) );
-    if(snprintf( outBankFileName, FILENAME_MAX, "%s_%02d-%s", 
+    if(snprintf( outBankFileName, FILENAME_MAX, "%s_%02d-%s",
         bankFileNameHead, i, bankFileNameTail ) >= FILENAME_MAX)
       abort();
     xmlStream = XLALOpenLIGOLwXMLFile( outBankFileName );
 
-    if ( vrbflg ) 
+    if ( vrbflg )
       fprintf( stdout, "writing templates to %s... ", outBankFileName );
 
     /* write process table */
     XLALGPSTimeNow(&(proctable->end_time));
     XLALWriteLIGOLwXMLProcessTable( xmlStream, proctable );
-    
+
     /* write process_params table */
     XLALWriteLIGOLwXMLProcessParamsTable( xmlStream, procparams );
 

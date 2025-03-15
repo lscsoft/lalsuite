@@ -128,19 +128,19 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     printf("Error!  Unrecognized mode in analytic likelihood!\n");
     exit(1);
   }
-  
+
   for(i=0;i<15;i++)
   {
     x[i]=scaling[i]* (LALInferenceGetREAL8Variable(currentParams,LALInferenceAnalyticNamesCBC[i]) - mean[i]);
   }
-  
+
 }
 
 static void extractBurstDimensionlessVariableVector(LALInferenceVariables *currentParams, REAL8 *x, INT4 mode) {
   REAL8 frequency=100.,q=1.0,loghrss, psi, ra, dec, t,alpha=0.0,polar_eccentricity=0.0;
   const UINT4 nparams=9;
   REAL8 mean[nparams];
-  
+
   memset(x, 0, nparams*sizeof(REAL8));
   memset(mean, 0, nparams*sizeof(REAL8));
 
@@ -153,7 +153,7 @@ static void extractBurstDimensionlessVariableVector(LALInferenceVariables *curre
     mean[5] = 0.0;   //dec
     mean[6] = 0.7; //psi
     mean[7] =0.5; // alpha (polar_angle)
-    mean[8] =0.25;    // polar_eccentricity 
+    mean[8] =0.25;    // polar_eccentricity
   } else if (mode==1) {
     mean[0] = 211.0;
     mean[1] = 6.0;
@@ -179,7 +179,7 @@ static void extractBurstDimensionlessVariableVector(LALInferenceVariables *curre
     printf("Error!  Unrecognized mode in analytic likelihood!\n");
     exit(1);
   }
- 
+
   loghrss = LALInferenceGetREAL8Variable(currentParams, "loghrss");
   frequency = LALInferenceGetREAL8Variable(currentParams, "frequency");
   q = LALInferenceGetREAL8Variable(currentParams, "quality");
@@ -197,11 +197,11 @@ static void extractBurstDimensionlessVariableVector(LALInferenceVariables *curre
   x[5] = burst_scaling[5] * (dec    - mean[5]);
   x[6] = burst_scaling[6] * (psi     - mean[6]);
   x[7] = burst_scaling[7] * (alpha     - mean[7]);
-  x[8] = burst_scaling[8] * (polar_eccentricity - mean[8]);  
+  x[8] = burst_scaling[8] * (polar_eccentricity - mean[8]);
 }
 
-REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams, 
-                                                  LALInferenceIFOData *data, 
+REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams,
+                                                  LALInferenceIFOData *data,
                                                   LALInferenceModel *model) {
   INT4 tmpdim=0;
   int cbc=1;

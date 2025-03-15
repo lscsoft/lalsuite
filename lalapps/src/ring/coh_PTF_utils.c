@@ -85,7 +85,7 @@ INT4 coh_PTF_data_condition(
 /* gets the data, performs any injections, and conditions the data */
 REAL4TimeSeries *coh_PTF_get_data(
               struct coh_PTF_params *params,
-              const char *ifoChannel, 
+              const char *ifoChannel,
               const char *dataCache,
               UINT4 ifoNumber  )
 {
@@ -346,7 +346,7 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
       else
       {
         invspec = invspecorig;
-      } 
+      }
     }
     else
     {
@@ -354,7 +354,7 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
       REAL8FrequencySeries *spectrum;
       spectrum = generate_theoretical_psd(1./params->sampleRate,
           params->segmentDuration,params->simDataType, 1E-20);
-  
+
       /* Need to convert to a REAL4 FrequencySeries */
       invspec = XLALCreateREAL4FrequencySeries("TEMP",&(channel->epoch),0,
           1.0/params->segmentDuration,&lalDimensionlessUnit,
@@ -368,7 +368,7 @@ REAL4FrequencySeries *coh_PTF_get_invspec(
       }
       XLALDestroyREAL8FrequencySeries(spectrum);
     }
-    
+
     if ( params->writeInvSpectrum ) /* Write spectrum before inversion */
       write_REAL4FrequencySeries( invspec );
 
@@ -414,9 +414,9 @@ RingDataSegments *coh_PTF_get_segments(
   if ( params->analyzeInjSegsOnly )
   {
     /* NOTE: Using this flag will override anything given by the option
-     * --only-analyse-segments, do not try and use both together */ 
+     * --only-analyse-segments, do not try and use both together */
     /* Figure out which segments the injections are in. If an injection is
-     * within 1s of a segment boundary, analyse both segments. */ 
+     * within 1s of a segment boundary, analyse both segments. */
     for ( i = 0 ; i < params->numOverlapSegments; i++)
       segListToDo[i] = 0;
     SimInspiralTable        *injectList = NULL;
@@ -441,7 +441,7 @@ RingDataSegments *coh_PTF_get_segments(
 
       /* Adjust to the epoch relative to the analysis start */
       deltaTime -= params->analStartTime;
-    
+
       /* And figure out the segment number */
       segNumber = floor( deltaTime / params->strideDuration);
       if (segNumber >= (INT4) params->numOverlapSegments)
@@ -492,13 +492,13 @@ RingDataSegments *coh_PTF_get_segments(
   if ( (! params->segmentsToDoList || ! strlen( params->segmentsToDoList )) && (! params->analyzeInjSegsOnly) )
   {
     /* Not convinved the code ever goes here, because empty segmentsToDoList
-     * does not evaluate to false. The loop below still works though! */ 
+     * does not evaluate to false. The loop below still works though! */
     segments->numSgmnt = params->numOverlapSegments;
     segments->sgmnt = LALCalloc( segments->numSgmnt, sizeof(*segments->sgmnt) );
     for ( sgmnt = 0; sgmnt < params->numOverlapSegments; ++sgmnt )
     {
       slidSegNum = ( sgmnt + ( params->slideSegments[NumberIFO] ) ) % ( segments->numSgmnt );
-      timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] = 
+      timeSlideVectors[NumberIFO*params->numOverlapSegments + sgmnt] =
           ((INT4)slidSegNum-(INT4)sgmnt)*params->strideDuration;
       compute_data_segment( &segments->sgmnt[sgmnt], slidSegNum, channel,
           invspec, response, params->segmentDuration, params->strideDuration,
@@ -663,7 +663,7 @@ void coh_PTF_create_time_slide_table(
       {
         UINT4 slideChecking = 1;
         /* Here we check if the time-slid segment i is the same slide as the
-         * timeSlideList[uj] */  
+         * timeSlideList[uj] */
         for(ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
         {
           if (params->haveTrig[ifoNumber])
@@ -688,7 +688,7 @@ void coh_PTF_create_time_slide_table(
       {
         if (params->haveTrig[ifoNumber])
         {
-          longTimeSlideList[longSlideCount].timeSlideVectors[ifoNumber] = 
+          longTimeSlideList[longSlideCount].timeSlideVectors[ifoNumber] =
               timeSlideVectors[ifoNumber*params->numOverlapSegments+i];
         }
       }
@@ -739,7 +739,7 @@ void coh_PTF_create_time_slide_table(
           }
           ifoNum += 1;
         }
-      }  
+      }
       if (ifoNumber != LAL_NUM_IFO)
       { /* If I did not finish the previous for loop due to break, break here*/
         /* THIS IS THE ONLY PLACE THAT I MIGHT BREAK FROM THE WHILE LOOP */
@@ -756,7 +756,7 @@ void coh_PTF_create_time_slide_table(
 
         /* Next we populate the slide's start and end times */
         /* We're actually going to loop backwards, so ui = 0 corresponds to the
-         * end of the segment where are slides will have wrapped */  
+         * end of the segment where are slides will have wrapped */
         if (ui == 0)
         {
           /* If ui=0 we know the end point of slide will be analEndPoint */
@@ -767,7 +767,7 @@ void coh_PTF_create_time_slide_table(
         {
           /* Otherwise end at where we started before */
           shortTimeSlideList[shortSlideCount].analEndPoint = lastStartPoint;
-        } 
+        }
         if (ui == ifoNum - 1)
         {
           /* If ui = ifoNum we have to start at analStartPoint */
@@ -777,7 +777,7 @@ void coh_PTF_create_time_slide_table(
         else
         {
           /* Now the tricky one, we have to figure out where the next (previous
-           * as we're looping backwards) wrap point will be. */  
+           * as we're looping backwards) wrap point will be. */
           wrapTime = params->strideDuration - (ui + 1) * currBaseOffset;
           wrapPoint = floor(wrapTime * params->sampleRate + 0.5);
           /* Start point is then start point + wrap point */
@@ -866,7 +866,7 @@ void coh_PTF_create_time_slide_table(
   } /* End long slide loop */
 
   /* Now we construct the list of analysed segments for each time slide_id
-   * This will be a segment for *every* segment+short_slide combination */ 
+   * This will be a segment for *every* segment+short_slide combination */
   slideSegmentCount = 0;
   for (i = 0 ; i < numSegments ; i++)
   { /* Loop over segments */
@@ -881,7 +881,7 @@ void coh_PTF_create_time_slide_table(
       {
         if (params->haveTrig[ifoNumber])
         {
-          tmpSlideStartTime = segments[ifoNumber]->sgmnt[i].epoch; 
+          tmpSlideStartTime = segments[ifoNumber]->sgmnt[i].epoch;
           tmpSlideEndTime = segments[ifoNumber]->sgmnt[i].epoch;
           XLALGPSAdd(&tmpSlideStartTime, \
                     -timeSlideVectors[ifoNumber*params->numOverlapSegments+i]);
@@ -899,7 +899,7 @@ void coh_PTF_create_time_slide_table(
             if (XLALGPSCmp(&tmpSlideEndTime, &slideEndTime))
             {
               fprintf(stderr, "2: %d %d\n", tmpSlideEndTime.gpsSeconds, slideEndTime.gpsSeconds);
-              fprintf(stderr, "2: %d %d\n", tmpSlideEndTime.gpsNanoSeconds, slideEndTime.gpsNanoSeconds);          
+              fprintf(stderr, "2: %d %d\n", tmpSlideEndTime.gpsNanoSeconds, slideEndTime.gpsNanoSeconds);
               error("Error long slide epochs not agreeing with the slid times. This suggests broken code, please contact a developer.");
             }
           }
@@ -1031,7 +1031,7 @@ void coh_PTF_initialize_structures(
     fcTmplt->data           = XLALCreateCOMPLEX8Vector(params->numFreqPoints);
     fcTmpltParams->xfacVec  = XLALCreateVector(params->numFreqPoints);
     fcTmpltParams->PTFphi   = XLALCreateVector(params->numFreqPoints);
-    /* Set the values of xfacVec  This is k^(-1/3) 
+    /* Set the values of xfacVec  This is k^(-1/3)
      * also PTFphi which is k^(-7/6). As these are expensive to compute it
      * is cheaper to do it once rather than many times. */
     const REAL4                   xfacExponent = -1.0/3.0;
@@ -1108,10 +1108,10 @@ void coh_PTF_initialize_structures(
       PTFqVec[LAL_NUM_IFO] = XLALCreateCOMPLEX8VectorSequence\
                              (1, params->numTimePoints);
     }
-  }  
+  }
   /* Send the output back to the parent function */
   *fcTmpltP = fcTmplt;
-  *fcTmpltParamsP = fcTmpltParams; 
+  *fcTmpltParamsP = fcTmpltParams;
 
 }
 
@@ -1195,7 +1195,7 @@ void coh_PTF_initialize_time_series(
         }
       }
     }
-  } 
+  }
 
   if (params->doAutoVeto)
   {
@@ -1581,7 +1581,7 @@ void coh_PTF_calculate_single_detector_filters(
         }
       }
       snglAcceptCount[ifoNumber] = localCount;
-      
+
     }
   }
 }
@@ -1915,7 +1915,7 @@ void coh_PTF_calculate_coherent_SNR(
           params->numTimePoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
 
         /* And SNR is calculated
-         * For non-spin+multi-site+coherent: 
+         * For non-spin+multi-site+coherent:
          *               v1p[0] * v1p[0] = (\bf{F}_+\bf{h}_0 | \bf{s})^2
          *               v1p[1] * v1p[1] = (\bf{F}_x\bf{h}_0 | \bf{s})^2
          *               v2p[0] * v2p[0] = (\bf{F}_+\bf{h}_{\pi/2} | \bf{s})^2
@@ -2065,7 +2065,7 @@ UINT4 coh_PTF_template_time_series_cluster(
         if (snrData[ui])
         {
           acceptPoints[count] = ui;
-          count++;  
+          count++;
           logicArray[ui] = 2;
         }
       }
@@ -2084,10 +2084,10 @@ UINT4 coh_PTF_test_veto_vals(
 )
 {
   /* This function checks whether chisq needs to be calculated. It does this
-   * by checking if the trigger will fail the bank/auto/null vetoes */ 
+   * by checking if the trigger will fail the bank/auto/null vetoes */
 
   /* NOTE: The code currently uses the null stream SNR. It should instead/also
-   * use the nullSNR calculated from coincSNR - cohSNR */ 
+   * use the nullSNR calculated from coincSNR - cohSNR */
 
   UINT4 numDOF;
   REAL4 bestNR,currSNR;
@@ -2270,7 +2270,7 @@ void coh_PTF_calculate_null_stream_snr(
         * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
   }
   nullSNR->data->data[snrLoc] = sqrt(max_eigen);
-}      
+}
 
 void coh_PTF_calculate_trace_snr(
   struct coh_PTF_params   *params,
@@ -2410,7 +2410,7 @@ void coh_PTF_calculate_bmatrix(
   gsl_eigen_symmv_workspace *matTemp = gsl_eigen_symmv_alloc (vecLengthTwo);
   /* Create and invert the Bmatrix */
   /* Note for nonSpin PTFM contains one entry per ifo, this is loop is then
-     a lot simpler than it looks! For PTF there are 25 entries in PTFM! 
+     a lot simpler than it looks! For PTF there are 25 entries in PTFM!
      For non spin this stores (h_0|h_0)*/
   for (i = 0; i < vecLength; i++ )
   {
@@ -2488,13 +2488,13 @@ void coh_PTF_calculate_rotated_vectors(
     UINT4 detectorNum)
 {
   /* IMPORTANT!!! This function is probably the dominant computational cost
-   * when running in lots-of-sky-points mode. Optimizing this is important! */ 
+   * when running in lots-of-sky-points mode. Optimizing this is important! */
 
   // This function calculates the coherent time series and rotates them into
   // the basis where the B matrix is the identity.
   // This is the dominant polarization frame with some normalization
-  
-  UINT4 j,k;  
+
+  UINT4 j,k;
   REAL4 v1[vecLengthTwo],v2[vecLengthTwo];
 
   for ( j = 0; j < vecLengthTwo ; j++ ) /* Construct the vi vectors */
@@ -2957,7 +2957,7 @@ UINT8 coh_PTF_add_sngl_triggers(
 )
 {
   /* This function adds SnglInspiral events to the event list */
-  
+
   UINT4 i;
   SnglInspiralTable *lastEvent = *thisEvent;
   SnglInspiralTable *currEvent = NULL;
@@ -3060,11 +3060,11 @@ SnglInspiralTable* coh_PTF_create_sngl_event(
   thisEvent->event_duration = 0;
   /* FIXME: What does coa_phase actually mean here? */
   thisEvent->coa_phase = (REAL4)
-      atan2( pValues[0]->data->data[currPos], pValues[1]->data->data[currPos]); 
+      atan2( pValues[0]->data->data[currPos], pValues[1]->data->data[currPos]);
 
   /* set the impulse time for the event FIXME:Check this! */
   thisEvent->template_duration = (REAL8) PTFTemplate.tC;
-  
+
   /* record the ifo name for the event */
   snprintf(thisEvent->ifo, LIGOMETA_IFO_MAX, "%s", params->ifoName[0]);
   /* Set the channel name */
@@ -3488,7 +3488,7 @@ int is_in_list( int i, const char *list )
 
     /* now see if this token is a range */
     if ( ( tok2 = strchr( tok, '-' ) ) )
-      *tok2++ = 0; /* nul terminate first part of token; tok2 is second part */  
+      *tok2++ = 0; /* nul terminate first part of token; tok2 is second part */
     if ( tok2 ) /* range */
     {
       int n1, n2;
@@ -3542,7 +3542,7 @@ SnglInspiralTable *conv_insp_tmpl_to_sngl_table(
  *
  */
 
-CohPTFSkyPositions *coh_PTF_generate_sky_points( 
+CohPTFSkyPositions *coh_PTF_generate_sky_points(
     struct coh_PTF_params *params
     )
 {
@@ -3593,7 +3593,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_points(
     verbose("Generated full sky grid with %d points, ",
             skyPoints->numPoints);
     verbose("parsing for time-delay degeneracy\n");
-    CohPTFSkyPositions *parsedSkyPoints = NULL; 
+    CohPTFSkyPositions *parsedSkyPoints = NULL;
     parsedSkyPoints = coh_PTF_parse_time_delays(skyPoints, params);
     if (skyPoints->data)
       LALFree(skyPoints->data);
@@ -3612,7 +3612,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_points(
  */
 
 CohPTFSkyPositions *coh_PTF_generate_sky_grid(
-    struct coh_PTF_params *params    
+    struct coh_PTF_params *params
     )
 {
   CohPTFSkyPositions *skyPoints = NULL;
@@ -3664,8 +3664,8 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
           /* generate angular window with sky error */
           lambdamin = angle-params->skyError;
           lambdamax = angle+params->skyError;
-   
-          /* if pi/2 is in the range, choose that, 
+
+          /* if pi/2 is in the range, choose that,
            * otherwise get as close as possible */
           if (lambdamin < LAL_PI_2 && lambdamax > LAL_PI_2)
           {
@@ -3681,7 +3681,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
           detalpha = lightTravelTime * sin(lambda);
           if (detalpha > alpha)
             alpha = detalpha;
-    
+
         }
       }
     }
@@ -3704,13 +3704,13 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
   /*
    * Rotate sky grid to centre on the given (ra,dec)
    */
-  
+
   /* calculate angle between north pole and (ra,dec) */
   raNp  = 0.;
   decNp = LAL_PI_2;
 
   angle = acos ( sin(decNp)*sin(params->declination) +
-                 cos(decNp)*cos(params->declination) * 
+                 cos(decNp)*cos(params->declination) *
                  cos( raNp-params->rightAscension ) );
 
   /* calculate unit vector to rotate around */
@@ -3733,7 +3733,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
 
   /* rotate sky points */
   coh_PTF_rotate_skyPoints(skyPoints, axis, angle);
-  
+
   /* free memory */
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -3826,7 +3826,7 @@ CohPTFSkyPositions *coh_PTF_parse_time_delays(
   REAL8              dt = params->timingAccuracy;
 
   /* get site coordinates */
-  i=0; 
+  i=0;
   for(ifoNumber=0; ifoNumber<LAL_NUM_IFO; ifoNumber++)
   {
     if (params->haveTrig[ifoNumber])
@@ -3866,7 +3866,7 @@ CohPTFSkyPositions *coh_PTF_parse_time_delays(
         appendPoint[p] = 1;
         break;
       }
-    } 
+    }
 
     /* if we want to keep this point, save the time delay and increment the
      * counter */
@@ -3961,7 +3961,7 @@ void coh_PTF_rotate_SkyPosition(
   gsl_vector *pos;    /* original position vector */
   gsl_vector *rotPos; /* rotated position vector */
 
-  
+
   phi   = skyPoint->longitude;
   theta = LAL_PI_2 - skyPoint->latitude;
   /* convert to cartesian */
@@ -4083,7 +4083,7 @@ CohPTFSkyPositions *coh_PTF_read_grid_from_file(
   }
 
   /* seek to start of file again */
-  fseek(data, 0, SEEK_SET);  
+  fseek(data, 0, SEEK_SET);
 
   /* assign memory for sky points */
   skyPoints = LALCalloc(1, sizeof(*skyPoints));
@@ -4156,7 +4156,7 @@ CohPTFSkyPositions *coh_PTF_two_det_sky_grid(
 
   /* calculate number of skypoints */
   numSkyPoints = 2*(UINT4) floor(lightTravelTime/params->timingAccuracy) + 1;
-   
+
   /* assign memory for sky points */
   geoSkyPoints = LALCalloc(1, sizeof(CohPTFSkyPositions));
   geoSkyPoints->numPoints = numSkyPoints;
@@ -4186,7 +4186,7 @@ CohPTFSkyPositions *coh_PTF_two_det_sky_grid(
   gsl_vector_set(northPole, 2, 1);
   gsl_blas_ddot(normal, northPole, &angle);
   angle = acos(angle);
- 
+
   /* generate rotation vector */
   axis = gsl_vector_alloc(3);
   cross_product(axis, normal, northPole);
@@ -4265,7 +4265,7 @@ CohPTFSkyPositions *coh_PTF_three_det_sky_grid(
         gsl_vector_memcpy(baseline[i-1], locations[i]);
         gsl_vector_sub(baseline[i-1], locations[0]);
         normalise(baseline[i-1]);
-      } 
+      }
       i++;
     }
   }
@@ -4323,7 +4323,7 @@ CohPTFSkyPositions *coh_PTF_three_det_sky_grid(
 
   /* construct x-axis of network coordinates */
   xangle = LAL_PI_2 - angle;
-  cross_product(normal, baseline[0], baseline[1]); 
+  cross_product(normal, baseline[0], baseline[1]);
   rotation_matrix(matrix, normal, xangle);
   /* apply rotation */
   gsl_blas_dgemv(CblasNoTrans, 1.0, matrix, baseline[1], 0.0, xaxis);
@@ -4333,7 +4333,7 @@ CohPTFSkyPositions *coh_PTF_three_det_sky_grid(
    * detectors 1 and 2.
    * We need to rotate that onto the geographical north pole:
    */
-  
+
   northPole = gsl_vector_alloc(3);
 
   /* construct rotation matrix */
@@ -4410,7 +4410,7 @@ void findInjectionSegment(
     )
 {
     /* WARNING: THIS FUNCTION WILL NOT WORK WITH SHORT SLIDES. DO NOT ATTEMPT
-     * TO SLIDE INJECTION TRIGGERS WITHOUT FIXING THIS FUNCTION FIRST! */ 
+     * TO SLIDE INJECTION TRIGGERS WITHOUT FIXING THIS FUNCTION FIRST! */
 
     /* define variables */
     LIGOTimeGPS injTime, segmentStart, segmentEnd;
@@ -4464,7 +4464,7 @@ void findInjectionSegment(
         thisInject = thisInject->next;
     }
     *start = tmpStart;
-    *end = tmpEnd;  
+    *end = tmpEnd;
 }
 
 UINT4 coh_PTF_trig_time_check(
@@ -4514,7 +4514,7 @@ UINT4 checkInjectionMchirp(
   XLALGPSAdd(&segmentEnd, params->strideDuration);
   passMchirpCheck = 2;
   thisInject = params->injectList;
-  
+
   /* loop over injections */
   while (thisInject)
   {
@@ -4656,4 +4656,3 @@ void coh_PTF_set_null_input_LALDetector(
     detector[i] = NULL;
   }
 }
-

@@ -97,8 +97,8 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 )
 {
 	int		debugPK = 0;
-	
-	
+
+
     /** lMax: l index up to which h_{lm} modes are included in the computation of the GW enegy flux: see Eq. in 13 in PRD 86,  024011 (2012) */
     static const INT4 lMax = 8;
 
@@ -185,7 +185,7 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 	SpinEOBHCoeffs *coeffs = (SpinEOBHCoeffs *) params.params->seobCoeffs;
 	REAL8 STEP_SIZE; // The step size passed to GSL to compute derivatives
 	if(SpinAlignedEOBversion==4){
-	  STEP_SIZE = 2.0e-3; //Allow a different step size for v4P 
+	  STEP_SIZE = 2.0e-3; //Allow a different step size for v4P
 	}
 	else{
 	  STEP_SIZE = 2.0e-4;

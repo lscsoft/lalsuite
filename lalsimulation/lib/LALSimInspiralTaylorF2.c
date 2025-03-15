@@ -108,7 +108,7 @@ int XLALSimInspiralTaylorF2AlignedPhasingArray(
 {
     UINT4 pnmaxnum = PN_PHASING_SERIES_MAX_ORDER + 1;
 
-    *phasingvals = XLALCreateREAL8Vector(mass1.length * pnmaxnum * 3); 
+    *phasingvals = XLALCreateREAL8Vector(mass1.length * pnmaxnum * 3);
     REAL8Vector* pv = *phasingvals;
 
     #pragma omp parallel

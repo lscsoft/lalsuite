@@ -3,8 +3,8 @@
 
 void XLALCudaError(cudaError_t error, const char *file, int line)
 {
-    if(error != cudaSuccess)	
-    {	   
+    if(error != cudaSuccess)
+    {
         fprintf( stderr, "%s:%d %s\n", file, line, cudaGetErrorString(error));
         exit(1);
     }
@@ -12,22 +12,22 @@ void XLALCudaError(cudaError_t error, const char *file, int line)
 
 void XLALCudaFFTError(cufftResult_t error, const char *file, int line)
 {
-    if(error != CUFFT_SUCCESS) 
+    if(error != CUFFT_SUCCESS)
     {
-	/* As there are no GetErrorString function available for CUDA FFT, 
-	 * the error messages had to be hard-coded, 
-	 * and needs to be updated with new CUDA releases. 
+	/* As there are no GetErrorString function available for CUDA FFT,
+	 * the error messages had to be hard-coded,
+	 * and needs to be updated with new CUDA releases.
 	 */
 	switch( error )
 	{
 	    case CUFFT_INVALID_PLAN:
 	      fprintf( stderr, "%s:%d The plan handle is invalid\n", file, line );
 	      break;
-	
+
 	    case CUFFT_INVALID_VALUE:
 	      fprintf( stderr, "%s:%d The input data and/or output data is not valid\n", file, line );
 	      break;
-	      
+
 	    case CUFFT_INTERNAL_ERROR:
 	      fprintf( stderr, "%s:%d Internal driver error is detected\n", file, line );
 	      break;

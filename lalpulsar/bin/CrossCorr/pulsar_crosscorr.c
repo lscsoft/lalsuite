@@ -1815,5 +1815,3 @@ void initUserVars( LALStatus *status )
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-
-

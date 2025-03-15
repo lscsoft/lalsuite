@@ -1,6 +1,6 @@
 //
 //  DetectorFixedSkyCoords.c
-//  
+//
 //
 //  Created by John Veitch on 19/06/2014.
 //
@@ -31,7 +31,7 @@ void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
   REAL8 detnorm=0;
   for(i=0;i<3;i++) detnorm+=detvec[i]*detvec[i];
   for(i=0;i<3;i++) detvec[i]/=sqrt(detnorm);
-  
+
   REAL8 NORTH[3]={0,0,1};
   REAL8 a[3];
   /* Cross product of North vector with detector vector
@@ -41,13 +41,13 @@ void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
   a[2]=0.0;
   REAL8 norm=sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
   for (i=0;i<3;i++) a[i]/=norm;
-  
+
   /* Cartesian coordinates in detector-aligned frame */
   REAL8 DETPOS[3];
   DETPOS[0]=sin(alpha)*cos(theta);
   DETPOS[1]=sin(alpha)*sin(theta);
   DETPOS[2]=cos(alpha);
-  
+
   /* Rotation angle about a */
   REAL8 rotang=-acos(detvec[2]*NORTH[2]);
   REAL8 c=cos(rotang),s=sin(rotang);
@@ -58,15 +58,15 @@ void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
     {a[1]*a[0]*(1.-c)+a[2]*s, c+a[1]*a[1]*(1.-c), a[1]*a[2]*(1.-c)-a[0]*s},
     {a[0]*a[2]*(1.-c)-a[1]*s, a[1]*a[2]*(1.-c)+a[0]*s, c+a[2]*a[2]*(1.-c)}
   };
-  
+
   /* Calculate cartesian coordinates in Geographic frame */
   REAL8 GEO[3]={0,0,0};
   for(i=0;i<3;i++) for(j=0;j<3;j++) GEO[i]+=det2horiz[i][j]*DETPOS[j];
-  
+
   REAL8 r=0;
   for(i=0;i<3;i++) r+=GEO[i]*GEO[i];
   r=sqrt(r);
-  
+
   /* Calculate Geographic coordinates */
   REAL8 longitude=atan2(GEO[1],GEO[0]);
   REAL8 latitude=asin(GEO[2]/r);
@@ -75,11 +75,11 @@ void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
   horiz.longitude=longitude;
   horiz.latitude=latitude;
   horiz.system=COORDINATESYSTEM_GEOGRAPHIC;
-  
+
   LALStatus status;
   memset(&status,0,sizeof(status));
   LIGOTimeGPS gpstime;
-  
+
   XLALGPSSetREAL8(&gpstime,t0);
   LALGeographicToEquatorial(&status,&equat,&horiz,&gpstime);
   if(status.statusCode)
@@ -91,11 +91,11 @@ void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
 
   *ra=equat.longitude;
   *dec=equat.latitude;
-  
+
   /* Compute time at geocentre (strictly speaking we use the wrong gpstime for the earth orientation by a few ms) */
   *tg=t0-XLALTimeDelayFromEarthCenter(det0->location, equat.longitude,equat.latitude,&gpstime);
-  
-  
+
+
 }
 
 void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
@@ -114,7 +114,7 @@ void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
   REAL8 detnorm=0;
   for(i=0;i<3;i++) detnorm+=detvec[i]*detvec[i];
   for(i=0;i<3;i++) detvec[i]/=sqrt(detnorm);
-  
+
   REAL8 NORTH[3]={0,0,1};
   REAL8 a[3];
   /* Cross product of North vector with detector vector
@@ -124,17 +124,17 @@ void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
   a[2]=0.0;
   REAL8 norm=sqrt(a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
   for (i=0;i<3;i++) a[i]/=norm;
-  
+
   /* Convert Equatorial (ra,dec) to geographic coordinates*/
   SkyPosition horiz,equat;
   equat.longitude=ra;
   equat.latitude=dec;
   equat.system=COORDINATESYSTEM_EQUATORIAL;
-  
+
   LALStatus status;
   memset(&status,0,sizeof(status));
   LIGOTimeGPS gpstime;
-  
+
   XLALGPSSetREAL8(&gpstime,tg);
   LALEquatorialToGeographic(&status,&horiz,&equat,&gpstime);
   if(status.statusCode)
@@ -150,7 +150,7 @@ void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
   GEOPOS[0]=cos(latitude)*cos(longitude);
   GEOPOS[1]=cos(latitude)*sin(longitude);
   GEOPOS[2]=sin(latitude);
-  
+
   /* Rotation angle about a */
   REAL8 rotang=-acos(detvec[2]*NORTH[2]);
   REAL8 c=cos(rotang),s=sin(rotang);
@@ -166,22 +166,21 @@ void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
     {a[1]*a[0]*(1.-c)-a[2]*s, c+a[1]*a[1]*(1.-c), a[1]*a[2]*(1.-c)+a[0]*s},
     {a[0]*a[2]*(1.-c)+a[1]*s, a[1]*a[2]*(1.-c)-a[0]*s, c+a[2]*a[2]*(1.-c)}
   };
-  
+
   /* Calculate cartesian coordinates in detector frame */
   REAL8 DETPOS[3]={0,0,0};
   for(i=0;i<3;i++) for(j=0;j<3;j++) DETPOS[i]+=horiz2det[i][j]*GEOPOS[j];
-  
+
   REAL8 r=0;
   for(i=0;i<3;i++) r+=DETPOS[i]*DETPOS[i];
   r=sqrt(r);
-  
+
   /* Calculate detector coordinates */
   *theta=atan2(DETPOS[1],DETPOS[0]);
   *alpha=acos(DETPOS[2]/r);
-  
+
   /* Compute time at geocentre (strictly speaking we use the wrong gpstime for the earth orientation by a few ms) */
   *t0=tg+XLALTimeDelayFromEarthCenter(det0->location, equat.longitude,equat.latitude,&gpstime);
-  
-  
-}
 
+
+}

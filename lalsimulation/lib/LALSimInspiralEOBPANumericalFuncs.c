@@ -99,7 +99,7 @@ XLALFDDerivative1Order4(
 
 		derivativeVec->data[i] /= h;
 	}
-	
+
     return XLAL_SUCCESS;
 }
 
@@ -165,7 +165,7 @@ XLALFDDerivative1Order2(
 
 		derivativeVec->data[i] /= h;
 	}
-	
+
     return XLAL_SUCCESS;
 }
 
@@ -271,7 +271,7 @@ XLALFDDerivative1Order6(
 
 		derivativeVec->data[i] /= h;
 	}
-	
+
     return XLAL_SUCCESS;
 }
 
@@ -402,7 +402,7 @@ XLALFDDerivative1Order8(
 }
 
 /**
- * Function which calculates the 3-order cumulative derivative of a 
+ * Function which calculates the 3-order cumulative derivative of a
  * numerical function
  */
 int
@@ -472,7 +472,7 @@ XLALCumulativeIntegral3(
             ) / (a * c * (a + b) * (c + b) * (c + a + b))
         );
 		integralVec->data[i+1] = integralVec->data[i] + z;
-	}	
+	}
 	XLALDestroyREAL8Vector(XVecExt);
 	XLALDestroyREAL8Vector(YVecExt);
 

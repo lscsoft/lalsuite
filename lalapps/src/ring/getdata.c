@@ -112,7 +112,7 @@ REAL4TimeSeries * get_simulated_data_new(
   series = XLALCreateREAL8TimeSeries("TEMP",epoch,0.,1.0/sampleRate,&lalStrainUnit,npoints);
   output = XLALCreateREAL4TimeSeries("TEMP",epoch,0.,1.0/sampleRate,&lalStrainUnit,npoints);
   snprintf( output->name, sizeof( output->name ), "%s_SIM", channelName );
-  
+
   XLALSimNoise(series, 0 , psd, rng);
 
   for ( j = 0; j < series->data->length; ++j )
@@ -158,7 +158,7 @@ REAL4TimeSeries * get_zero_data(
     series->sampleUnits = lalStrainUnit;
   else
     series->sampleUnits = lalADCCountUnit;
-  
+
   for ( j = 0; j < series->data->length; ++j )
     series->data->data[j] = 0;
 
@@ -260,7 +260,7 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
   /* if this is strain data, correct the units */
   if ( dataType == LALRINGDOWN_DATATYPE_HT_REAL8 )
     series->sampleUnits = lalStrainUnit;
-  
+
   /* destroy REAL8 time series */
   XLALDestroyREAL8Vector( dblser->data );
   LALFree(dblser);

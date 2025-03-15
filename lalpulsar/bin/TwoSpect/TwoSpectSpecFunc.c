@@ -945,7 +945,7 @@ void sumseries( REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, RE
     REAL8 pplus = Pint * Cint;
     *( computedprob ) += pplus;
 
-    if ( pplus > *( computedprob )*err ) {
+    if ( pplus > *( computedprob ) * err ) {
       j = 1;
     } else {
       j = 0;
@@ -1003,7 +1003,7 @@ void sumseries_eg( REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter,
       REAL8 pplus = Pint * Cint;
       *( computedprob ) += pplus;
 
-      if ( pplus <= *( computedprob )*err || counterint < 0 ) {
+      if ( pplus <= *( computedprob ) * err || counterint < 0 ) {
         return;
       }
 
@@ -1017,7 +1017,7 @@ void sumseries_eg( REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter,
       REAL8 pplus = Pint * Cint;
       *( computedprob ) += pplus;
 
-      if ( pplus <= *( computedprob )*err ) {
+      if ( pplus <= *( computedprob ) * err ) {
         return;
       }
 

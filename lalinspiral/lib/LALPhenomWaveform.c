@@ -340,7 +340,7 @@ int XLALBBHPhenTimeDomEngine(
   params->fLower = fLower;
   phenParams.fCut = params->tSampling/2.;
 
-  /* allocate memory for the freq and domain tempaltes - templates are generated 
+  /* allocate memory for the freq and domain tempaltes - templates are generated
    * using a lower value of fLower than prescribed by the user */
   tau0 = 5.*totalMass*LAL_MTSUN_SI/(256.*eta*pow(LAL_PI*totalMass*LAL_MTSUN_SI*fLower, 8./3.));
   n = pow(2., ceil(log2(tau0*params->tSampling)));
@@ -361,13 +361,13 @@ int XLALBBHPhenTimeDomEngine(
       /* non-spinning binaries. Ref. http://arxiv.org/pdf/0710.2335 */
     case IMRPhenomA:
       XLALBBHPhenWaveFD (&phenParams, params, signalFD1);
-      params->startPhase += LAL_PI_2; 
+      params->startPhase += LAL_PI_2;
       XLALBBHPhenWaveFD (&phenParams, params, signalFD2);
       break;
       /* aligned-spin binaries. Ref. http://arxiv.org/abs/0909.2867 */
     case IMRPhenomB:
       XLALBBHPhenWaveFD2 (&phenParams, params, signalFD1);
-      params->startPhase += LAL_PI_2; 
+      params->startPhase += LAL_PI_2;
       XLALBBHPhenWaveFD2 (&phenParams, params, signalFD2);
       break;
     default:
@@ -516,7 +516,7 @@ int XLALBBHPhenTimeDomEngine(
       if (freqVec) freqVec->data[j] = fVec->data[i]; /* instant. freq */
       if (phiVec) phiVec->data[j] = phi->data[i];  /* phase evolution */
       if (aVec) {
-        aVec->data[k] = a->data[i]; /* inst. amplitude, assuming that h+ & hx have equal ...*/ 
+        aVec->data[k] = a->data[i]; /* inst. amplitude, assuming that h+ & hx have equal ...*/
         aVec->data[l] = a->data[i]; /* ... amplitude. valid in the absence of precession */
       }
       if (h) {
@@ -811,7 +811,7 @@ static void XLALComputePhenomParams2(
   InspiralTemplate *params) {
 
   REAL8 totalMass, piM, eta, chi, delta;
-  REAL8 etap2, chip2, etap3, etap2chi, etachip2, etachi; 
+  REAL8 etap2, chip2, etap3, etap2chi, etachip2, etachi;
 
   if (!params || !phenParams) return;
 
@@ -829,7 +829,7 @@ static void XLALComputePhenomParams2(
   chip2 = chi*chi;
   etap3 = etap2*eta;
   etap2chi = etap2*chi;
-  etachip2 = eta*chip2;	
+  etachip2 = eta*chip2;
   etachi = eta*chi;
 
   phenParams->psi0 = 3./(128.*eta);
@@ -858,7 +858,7 @@ static void XLALComputePhenomParams2(
   1.0891e+07*etap3 ;
 
   phenParams->psi8 = -3.6600e+05*eta + 3.0670e+05*etachi + 6.3176e+02*etachip2 +
-  2.4265e+06*etap2 + -7.2180e+05*etap2chi + 
+  2.4265e+06*etap2 + -7.2180e+05*etap2chi +
   -4.5524e+06*etap3;
 
   phenParams->fMerger =  1. - 4.4547*pow(1.-chi,0.217) + 3.521*pow(1.-chi,0.26) +
@@ -928,7 +928,7 @@ static void XLALBBHPhenWaveFD(
   *(signalvec->data+0) = 0.;
   *(signalvec->data+n/2) = 0.;
 
-  nby2 = n/2; 
+  nby2 = n/2;
 
   /* now generate the waveform at all frequency bins */
   for (i=1; i<nby2; i++) {
@@ -1046,7 +1046,7 @@ static void XLALBBHPhenWaveFD2(
   /***********************************************************************/
   /* now generate the waveform at all frequency bins */
   /***********************************************************************/
-  nby2 = n/2; 
+  nby2 = n/2;
   for (i=1; i<nby2; i++) {
     /* this is the index of the imaginary part */
     j = n-i;

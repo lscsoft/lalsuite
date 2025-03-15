@@ -716,7 +716,7 @@ LALDTriDiagonalToDiagonal( LALStatus   *stat,
  * steps.  This is the approach advocated in Chapter 11
  * of \cite ptvf1992 , and taken in this module.
  *
- * The routines in call the routines 
+ * The routines in call the routines
  * first to reduce the matrix to tridiagonal
  * form, and then to reduce it to diagonal form iteratively.  The
  * routines <tt>LALSSymmetricEigenVectors()</tt> and

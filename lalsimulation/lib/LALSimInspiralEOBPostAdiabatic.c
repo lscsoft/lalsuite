@@ -104,7 +104,7 @@ XLALSimInspiralEOBPostAdiabaticj0Func(
 }
 
 /**
- * Function which implements eq. (2.6) of arXiv:2105.06983 for the 
+ * Function which implements eq. (2.6) of arXiv:2105.06983 for the
  * purposes of root solving
  */
 double
@@ -206,10 +206,10 @@ XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 }
 
 /**
- * Function which implements eq. (2.7) of arXiv:2105.06983 for the 
+ * Function which implements eq. (2.7) of arXiv:2105.06983 for the
  * purposes of root solving
  */
-double 
+double
 XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 	REAL8 pphi_sol,
     /**<< The value of pphi */
@@ -334,7 +334,7 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 }
 
 /**
- * Root finder function which is used for computing the adiabatic and 
+ * Root finder function which is used for computing the adiabatic and
  * post-adiabatic approximations.
  */
 int
@@ -523,11 +523,11 @@ XLALRescaleREAL8Vector(
 }
 
 /**
- * This function calculates the adiabatic (0th order PA) approximation 
+ * This function calculates the adiabatic (0th order PA) approximation
  * of the inspiral dynamics. The procedure is:
- * Step 1) At each point along the inspiral, calculate the circular 
+ * Step 1) At each point along the inspiral, calculate the circular
  * value for the orbital angular momentum j0
- * Step 2) At each point along the inspiral, improve j0 by solving 
+ * Step 2) At each point along the inspiral, improve j0 by solving
  * eq. (2.5) of arXiv:2105.06983 for pphi.
  */
 int
@@ -616,7 +616,7 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
         pphi0Vec->data[i] = pphiRoot.root;
 
 		REAL8 polarDynamics[4];
-		
+
 		polarDynamics[0] = rVec->data[i];
 		polarDynamics[1] = phiVec->data[i];
 		polarDynamics[2] = prstarVec->data[i];
@@ -663,15 +663,15 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 }
 
 /**
- * This function calculates the (n-th order) post-adiabatic approximation 
+ * This function calculates the (n-th order) post-adiabatic approximation
  * of the inspiral dynamics. The procedure is:
  * Step 0) Initialise all necessary variables and allocate memory space.
  * Step 1) Iterate the PA order n from 1 to 8.
- * Step 2) At odd n (orders 1, 3, 5, 7) improve the approximation for 
+ * Step 2) At odd n (orders 1, 3, 5, 7) improve the approximation for
  * prstar (pr*) by solving eq. (2.6) of arXiv:2105.06983.
- * Step 3) At even n (orders 2, 4, 6, 8) improve the approximation for 
+ * Step 3) At even n (orders 2, 4, 6, 8) improve the approximation for
  * pphi by solving eq. (2.7) of arXiv:2105.06983.
- * Step 4) Compute the derivative dt/dr and dphi/dr which will be needed 
+ * Step 4) Compute the derivative dt/dr and dphi/dr which will be needed
  * for computing the quantities t(r) and phi(r).
  */
 int
@@ -732,7 +732,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
         rReverseVec->data, 0,
         rReverseVec->length * sizeof(REAL8)
     );
-	
+
     XLALReverseREAL8Vector(rVec,rReverseVec);
 
 	REAL8Vector *pphiReverseVec = XLALCreateREAL8Vector(rSize);
@@ -837,7 +837,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 					dr,
 					seobParams,
 					LALParams
-				);	
+				);
 	    	}
 
 			XLALReverseREAL8Vector(prstarVec, prstarReverseVec);
@@ -888,7 +888,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 				}
 
 				pphiVec->data[i] = pphiRoot.root;
-		
+
 				polarDynamics[0] = rVec->data[i];
 				polarDynamics[1] = phiVec->data[i];
 				polarDynamics[2] = prstarVec->data[i];
@@ -907,7 +907,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
                 dpphiBydrReverseVec->data, 0,
                 dpphiBydrReverseVec->length * sizeof(REAL8)
             );
-			
+
             XLALFDDerivative1Order8(
                 rReverseVec, pphiReverseVec, dpphiBydrReverseVec
             );
@@ -1057,7 +1057,7 @@ XLALSimInspiralEOBPAPartialHByPartialprstar(
 	if (analyticFlag == 0)
 	{
 		INT4 i;
-	
+
 		for (i = -4; i <= 4; i++)
 		{
 			if (i != 0)
@@ -1073,7 +1073,7 @@ XLALSimInspiralEOBPAPartialHByPartialprstar(
                 );
 			}
 		}
-	
+
 		partialHByPartialprstar /= h;
 	}
 	else
@@ -1245,7 +1245,7 @@ XLALSimInspiralEOBPAHamiltonianWrapper(
 	a2CartVec.data = spin2;
 	aKCartVec.data = aKV;
 	SstarCartVec.data = SstarV;
-    
+
     // tortoise flag:
     // 0 - unstarred coordinates pr, pphi
     // 1 - starred coordinates prstar, pphistar = pphi
@@ -1329,11 +1329,11 @@ XLALSimInspiralEOBPAFluxWrapper(
 	polarDynamics.length = 4;
 	REAL8 pol[4] = {r, 0., prstar, pphi};
 	polarDynamics.data = pol;
-	
+
 	const UINT4 lMax = 8;
 
 	const UINT4 SpinAlignedEOBversion = 4;
-	
+
  	REAL8 Flux;
 
     if (analyticFlag == 0)
@@ -1369,15 +1369,15 @@ XLALSimInspiralEOBPAFluxWrapper(
 
 /**
  * This function generates post-adiabatic inspiral for spin-aligned
- * binary in the SEOB formalism. The procedure is described in 
+ * binary in the SEOB formalism. The procedure is described in
  * https://arxiv.org/abs/2105.06983 (or
  * https://journals.aps.org/prd/abstract/10.1103/PhysRevD.104.124087)
- * STEP 0) Initialise variables and set up a radial grid on which the 
+ * STEP 0) Initialise variables and set up a radial grid on which the
  * post-adiabatic routine will be done.
  * STEP 1) Compute the (quasi-circular) adiabatic approximation
  * according to eq. (2.5) of arXiv:2105.06983.
  * STEP 2) Perform the post-adiabatic routine, by computing improvements
- * to prstar and pphi in alternating order, according to eqs. (2.6) and 
+ * to prstar and pphi in alternating order, according to eqs. (2.6) and
  * (2.7) of arXiv:2105.06983.
  * STEP 3) The time t and orbital phase phi are computed via cubic
  * quadrature using eqs. (2.10) from arXiv:2105.06983.
@@ -1395,7 +1395,7 @@ XLALSimInspiralEOBPostAdiabatic(
 	REAL8 spin2z,
 	/**<< z-component of spin-2, dimensionless */
 	const REAL8Vector initVals,
-	/**<< initial values (r, phi, pr, pphi) for the post-adiabatic 
+	/**<< initial values (r, phi, pr, pphi) for the post-adiabatic
     routine */
 	UINT4 SpinAlignedEOBversion,
 	/**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4,
@@ -1471,9 +1471,9 @@ XLALSimInspiralEOBPostAdiabatic(
 	}
 
 	REAL8 dr = 0.3;
-	
+
 	UINT4 rSize = (int) ceil((rInitial-rFinal)/dr);
-	
+
 	if (rSize <= 4)
 	{
 		XLAL_ERROR(XLAL_ERANGE);
@@ -1482,7 +1482,7 @@ XLALSimInspiralEOBPostAdiabatic(
 	{
 		rSize = 10;
 	}
-	
+
 	dr = XLALSimInspiralEOBPACalculatedr(rInitial, rFinal, rSize);
 
 	LALDict *LALparams = XLALCreateDict();
@@ -1727,7 +1727,7 @@ XLALSimInspiralEOBPostAdiabatic(
         rReverseVec, omegaReverseVec, domegadrReverseVec
     );
 	XLALReverseREAL8Vector(domegadrReverseVec, domegadrVec);
-    
+
 	// Figure out where we are going to stop
 	UNUSED REAL8 adiabatic_param = 0.0;
 	UNUSED REAL8 r,prstar,pphi,csi,omega,domegadr;
@@ -1799,6 +1799,6 @@ XLALSimInspiralEOBPostAdiabatic(
             "PA inspiral doesn't have enough points for interpolation."
         );
 	}
-	
+
     return XLAL_SUCCESS;
 }

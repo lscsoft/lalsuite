@@ -147,8 +147,8 @@ outputs:
         # provided to assist the solver, but not actually used
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
       run:
+        - igwn-segments
         - {{ pin_subpackage('liblal', exact=True) }}
-        - ligo-segments
         - numpy
         - python
         - python-dateutil
@@ -156,11 +156,11 @@ outputs:
     test:
       requires:
         - freezegun
+        {% if not migrating %}
+        - igwn-ligolw
+        {% endif %}
         - lscsoft-glue
         - pytest >=4.0.0a0
-        {% if not migrating %}
-        - python-ligo-lw
-        {% endif %}
       source_files:
         - test/python
       commands:
@@ -196,8 +196,8 @@ outputs:
         - sed
       host:
         - fftw  # [fft_impl == "fftw"]
+        - igwn-segments
         - {{ pin_subpackage('liblal', exact=True) }}
-        - ligo-segments
         - python
         - {{ pin_subpackage('python-lal', exact=True) }}
         - zlib
@@ -206,7 +206,7 @@ outputs:
       run:
         - fftw  # [fft_impl == "fftw"]
         - {{ pin_subpackage('liblal', exact=True) }}
-        - ligo-segments
+        - igwn-segments
         - numpy
         - python
         - {{ pin_subpackage('python-lal', exact=True) }}

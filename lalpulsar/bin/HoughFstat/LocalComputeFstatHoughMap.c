@@ -1,4 +1,4 @@
-/*  
+/*
  *  Copyright (C) 2005-2008 Badri Krishnan, Alicia Sintes, Bernd Machenschalk
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -12,10 +12,10 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *  MA  02110-1301  USA
- * 
+ *
  */
 
 /*
@@ -47,7 +47,7 @@ static int smallerHough(const void *a,const void *b) {
   SemiCohCandidate a1, b1;
   a1 = *((const SemiCohCandidate *)a);
   b1 = *((const SemiCohCandidate *)b);
-  
+
   if( a1.significance < b1.significance )
     return(1);
   else if( a1.significance > b1.significance)
@@ -86,15 +86,15 @@ static int smallerHough(const void *a,const void *b) {
 #endif
 
 static void
-LocalHOUGHConstructHMT_W  (LALStatus                  *status, 
+LocalHOUGHConstructHMT_W  (LALStatus                  *status,
 			   HOUGHMapTotal              *ht     , /**< The output hough map */
-			   UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */ 
+			   UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */
 			   PHMDVectorSequence         *phmdVS); /**< set of partial hough map derivatives */
 
 static void
 LocalHOUGHAddPHMD2HD_W    (LALStatus      *status, /**< the status pointer */
 			   HOUGHMapDeriv  *hd,     /**< the Hough map derivative */
-			   HOUGHphmd      *phmd);  /**< info from a partial map */ 
+			   HOUGHphmd      *phmd);  /**< info from a partial map */
 
 /* this is the only function that's actually changed for optimization */
 INLINE void
@@ -103,7 +103,7 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
 			   HOUGHBorder** pBorderP,
 			   INT4         length,
 			   HoughDT       weight,
-			   INT4         xSide, 
+			   INT4         xSide,
 			   INT4         ySide) ALWAYS_INLINE;
 
 
@@ -122,10 +122,10 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   PHMDVectorSequence  phmdVS;  /* the partial Hough map derivatives */
   UINT8FrequencyIndexVector freqInd; /* for trajectory in time-freq plane */
   HOUGHResolutionPar parRes;   /* patch grid information */
-  HOUGHPatchGrid  patch;   /* Patch description */ 
+  HOUGHPatchGrid  patch;   /* Patch description */
   HOUGHParamPLUT  parLut;  /* parameters needed to build lut  */
   HOUGHDemodPar   parDem;  /* demodulation parameters */
-  HOUGHSizePar    parSize; 
+  HOUGHSizePar    parSize;
 
   UINT2  xSide, ySide, maxNBins, maxNBorders;
   INT8  fBinIni, fBinFin, fBin;
@@ -147,25 +147,25 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   /* check input is not null */
   if ( out == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
+  }
   if ( out->length == 0 ) {
     ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-  }  
+  }
   if ( out->list == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-  }  
+  }
   if ( pgV == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
+  }
   if ( pgV->length == 0 ) {
     ABORT ( status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
-  }  
+  }
   if ( pgV->pg == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
+  }
   if ( params == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
+  }
 
 
 
@@ -184,21 +184,21 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   pos = params->pos;
   fdot = params->fdot;
   tsMid = params->tsMid;
-  refTimeGPS = params->refTime;  
+  refTimeGPS = params->refTime;
   refTime = XLALGPSGetREAL8(&refTimeGPS);
 
   /* set patch size */
-  /* this is supposed to be the "educated guess" 
+  /* this is supposed to be the "educated guess"
      delta theta = 1.0 / (Tcoh * f0 * Vepi )
-     where Tcoh is coherent time baseline, 
-     f0 is frequency and Vepi is rotational velocity 
+     where Tcoh is coherent time baseline,
+     f0 is frequency and Vepi is rotational velocity
      of detector */
   patchSizeX = params->patchSizeX;
   patchSizeY = params->patchSizeY;
 
   /* calculate time differences from start of observation time for each stack*/
   TRY( LALDCreateVector( status->statusPtr, &timeDiffV, nStacks), status);
-  
+
   for (k=0; k<nStacks; k++) {
     REAL8 tMidStack;
     tMidStack = XLALGPSGetREAL8(tsMid->data + k);
@@ -214,7 +214,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   lutV.lut = (HOUGHptfLUT *)LALCalloc(1,nStacks*sizeof(HOUGHptfLUT));
   if ( lutV.lut == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
+  }
 
 
   /* partial hough map derivative vector */
@@ -230,7 +230,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
     /* set number of freq. bins for which LUTs will be calculated */
     /* this sets the range of residual spindowns values */
     /* phmdVS.nfSize  = 2*nfdotBy2 + 1; */
-    phmdVS.nfSize  = 2 * floor((nfdot-1) * (REAL4)(dfdot * maxTimeDiff / deltaF) + 0.5f) + 1; 
+    phmdVS.nfSize  = 2 * floor((nfdot-1) * (REAL4)(dfdot * maxTimeDiff / deltaF) + 0.5f) + 1;
   }
 
   phmdVS.deltaF  = deltaF;
@@ -238,7 +238,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   phmdVS.phmd=(HOUGHphmd *)LALCalloc( 1,phmdVS.length * phmdVS.nfSize *sizeof(HOUGHphmd));
   if ( phmdVS.phmd == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }    
+  }
 
   /* residual spindown trajectory */
   freqInd.deltaF = deltaF;
@@ -247,15 +247,15 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   freqInd.data =  ( UINT8 *)LALCalloc(1,nStacks*sizeof(UINT8));
   if ( freqInd.data == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
-   
+  }
+
   /* resolution in space of residual spindowns */
   ht.dFdot.length = 1;
   ht.dFdot.data = NULL;
   ht.dFdot.data = (REAL8 *)LALCalloc( 1, ht.dFdot.length * sizeof(REAL8));
   if ( ht.dFdot.data == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
+  }
 
   /* the residual spindowns */
   ht.spinRes.length = 1;
@@ -263,7 +263,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   ht.spinRes.data = (REAL8 *)LALCalloc( 1, ht.spinRes.length*sizeof(REAL8));
   if ( ht.spinRes.data == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
+  }
 
   /* the residual spindowns */
   ht.spinDem.length = 1;
@@ -271,7 +271,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   ht.spinDem.data = (REAL8 *)LALCalloc( 1, ht.spinRes.length*sizeof(REAL8));
   if ( ht.spinDem.data == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
+  }
 
   /* the demodulation params */
   parDem.deltaF = deltaF;
@@ -282,7 +282,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   parDem.spin.data = (REAL8 *)LALCalloc(1, sizeof(REAL8));
   if ( parDem.spin.data == NULL ) {
     ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-  }  
+  }
   parDem.spin.data[0] = fdot;
 
   /* the skygrid resolution params */
@@ -293,28 +293,28 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   parRes.pixErr = PIXERR;
   parRes.linErr = LINERR;
   parRes.vTotC = VTOT;
- 
+
   /* adjust fBinIni and fBinFin to take maxNBins into account */
   /* and make sure that we have fstat values for sufficient number of bins */
-  parRes.f0Bin =  fBinIni;      
+  parRes.f0Bin =  fBinIni;
 
   fBinIni += params->extraBinsFstat;
   fBinFin -= params->extraBinsFstat;
   /* this is not very clean -- the Fstat calculation has to know how many extra bins are needed */
 
-  LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%" LAL_INT8_FORMAT " bins)\n", 
+  LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%" LAL_INT8_FORMAT " bins)\n",
 	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni + 1);
   ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
-  /* initialise number of candidates -- this means that any previous candidates 
+  /* initialise number of candidates -- this means that any previous candidates
      stored in the list will be lost for all practical purposes*/
-  out->nCandidates = 0; 
-  
+  out->nCandidates = 0;
+
   /* create toplist of candidates */
   if (params->useToplist) {
     create_toplist(&houghToplist, out->length, sizeof(SemiCohCandidate), smallerHough);
   }
-  else { 
+  else {
     /* if no toplist then use number of hough maps */
     INT4 numHmaps = (fBinFin - fBinIni + 1)*phmdVS.nfSize;
     if (out->length != numHmaps) {
@@ -322,27 +322,27 @@ LocalComputeFstatHoughMap (LALStatus            *status,
       out->list = (SemiCohCandidate *)LALRealloc( out->list, out->length * sizeof(SemiCohCandidate));
       if ( out->list == NULL ) {
 	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-      }  
+      }
     }
   }
 
   /*------------------ start main Hough calculation ---------------------*/
 
-  /* initialization */  
+  /* initialization */
   fBin= fBinIni; /* initial search bin */
 
   while( fBin <= fBinFin ){
     INT8 fBinSearch, fBinSearchMax;
-    UINT4 i,j; 
-    	
-    parRes.f0Bin =  fBin;      
+    UINT4 i,j;
+
+    parRes.f0Bin =  fBin;
     TRY( LocalHOUGHComputeSizePar( status->statusPtr, &parSize, &parRes ),  status );
     xSide = parSize.xSide;
     ySide = parSize.ySide;
 
     maxNBins = parSize.maxNBins;
     maxNBorders = parSize.maxNBorders;
-	
+
     /*------------------ create patch grid at fBin ----------------------*/
     patch.xSide = xSide;
     patch.ySide = ySide;
@@ -351,14 +351,14 @@ LocalComputeFstatHoughMap (LALStatus            *status,
     patch.xCoor = (REAL8 *)LALCalloc(1,xSide*sizeof(REAL8));
     if ( patch.xCoor == NULL ) {
       ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-    }  
+    }
 
     patch.yCoor = (REAL8 *)LALCalloc(1,ySide*sizeof(REAL8));
     if ( patch.yCoor == NULL ) {
       ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-    }  
+    }
     TRY( LocalHOUGHFillPatchGrid( status->statusPtr, &patch, &parSize ), status );
-    
+
     /*------------- other memory allocation and settings----------------- */
     for(j=0; j<lutV.length; ++j){
       lutV.lut[j].maxNBins = maxNBins;
@@ -366,19 +366,19 @@ LocalComputeFstatHoughMap (LALStatus            *status,
       lutV.lut[j].border = (HOUGHBorder *)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder));
       if ( lutV.lut[j].border == NULL ) {
 	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-      }  
+      }
 
       lutV.lut[j].bin =	(HOUGHBin2Border *)LALCalloc(1,maxNBins*sizeof(HOUGHBin2Border));
       if ( lutV.lut[j].bin == NULL ) {
 	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-      }  
+      }
 
       for (i=0; i<maxNBorders; ++i){
 	lutV.lut[j].border[i].ySide = ySide;
 	lutV.lut[j].border[i].xPixel = (COORType *)LALCalloc(1,ySide*sizeof(COORType));
 	if ( lutV.lut[j].border[i].xPixel == NULL ) {
 	  ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-	}  
+	}
       }
     }
 
@@ -387,26 +387,26 @@ LocalComputeFstatHoughMap (LALStatus            *status,
       phmdVS.phmd[j].leftBorderP = (HOUGHBorder **)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder *));
       if ( phmdVS.phmd[j].leftBorderP == NULL ) {
 	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-      }  
+      }
 
       phmdVS.phmd[j].rightBorderP = (HOUGHBorder **)LALCalloc(1,maxNBorders*sizeof(HOUGHBorder *));
       if ( phmdVS.phmd[j].rightBorderP == NULL ) {
 	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-      }  
+      }
 
       phmdVS.phmd[j].ySide = ySide;
       phmdVS.phmd[j].firstColumn = NULL;
       phmdVS.phmd[j].firstColumn = (UCHAR *)LALCalloc(1,ySide*sizeof(UCHAR));
       if ( phmdVS.phmd[j].firstColumn == NULL ) {
 	ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-      }  
+      }
     }
-    
-    /*------------------- create all the LUTs at fBin ---------------------*/  
+
+    /*------------------- create all the LUTs at fBin ---------------------*/
     for (j=0; j < (UINT4)nStacks; j++){  /* create all the LUTs */
       parDem.veloC.x = vel->data[3*j];
       parDem.veloC.y = vel->data[3*j + 1];
-      parDem.veloC.z = vel->data[3*j + 2];      
+      parDem.veloC.z = vel->data[3*j + 2];
       parDem.positC.x = pos->data[3*j];
       parDem.positC.y = pos->data[3*j + 1];
       parDem.positC.z = pos->data[3*j + 2];
@@ -419,15 +419,15 @@ LocalComputeFstatHoughMap (LALStatus            *status,
       TRY( LocalHOUGHConstructPLUT( status->statusPtr, &(lutV.lut[j]), &patch, &parLut ), status);
 
     }
-    
 
-    
-    /*--------- build the set of  PHMD centered around fBin -------------*/     
+
+
+    /*--------- build the set of  PHMD centered around fBin -------------*/
     phmdVS.fBinMin = fBin - phmdVS.nfSize/2;
     TRY( LocalHOUGHConstructSpacePHMD(status->statusPtr, &phmdVS, pgV, &lutV), status );
     TRY( LocalHOUGHWeighSpacePHMD(status->statusPtr, &phmdVS, params->weightsV), status);
-    
-    /*-------------- initializing the Total Hough map space ------------*/   
+
+    /*-------------- initializing the Total Hough map space ------------*/
     ht.xSide = xSide;
     ht.ySide = ySide;
     ht.skyPatch.alpha = alpha;
@@ -442,16 +442,16 @@ LocalComputeFstatHoughMap (LALStatus            *status,
     ht.map   = (HoughTT *)LALCalloc(1,xSide*ySide*sizeof(HoughTT));
     if ( ht.map == NULL ) {
       ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-    }  
+    }
 
     TRY( LocalHOUGHInitializeHT( status->statusPtr, &ht, &patch), status); /*not needed */
-    
+
     /*  Search frequency interval possible using the same LUTs */
     fBinSearch = fBin;
     fBinSearchMax = fBin + parSize.nFreqValid - 1;
-     
-    /* Study all possible frequencies with one set of LUT */    
-    while ( (fBinSearch <= fBinFin) && (fBinSearch < fBinSearchMax) )  { 
+
+    /* Study all possible frequencies with one set of LUT */
+    while ( (fBinSearch <= fBinFin) && (fBinSearch < fBinSearchMax) )  {
 
       /* finally we can construct the hough maps and select candidates */
       {
@@ -462,10 +462,10 @@ LocalComputeFstatHoughMap (LALStatus            *status,
 
 	/*loop over all values of residual spindown */
 	/* check limits of loop */
-	for( n = -nfdotBy2; n <= nfdotBy2 ; n++ ){ 
+	for( n = -nfdotBy2; n <= nfdotBy2 ; n++ ){
 
-	  ht.spinRes.data[0] =  n*dfdot; 
-	  
+	  ht.spinRes.data[0] =  n*dfdot;
+
 	  for (j=0; j < (UINT4)nStacks; j++) {
 	    freqInd.data[j] = fBinSearch + floor( (REAL4)(timeDiffV->data[j]*n*dfdot/deltaF) + 0.5f);
 	  }
@@ -479,16 +479,16 @@ LocalComputeFstatHoughMap (LALStatus            *status,
 	  else {
 	    TRY(GetHoughCandidates_threshold( status->statusPtr, out, &ht, &patch, &parDem, params->threshold), status);
 	  }
-	  
+
 	} /* end loop over spindown trajectories */
 
       } /* end of block for calculating total hough maps */
-      
+
 
       /*------ shift the search freq. & PHMD structure 1 freq.bin -------*/
       ++fBinSearch;
       TRY( LocalHOUGHupdateSpacePHMDup(status->statusPtr, &phmdVS, pgV, &lutV), status );
-      TRY( LocalHOUGHWeighSpacePHMD(status->statusPtr, &phmdVS, params->weightsV), status);      
+      TRY( LocalHOUGHWeighSpacePHMD(status->statusPtr, &phmdVS, params->weightsV), status);
 
     }   /* closing while loop over fBinSearch */
 
@@ -496,9 +496,9 @@ LocalComputeFstatHoughMap (LALStatus            *status,
     /* printf ("xside x yside = %d x %d = %d\n", parSize.xSide, parSize.ySide, parSize.xSide * parSize.ySide ); */
     nSkyRefine = parSize.xSide * parSize.ySide;
 #endif
-    
+
     fBin = fBinSearch;
-    
+
     /*--------------  Free partial memory -----------------*/
     LALFree(patch.xCoor);
     LALFree(patch.yCoor);
@@ -516,10 +516,10 @@ LocalComputeFstatHoughMap (LALStatus            *status,
       LALFree( phmdVS.phmd[j].rightBorderP);
       LALFree( phmdVS.phmd[j].firstColumn);
     }
-    
+
   } /* closing first while */
 
-  
+
   /* free remaining memory */
   LALFree(ht.spinRes.data);
   LALFree(ht.spinDem.data);
@@ -553,7 +553,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
 static void
 LocalHOUGHConstructHMT_W (LALStatus                  *status, /**< LAL status pointer */
 			  HOUGHMapTotal              *ht, /**< The output hough map */
-			  UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */ 
+			  UINT8FrequencyIndexVector  *freqInd, /**< time-frequency trajectory */
 			  PHMDVectorSequence         *phmdVS) /**< set of partial hough map derivatives */
 {
 
@@ -561,17 +561,17 @@ LocalHOUGHConstructHMT_W (LALStatus                  *status, /**< LAL status po
   UINT4    breakLine;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
-  UINT8    fBinMin;   /* present minimum frequency bin */ 
+  UINT8    fBinMin;   /* present minimum frequency bin */
   INT8     fBin;      /* present frequency bin */
   UINT2    xSide,ySide;
- 
+
   HOUGHMapDeriv hd; /* the Hough map derivative */
 
   /* --------------------------------------------- */
   INITSTATUS(status);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
-  /*   Make sure the arguments are not NULL: */ 
+  /*   Make sure the arguments are not NULL: */
   ASSERT (phmdVS,  status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
   ASSERT (ht,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
   ASSERT (freqInd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
@@ -582,9 +582,9 @@ LocalHOUGHConstructHMT_W (LALStatus                  *status, /**< LAL status po
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (freqInd->length == phmdVS->length, status, 
+  ASSERT (freqInd->length == phmdVS->length, status,
 	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
-  ASSERT (freqInd->deltaF == phmdVS->deltaF, status, 
+  ASSERT (freqInd->deltaF == phmdVS->deltaF, status,
 	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
   /* -------------------------------------------   */
 
@@ -592,45 +592,45 @@ LocalHOUGHConstructHMT_W (LALStatus                  *status, /**< LAL status po
   ASSERT (phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
   ASSERT (phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
   /* -------------------------------------------   */
-  
+
    /* Make sure the ht map contains some pixels */
   ASSERT (ht->xSide, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
   ASSERT (ht->ySide, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
 
   length = phmdVS->length;
-  nfSize = phmdVS->nfSize; 
-  
+  nfSize = phmdVS->nfSize;
+
   fBinMin = phmdVS->fBinMin; /* initial frequency value  od the cilinder*/
-  
+
   breakLine = phmdVS->breakLine;
 
   /* number of physical pixels */
   xSide = ht->xSide;
   ySide = ht->ySide;
-  
+
   /* Make sure initial breakLine is in [0,nfSize)  */
   ASSERT ( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
-  
+
   /* -------------------------------------------   */
-  
+
   /* Initializing  hd map and memory allocation */
   hd.xSide = xSide;
   hd.ySide = ySide;
   hd.map = (HoughDT *)LALMalloc(ySide*(xSide+1)*sizeof(HoughDT));
   if (hd. map == NULL) {
-    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM); 
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
   }
 
   /* -------------------------------------------   */
- 
+
   TRY( LALHOUGHInitializeHD(status->statusPtr, &hd), status);
-  for ( k=0; k<length; ++k ){ 
+  for ( k=0; k<length; ++k ){
     /* read the frequency index and make sure is in the proper interval*/
     fBin =freqInd->data[k] -fBinMin;
 
     ASSERT ( fBin < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
     ASSERT ( fBin >= 0,     status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
- 
+
     /* find index */
     j = (fBin + breakLine) % nfSize;
 
@@ -640,7 +640,7 @@ LocalHOUGHConstructHMT_W (LALStatus                  *status, /**< LAL status po
   }
 
   TRY( LALHOUGHIntegrHD2HT(status->statusPtr, ht, &hd), status);
-  
+
   /* Free memory and exit */
   LALFree(hd.map);
 
@@ -661,7 +661,7 @@ LocalHOUGHConstructHMT_W (LALStatus                  *status, /**< LAL status po
 static void
 LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 			HOUGHMapDeriv  *hd,     /**< the Hough map derivative */
-			HOUGHphmd      *phmd)   /**< info from a partial map */ 
+			HOUGHphmd      *phmd)   /**< info from a partial map */
 {
 
   INT2     k;
@@ -669,9 +669,9 @@ LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
   HoughDT  weight;
 
   INITSTATUS(status);
-  ATTATCHSTATUSPTR (status); 
+  ATTATCHSTATUSPTR (status);
 
-  /*   Make sure the arguments are not NULL: */ 
+  /*   Make sure the arguments are not NULL: */
   ASSERT (hd,   status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
   ASSERT (phmd, status, HOUGHMAPH_ENULL, HOUGHMAPH_MSGENULL);
 
@@ -683,7 +683,7 @@ LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
   weight = phmd->weight;
   xSide = hd->xSide;
   ySide = hd->ySide;
-  
+
   /* first column correction */
   for ( k=0; k< ySide; ++k ){
     hd->map[k*(xSide+1) + 0] += phmd->firstColumn[k] * weight;
@@ -697,7 +697,7 @@ LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 				  weight,
 				  xSide,
 				  ySide), status );
-  
+
   /* right borders => decrease according to weight */
   TRY ( LocalHOUGHAddPHMD2HD_Wlr (status,
 				  hd->map,
@@ -706,10 +706,10 @@ LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 				  - weight,
 				  xSide,
 				  ySide), status );
-  
+
   /* cleanup */
   DETATCHSTATUSPTR (status);
-  
+
   /* normal exit */
   RETURN (status);
 }
@@ -743,7 +743,7 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status UNUSED,
 			   HOUGHBorder** pBorderP,
 			   INT4         length,
 			   HoughDT       weight,
-			   INT4         xSide, 
+			   INT4         xSide,
 			   INT4         ySide) {
 
   INT4  xSideP1 = xSide +1; /* avoid 16 bit types */
@@ -751,7 +751,7 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status UNUSED,
   INT4  k;
   COORType     *xPixel;
   HOUGHBorder* borderP;
-   
+
   for (k=0; k< length; ++k){
 
     borderP = pBorderP[k];
@@ -763,12 +763,12 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status UNUSED,
     if(k < length-1) {
 	INT4 ylkp1 = pBorderP[k+1]->yLower;
 	PREFETCH(&(pBorderP[k+1]->xPixel[ylkp1]));
-    } 	
+    }
 
     if(k < length-2) {
 	PREFETCH(pBorderP[k+2]);
-    } 	
-   
+    }
+
     if (yLower < 0) {
       fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
 	      yLower, __LINE__);
@@ -783,7 +783,7 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status UNUSED,
     ADDPHMD2HD_WLR_LOOP(xPixel,yLower,yUpper,xSideP1,map,weight);
 
   };
-    
+
 };
 
 #elif defined(PREFETCH) && ( defined(__SSE__) || defined(__ALTIVEC__) )
@@ -802,7 +802,7 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status UNUSED,
 	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n", \
 		__FILE__,__LINE__,IDX,ySide*(xSide+1),OFFSET,xPixel[OFFSET],xSide ); \
 	ABORT(status, HOUGHMAPH_ESIZE, HOUGHMAPH_MSGESIZE); \
-      } 
+      }
 
 INLINE void
 LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
@@ -810,7 +810,7 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
 			  HOUGHBorder** pBorderP,
 			  INT4         length,
 			  HoughDT      weight,
-			  INT4         xSide, 
+			  INT4         xSide,
 			  INT4         ySide)
 {
 
@@ -825,11 +825,11 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
   INT4        xSideP1_2=xSideP1+xSideP1;
   INT4        xSideP1_3=xSideP1_2+xSideP1;
 
-  HoughDT     *pf_addr[8]; 
+  HoughDT     *pf_addr[8];
 
   for (k=0; k< length; ++k) {
 
-    /*  Make sure the arguments are not NULL: (Commented for performance) */ 
+    /*  Make sure the arguments are not NULL: (Commented for performance) */
     /*  ASSERT (phmd->leftBorderP[k], status, HOUGHMAPH_ENULL,
 	HOUGHMAPH_MSGENULL); */
 
@@ -846,13 +846,13 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
     if(k < length-1) {
 	INT4 ylkp1 = pBorderP[k+1]->yLower;
 	PREFETCH(&(pBorderP[k+1]->xPixel[ylkp1]));
-    } 	
+    }
 
     if(k < length-2) {
 	PREFETCH(pBorderP[k+2]);
-    } 	
+    }
 
-   
+
     if (yLower < 0) {
       fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",
 	      yLower, __LINE__);
@@ -871,26 +871,26 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
 
     offs = yUpper - yLower+1;
     if (offs > EAH_HOUGH_BATCHSIZE) {
-	offs = EAH_HOUGH_BATCHSIZE; 
-    }	
-	
-    	
+	offs = EAH_HOUGH_BATCHSIZE;
+    }
+
+
     for(j=yLower; j < yLower+offs; j++) {
         sidx0=xPixel[j]+ j*xSideP1;
         PREFETCH(pf_addr[c_c++] = map + sidx0);
 #ifndef NO_CHECK_INDEX
         CHECK_INDEX(sidx0,j);
 #endif
-    }		
-		
+    }
+
     c_c=0;
     for(j=yLower; j<=yUpper-(2*EAH_HOUGH_BATCHSIZE-1);j+=EAH_HOUGH_BATCHSIZE){
 
-      sidx0 = xPixel[j+EAH_HOUGH_BATCHSIZE]+sidxBase_n;; 
+      sidx0 = xPixel[j+EAH_HOUGH_BATCHSIZE]+sidxBase_n;;
       sidx1 = xPixel[j+EAH_HOUGH_BATCHSIZE+1]+sidxBase_n+xSideP1;
       sidx2 = xPixel[j+EAH_HOUGH_BATCHSIZE+2]+sidxBase_n+xSideP1_2;
       sidx3 = xPixel[j+EAH_HOUGH_BATCHSIZE+3]+sidxBase_n+xSideP1_3;;
-	
+
       PREFETCH(xPixel +(j+(EAH_HOUGH_BATCHSIZE+EAH_HOUGH_BATCHSIZE)));
 
       PREFETCH(pf_addr[c_n] = map + sidx0);
@@ -946,7 +946,7 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
 			  HOUGHBorder** pBorderP,
 			  INT4         length,
 			  HoughDT      weight,
-			  INT4         xSide, 
+			  INT4         xSide,
 			  INT4         ySide)
 {
   INT4        k,j;
@@ -962,7 +962,7 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
     yLower = (*borderP).yLower;
     yUpper = (*borderP).yUpper;
     xPixel =  &((*borderP).xPixel[0]);
-   
+
     /* check boundary conditions */
     if (yLower < 0) {
       fprintf(stderr,"WARNING: Fixing yLower (%d -> 0) [HoughMap.c %d]\n",

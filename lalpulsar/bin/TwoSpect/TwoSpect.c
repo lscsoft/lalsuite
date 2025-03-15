@@ -340,7 +340,7 @@ int main( int argc, char *argv[] )
     XLALDestroyREAL4VectorAligned( background );
     XLAL_CHECK( ( background = XLALCreateREAL4VectorAligned( ffdata->numffts * ( ffdata->numfbins + 2 * ( maxbinshift - 10 ) ), 32 ) ) != NULL, XLAL_EFUNC );
     for ( ii = 0; ii < ffdata->numffts; ii++ ) {
-      if ( background0->data[( ffdata->numfbins + 2 * maxbinshift )*ii] != 0.0 ) {
+      if ( background0->data[( ffdata->numfbins + 2 * maxbinshift ) * ii] != 0.0 ) {
         memcpy( &( background->data[( ffdata->numfbins + 2 * ( maxbinshift - 10 ) )*ii] ), &( background0->data[( ffdata->numfbins + 2 * maxbinshift )*ii + 10] ), sizeof( REAL4 ) * ( ffdata->numfbins + 2 * ( maxbinshift - 10 ) ) );
       } else {
         memset( &( background->data[( ffdata->numfbins + 2 * ( maxbinshift - 10 ) )*ii] ), 0, sizeof( REAL4 ) * ( ffdata->numfbins + 2 * ( maxbinshift - 10 ) ) );
@@ -1373,7 +1373,7 @@ INT4 cleanLines( REAL4VectorAligned *TFdata, const REAL4VectorAligned *backgroun
         if ( lines->data[jj] - ( params->blksize - 1 ) / 2 >= 0 ) {
           REAL8 noiseval = expRandNum( background->data[ii * ( numfbins - ( params->blksize - 1 ) ) + lines->data[jj]], rng );
           XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC, "ii=%d, jj=%d, background=%g", ii, jj, background->data[ii * ( numfbins - ( params->blksize - 1 ) ) + lines->data[jj]] );
-          if ( ii > 0 && TFdata->data[( ii - 1 )*numfbins] != 0.0 ) {
+          if ( ii > 0 && TFdata->data[( ii - 1 ) * numfbins] != 0.0 ) {
             noiseval *= ( 1.0 - 0.167 * 0.167 );
             noiseval += 0.167 * prevnoiseval;
           }
@@ -1935,7 +1935,7 @@ INT4 readTwoSpectInputParams( UserInput_t *uvar, int argc, char *argv[] )
   }
 
   //Check analysis parameters
-  if ( ceil( uvar->t0 / uvar->SFToverlap )*uvar->SFToverlap - uvar->t0 != 0.0 ) {
+  if ( ceil( uvar->t0 / uvar->SFToverlap ) * uvar->SFToverlap - uvar->t0 != 0.0 ) {
     REAL8 oldstart = uvar->t0;
     uvar->t0 = ceil( uvar->t0 / uvar->SFToverlap ) * uvar->SFToverlap;
     fprintf( stderr, "WARNING! Adjusting start time from %f to %f\n", oldstart, uvar->t0 );

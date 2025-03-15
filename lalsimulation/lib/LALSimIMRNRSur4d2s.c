@@ -550,7 +550,7 @@ static int NRSurrogateData_Init_submodel(
 
   return ret;
 }
-#endif 
+#endif
 
 /* Deallocate contents of the given NRSurrogateData_submodel structure */
 static void NRSurrogateData_Cleanup_submodel(NRSurrogateData_submodel *submodel) {

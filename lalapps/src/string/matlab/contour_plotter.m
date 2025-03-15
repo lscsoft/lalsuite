@@ -8,7 +8,7 @@ load /archive/home/amergl/s5cosmicstring/gamma_S4UL.dat
 %one year
 %T=365*24*3600;
 
-%S4 live-time 
+%S4 live-time
 %T=1363502.0;
 T=342610.0;
 
@@ -42,13 +42,13 @@ for kk = 1:length(Gmu2)
       %rateS(jj,kk) = gammaS(cut,5);
       %rateSMin(jj,kk) = gammaS(cut,6);
       %rateSMax(jj,kk) = gammaS(cut,7);
-      
+
       rateUL(jj,kk) = gammaUL(cut,5);
       rateULMin(jj,kk) = gammaUL(cut,6);
       rateULMax(jj,kk) = gammaUL(cut,7);
-      
+
       %rateSLIGO(jj,kk)=gammaL(cut,5);
-      
+
     else
       disp('PROBLEM')
     end

@@ -1,6 +1,13 @@
 #!/usr/bin/env perl
 # Author: Karl Wette, 2016
 
+# Attempt to convert old `LALStatus`-type LAL functions to XLAL
+# functions, as well as calls to those functions. Relies on regular
+# expression matching based on common coding patterns in old `LALStatus`
+# code. Call without arguments for usage.
+#
+# Use at your own risk!!
+
 use strict;
 use Text::ParseWords;
 

@@ -269,7 +269,7 @@ typedef struct tagCohPTFSkyPositions
   UINT4       numPoints;
   SkyPosition *data;
 }
-CohPTFSkyPositions; 
+CohPTFSkyPositions;
 
 typedef struct tagTimeSlideVectorList
 {
@@ -439,7 +439,7 @@ INT4 coh_PTF_data_condition(
               struct timeval           startTime
 );
 
-REAL4TimeSeries *coh_PTF_get_data( 
+REAL4TimeSeries *coh_PTF_get_data(
     struct coh_PTF_params *params,
     const char *ifoChannel,
     const char *dataCache,
@@ -1151,7 +1151,7 @@ int coh_PTF_output_tmpltbank(
 
 ProcessTable * coh_PTF_create_process_table(
     struct coh_PTF_params *params
-);   
+);
 
 SearchSummaryTable *coh_PTF_create_search_summary(
     struct coh_PTF_params *params

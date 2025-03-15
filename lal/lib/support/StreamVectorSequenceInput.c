@@ -46,7 +46,7 @@ void
 LALCHARReadVectorSequence( LALStatus          *stat,
 			   CHARVectorSequence **sequence,
 			   FILE               *stream )
-{ 
+{
   VectorList head = empty;   /* head of linked list of vectors */
   VectorList *here;          /* pointer to current position in list */
   CHAR *data;                /* pointer to vector data */

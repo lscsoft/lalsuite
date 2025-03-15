@@ -1179,7 +1179,7 @@ XLALEOBPPWaveform(
    memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   if ( XLALEOBPPWaveformEngine( signalvec, NULL, NULL, NULL, 
+   if ( XLALEOBPPWaveformEngine( signalvec, NULL, NULL, NULL,
           &count, params, &paramsInit) == XLAL_FAILURE )
    {
      XLAL_ERROR( XLAL_EFUNC );
@@ -1256,7 +1256,7 @@ XLALEOBPPWaveformTemplates (
    memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));
 
    /* Call the engine function */
-   if ( XLALEOBPPWaveformEngine( signalvec1, signalvec2, NULL, NULL, 
+   if ( XLALEOBPPWaveformEngine( signalvec1, signalvec2, NULL, NULL,
        &count, params, &paramsInit) == XLAL_FAILURE )
    {
      XLAL_ERROR( XLAL_EFUNC );
@@ -1299,22 +1299,22 @@ XLALEOBPPWaveformForInjection (
     XLAL_ERROR( XLAL_EFAULT );
   }
   if ( waveform->h )
-  {     
+  {
     XLALPrintError( "Pointer for waveform->h exists. Was expecting NULL.\n" );
     XLAL_ERROR( XLAL_EFAULT );
-  } 
+  }
   if ( waveform->f )
-  {     
+  {
     XLALPrintError( "Pointer for waveform->f exists. Was expecting NULL.\n" );
     XLAL_ERROR( XLAL_EFAULT );
   }
   if ( waveform->phi )
-  {     
+  {
     XLALPrintError( "Pointer for waveform->phi exists. Was expecting NULL.\n" );
     XLAL_ERROR( XLAL_EFAULT );
   }
   if ( waveform->shift )
-  {     
+  {
     XLALPrintError( "Pointer for waveform->shift exists. Was expecting NULL.\n" );
     XLAL_ERROR( XLAL_EFAULT );
   }
@@ -2037,7 +2037,7 @@ XLALEOBPPWaveformEngine (
        count++;
        i++;
     }
-    
+
     /* Now apply the NQC correction to the high sample part */
     for ( i = 0; i <= finalIdx; i++ )
     {
@@ -2152,7 +2152,7 @@ XLALEOBPPWaveformEngine (
        XLAL_ERROR( XLAL_EFUNC );
      }
 
-     if ( modeL % 2 ) /* odd modeL gives a minus sign to negative m modes */ 
+     if ( modeL % 2 ) /* odd modeL gives a minus sign to negative m modes */
      {
        MultSphHarmM = - MultSphHarmM;
      }

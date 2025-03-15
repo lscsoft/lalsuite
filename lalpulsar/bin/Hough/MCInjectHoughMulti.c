@@ -1678,4 +1678,3 @@ void PrintLogFile2( LALStatus       *status,
   /* normal exit */
   RETURN( status );
 }
-

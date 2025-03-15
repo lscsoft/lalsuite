@@ -438,7 +438,7 @@ typedef enum tagApproximant {
    IMRPhenomTP,      /** Time domain, precessing phenomenological IMR waveform model for L=2 sector ([arXiv: 20XY.ZZZZZ]). */
    IMRPhenomTPHM,      /** Time domain, precessing phenomenological IMR waveform model with subdominant modes ([arXiv: 20XY.ZZZZZ]). */
    SEOBNRv5_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv5
-		    * @remarks Implemented in lalsimulation (frequency domain). */   
+		    * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4HM_PA,    /** Spin non-precessing EOBNR model v4 with higher modes post-adiabatic dynamics (time domain), PhysRevD.104.124087 [arXiv:2105.06983] */
    pSEOBNRv4HM_PA,    /** Spin non-precessing EOBNR model v4 with higher modes post-adiabatic dynamics (time domain) and TGR ringdown effects, PhysRevD.104.124087 [arXiv:2105.06983] */
    IMRPhenomXAS_NRTidalv2,         /**< Tidal extension of IMRPhenomXAS based on [arXiv:1905.06011]. */
@@ -446,11 +446,12 @@ typedef enum tagApproximant {
    IMRPhenomXO4a,    /**< Frequency domain, precessing with subdominant modes phenomenological IMR waveform model with NR-tuned precession angles. */
    ExternalPython, /** External Python model **/
    SEOBNRv5HM_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv5HM
-		    * @remarks Implemented in lalsimulation (frequency domain). */     
+		    * @remarks Implemented in lalsimulation (frequency domain). */
    IMRPhenomXAS_NRTidalv3,         /**< Tidal extension of IMRPhenomXAS based on NRTidalv3. */
    IMRPhenomXP_NRTidalv3,         /**< Tidal extension of IMRPhenomXP based on NRTidalv3. */
-   SEOBNRv5_ROM_NRTidalv3, /**< based on NRTidalv3 (arXiv:2311.07456); 
-                             * @remarks Implemented in lalsimulation (time domain and frequency domain). */ 
+   SEOBNRv5_ROM_NRTidalv3, /**< based on NRTidalv3 (arXiv:2311.07456);
+                             * @remarks Implemented in lalsimulation (time domain and frequency domain). */
+   IMRPhenomXPNR,    /**< Frequency domain, precessing with subdominant modes phenomenological IMR waveform model with SpinTaylor and NR-tuned precession angles. */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -983,6 +984,7 @@ extern const LALSimInspiralGenerator lalIMRPhenomXASGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXHMGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXPHMGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXO4aGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXPNRGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXPGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXAS_NRTidalv2GeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomXAS_NRTidalv3GeneratorTemplate;
@@ -1107,7 +1109,7 @@ void XLALSimInspiralParseDictionaryToChooseTDWaveform(
     REAL8 *deltaT,                         /**< [out] sampling interval (s) */
     REAL8 *f_min,                          /**< [out] starting GW frequency (Hz) */
     REAL8 *f_ref,                          /**< [out] reference frequency (Hz) */
-    LALDict *params                        /**< Input lal dictionary with ChooseTDwaveform parameters */    
+    LALDict *params                        /**< Input lal dictionary with ChooseTDwaveform parameters */
 );
 
 void XLALSimInspiralParseDictionaryToChooseTDModes(
@@ -1147,7 +1149,7 @@ void XLALSimInspiralParseDictionaryToChooseFDWaveform(
     REAL8 *f_min,                          /**< [out] starting GW frequency (Hz) */
     REAL8 *f_max,                          /**< [out] ending GW frequency (Hz) */
     REAL8 *f_ref,                          /**< [out] reference frequency (Hz) */
-    LALDict *params                        /**< Input lal dictionary with ChooseTDwaveform parameters **/    
+    LALDict *params                        /**< Input lal dictionary with ChooseTDwaveform parameters **/
 );
 
 void XLALSimInspiralParseDictionaryToChooseFDModes(

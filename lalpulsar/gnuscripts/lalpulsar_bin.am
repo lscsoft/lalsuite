@@ -62,7 +62,7 @@ test_script_compiler__longtests = \
 		else \
 			skip_longtest=1; \
 		fi \
-        fi
+	fi
 
 TEST_EXTENSIONS = .sh .py
 SH_LOG_COMPILER = $(test_script_compiler) "$${skip_longtest}" sh "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"

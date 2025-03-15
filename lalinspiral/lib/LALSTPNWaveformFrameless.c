@@ -13,8 +13,8 @@ typedef struct LALSTPNstructparams {
 	REAL8 epnorb[9];
 } LALSTPNparams;
 
-static int XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams, 
-    InspiralTemplate *params, InspiralInit *paramsInit) 
+static int XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,
+    InspiralTemplate *params, InspiralInit *paramsInit)
 {
   // Check the relevant pointers
   if( !params || !mparams || !paramsInit )
@@ -35,38 +35,38 @@ static int XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,
 
   mparams->wdotnew = (96.0/5.0) * params->eta;
 
-  for(int j = LAL_PNORDER_NEWTONIAN; j <= 8; j++) 
+  for(int j = LAL_PNORDER_NEWTONIAN; j <= 8; j++)
   {
     mparams->wdotorb[j] = mparams->epnorb[j] = 0.0;
   }
 
   mparams->epnorb[0] = 1.0;
 
-  for(unsigned int j = LAL_PNORDER_NEWTONIAN; j <= params->order; j++) 
+  for(unsigned int j = LAL_PNORDER_NEWTONIAN; j <= params->order; j++)
   {
     mparams->wdotorb[j] = paramsInit->ak.ST[j];
   }
 
   /* note: in the original code epnorb[2] is set even for */
   /* PNORDER_NEWTONIAN or PNORDER_HALF */
-  if (params->order >= LAL_PNORDER_ONE) 
+  if (params->order >= LAL_PNORDER_ONE)
   {
     mparams->epnorb[2]  = -(1.0/12.0) * (9.0 + params->eta);
   }
 
-  for(int j = params->order + 1; j <= 8; j++) 
+  for(int j = params->order + 1; j <= 8; j++)
   {
     mparams->wdotorb[j] = 0;
   }
 
-  if (params->order >= LAL_PNORDER_ONE_POINT_FIVE) 
+  if (params->order >= LAL_PNORDER_ONE_POINT_FIVE)
   {
     mparams->wspin15 	= -(1.0/12.0);
     mparams->LNhdot15 	= 0.5;
     mparams->S1dot15 	= (4.0 + 3.0 * mparams->m2m1) / 2.0 ;
     mparams->S2dot15 	= (4.0 + 3.0 * mparams->m1m2) / 2.0 ;
-  } 
-  else 
+  }
+  else
   {
     mparams->wspin15 	= 0.0;
     mparams->LNhdot15 	= 0.0;
@@ -74,36 +74,36 @@ static int XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,
     mparams->S2dot15 	= 0.0;
   }
 
-  if (params->order >= LAL_PNORDER_TWO) 
+  if (params->order >= LAL_PNORDER_TWO)
   {
     mparams->wspin20 	= -(1.0/48.0) / params->eta;
     mparams->LNhdot20 	= -1.5 / params->eta;
     mparams->Sdot20 	= 0.5;
-    mparams->epnorb[4]  = (1.0/24.0) 
+    mparams->epnorb[4]  = (1.0/24.0)
         * (-81.0 + 57.0*params->eta - params->eta*params->eta);
-  } 
-  else 
+  }
+  else
   {
     mparams->wspin20 	= 0.0;
     mparams->LNhdot20 	= 0.0;
     mparams->Sdot20 	= 0.0;
   }
 
-  if (params->order >= LAL_PNORDER_THREE) 
+  if (params->order >= LAL_PNORDER_THREE)
   {
-    mparams->epnorb[6]  = ( - (675.0/64.0) + ( (209323.0/4032.0) 
+    mparams->epnorb[6]  = ( - (675.0/64.0) + ( (209323.0/4032.0)
         -(205.0/96.0)*LAL_PI*LAL_PI - (110.0/9.0) * (-1987.0/3080.0) ) * params
-        ->eta - (155.0/96.0)*(params->eta*params->eta) 
+        ->eta - (155.0/96.0)*(params->eta*params->eta)
         - (35.0/5184.0)*(params->eta*params->eta*params->eta) );
   }
 
-  if (params->order == LAL_PNORDER_THREE) 
+  if (params->order == LAL_PNORDER_THREE)
   {
-    mparams->wdotorb[(int)(LAL_PNORDER_THREE+1)] 
+    mparams->wdotorb[(int)(LAL_PNORDER_THREE+1)]
         = paramsInit->ak.ST[(int)(LAL_PNORDER_THREE+1)];
   }
 
-  if (params->order == LAL_PNORDER_THREE_POINT_FIVE) 
+  if (params->order == LAL_PNORDER_THREE_POINT_FIVE)
   {
     mparams->wdotorb[8] = paramsInit->ak.ST[8];
   }
@@ -112,7 +112,7 @@ static int XLALSTPNAdaptiveSetParams(LALSTPNparams *mparams,
 }
 
 static int XLALSTPNAdaptiveTest(double t, const double values[],
-    double dvalues[],void *mparams) 
+    double dvalues[],void *mparams)
 {
   REAL8 omega, v, test;
   LALSTPNparams *params = (LALSTPNparams*)mparams;
@@ -126,10 +126,10 @@ static int XLALSTPNAdaptiveTest(double t, const double values[],
       + params->epnorb[1] + (4.0/3.0) * v * (params->epnorb[2]
       + (5.0/4.0) * v * (params->epnorb[3] + (6.0/5.0) * v * (params->epnorb[4]
       + (7.0/6.0) * v * (params->epnorb[5] + (8.0/7.0) * v * (params->epnorb[6]
-      + (9.0/8.0) * v * (params->epnorb[7] 
+      + (9.0/8.0) * v * (params->epnorb[7]
       + (10.0/9.0)* v *  params->epnorb[8] )))))) );
 
-  if (params->wspin15 != 0.0) 
+  if (params->wspin15 != 0.0)
   {
     REAL8 LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z;
     REAL8 v2, dotLNS1, dotLNS2;
@@ -143,11 +143,11 @@ static int XLALSTPNAdaptiveTest(double t, const double values[],
     dotLNS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
     dotLNS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
 
-    test += -0.5 * params->eta * (5.0/3.0) * v2 
-        * ( (8.0/3.0 + 2.0*params->m2m1)*dotLNS1 
+    test += -0.5 * params->eta * (5.0/3.0) * v2
+        * ( (8.0/3.0 + 2.0*params->m2m1)*dotLNS1
         + (8.0/3.0 + 2.0*params->m1m2)*dotLNS2 );
 
-    if (params->wspin20 != 0.0) 
+    if (params->wspin20 != 0.0)
     {
       REAL8 dotS1S2;
 
@@ -159,27 +159,27 @@ static int XLALSTPNAdaptiveTest(double t, const double values[],
   if (test > 0.0) /* energy test fails! */
   {
     return LALSTPN_TEST_ENERGY;
-  } 
+  }
   else if (dvalues[1] < 0.0) /* omegadot < 0! */
   {
     return LALSTPN_TEST_OMEGADOT;
-  } 
+  }
   else if (isnan(omega)) /* omega is nan! */
   {
     return LALSTPN_TEST_OMEGANAN;
-  } 
+  }
   else /* Step is valid, continue the integration */
   {
     return GSL_SUCCESS;
   }
 }
 
-static int XLALSTPNFramelessAdaptiveDerivatives(double t, 
-    const double values[], double dvalues[], void *mparams) 
+static int XLALSTPNFramelessAdaptiveDerivatives(double t,
+    const double values[], double dvalues[], void *mparams)
 {
   /* coordinates and derivatives */
   REAL8 omega, LNhx, LNhy, LNhz, S1x, S1y, S1z, S2x, S2y, S2z, E1x, E1y, E1z;
-  REAL8 ds, domega, dLNhx, dLNhy, dLNhz, dS1x, dS1y, dS1z, dS2x, dS2y, dS2z; 
+  REAL8 ds, domega, dLNhx, dLNhy, dLNhz, dS1x, dS1y, dS1z, dS2x, dS2y, dS2z;
   REAL8 dE1x, dE1y, dE1z;
 
   /* auxiliary variables */
@@ -200,7 +200,7 @@ static int XLALSTPNFramelessAdaptiveDerivatives(double t,
   S2x  = values[8];  S2y   = values[9];  S2z  = values[10];
   E1x  = values[11]; E1y   = values[12]; E1z  = values[13];
 
-  if (omega <= 0.0) 
+  if (omega <= 0.0)
   {
     return LALSTPN_DERIVATIVE_OMEGANONPOS;
   }
@@ -213,17 +213,17 @@ static int XLALSTPNFramelessAdaptiveDerivatives(double t,
   dotS1S2 = (S1x*S2x  + S1y*S2y  + S1z*S2z );
 
   /* domega - non-spinning PN corrections... */
-  domega = params->wdotorb[0] + v * (params->wdotorb[1] + 
-      v * (params->wdotorb[2] + v * (params->wdotorb[3] + 
-      v * (params->wdotorb[4] + v * (params->wdotorb[5] + 
-      v * (params->wdotorb[6] + params->wdotorb[7] * log(omega) + 
+  domega = params->wdotorb[0] + v * (params->wdotorb[1] +
+      v * (params->wdotorb[2] + v * (params->wdotorb[3] +
+      v * (params->wdotorb[4] + v * (params->wdotorb[5] +
+      v * (params->wdotorb[6] + params->wdotorb[7] * log(omega) +
       v * params->wdotorb[8] ))))));
 
   /* ...now add in spin-dependent corrections... */
-  domega += params->wspin15 * omega * ( LNhx * (113.0 * S1x + 113.0 * S2x 
-      + 75.0 * params->m2m1 * S1x + 75.0 * params->m1m2 * S2x) 
-      + LNhy * (113.0 * S1y + 113.0 * S2y + 75.0 * params->m2m1 * S1y 
-      + 75.0 * params->m1m2 * S2y) + LNhz * (113.0 * S1z + 113.0 * S2z 
+  domega += params->wspin15 * omega * ( LNhx * (113.0 * S1x + 113.0 * S2x
+      + 75.0 * params->m2m1 * S1x + 75.0 * params->m1m2 * S2x)
+      + LNhy * (113.0 * S1y + 113.0 * S2y + 75.0 * params->m2m1 * S1y
+      + 75.0 * params->m1m2 * S2y) + LNhz * (113.0 * S1z + 113.0 * S2z
       + 75.0 * params->m2m1 * S1z + 75.0 * params->m1m2 * S2z) );
 
   domega += params->wspin20 * v4 *(247.0 * dotS1S2 - 721.0 * dotLNS1 * dotLNS2);
@@ -233,11 +233,11 @@ static int XLALSTPNFramelessAdaptiveDerivatives(double t,
   /* dLN */
   omega2 = omega * omega;
 
-  tmpx = params->LNhdot15 * omega2 * ((4.0 + 3.0*params->m2m1) * S1x 
+  tmpx = params->LNhdot15 * omega2 * ((4.0 + 3.0*params->m2m1) * S1x
       + (4.0 + 3.0*params->m1m2) * S2x);
-  tmpy = params->LNhdot15 * omega2 * ((4.0 + 3.0*params->m2m1) * S1y 
+  tmpy = params->LNhdot15 * omega2 * ((4.0 + 3.0*params->m2m1) * S1y
       + (4.0 + 3.0*params->m1m2) * S2y);
-  tmpz = params->LNhdot15 * omega2 * ((4.0 + 3.0*params->m2m1) * S1z 
+  tmpz = params->LNhdot15 * omega2 * ((4.0 + 3.0*params->m2m1) * S1z
       + (4.0 + 3.0*params->m1m2) * S2z);
 
   tmpx += params->LNhdot20 * v7 * (dotLNS2 * S1x + dotLNS1 * S2x);
@@ -304,7 +304,7 @@ static int XLALSTPNFramelessAdaptiveDerivatives(double t,
   return GSL_SUCCESS;
 }
 
-void LALSTPNFramelessWaveform(LALStatus *status, REAL4Vector *signalvec, 
+void LALSTPNFramelessWaveform(LALStatus *status, REAL4Vector *signalvec,
     InspiralTemplate *params)
 {
   XLAL_PRINT_DEPRECATION_WARNING("XLALSTPNFramelessWaveform");
@@ -337,16 +337,16 @@ int XLALSTPNFramelessWaveform(REAL4Vector *signalvec, InspiralTemplate *params)
   if( XLALInspiralChooseModel(&(paramsInit.func), &(paramsInit.ak), params) )
     XLAL_ERROR(XLAL_EFUNC);
 
-  memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));   
+  memset(signalvec->data, 0, signalvec->length * sizeof( REAL4 ));
   /* Call the engine function */
-  if( XLALSTPNFramelessAdaptiveWaveformEngine(signalvec, NULL, &count, params, 
+  if( XLALSTPNFramelessAdaptiveWaveformEngine(signalvec, NULL, &count, params,
       &paramsInit) )
     XLAL_ERROR(XLAL_EFUNC);
 
-  return XLAL_SUCCESS;    
+  return XLAL_SUCCESS;
 }
 
-void LALSTPNFramelessWaveformTemplates(LALStatus *status, 
+void LALSTPNFramelessWaveformTemplates(LALStatus *status,
     REAL4Vector *signalvec1, REAL4Vector *signalvec2, InspiralTemplate *params)
 {
   XLAL_PRINT_DEPRECATION_WARNING("XLALSTPNFramelessWaveformTemplates");
@@ -362,11 +362,11 @@ void LALSTPNFramelessWaveformTemplates(LALStatus *status,
 
 
 
-int XLALSTPNFramelessWaveformTemplates(REAL4Vector *signalvec1, 
+int XLALSTPNFramelessWaveformTemplates(REAL4Vector *signalvec1,
     REAL4Vector *signalvec2, InspiralTemplate *params)
 {
   // Check the relevant pointers
-  if( !signalvec1 || !signalvec1->data || !signalvec2 
+  if( !signalvec1 || !signalvec1->data || !signalvec2
       || !signalvec2->data || !params )
     XLAL_ERROR(XLAL_EFAULT);
 
@@ -382,17 +382,17 @@ int XLALSTPNFramelessWaveformTemplates(REAL4Vector *signalvec1,
   if( XLALInspiralInit(params, &paramsInit) )
     XLAL_ERROR(XLAL_EFUNC);
 
-  memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));   
-  memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));   
+  memset(signalvec1->data, 0, signalvec1->length * sizeof( REAL4 ));
+  memset(signalvec2->data, 0, signalvec2->length * sizeof( REAL4 ));
   /* Call the engine function */
-  if( XLALSTPNFramelessAdaptiveWaveformEngine(signalvec1, signalvec2, 
+  if( XLALSTPNFramelessAdaptiveWaveformEngine(signalvec1, signalvec2,
       &count, params, &paramsInit) )
     XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 }
 
-void LALSTPNFramelessWaveformForInjection(LALStatus *status, 
+void LALSTPNFramelessWaveformForInjection(LALStatus *status,
     CoherentGW *waveform, InspiralTemplate *params, PPNParamStruc *ppnParams)
 {
   XLAL_PRINT_DEPRECATION_WARNING("XLALSTPNFramelessWaveformForInjection");
@@ -406,7 +406,7 @@ void LALSTPNFramelessWaveformForInjection(LALStatus *status,
   RETURN(status);
 }
 
-int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform, 
+int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
     InspiralTemplate *params, PPNParamStruc *ppnParams)
 {
   // Check the relevant pointers exist
@@ -428,7 +428,7 @@ int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
 
   /* The start phase is passed via coa_phase in the SimInspiralTable, */
   /* then ppnParams->phi due to convention in GenerateInspiral.c */
-  params->startPhase = ppnParams->phi; 
+  params->startPhase = ppnParams->phi;
   if( XLALInspiralInit(params, &paramsInit) )
     XLAL_ERROR(XLAL_EFUNC);
   if (paramsInit.nbins==0)
@@ -447,7 +447,7 @@ int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
 
 
   /* Call the engine function */
-  if( XLALSTPNFramelessAdaptiveWaveformEngine(hplus, hcross, &count, 
+  if( XLALSTPNFramelessAdaptiveWaveformEngine(hplus, hcross, &count,
       params, &paramsInit) )
     XLAL_ERROR(XLAL_EFUNC);
 
@@ -468,8 +468,8 @@ int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
 
 
   /* Allocate the waveform structures. */
-  if ( ( waveform->h = (REAL4TimeVectorSeries *) 
-      XLALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) 
+  if ( ( waveform->h = (REAL4TimeVectorSeries *)
+      XLALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL )
   {
     XLAL_ERROR(XLAL_ENOMEM);
   }
@@ -519,8 +519,8 @@ int XLALSTPNFramelessWaveformForInjection(CoherentGW *waveform,
   return XLAL_SUCCESS;
 }
 
-void LALSTPNFramelessAdaptiveWaveformEngine( LALStatus *status, 
-    REAL4Vector *signalvec1, REAL4Vector *signalvec2, UINT4 *countback, 
+void LALSTPNFramelessAdaptiveWaveformEngine( LALStatus *status,
+    REAL4Vector *signalvec1, REAL4Vector *signalvec2, UINT4 *countback,
     InspiralTemplate *params, InspiralInit *paramsInit)
 {
   XLAL_PRINT_DEPRECATION_WARNING("XLALSTPNFramelessAdaptiveWaveformEngine");
@@ -528,7 +528,7 @@ void LALSTPNFramelessAdaptiveWaveformEngine( LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
-  if( XLALSTPNFramelessAdaptiveWaveformEngine(signalvec1, signalvec2, 
+  if( XLALSTPNFramelessAdaptiveWaveformEngine(signalvec1, signalvec2,
       countback, params, paramsInit) )
     ABORTXLAL(status);
 
@@ -537,8 +537,8 @@ void LALSTPNFramelessAdaptiveWaveformEngine( LALStatus *status,
 }
 
 
-int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1, 
-    REAL4Vector *signalvec2, UINT4 *countback, InspiralTemplate *params, 
+int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
+    REAL4Vector *signalvec2, UINT4 *countback, InspiralTemplate *params,
     InspiralInit *paramsInit)
 {
   /* PN parameters */
@@ -561,9 +561,9 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
   dt = 1.0/params->tSampling;	  /* tSampling is in Hz, so dt is in seconds */
   m = params->totalMass * LAL_MTSUN_SI;
 
-  /* length estimation (Newtonian) */ 
+  /* length estimation (Newtonian) */
   /* since integration is adaptive, we could use a better estimate */
-  lengths = (5.0/256.0) * pow(LAL_PI,-8.0/3.0) * pow(params->chirpMass 
+  lengths = (5.0/256.0) * pow(LAL_PI,-8.0/3.0) * pow(params->chirpMass
       * LAL_MTSUN_SI * params->fLower,-5.0/3.0) / params->fLower;
 
   /* setup coefficients for PN equations */
@@ -594,10 +594,10 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
   xlalErrno = 0;
 
   /* allocate the integrator */
-  integrator = XLALAdaptiveRungeKutta4Init(14, 
-      XLALSTPNFramelessAdaptiveDerivatives, XLALSTPNAdaptiveTest, 
+  integrator = XLALAdaptiveRungeKutta4Init(14,
+      XLALSTPNFramelessAdaptiveDerivatives, XLALSTPNAdaptiveTest,
       1.0e-6, 1.0e-6);
-  if (!integrator) 
+  if (!integrator)
   {
     XLALPrintError("LALSTPNFramelessAdaptiveWaveformEngine: Cannot allocate integrator.\n");
     XLAL_ERROR(XLAL_EFUNC);
@@ -607,43 +607,43 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
   integrator->stopontestonly = 1;
 
   /* run the integration; note: time is measured in units of total mass */
-  len = XLALAdaptiveRungeKutta4(integrator, (void *) &mparams, yinit, 0.0, 
+  len = XLALAdaptiveRungeKutta4(integrator, (void *) &mparams, yinit, 0.0,
       lengths/m, dt/m, &yout);
 
   intreturn = integrator->returncode;
   XLALAdaptiveRungeKuttaFree(integrator);
 
-  if (!len) 
+  if (!len)
   {
     XLALPrintError("LALSTPNFramelessAdaptiveWaveformEngine: integration failed with errorcode %d.\n",intreturn);
     XLAL_ERROR(XLAL_EFUNC);
   }
 
   /* report on abnormal termination (TO DO: throw some kind of LAL error?) */
-  if (intreturn != 0 && intreturn != LALSTPN_TEST_ENERGY 
-      && intreturn != LALSTPN_TEST_OMEGADOT) 
+  if (intreturn != 0 && intreturn != LALSTPN_TEST_ENERGY
+      && intreturn != LALSTPN_TEST_OMEGADOT)
   {
     XLALPrintWarning("LALSTPNFramelessAdaptiveWaveformEngine WARNING: integration terminated with code %d.\n",intreturn);
-    XLALPrintWarning("Waveform parameters were m1 = %e, m2 = %e, s1 = (%e,%e,%e), s2 = (%e,%e,%e), inc = %e.\n", 
-        params->mass1, params->mass2, params->spin1[0], params->spin1[1], 
-        params->spin1[2], params->spin2[0], params->spin2[1], 
+    XLALPrintWarning("Waveform parameters were m1 = %e, m2 = %e, s1 = (%e,%e,%e), s2 = (%e,%e,%e), inc = %e.\n",
+        params->mass1, params->mass2, params->spin1[0], params->spin1[1],
+        params->spin1[2], params->spin2[0], params->spin2[1],
         params->spin2[2], params->inclination);
   }
 
-  /* check that we're not above Nyquist. Need to find a way to pass 
-   * this information along without creating GB worth of warnings. 
+  /* check that we're not above Nyquist. Need to find a way to pass
+   * this information along without creating GB worth of warnings.
    * a --no-warning flag?
    * if (yinit[1]/unitHz > 0.5 * params->tSampling) {
    *   fprintf(stderr,"LALSTPNWaveform2 WARNING: final frequency above Nyquist.\n");
    *  }
    */
   /* if we have enough space, compute the waveform components; otherwise abort*/
-  if (signalvec1 && len >= signalvec1->length) 
+  if (signalvec1 && len >= signalvec1->length)
   {
     XLALPrintError("LALSTPNFramelessAdaptiveWaveformEngine: no space to write in signalvec1: %d vs. %d\n", len, signalvec1->length);
     XLAL_ERROR(XLAL_EBADLEN);
   }
-  if (signalvec2 && len >= signalvec2->length) 
+  if (signalvec2 && len >= signalvec2->length)
   {
     XLALPrintError("LALSTPNFramelessAdaptiveWaveformEngine: no space to write in signalvec2: %d vs. %d\n", len, signalvec2->length);
     XLAL_ERROR(XLAL_EBADLEN);
@@ -651,17 +651,17 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
 
   /* set up some aliases for the returned arrays; note vector 0 is time */
   REAL8 *vphi = &yout->data[1*len]; REAL8 *omega = &yout->data[2*len];
-  REAL8 *LNhx = &yout->data[3*len]; REAL8 *LNhy  = &yout->data[4*len]; 
+  REAL8 *LNhx = &yout->data[3*len]; REAL8 *LNhy  = &yout->data[4*len];
   REAL8 *LNhz = &yout->data[5*len];
 
   /*-- these are not needed for the waveforms, but uncomment for debugging: --*/
-  /*REAL8 *S1x  = &yout->data[6*len];  REAL8 *S1y   = &yout->data[7*len];  
-  REAL8 *S1z  = &yout->data[8*len];  REAL8 *S2x   = &yout->data[9*len]; 
+  /*REAL8 *S1x  = &yout->data[6*len];  REAL8 *S1y   = &yout->data[7*len];
+  REAL8 *S1z  = &yout->data[8*len];  REAL8 *S2x   = &yout->data[9*len];
   REAL8 *S2y  = &yout->data[10*len]; REAL8 *S2z   = &yout->data[11*len];
   REAL8 *that = &yout->data[0];*/
   /*--------------------------------------------------------------------------*/
 
-  REAL8 *E1x = &yout->data[12*len]; REAL8 *E1y = &yout->data[13*len]; 
+  REAL8 *E1x = &yout->data[12*len]; REAL8 *E1y = &yout->data[13*len];
   REAL8 *E1z = &yout->data[14*len];
 
   *countback = len;
@@ -672,7 +672,7 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
   /*FILE *outFile=NULL;
   outFile = fopen("frameless-dynamics.dat", "w");*/
   /*--------------------------------------------------*/
-  for(unsigned int i=0;i<len;i++) 
+  for(unsigned int i=0;i<len;i++)
   {
     f2a = pow(omega[i],2.0/3.0);
 
@@ -682,12 +682,12 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
     /*---- Uncomment the next line for debugging ----*/
     /*    E2z = LNhx[i]*E1y[i] - LNhy[i]*E1x[i];
           fprintf(outFile,"%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
-		that[i] * m, vphi[i], omega[i], LNhx[i], LNhy[i], LNhz[i], 
-		S1x[i], S1y[i], S1z[i], S2x[i], S2y[i], S2z[i], 
+		that[i] * m, vphi[i], omega[i], LNhx[i], LNhy[i], LNhz[i],
+		S1x[i], S1y[i], S1z[i], S2x[i], S2y[i], S2z[i],
 		E1x[i], E1y[i], E1z[i], E2x, E2y, E2z);*/
     /* ----------------------------------------------*/
 
-    if (signalvec1) 
+    if (signalvec1)
     {
       /* Polarization tensors projected into viewer's frame */
       hpluscos  = 0.5 * (E1x[i]*E1x[i] - E1y[i]*E1y[i] - E2x*E2x + E2y*E2y);
@@ -697,7 +697,7 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
           ( hpluscos * cos(2*vphi[i]) + hplussin * sin(2*vphi[i]) ) );
     }
 
-    if (signalvec2) 
+    if (signalvec2)
     {
       /* Polarization tensors projected into viewer's frame */
       hcrosscos = E1x[i]*E1y[i] - E2x*E2y;
@@ -710,7 +710,7 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
   /*---- Uncomment next line for debugging ----*/
   /*fclose(outFile);*/
   /*-------------------------------------------*/
-      
+
   params->fFinal = (REAL4)(omega[len-1]/unitHz);
   params->tC = yout->data[len-1] * m; /* m converts from t/m to t in seconds */
 
@@ -718,4 +718,3 @@ int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
 
   return XLAL_SUCCESS;
 }
-

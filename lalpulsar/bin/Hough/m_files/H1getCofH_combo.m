@@ -3,7 +3,7 @@
 %
 % Remember to add the path where this file is located:
 % addpath /scratch/sintes/CVSDIR/waves/people/sintes/PULSAR/CODES/m_files/
-%   To run simply type  
+%   To run simply type
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -50,37 +50,37 @@ filepre1 = strcat(filepre1,'_');
 
 for bandnumber=0:Nbands-1
 
-  bn=bandnumber+1;  
+  bn=bandnumber+1;
   steph0= (h0max(bn)-h0min(bn))/(nh0-1);
   h0vect = h0min(bn):steph0:h0max(bn);
-  
+
   filepre2 = strcat(filepre, int2str( bandnumber ) );
 
   mystring = strcat(filepre1, int2str( bandnumber ) );
-  mystring = strcat(mystring, '_nc');  
+  mystring = strcat(mystring, '_nc');
   Ncount0 = load(mystring);
-  
+
   fprintf(fid,'%d %d %d %d ', bn-1, fmin(bn), fmax(bn), Nmax(bn) );
-  
+
    for h0num=1:nh0
      string1 = sprintf('_00%d.m.dat',h0num-1);
      string2 = strcat(filepre2,string1);
      Ncount= load(string2);
-     
+
      nMonteCarlos=length(Ncount);
      x=Ncount(:,2);
      kkcount = find(x>Nmax(bn));
-     
+
      y=Ncount0(:,h0num);
      nMonteCarlos0= length(y);
      kkcount0 = find(y>Nmax(bn));
- 
+
      CH(h0num) = (length(kkcount)+length(kkcount0))/(nMonteCarlos+nMonteCarlos0);
      fprintf(fid,' %d %d ', h0vect(h0num), CH(h0num) );
    end
      fprintf(fid,' \n');
    CH
-   
+
   %%%  fprintf(fid,'%d %d %d %d %d %d %d %d %d %d %d %d %d %d\n',bn-1, ...
   %           BandList(bn,1),BandList(bn, 2), Nmax(bn), CH);
 end

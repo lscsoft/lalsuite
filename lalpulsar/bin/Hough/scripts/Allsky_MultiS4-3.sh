@@ -51,7 +51,7 @@ tempoutdir=/scratch/tmp/$iam/$1.Multi-3.run
 # set a trap so if the job ends some cleanup is done
 trap "/bin/rm -rf ${tempoutdir}; exit 0" 0 1 2 9 15
 
-# make the temporary directory where we work 
+# make the temporary directory where we work
 mkdir -p $tempoutdir
 
 # make the temporary output directory where results are stored
@@ -76,7 +76,7 @@ echo finished copying stuff
 
 # the 1Hz frequency band analyzed by the i^{th} node is "startfreq+i"
 temp=`mult $1 $freqband`
-freq=`add $temp $startfreq` 
+freq=`add $temp $startfreq`
 echo frequency analysed is 1Hz band starting from $freq
 
 # now run the driver
@@ -88,5 +88,4 @@ echo finished running driver
 mkdir -p ${workdir}/Multi
 rsync -a ${tempoutdir}/Multi $workdir
 
-echo done!  
-
+echo done!

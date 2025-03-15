@@ -30,11 +30,11 @@ from optparse import OptionParser
 import sys
 
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
-from ligo.lw.utils import time_slide as ligolw_time_slide
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw.utils import process as ligolw_process
+from igwn_ligolw.utils import time_slide as ligolw_time_slide
 from lalburst import git_version
 from lalburst import timeslides
 

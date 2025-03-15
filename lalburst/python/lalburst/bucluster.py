@@ -28,10 +28,10 @@ import math
 import sys
 
 
-from ligo.lw import lsctables
-from ligo.lw.utils import process as ligolw_process
-from ligo.lw.utils import search_summary as ligolw_search_summary
-from ligo import segments
+from igwn_ligolw import lsctables
+from igwn_ligolw.utils import process as ligolw_process
+from igwn_ligolw.utils import search_summary as ligolw_search_summary
+import igwn_segments as segments
 from . import snglcluster
 
 

@@ -810,4 +810,3 @@ void get_loudest_snr( LALInferenceRunState *runState )
 
   fclose( fpsnr );
 }
-

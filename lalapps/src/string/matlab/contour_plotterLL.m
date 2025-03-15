@@ -33,4 +33,3 @@ xlabel('G\mu','FontSize',14)
 ylabel('p','FontSize',14)
 title('Large Loops','FontSize',14)
 contour(Gmu2,p2,rate*T, [numberofevents],'r*');
-

@@ -433,6 +433,14 @@ UINT8 XLALTotalLatticeTilingPoints(
 );
 
 ///
+/// Return the total number of points along a certain dimension covered by the lattice tiling iterator.
+///
+UINT8 XLALLatticeTilingPointsAtDimension(
+  const LatticeTilingIterator *itr,      ///< [in] Lattice tiling iterator
+  const size_t dim                      ///< [in] Dimension for which to return count
+);
+
+///
 /// Return the index of the current point in the lattice tiling iterator.
 ///
 UINT8 XLALCurrentLatticeTilingIndex(

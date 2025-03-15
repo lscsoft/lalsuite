@@ -34,13 +34,13 @@ import lal
 from lal import rate
 
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import array as ligolw_array
-from ligo.lw import param as ligolw_param
-from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
-from ligo.lw.utils import search_summary as ligolw_search_summary
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import array as ligolw_array
+from igwn_ligolw import param as ligolw_param
+from igwn_ligolw import utils as ligolw_utils
+from igwn_ligolw.utils import process as ligolw_process
+from igwn_ligolw.utils import search_summary as ligolw_search_summary
 from . import snglcoinc
 from .SimBurstUtils import MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
 
@@ -119,7 +119,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 	@classmethod
 	def from_xml(cls, xml, name):
 		xml = cls.get_xml_root(xml, name)
-		self = cls(lsctables.instrumentsproperty.get(ligolw_param.get_pyvalue(xml, "instruments")))
+		self = cls(lsctables.instrumentsproperty.get(ligolw_param.Param.get_param(xml, "instruments").value))
 		for key in self.densities:
 			self.densities[key] = rate.BinnedLnPDF.from_xml(xml, key)
 		return self

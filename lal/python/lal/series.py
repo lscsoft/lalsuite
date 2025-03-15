@@ -27,9 +27,9 @@ the DMT to store time- and frequency-series data in XML files,
 """
 
 
-from ligo.lw import ligolw
-from ligo.lw import array as ligolw_array
-from ligo.lw import param as ligolw_param
+from igwn_ligolw import ligolw
+from igwn_ligolw import array as ligolw_array
+from igwn_ligolw import param as ligolw_param
 import lal
 import numpy as np
 
@@ -54,9 +54,9 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     elem.appendChild(ligolw_param.Param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
     delta = getattr(series, delta_name)
     if np.iscomplexobj(series.data.data):
-        data = np.row_stack((np.arange(len(series.data.data)) * delta, series.data.data.real, series.data.data.imag))
+        data = np.vstack((np.arange(len(series.data.data)) * delta, series.data.data.real, series.data.data.imag))
     else:
-        data = np.row_stack((np.arange(len(series.data.data)) * delta, series.data.data))
+        data = np.vstack((np.arange(len(series.data.data)) * delta, series.data.data))
     a = ligolw_array.Array.build(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
@@ -229,7 +229,7 @@ def read_psd_xmldoc(xmldoc, root_name = u"psd"):
     """
     if root_name is not None:
         xmldoc, = (elem for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == root_name)
-    result = dict((ligolw_param.get_pyvalue(elem, u"instrument"), parse_REAL8FrequencySeries(elem)) for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == u"REAL8FrequencySeries")
+    result = dict((ligolw_param.Param.get_param(elem, u"instrument").value, parse_REAL8FrequencySeries(elem)) for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == u"REAL8FrequencySeries")
     # interpret empty frequency series as None
     for instrument in result:
         if len(result[instrument].data.data) == 0:
@@ -242,7 +242,7 @@ def read_psd_xmldoc(xmldoc, root_name = u"psd"):
 class PSDContentHandler(ligolw.LIGOLWContentHandler):
     """A content handler suitable for reading PSD documents. Use like this:
 
-    >>> from ligo.lw.utils import load_filename
+    >>> from igwn_ligolw.utils import load_filename
     >>> xmldoc = load_filename('psd.xml', contenthandler=PSDContentHandler)
     >>> psds = read_psd_xmldoc(xmldoc)
     """

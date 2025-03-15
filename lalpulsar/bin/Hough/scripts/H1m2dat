@@ -10,4 +10,3 @@ do
  echo "processing $newname"
  mv out dat/$newname
 done
-

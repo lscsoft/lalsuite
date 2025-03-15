@@ -281,6 +281,8 @@ noinst_HEADERS = \
 	LALSimIMRPhenomP.h \
 	LALSimIMRPhenomPv3HM.h \
 	LALSimIMRPhenomInternalUtils.h \
+	LALSimIMRDataUtilities.c \
+	LALSimIMRDataUtilities.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
 	LALSimIMRSEOBNRv5ROM_NRTidal.h \
@@ -348,6 +350,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
 	LALSimBurstImg.c \
+	LALSimIMRDataUtilities.c \
 	LALSimIMREOBNRv2.c \
 	LALSimIMRSpinAlignedEOB.c \
 	LALSimIMRSpinPrecEOB.c \

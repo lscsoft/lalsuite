@@ -269,7 +269,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
   mparams->m1msq = mparams->m1m * mparams->m1m;
   mparams->m2msq = mparams->m2m * mparams->m2m;
   mparams->dm    = (params->mass1 - params->mass2) / params->totalMass;
-  
+
   /* params->eta might have been set up before but just for safety, we
    * recompute it here below.*/
   params->eta = (params->mass1 * params->mass2) / (params->mass1 + params->mass2) / (params->mass1 + params->mass2);
@@ -485,7 +485,7 @@ static int XLALSpinInspiralTest(double t, const double values[], double dvalues[
   else if (isnan(omega)) {
     /* omega is nan */
     returnint= LALPSIRDPN_TEST_OMEGANAN;
-  } 
+  }
   else if ((params->inspiralOnly==1)&&(omega>params->OmCutoff)) {
     returnint= LALPSIRDPN_TEST_OMEGACUT;
   }
@@ -522,7 +522,7 @@ static int XLALSpinInspiralDerivatives(double t, const double values[], double d
     REAL8 tmpx, tmpy, tmpz, cross1x, cross1y, cross1z, cross2x, cross2y, cross2z, LNhxy;
 
     LALPSpinInspiralRDparams *params= (LALPSpinInspiralRDparams *) mparams;
-    
+
     UNUSED(t);
 
     /* --- computation start here --- */
@@ -1155,7 +1155,7 @@ static int XLALSpinInspiralFillH3Modes(
                                 cos(  Psi - 3. * alpha) * an->s4i2 * an->c2i2 +
                                 cos(  Psi + 3. * alpha) * an->s2i2 * an->c4i2 +
                                  9. * cos(3. * (Psi + alpha)) * an->c6i2) +
-                                v2 * 4. * an->si * (1. - 3. * eta) * 
+                                v2 * 4. * an->si * (1. - 3. * eta) *
                                 (-cos(2. * Psi - 3. * alpha) * an->s4i2 +
                                  cos(2. * Psi + 3. * alpha) * an->c4i2 ) );
 
@@ -1164,7 +1164,7 @@ static int XLALSpinInspiralFillH3Modes(
                                   sin(  Psi - 3. * alpha) * an->s4i2 * an->c2i2 -
                                   sin(  Psi + 3. * alpha) * an->s2i2 * an->c4i2 -
                                    9. * sin(3. * (Psi + alpha)) * an->c6i2) +
-                                    v2 * 4. * an->si * (1. - 3. * eta) * 
+                                    v2 * 4. * an->si * (1. - 3. * eta) *
                                      (-sin(2. * Psi - 3. * alpha) * an->s4i2
                                       -sin(2. * Psi + 3. * alpha) * an->c4i2 ) );
 
@@ -1364,7 +1364,7 @@ static int XLALSpinInspiralFillH4Modes(
 }
 
 static int XLALSpinInspiralEngine(
-				UINT4 neqs, 
+				UINT4 neqs,
 				const REAL8 yinit[],
 				REAL8 amp22ini,
 				LALPSpinInspiralRDparams *mparams,
@@ -1391,7 +1391,7 @@ static int XLALSpinInspiralEngine(
 				REAL8Vector* h40,
 				REAL8Vector* freq,
 				REAL8Vector* phase,
-				LALPSpinInspiralPhenPars *phenPars 
+				LALPSpinInspiralPhenPars *phenPars
 				)
 {
   INT4 intreturn;
@@ -1449,7 +1449,7 @@ static int XLALSpinInspiralEngine(
   dummy.length = neqs * 6;
 
   values.length = dvalues.length = newvalues.length = yt.length = dym.length = dyt.length = neqs;
-  
+
   if (!(dummy.data = (REAL8 *) LALMalloc(sizeof(REAL8) * neqs * 6))) {
     XLAL_ERROR(XLAL_ENOMEM);
   }
@@ -1727,9 +1727,9 @@ static int XLALSpinInspiralEngine(
 } /* End of XLALSpinInspiralEngine*/
 
 static int XLALSpinInspiralAdaptiveEngine(
-					const UINT4 neqs, 
-					const REAL8 yinit[],  
-					REAL8 amp22ini, 
+					const UINT4 neqs,
+					const REAL8 yinit[],
+					REAL8 amp22ini,
 					LALPSpinInspiralRDparams *mparams,
 					REAL8Vector* h2P2,
 					REAL8Vector* h2M2,
@@ -1754,7 +1754,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 					REAL8Vector* h40,
 					REAL8Vector* freq,
 					REAL8Vector* phase,
-					LALPSpinInspiralPhenPars *phenPars 
+					LALPSpinInspiralPhenPars *phenPars
 					  )
 {
 
@@ -1882,7 +1882,7 @@ static int XLALSpinInspiralAdaptiveEngine(
       if (omegaMatch>omega[j]) {
 	if (omega[j-1]<omega[j]) jMatch=j;
 	// The numerical integrator sometimes stops and stores twice the last
-	// omega value, this 'if' instruction avoids keeping two identical 
+	// omega value, this 'if' instruction avoids keeping two identical
 	// values of omega at the end of the integration.
       }
     } while ((j>0)&&(jMatch==0));
@@ -1901,7 +1901,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     else
       kMatch=Npoints-1;
     //We keep until the point where omega > omegaMatch for better derivative
-    //computation, but do the matching at the last point at which 
+    //computation, but do the matching at the last point at which
     // omega < omegaMatch
 
     REAL8Vector *omega_s   = XLALCreateREAL8Vector(Npoints);
@@ -1934,7 +1934,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     errcode += XLALGenerateWaveDerivative(dLNhy,LNhy_s,dt);
     errcode += XLALGenerateWaveDerivative(dLNhz,LNhz_s,dt);
     if (errcode != XLAL_SUCCESS) {
-      XLALPrintError("**** LALPSpinInspiralRD ERROR ****: error generating first derivatives: #points %d\n",Npoints);      
+      XLALPrintError("**** LALPSpinInspiralRD ERROR ****: error generating first derivatives: #points %d\n",Npoints);
       XLALPrintError("                     m:           : %12.5f  %12.5f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
       XLALPrintError("              S1:                 : %12.5f  %12.5f  %12.5f\n",S1x0,S1y0,S1z0);
       XLALPrintError("              S2:                 : %12.5f  %12.5f  %12.5f\n",S2x0,S2y0,S2z0);
@@ -1967,11 +1967,11 @@ static int XLALSpinInspiralAdaptiveEngine(
 
     if (ddomega->data[kMatch]<0.) {
       XLALPrintWarning("*** LALPSpinInspiralRD WARNING: the attach of the phenom. phase has been shifted back: m1 %12.6f  m2 %12.6f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
-      XLALPrintWarning("  Integration returned %d\n   1025: Energy increases\n   1026: Omegadot -ve\n   1028: Omega NAN\n   1029: Omega > Omegamatch\n   1031: Omega -ve\n   1032: Omega > OmegaCut %12.6e\n",intreturn,mparams->OmCutoff); 
+      XLALPrintWarning("  Integration returned %d\n   1025: Energy increases\n   1026: Omegadot -ve\n   1028: Omega NAN\n   1029: Omega > Omegamatch\n   1031: Omega -ve\n   1032: Omega > OmegaCut %12.6e\n",intreturn,mparams->OmCutoff);
       while ((kMatch>0)&&(ddomega->data[kMatch]<0.)) {
 	kMatch--;
 	jMatch--;
-      } 
+      }
     }
 
     phenPars->intreturn = intreturn;
@@ -2034,7 +2034,7 @@ static int XLALSpinInspiralAdaptiveEngine(
 
   //REAL8 alphaoold = 0.;
   alphaold=alpha;
-  if ((LNhy[0]*LNhy[0]+LNhx[0]*LNhx[0])>0.) 
+  if ((LNhy[0]*LNhy[0]+LNhx[0]*LNhx[0])>0.)
     alpha=atan2(LNhy[0],LNhx[0]);
   else {
     if ((S1x[0]*S1x[0]+S1y[0]*S1y[0]+S2x[0]*S2x[0]+S2y[0]*S2y[0])>0.) {
@@ -2043,7 +2043,7 @@ static int XLALSpinInspiralAdaptiveEngine(
       alpha=atan2(-c1*S1x[0]-c2*S2x[0],c1*S1y[0]+c2*S2y[0]);
     }
     else
-      alpha=0.;  
+      alpha=0.;
   }
 
   for (j=0;j<=jMatch;j++) {
@@ -2059,7 +2059,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     // Y20         = sqrt(15/2 PI) (sin^2 t)/4
 
     amp22 = amp22ini * v2;
-    amp33 = -amp22 / 4. * sqrt(5./42.); 
+    amp33 = -amp22 / 4. * sqrt(5./42.);
     amp44 = amp22 * sqrt(5./7.) * 2./9.* v2;
 
     Psi = phase->data[j] = Phi[j];// - 2. * omega[j] * log(omega[j]);
@@ -2116,7 +2116,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   phenPars->alpha=alpha;
 
   if (yin)  XLALFree(yin);
-  if (yout) XLALDestroyREAL8Array(yout);  
+  if (yout) XLALDestroyREAL8Array(yout);
 
   return XLAL_SUCCESS;
 
@@ -2157,7 +2157,7 @@ static int XLALPSpinInspiralRDEngine(
 
   INT4  intreturn;
   REAL8 yinit[neqs];
-  
+
   REAL8Vector* h2P2;
   REAL8Vector* h2M2;
   REAL8Vector* h2P1;
@@ -2267,20 +2267,20 @@ static int XLALPSpinInspiralRDEngine(
   }
 
   /* Here we use the following convention:
-     the coordinates of the spin vectors params->spin1,2 and the params->inclination 
-     variable refers to different physical parameters according to the value of 
+     the coordinates of the spin vectors params->spin1,2 and the params->inclination
+     variable refers to different physical parameters according to the value of
      params->axisChoice:
 
      * OrbitalL: params->inclination denotes the angle between the view direction
-                 N and the initial L (initial L//z, N in the x-z plane) and the spin 
+                 N and the initial L (initial L//z, N in the x-z plane) and the spin
 		 coordinates are given with respect to initial L.
-     * TotalJ:   params->inclination denotes the angle between the view directoin 
-                 and J (J is constant during the evolution, J//z, both N and initial 
-		 L are in the x-z plane) and the spin coordinates are given wrt 
+     * TotalJ:   params->inclination denotes the angle between the view directoin
+                 and J (J is constant during the evolution, J//z, both N and initial
+		 L are in the x-z plane) and the spin coordinates are given wrt
 		 initial ** L **.
 
-     * View:     params->inclination denotes the angle between the initial L and N 
-                 (N//z, initial L in the x-z plane) and the spin coordinates 
+     * View:     params->inclination denotes the angle between the initial L and N
+                 (N//z, initial L in the x-z plane) and the spin coordinates
 		 are given with respect to N.
 
      In order to reproduce the results of the SpinTaylor code View must be chosen.
@@ -2367,7 +2367,7 @@ static int XLALPSpinInspiralRDEngine(
     break;
   }
 
-  /*All the PN formulas used in the differential equation integration 
+  /*All the PN formulas used in the differential equation integration
     assume that the spin variables are the physical ones divided by
     totalmasss^2, here we introduce the correct normalization, changing the
     input one, where spin components were normalized on individual mass. */
@@ -2602,12 +2602,12 @@ static int XLALPSpinInspiralRDEngine(
       XLALDestroyREAL8Vector(fap);
       XLALDestroyREAL8Vector(hap);
       XLALDestroyREAL8Vector(phap);
-      XLAL_ERROR(XLAL_EFUNC);      
+      XLAL_ERROR(XLAL_EFUNC);
     }
   }
   intreturn=phenPars.intreturn;
   /* report on abnormal termination:
-     Termination is fine if omegamatch is passed or if energy starts 
+     Termination is fine if omegamatch is passed or if energy starts
      increasing  */
 
   if ( (intreturn!=LALPSIRDPN_TEST_OMEGACUT) && (intreturn != LALPSIRDPN_TEST_OMEGAMATCH) && (intreturn != LALPSIRDPN_TEST_ENERGY) )
@@ -2965,7 +2965,7 @@ static int XLALPSpinInspiralRDEngine(
    * Compute the spherical harmonics required for constructing (h+,hx).
    -------------------------------------------------------------------*/
 
-  /* The angles theta for the spherical harmonics has been set according to 
+  /* The angles theta for the spherical harmonics has been set according to
      the input inclination parameter and the axisChoice */
 
   for (i = 0; i < length; i++) {
@@ -3102,7 +3102,7 @@ static int XLALPSpinInspiralRDEngine(
   } else {
     for (i = 0; i < length; i++) {
       x0 = h30->data[2 * i];
-      x1 = h30->data[2 * i + 1];    
+      x1 = h30->data[2 * i + 1];
       sigp->data[i] += x0 * creal(MultSphHarmP) - x1 * cimag(MultSphHarmM);
       sigc->data[i] -= x0 * cimag(MultSphHarmP) + x1 * creal(MultSphHarmP);
     }

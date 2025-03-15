@@ -3,10 +3,6 @@ sysconf_DATA += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-e
 MOSTLYCLEANFILES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish $(PACKAGE)-user-env.shell
 EXTRA_DIST += README.md AUTHORS gnuscripts/generate_user_env.awk gnuscripts/reproducible-date
 
-PRETTY_C_PATTERN = '*.c' '*.cu' '*.h'
-PRETTY_PY_PATTERN = '*.py'
-PRETTY_PATTERN = $(PRETTY_C_PATTERN) $(PRETTY_PY_PATTERN)
-
 $(PACKAGE)-user-env.shell: Makefile $(srcdir)/gnuscripts/generate_user_env.awk
 	$(AM_V_GEN)if echo "$(user_environment)" | $(AWK) -f $(srcdir)/gnuscripts/generate_user_env.awk >$@; then \
 		exit 0; \

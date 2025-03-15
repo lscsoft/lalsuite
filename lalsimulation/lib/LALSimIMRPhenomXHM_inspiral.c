@@ -767,7 +767,7 @@ static double IMRPhenomXHM_Inspiral_Amp_Ansatz(IMRPhenomX_UsefulPowers *powers_o
         if (pAmp->InspRescaleFactor != 0){
             InspAmp /= RescaleFactor(powers_of_Mf, pAmp, pAmp->InspRescaleFactor);
         }
-    }        
+    }
 
     return InspAmp ;
 }
@@ -884,7 +884,7 @@ static void IMRPhenomXHM_Inspiral_Amp_CollocationPoints(IMRPhenomXHMAmpCoefficie
     for(UINT2 i = 0; i < pWFHM->nCollocPtsInspAmp; i++){
         pAmp->CollocationPointsValuesAmplitudeInsp[i] = fabs(pAmp->InspiralAmpFits[pWFHM->modeInt * pWFHM->nCollocPtsInspAmp + i](pWF22, pWFHM->IMRPhenomXHMInspiralAmpFitsVersion));
     }
-    
+
     if (pWFHM->InspiralAmpVeto == 1){
         pWFHM->IMRPhenomXHMInspiralAmpVersion = 13;
     }

@@ -3,18 +3,15 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
 # Add compiled test programs to this variable
 test_programs += ComputeTransferTest
-test_programs += CubicSplineTriggerInterpolantTest
 test_programs += DetResponseTest
 test_programs += DetectorSiteTest
 test_programs += FrequencySeriesTest
-test_programs += LanczosTriggerInterpolantTest
-test_programs += NearestNeighborTriggerInterpolantTest
-test_programs += QuadraticFitTriggerInterpolantTest
 test_programs += SegmentsTest
 test_programs += SequenceTest
 test_programs += SkymapTest
 test_programs += TimeSeriesInterpTest
 test_programs += TimeSeriesTest
+test_programs += TriggerInterpolateTest
 test_programs += UnitsTest
 test_programs += ValueTest
 #test_programs += CoherentEstimationTest

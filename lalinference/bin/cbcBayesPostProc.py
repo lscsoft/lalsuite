@@ -72,9 +72,9 @@ import lalinference.plot
 from lalinference import bayespputils as bppu
 from lalinference import git_version
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Ben Farr <bfarr@u.northwestern.edu>, Will M. Farr <will.farr@ligo.org>, John Veitch <john.veitch@ligo.org>"
 __version__= "git id %s"%git_version.id

@@ -631,7 +631,7 @@ static table const military_table[] =
   { 0, 0, 0 }
 };
 
-
+
 
 static int
 to_hour (int hours, int meridian)

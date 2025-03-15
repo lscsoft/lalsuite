@@ -1,9 +1,5 @@
 include $(top_srcdir)/gnuscripts/lalsuite_top.am
 
-.PHONY: pretty
-.PHONY: pretty-c
-.PHONY: pretty-python
-
 if HAVE_GIT_REPO
 
 # Override automake's default rule for rebuilding aclocal.m4, to ensure that
@@ -11,71 +7,5 @@ if HAVE_GIT_REPO
 # require other autotools (e.g. autoheader) to be re-run. See Redmine issue #728.
 $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(SHELL) ./00boot
-
-# Pretty format C code
-pretty: pretty-c
-pretty-c:
-	$(AM_V_at)if test "X$(ASTYLE)" = Xfalse; then \
-		echo "ERROR: astyle is not available"; \
-		exit 1; \
-	fi; \
-	echo "Pretty-formatting C code in $(PACKAGE_NAME)..." >&2; \
-	for file in `cd $(srcdir) && $(GIT) ls-files -- $(PRETTY_C_PATTERN)`; do \
-		if test -h "$${file}"; then \
-			continue; \
-		fi; \
-		if test -f "$(srcdir)/.pretty.exclude" && $(GREP) -qF "$${file}" "$(srcdir)/.pretty.exclude"; then \
-			continue; \
-		fi; \
-		dirpart=`expr "X$${file}" : "^X\(.*\)/[^/]*"`; \
-		basepart=`expr "X$${file}" : "^X.*/\([^/]*\)"`; \
-		namepart=`expr "X$${basepart}" : "^X\([^.]*\)"`; \
-		extnpart=`expr "X$${basepart}" : "^X[^.]*[.]\(.*\)"`; \
-		for optfile in \
-			"$(srcdir)/$${dirpart}/.$${namepart}.pretty.astylerc" \
-			"$(srcdir)/$${dirpart}/.pretty.astylerc" \
-			"$(srcdir)/.pretty.astylerc" \
-		; do \
-			if test -r "$${optfile}"; then \
-				$(ASTYLE) --quiet --suffix=none --project=none --options="$${optfile}" "$(srcdir)/$${file}" || exit 1; \
-			fi; \
-		done; \
-	done
-
-# Pretty format Python code
-pretty: pretty-python
-if HAVE_PYTHON
-pretty-python:
-	$(AM_V_at)if test "X$(PYTHON_BLACK)" = Xfalse; then \
-		echo "ERROR: $(PYTHON) -m black is not available"; \
-		exit 1; \
-	fi; \
-	echo "Pretty-formatting Python code in $(PACKAGE_NAME)..." >&2; \
-	files=; \
-	for file in `cd $(srcdir) && $(GIT) ls-files -- $(PRETTY_PY_PATTERN)`; do \
-		if test -h "$${file}"; then \
-			continue; \
-		fi; \
-		if test -f "$(srcdir)/.pretty.exclude" && $(GREP) -qF "$${file}" "$(srcdir)/.pretty.exclude"; then \
-			continue; \
-		fi; \
-		dirpart=`expr "X$${file}" : "^X\(.*\)/[^/]*"`; \
-		basepart=`expr "X$${file}" : "^X.*/\([^/]*\)"`; \
-		namepart=`expr "X$${basepart}" : "^X\([^.]*\)"`; \
-		extnpart=`expr "X$${basepart}" : "^X[^.]*[.]\(.*\)"`; \
-		for flagfile in \
-			"$(srcdir)/$${dirpart}/.$${namepart}.pretty.black" \
-			"$(srcdir)/$${dirpart}/.pretty.black" \
-			"$(srcdir)/.pretty.black" \
-		; do \
-			if test -r "$${flagfile}"; then \
-				files="$${files} $(srcdir)/$${file}"; \
-			fi; \
-		done; \
-	done; \
-	if test "X$${files}" != X; then \
-		$(PYTHON_BLACK) --quiet $${files} || exit 1; \
-	fi
-endif
 
 endif # HAVE_GIT_REPO

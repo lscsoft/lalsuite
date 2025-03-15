@@ -10,7 +10,7 @@
 MC_H1_2_000
  hist(Ncount(:,2),20)
  title(h0)
-  
+
  subplot(3,3,2)
 MC_H1_2_001
  hist(Ncount(:,2),20)

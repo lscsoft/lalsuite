@@ -142,9 +142,9 @@ REAL8 XLALSimUniversalRelationQuadMonVSlambda2Tidal(
     return exp(lny);
 }
 
-/* Quasi universal relation between spin-induced quadrupole and 
- *   spin-induced octupole moment based on Yagi & Yunes arxiv:1608.02582; 
- *    Table 2 of the review also given explicitly in NRTidalv2 paper https://arxiv.org/abs/1905.06011    
+/* Quasi universal relation between spin-induced quadrupole and
+ *   spin-induced octupole moment based on Yagi & Yunes arxiv:1608.02582;
+ *    Table 2 of the review also given explicitly in NRTidalv2 paper https://arxiv.org/abs/1905.06011
 */
 
 REAL8 XLALSimUniversalRelationSpinInducedOctupoleVSSpinInducedQuadrupole(

@@ -4,9 +4,9 @@
 
 import itertools
 from glue import pipeline
-from ligo import segments
-from ligo.lw import ligolw, lsctables
-from ligo.lw import utils as ligolw_utils
+import igwn_segments as segments
+from igwn_ligolw import ligolw, lsctables
+from igwn_ligolw import utils as ligolw_utils
 import os
 import socket
 import uuid
@@ -319,7 +319,7 @@ def open_pipedown_database(database_filename,tmp_space):
     """
     if not os.access(database_filename,os.R_OK):
         raise Exception('Unable to open input file: %s'%(database_filename))
-    from ligo.lw import dbtables
+    from igwn_ligolw import dbtables
     import sqlite3
     working_filename=dbtables.get_connection_filename(database_filename,tmp_path=tmp_space)
     connection = sqlite3.connect(working_filename)

@@ -75,7 +75,7 @@
 #undef TYPECODE
 #undef TYPE
 
-#define TYPECODE C 
+#define TYPECODE C
 #define TYPE COMPLEX8
 #include "H5FileIOVectorHL_source.c"
 #include "H5FileIOArrayHL_source.c"
@@ -84,7 +84,7 @@
 #undef TYPECODE
 #undef TYPE
 
-#define TYPECODE Z 
+#define TYPECODE Z
 #define TYPE COMPLEX16
 #include "H5FileIOVectorHL_source.c"
 #include "H5FileIOArrayHL_source.c"

@@ -34,13 +34,13 @@ import sys
 
 from lal.utils import CacheEntry
 
-from ligo.lw import dbtables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import dbtables
+from igwn_ligolw import utils as ligolw_utils
 from lalburst import burca_tailor
 from lalburst import SnglBurstUtils
 from lalburst.SimBurstUtils import MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
 from lalburst import git_version
-from ligo import segments
+import igwn_segments as segments
 
 
 # characters allowed to appear in the description string

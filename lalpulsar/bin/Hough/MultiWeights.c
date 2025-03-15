@@ -532,5 +532,3 @@ void PrintLogFile( LALStatus       *status,
   /* normal exit */
   RETURN( status );
 }
-
-

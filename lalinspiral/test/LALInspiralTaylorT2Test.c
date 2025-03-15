@@ -119,7 +119,7 @@ int main(void) {
 	params.signalAmplitude = 4.0 * params.mu * LAL_MRSUN_SI/params.distance;
 	params.ieta = 1;
 
-	
+
 
 	dt = 1. / params.tSampling;
 

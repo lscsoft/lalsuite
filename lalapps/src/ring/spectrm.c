@@ -204,10 +204,10 @@ REAL8FrequencySeries *generate_theoretical_psd(
   }
   else if ( spectrumNumber == ILIGO_PSD )
   {
-    verbose( "Creating initial LIGO PSD. PSD only generated from 30Hz \n" ); 
+    verbose( "Creating initial LIGO PSD. PSD only generated from 30Hz \n" );
     /* FIXME  */
     REAL4 flow = 30;
-    XLALSimNoisePSD(spectrum, flow, XLALSimNoisePSDiLIGOSRD);   
+    XLALSimNoisePSD(spectrum, flow, XLALSimNoisePSDiLIGOSRD);
     snprintf( spectrum->name, sizeof( spectrum->name ),
       "iLIGO_PSD" );
   }
@@ -317,4 +317,3 @@ int calibrate_spectrum(
 
   return 0;
 }
-

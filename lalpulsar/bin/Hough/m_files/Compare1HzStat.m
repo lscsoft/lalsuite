@@ -1,6 +1,6 @@
 
 %
-%  Matlab script to plot statistics and compare them with theoretical 
+%  Matlab script to plot statistics and compare them with theoretical
 %  distributions
 %
 % Remember to add the path where this file is located:
@@ -43,21 +43,21 @@ alpha = exp(-1.6)
    bar(x, output(:,2)/partialSum)
    hold on
    plot(x,y, 'ro')
-   
+
    %legend('binopdf(n,671,0.20)','p(n|h=0) experiment')
    %title('L1 patch 9, 202-203 Hz' )
    legend('binopdf(n,1886,0.20)','p(n|h=0) experiment')
    title('H1 patch 9, 202-203 Hz' )
-  
+
    NC=load(file2);
    Nmax= NC(:,4);
    Nmin= NC(:,5);
    Nav = NC(:,6);
    Nstd= NC(:,7);
    Nfre= NC(:,8);
-   
+
    figure
-    
+
    plot(Nfre,Nmax,'b+')
    hold on
     plot(Nfre,Nav,'g+')

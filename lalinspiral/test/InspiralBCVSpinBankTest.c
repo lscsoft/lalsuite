@@ -89,5 +89,3 @@ void testfunction(LALStatus *status)
   DETATCHSTATUSPTR( status);
   RETURN (status);
 }
-
-

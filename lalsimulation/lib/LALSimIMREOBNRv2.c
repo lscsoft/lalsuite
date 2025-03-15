@@ -577,12 +577,12 @@ XLALSimIMREOBNRv2SetupFlux(
 {
 
   REAL8 a1, a2, a3, a4, a5, a6, a7, a8;
-  
+
   /* Powers of a */
   REAL8 a12, a22, a32, a42, a52, a62, a72, a23, a33, a43, a53, a34, a44;
 
   REAL8 c1, c2, c3, c4, c5, c6, c7, c8;
-  
+
   REAL8 vlso, vpole;
 
   memset( ak, 0, sizeof( *ak ) );
@@ -814,7 +814,7 @@ XLALSimIMREOBNRv2Generator(
    /* Min and max rInit and prInit to consider in root finding */
    const REAL8 rInitMin = 3.;
    const REAL8 rInitMax = 1000.;
-   
+
    const REAL8 prInitMin = -10.;
    const REAL8 prInitMax = 5.;
 
@@ -942,7 +942,7 @@ XLALSimIMREOBNRv2Generator(
    }
    else
    {
-     XLALPrintError( "Higher mode flag appears to be uninitialised " 
+     XLALPrintError( "Higher mode flag appears to be uninitialised "
          "(expected 0 or 1, but got %d\n)", higherModeFlag );
      XLAL_ERROR( XLAL_EINVAL );
    }
@@ -991,8 +991,8 @@ XLALSimIMREOBNRv2Generator(
    eobParams.nqcCoeffs = &nqcCoeffs;
    eobParams.prefixes  = &prefixes;
 
-   if ( XLALCalculateEOBACoefficients( &aCoeffs, eta ) == XLAL_FAILURE 
-   ||   XLALSimIMREOBCalcFacWaveformCoefficients( &hCoeffs, eta) == XLAL_FAILURE 
+   if ( XLALCalculateEOBACoefficients( &aCoeffs, eta ) == XLAL_FAILURE
+   ||   XLALSimIMREOBCalcFacWaveformCoefficients( &hCoeffs, eta) == XLAL_FAILURE
    ||   XLALSimIMREOBComputeNewtonMultipolePrefixes( &prefixes, eobParams.m1, eobParams.m2 )
          == XLAL_FAILURE )
    {
@@ -1254,7 +1254,7 @@ XLALSimIMREOBNRv2Generator(
   }
 
   i = 0;
-  /* TODO: discrete search for lfCut generates discontinuity w.r.t change in physical parameter. 
+  /* TODO: discrete search for lfCut generates discontinuity w.r.t change in physical parameter.
            Implement a continuous search. */
   while ( i < hiSRndx )
   {
@@ -1310,7 +1310,7 @@ XLALSimIMREOBNRv2Generator(
   gsl_spline    *spline = NULL;
   gsl_interp_accel *acc = NULL;
   REAL8 omegaDeriv1;
-  REAL8 time1, time2;   
+  REAL8 time1, time2;
   REAL8 timePeak, omegaDerivMid;
 
   spline = gsl_spline_alloc( gsl_interp_cspline, retLen );
@@ -1356,7 +1356,7 @@ XLALSimIMREOBNRv2Generator(
   /* Therefore we set them at the time when the orbital frequency reaches maximum */
   /* Note that the coalescence phase is defined for the ORBITAL phase, not the GW phasae */
   /* With PN corrections in the GW modes, GW phase is not exactly m times orbital phase */
-  /* In brief, at the highest orbital frequency, the orbital phase is phiC/2 */ 
+  /* In brief, at the highest orbital frequency, the orbital phase is phiC/2 */
   //t = m * (dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx] - dynamics->data[startIdx]);
   t = m * (dynamics->data[hiSRndx] + timePeak - dynamics->data[startIdx]);
   gsl_spline_init( spline, dynamicsHi->data, phiVecHi.data, retLen );
@@ -1379,14 +1379,14 @@ XLALSimIMREOBNRv2Generator(
 
     if ( !(*hplus) || !(*hcross) ) // Check hp, hc allocated properly
     {
-      if ( *hplus )  
-      { 
-        XLALDestroyREAL8TimeSeries( *hplus ); 
+      if ( *hplus )
+      {
+        XLALDestroyREAL8TimeSeries( *hplus );
         *hplus = NULL;
       }
-      if ( *hcross )  
-      { 
-        XLALDestroyREAL8TimeSeries( *hcross ); 
+      if ( *hcross )
+      {
+        XLALDestroyREAL8TimeSeries( *hcross );
         *hcross = NULL;
       }
       XLALDestroyREAL8Vector( sigReHi );
@@ -1567,7 +1567,7 @@ XLALSimIMREOBNRv2Generator(
 
      rdMatchPoint->data[0] -= fmod( rdMatchPoint->data[0], dt/m );
      rdMatchPoint->data[1] -= fmod( rdMatchPoint->data[1], dt/m );
- 
+
      xlalStatus = XLALSimIMREOBHybridAttachRingdown(sigReHi, sigImHi,
                    modeL, modeM, dt, mass1, mass2, 0, 0, 0, 0, 0, 0, &tVecHi, rdMatchPoint, EOBNRv2 );
      if (xlalStatus != XLAL_SUCCESS )
@@ -1639,11 +1639,11 @@ XLALSimIMREOBNRv2Generator(
   {
     if ( cos(inclination) < 0.0 )
     {
-      cut_ind = find_instant_freq(*hplus, *hcross, fLower, 1, 1); 
+      cut_ind = find_instant_freq(*hplus, *hcross, fLower, 1, 1);
     }
     else
     {
-      cut_ind = find_instant_freq(*hplus, *hcross, fLower, 1, 0); 
+      cut_ind = find_instant_freq(*hplus, *hcross, fLower, 1, 0);
     }
     *hplus = XLALResizeREAL8TimeSeries(*hplus, cut_ind, (*hplus)->data->length - cut_ind);
     *hcross = XLALResizeREAL8TimeSeries(*hcross, cut_ind, (*hcross)->data->length - cut_ind);
@@ -1677,7 +1677,7 @@ XLALSimIMREOBNRv2Generator(
  *
  * @brief Functions to generate the EOBNRv2 waveforms, as defined in
  * Pan et al, PRD84, 124052(2011).
- * 
+ *
  * @review EOBNRv2 reviewed by Ilya Mandel, Riccardo Sturani, Prayush Kumar, John Whelan, Yi Pan. Review concluded with git hash b29f20ff11e62095dbd44e850b248ecc58b08a13 (April 2013).
  *
  * @{

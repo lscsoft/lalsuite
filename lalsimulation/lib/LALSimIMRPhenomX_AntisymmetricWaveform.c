@@ -57,15 +57,38 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 #define DEBUG 1
 #endif
 
-  /**
-   * \author Shrobana Ghosh
-   */
+/**
+  * @addtogroup LALSimIMRPhenomX_c
+  * @{
+  *
+  * @name Routines for mode asymmetry in the dominant quadrupole mode
+  * @{
+  *
+  * @author Shrobhana Ghosh
+  *
+  * @brief C code for modelling asymmetry in the dominant (2,±2) modes in PhenomXO4a and PhenomXPNR
+  *
+  * This model is described in Ghosh et al., PRD 109, 024061 (2024), studies using this model are kindly asked
+  * to cite this paper.
+  *
+  * @note The model is tuned to single-spin numerical-relativity simulations up to mass-ratio 8 and spin magnitudes of 0.8.
+  * Mode asymmetry can only be used together with PNR angles, which are activated by the flag PhenomXPNRUseTunedAngles.
+  *
+  * @attention For more information, see the review wiki
+  * under https://git.ligo.org/waveforms/reviews/imrphenomxo4a/wikis/home
+  *
+  *
+  * Waveform flags:
+  *   IMRPhenomXAntisymmetricWaveform
+  *   - 0: Mode asymmetry switched off
+  *   - 1: Mode asymmetry siwtched on
+  */
 
-   /**
+  /**
    *   EXTERNAL GENERATE antisymmetric waveform
    * This is an external wrapper to generate the (2,2) and (2,-2) antisymmetric waveform,
-   * given the standard inputs given to generate FD waveforms.
-   * Note that at present this is only compatible with the PNR angles (refer arxiv XXXX.YYYYY)
+   * with the standard inputs given to generate FD waveforms.
+   * @note At present this is only compatible with the PNR angles (refer arxiv 2310.16980)
    */
   int XLALSimIMRPhenomX_PNR_GenerateAntisymmetricWaveform(
       REAL8Sequence **antisymamp, /**< [out] Amplitude of antisymmetric (2,2) waveform */
@@ -141,7 +164,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
     {
       freqs->data[i - iStart] = i * deltaF;
     }
-    
+
     IMRPhenomXWaveformStruct *pWF;
     pWF = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
     status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, PHENOMXDEBUG);
@@ -381,7 +404,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 
       /****** antisymmetric amplitude ******/
       amp_AS = kappa->data[idx] * amp;
-      
+
 
       if(Mf < MfT)
       {
@@ -395,7 +418,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
       REAL8 Amp0 = pWF->amp0 * pWF->ampNorm;
 
       antisymamp->data[idx] = Amp0 * powers_of_Mf.m_seven_sixths * amp_AS;
-      antisymphase->data[idx] = phi_AS;
+      antisymphase->data[idx] = pPrec->zeta_polarization + phi_AS;
     }
 
     /* Clean up memory allocation */
@@ -442,7 +465,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 
     REAL8 vRD = cbrt (LAL_PI * MfRD );
     const double kappaRD = GetKappa_at_frequency(vRD,delta,Chi,theta,eta,b);
-    
+
     for (size_t i = 0; i < freqs->length; i++)
     {
       REAL8 Mf = XLALSimPhenomUtilsHztoMf(freqs->data[i], M);
@@ -456,7 +479,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
         kappa->data[i] = kappaRD;
       }
     }
-    
+
     size_t width = 80;
     double df = 0.0;
     if(width > kappa->length - 1)
@@ -465,7 +488,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
     }
     size_t half_width = (size_t)floor((double)(width / 2.0));
 
-    
+
     for (size_t id = 0; id < kappa->length-width-1; id++)
     {
       double smoothed_ratio = 0.0;
@@ -594,19 +617,20 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
     phi_der_MfT *= inveta;
     phi_der_MfT += linb;
     phi_MfT  *= inveta;
-    phi_MfT  += linb*MfT + lina + phiref22;    
+    phi_MfT  += linb*MfT + lina + phiref22;
 
     *A0 = phi_der_MfT/2 - alpha_der_MfT;
     *phi_A0 = pPrec-> alpha_offset;
-    *phi_B0 = alpha_MfT - phi_MfT/2 + *A0 * MfT + *phi_A0; 
+    *phi_B0 = alpha_MfT - phi_MfT/2 + *A0 * MfT + *phi_A0;
 
     LALFree(alphaParams);
 
     return XLAL_SUCCESS;
   }
 
+/** @} */
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
-
-

@@ -34,7 +34,7 @@ import sqlite3
 import sys
 
 
-from ligo.lw import dbtables
+from igwn_ligolw import dbtables
 from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import calc_likelihood

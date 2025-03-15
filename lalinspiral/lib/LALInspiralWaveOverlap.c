@@ -348,4 +348,3 @@ LALInspiralWaveOverlap
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
-

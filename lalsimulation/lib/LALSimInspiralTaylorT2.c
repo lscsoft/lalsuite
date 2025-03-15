@@ -794,7 +794,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 	toffIn.t7 = ak.tva7;
 	toffIn.tl6 = ak.tvl6;
 	toffIn.t10 = ak.tva10;
-	toffIn.t12 = ak.tva12;    
+	toffIn.t12 = ak.tva12;
 	toffIn.piM = ak.totalmass * LAL_PI;
 
 	/* Determine the total chirp-time tC: the total chirp time is
@@ -960,7 +960,7 @@ int XLALSimInspiralTaylorT2PNGenerator(
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR(XLAL_EINVAL);
 	}
@@ -1016,13 +1016,13 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT2PNModes(
 	/* Sanity check fRef value */
 	if( fRef < 0. )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
 				__func__, fRef);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
@@ -1086,13 +1086,13 @@ COMPLEX16TimeSeries *XLALSimInspiralTaylorT2PNMode(
 	/* Sanity check fRef value */
 	if( fRef < 0. )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
 				__func__, fRef);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}

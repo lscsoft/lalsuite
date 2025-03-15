@@ -20,7 +20,7 @@ for index = 1:nFreqs
   tempFreq = freq(index);
 
   temp = find(fMinH1 < tempFreq);
-  if (length(temp) > 0) 
+  if (length(temp) > 0)
     minindex = max(temp);
     if (fMaxH1(minindex) > tempFreq)
        ULH1 = H195UL(minindex,5);
@@ -29,7 +29,7 @@ for index = 1:nFreqs
 
 
   temp = find(fMinL1 < tempFreq);
-  if (length(temp) > 0) 
+  if (length(temp) > 0)
      minindex = max(temp);
     if (fMaxL1(minindex) > tempFreq)
        ULH1 = L195UL(minindex,5);

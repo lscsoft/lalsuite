@@ -550,4 +550,3 @@ int jacobi(float **a, int n, float d[], float **v, int *nrot)
 	return 1;
 }
 #undef ROTATE
-

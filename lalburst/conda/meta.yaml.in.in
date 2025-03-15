@@ -22,6 +22,7 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
+{% set scipy_version = "@MIN_SCIPY_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
@@ -134,12 +135,13 @@ outputs:
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - scipy
+        - scipy >={{ scipy_version }}
         - tqdm
       run:
         - gsl
         - {{ pin_subpackage('liblalburst', exact=True) }}
-        - ligo-segments
+        - igwn-ligolw >={{ python_ligo_lw_version }}
+        - igwn-segments
         - lscsoft-glue
         - matplotlib-base
         - numpy
@@ -147,8 +149,7 @@ outputs:
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw >={{ python_ligo_lw_version }}
-        - scipy
+        - scipy >={{ scipy_version }}
         - tqdm
     test:
       requires:

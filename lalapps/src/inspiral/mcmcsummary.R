@@ -18,7 +18,7 @@
 #
 # The arguments of "mcmcsummary()" are:
 #
-#  - data: a data frame or matrix whose columns contain the MCMC samples of 
+#  - data: a data frame or matrix whose columns contain the MCMC samples of
 #          different variables; rows correspond to MCMC iterations.
 #          May also be an array, whose "slices" are then taken to be
 #          samples from parallel MCMC chains.
@@ -53,8 +53,8 @@
 #          "jpeg" graphics are always produced.
 #  - overwrite: (logical) flag indicating whether to clear / overwrite files
 #          if the "targetdirectory" (see above) already exists and is not empty.
-#  - signifdigits: number of significant digits to be supplied in tables. 
-#          For the "summary stats" table, each variable's standard deviation 
+#  - signifdigits: number of significant digits to be supplied in tables.
+#          For the "summary stats" table, each variable's standard deviation
 #          is given with this accuracy, and all other figures are then aligned
 #          with this. Defaults to 3.
 #  - plotN: the (maximum) number of samples to use in plots where otherwise ALL
@@ -134,7 +134,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
 # this is the main function.
 {
   # some auxiliary function definitions:
-  
+
   computeKDE <- function(x)
   # a little wrapper function
   # for kernel density estimate computation
@@ -186,7 +186,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
     if (!is.null(trueval)){ # expand plotting ranges if necessary
       if (!is.na(trueval[1])) xrange <- range(c(xrange,trueval[1]))
       if (!is.na(trueval[2])) yrange <- range(c(yrange,trueval[2]))
-    }    
+    }
     plot(x, y, pch=".", col=col, xlab=xlab, ylab=ylab, axes=FALSE,
          xlim=xrange, ylim=yrange)
     if (!is.null(trueval)){
@@ -210,7 +210,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
                   "")
     return(htmlcode)
   }
-  
+
   htmlfooter <- function(bottomline = paste('generated', date(), 'using <a href="http://www.r-project.org" title="R project homepage"><b>R</b></a> and the <a href="http://cran.r-project.org/package=xtable"><code>xtable</code></a> ',ifelse(codainstalled,'and <a href="http://cran.r-project.org/package=coda"><code>coda</code></a> packages.','package.')))
   {
     htmlcode <- c('  <hr>',
@@ -250,7 +250,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
     htmlcode <- c(paste('  <!--', commentstring, '-->'), '')
     return(htmlcode)
   }
-  
+
   htmlhorizline <- function()
   {
     htmlcode <- c('<hr>', '')
@@ -262,7 +262,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
     htmlcode <- c(paste('<h', level, '>', heading, '</h', level, '>', sep=''), '')
     return(htmlcode)
   }
-  
+
   htmlfragment <- function(fragmentname)
   {
     htmlcode <- c(paste('<a name="', fragmentname, '"></a>',sep=''))
@@ -290,18 +290,18 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
   {
     return(max(c(0, -(floor(log10(x))-(signifdigits-1)))))
   }
-  
+
   #
  ###  here's where the ACTUAL CODE starts:
   #
-  
+
   ok <- require("xtable")
   if (!ok) {
     warning("missing add-on package 'xtable'")
     return(invisible())
   }
   codainstalled <- require("coda")
-  
+
   # some initial definitions:
   nvar   <- ncol(data)                                       # number of variables
   stopifnot(length(varnames)==nvar)
@@ -406,7 +406,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
   # directory structure now complete.
 
   # start the HTML file::
-  htmlfilename <- paste(targetdirectory, "index.html", sep="/")  
+  htmlfilename <- paste(targetdirectory, "index.html", sep="/")
   write(htmlheader(),
         file=htmlfilename, append=FALSE)
   funcall <- match.call()
@@ -415,7 +415,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
           '-->', ''),
         file=htmlfilename, append=TRUE)
 
-  
+
   write(c("", "<!--", ""),
         file=htmlfilename, append=TRUE)
   write(htmlsection(1, paste("ENTER A MAIN TITLE HERE")),
@@ -429,7 +429,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
   write(c("-->", "", ""),
         file=htmlfilename, append=TRUE)
 
-  
+
   # compute & tabulate summary stats:
   write(htmlcomment("SUMMARY STATS:"),
         file=htmlfilename, append=TRUE)
@@ -448,11 +448,11 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
   write(c(paste('  ', formatC(nrow(posteriorsample),digits=0,format="f"), ' samples left after discarding burn-in.<br>',sep='')),
         file=htmlfilename, append=TRUE)
 
-  if (autoburnin)    
+  if (autoburnin)
     write(ifelse(nchain==1, '  (Burn-in was determined automatically.)<br>',
                             '  (Burn-ins were determined automatically.)<br>'),
           file=htmlfilename, append=TRUE)
-  
+
   if (codainstalled && nchain>1){                # R^p computation only for multiple chains
     if (max(burnin) < iteration[nobs-1]){        # minimum requirement: at least two samples left
       common <- which((iteration > max(burnin))) # the (final) common part of all chains
@@ -460,7 +460,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
       for (i in 1:nchain)
         codaList[[i]] <- mcmc(data=data[common,,i], start=iteration[common[1]], thin=diff(iteration[1:2]))
       # Brooks and Gelman's multivariate "potential scale reduction factor":
-      RHatP <- Re(gelman.diag(codaList)$mpsrf)   
+      RHatP <- Re(gelman.diag(codaList)$mpsrf)
       write(paste('  Convergence diagnostic: R<sup>p</sup> = ',
                   formatC(round(RHatP,max(5,signifdigits)), digits=max(5,signifdigits), format="f"),
                   ' (based on iterations ',formatC(iteration[common[1]],digits=0,format="f"),' and following).<br>', sep=''),
@@ -476,7 +476,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
   }
 
   write(c('  <br>',''), file=htmlfilename, append=TRUE)
-  
+
   interval <- ifelse(codainstalled, "highest posterior density interval", "confidence bounds")
   if (is.null(truevalue))
     write(c(paste("  mean, median, standard deviation, and 95%",interval,":<br>",sep=""), ""),
@@ -497,14 +497,14 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
     vardigitsR[i] <- decplaces(sumtab[i,"std. dev."], signifdigits)
     if (vardigitsR[i]>0)
       sumtab[i,] <- round(sumtab[i,], vardigitsR[i])
-    else 
+    else
       sumtab[i,] <- signif(sumtab[i,], signifdigits)
   }
   # "vardigitsR" now gives the number of digits to be displayed to the RIGHT of the decimal point.
   vardigitsL <- apply(sumtab, 1, function(x){max(c(1, trunc(log10(max(abs(x))))+1), na.rm=T)})
   # "vardigitsL" gives the number of digits to be displayed to the decimal point's LEFT.
 
-  
+
   xsumtab <- xtable(sumtab, digits=cbind(rep(0,nvar),matrix(vardigitsR, nrow=nvar, ncol=ncol(sumtab))))
 
   # create text format table:
@@ -520,10 +520,10 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
     for (j in 2:(ncol(sumtab)+1))
       textsumtab[i] <- paste(textsumtab[i], formatC(sumtab[i-1,j-1], format="f", digits=vardigitsR[i-1], width=colwidths[j]), sep="  ")
   #print(textsumtab)
-  
+
   # write HTML table to file:
   print(xsumtab, type="html", file=htmlfilename, append=TRUE)
-  
+
   # write LaTeX table to file:
   print(xsumtab, type="latex", file=paste(targetdirectory,'/latex/summarystats.TeX',sep=''), append=FALSE)
 
@@ -535,15 +535,15 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
           '  <br> <br>', ''),
         file=htmlfilename, append=TRUE)
 
-  
+
   # compute correlation matrix:
   write(c("correlation matrix:", ""),
         file=htmlfilename, append=TRUE)
   cormat <- round(cor(posteriorsample), signifdigits)
   dimnames(cormat) <- list(varnames,varnames)
-  
+
   xcormat <- xtable(cormat,digits=signifdigits)
-  
+
   # create text format table:
   textcormat <- format(c("", varnames), justify="left")
   colwidths <- sapply(strsplit(c(textcormat[1], varnames), split=""), length)
@@ -556,21 +556,21 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
   for (i in 2:(nvar+1))
     for (j in 2:(nvar+1))
       textcormat[i] <- paste(textcormat[i], formatC(cormat[i-1,j-1], format="f", digits=signifdigits, width=colwidths[j]), sep="  ")
-  
+
   # write HTML table to file:
   print(xcormat, type="html", file=htmlfilename, append=TRUE)
   # write LaTeX table to file:
   print(xcormat, type="latex", file=paste(targetdirectory,'/latex/correlations.TeX',sep=''), append=FALSE)
   # write TXT table to file:
   write(textcormat, file=paste(targetdirectory,'/txt/correlations.txt',sep=''), append=FALSE)
-  
+
   write(c('  <small>(same table in <a href="txt/correlations.txt" type="text/plain">text format</a>',
           '          and in <a href="latex/correlations.TeX" type="text/plain">LaTeX format</a>)</small><br>'),
         file=htmlfilename, append=TRUE)
   write(htmlhorizline(),
         file=htmlfilename, append=TRUE)
 
-  
+
   # create & insert marginal density plots:
   write(htmlcomment("TRACE PLOTS, KERNEL DENSITY ESTIMATES and HISTOGRAMS:"),
         file=htmlfilename, append=TRUE)
@@ -605,16 +605,16 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
     write(htmlplot(filename, graphicsformats),  #, wi=300, he=300),
           file=htmlfilename, append=TRUE)
     write(c('  </td>', '  </tr></table>', ''),
-          file=htmlfilename, append=TRUE)    
+          file=htmlfilename, append=TRUE)
   }
-  
+
   # parameter trace plots &c.:
   for (i in 1:nvar){
     write(htmlfragment(paste("parameter1D_", varnames[i], sep="")),
           file=htmlfilename, append=TRUE)
     write(htmlsection(2, paste("parameter: <i>", varnames[i], "</i>", sep="")),
           file=htmlfilename, append=TRUE)
-    
+
     filename <- paste("traceplot-", varnames[i], sep="")
     for (j in 1:ngraph){
       graphheight <- 4
@@ -637,7 +637,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
           file=htmlfilename, append=TRUE)
     write(c('  </td>'),
           file=htmlfilename, append=TRUE)
-    
+
     filename <- paste("kde-", varnames[i], sep="")
     kde <- computeKDE(posteriorsample[,i])
     for (j in 1:ngraph){
@@ -678,7 +678,7 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
       box()
       dev.off()
     }
-    
+
     write(c('  <td align="center">'),
           file=htmlfilename, append=TRUE)
     write(htmlplot(filename, graphicsformats),  #, wi=300, he=300),
@@ -687,11 +687,11 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
           file=htmlfilename, append=TRUE)
   }
 
-  
+
   write(htmlhorizline(),
         file=htmlfilename, append=TRUE)
 
-  
+
   # create bivariate distributions:
   write(htmlcomment("BIVARIATE DISTRIBUTION PLOTS:"),
         file=htmlfilename, append=TRUE)
@@ -736,18 +736,18 @@ mcmcsummary <- function(data, targetdirectory="mcmcsummary",
       write(htmlplot(filename2, graphicsformats),
             file=htmlfilename, append=TRUE)
       write(c('  </td>'),
-            file=htmlfilename, append=TRUE)  
+            file=htmlfilename, append=TRUE)
     }
-    
+
     write(c('  </tr></table>', ''),
           file=htmlfilename, append=TRUE)
   }
-  
+
   # finish the HTML file:
   write(htmlcomment("PAGE FOOTER:"),
         file=htmlfilename, append=TRUE)
   write(htmlfooter(),
         file=htmlfilename, append=TRUE)
-  
+
   return(invisible(posteriorsample))
 }

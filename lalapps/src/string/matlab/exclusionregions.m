@@ -32,7 +32,7 @@ nL1found=histc(log(L1foundpeaks),lnA);
 nH1made=histc(log(H1madepeaks),lnA);
 nH2made=histc(log(H2madepeaks),lnA);
 nL1made=histc(log(L1madepeaks),lnA);
- 
+
 eH1=nH1found./nH1made;
 eH2=nH2found./nH2made;
 eL1=nL1found./nL1made;
@@ -79,12 +79,12 @@ hold on
 
 for i=1:size(Gmu,2)
   for j=1:size(p,2)
-    for k=1:size(epsilon,2)      
+    for k=1:size(epsilon,2)
 
       alpha=epsilon(k)*(Gamma*Gmu(i))^n;   %value of the size of the small-scale structure
-      a=A./(t0^(-1/3)*Gmu(i)*(alpha^(2/3)));   %Reduced amplitude vector      
+      a=A./(t0^(-1/3)*Gmu(i)*(alpha^(2/3)));   %Reduced amplitude vector
       b=10^2 * c * alpha^(-5/3)*(p(j)*Gamma*Gmu(i))^(-1) * t0^(-1) * (f*t0)^(-2/3);
-      dRdlnA=b*aeq^(33/40)*a.^(-11/5) .* ((1+1/aeq*a).^(33/40)).*(1+a).^(-13/8); %Rate per logarithmic interval of amplitude 
+      dRdlnA=b*aeq^(33/40)*a.^(-11/5) .* ((1+1/aeq*a).^(33/40)).*(1+a).^(-13/8); %Rate per logarithmic interval of amplitude
 
       %apply theta fn cutoff
       theta0=(alpha*f*t0).^(-1/3);
@@ -96,8 +96,8 @@ for i=1:size(Gmu,2)
 
     end
   end
-  
-  contour(p,epsilon,ul,[1 1]);    
+
+  contour(p,epsilon,ul,[1 1]);
   xlabel('Reconnection  probability p','FontSize',14)
   ylabel('\epsilon (small-scale structure parameter)','FontSize',14)
   title(['Exclusion regions',num2str(Gmu(i))],'FontSize',14)

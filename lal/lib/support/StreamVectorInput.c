@@ -42,7 +42,7 @@ static const BufferList empty;
 
 void
 LALCHARReadVector( LALStatus *stat, CHARVector **vector, FILE *stream )
-{ 
+{
   BufferList head = empty; /* head of linked list of buffers */
   BufferList *here;     /* pointer to current position in list */
   CHAR *data;           /* pointer to vector data */

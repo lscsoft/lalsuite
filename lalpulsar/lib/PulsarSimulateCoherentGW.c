@@ -755,23 +755,23 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
   /* Compute initial value of i, ensuring that we will never index
      CWsignal->a or CWsignal->phi below their range. */
   i = 0;
-  if ( aOff + ( i + delayMin )*aDt < 0.0 ) {
+  if ( aOff + ( i + delayMin ) * aDt < 0.0 ) {
     INT4 j = ( INT4 )floor( -aOff / aDt - delayMax );
     if ( i < j ) {
       i = j;
     }
     while ( ( i < ( INT4 )( output->data->length ) ) &&
-            ( aOff + TCENTRE( i )*aDt < 0.0 ) ) {
+            ( aOff + TCENTRE( i ) * aDt < 0.0 ) ) {
       i++;
     }
   }
-  if ( phiOff + ( i + delayMin )*phiDt < 0.0 ) {
+  if ( phiOff + ( i + delayMin ) * phiDt < 0.0 ) {
     INT4 j = ( INT4 )( -phiOff / phiDt - delayMax );
     if ( i < j ) {
       i = j;
     }
     while ( ( i < ( INT4 )( output->data->length ) ) &&
-            ( phiOff + TCENTRE( i )*phiDt < 0.0 ) ) {
+            ( phiOff + TCENTRE( i ) * phiDt < 0.0 ) ) {
       i++;
     }
   }
@@ -785,24 +785,24 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
      CWsignal->a or CWsignal->phi above their range. */
   n = output->data->length - 1;
   INT4 nMax_a = CWsignal->a->data->length - 1;
-  if ( aOff + ( n + delayMax )*aDt > nMax_a ) {
+  if ( aOff + ( n + delayMax ) * aDt > nMax_a ) {
     INT4 j = ( INT4 )( ( nMax_a - aOff ) / aDt - delayMin + 1.0 );
     if ( n > j ) {
       n = j;
     }
     while ( ( n >= 0 ) &&
-            ( ( INT4 )floor( aOff + TCENTRE( n )*aDt ) > nMax ) ) {
+            ( ( INT4 )floor( aOff + TCENTRE( n ) * aDt ) > nMax ) ) {
       n--;
     }
   }
   nMax = CWsignal->phi->data->length - 1;
-  if ( phiOff + ( n + delayMax )*phiDt > nMax ) {
+  if ( phiOff + ( n + delayMax ) * phiDt > nMax ) {
     INT4 j = ( INT4 )( ( nMax - phiOff ) / phiDt - delayMin + 1.0 );
     if ( n > j ) {
       n = j;
     }
     while ( ( n >= 0 ) &&
-            ( ( INT4 )floor( phiOff + TCENTRE( n )*phiDt ) > nMax ) ) {
+            ( ( INT4 )floor( phiOff + TCENTRE( n ) * phiDt ) > nMax ) ) {
       n--;
     }
   }
@@ -815,25 +815,25 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
   /* Compute the values of i for which CWsignal->f is given. */
   if ( CWsignal->f ) {
     fInit = i;
-    if ( fOff + ( fInit + delayMin )*fDt < 0.0 ) {
+    if ( fOff + ( fInit + delayMin ) * fDt < 0.0 ) {
       INT4 j = ( INT4 )floor( -fOff / fDt - delayMax );
       if ( fInit < j ) {
         fInit = j;
       }
       while ( ( fInit <= n ) &&
-              ( fOff + TCENTRE( fInit )*fDt < 0.0 ) ) {
+              ( fOff + TCENTRE( fInit ) * fDt < 0.0 ) ) {
         fInit++;
       }
     }
     fFinal = n;
     nMax = CWsignal->f->data->length - 1;
-    if ( fOff + ( fFinal + delayMax )*fDt > nMax ) {
+    if ( fOff + ( fFinal + delayMax ) * fDt > nMax ) {
       INT4 j = ( INT4 )( ( nMax - fOff ) / fDt - delayMin + 1.0 );
       if ( fFinal > j ) {
         fFinal = j;
       }
       while ( ( fFinal >= i ) &&
-              ( ( INT4 )floor( fOff + TCENTRE( fFinal )*fDt ) > nMax ) ) {
+              ( ( INT4 )floor( fOff + TCENTRE( fFinal ) * fDt ) > nMax ) ) {
         fFinal--;
       }
     }
@@ -845,25 +845,25 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
   /* Compute the values of i for which CWsignal->shift is given. */
   if ( CWsignal->shift ) {
     shiftInit = i;
-    if ( shiftOff + ( shiftInit + delayMin )*shiftDt < 0.0 ) {
+    if ( shiftOff + ( shiftInit + delayMin ) * shiftDt < 0.0 ) {
       INT4 j = ( INT4 )floor( -shiftOff / shiftDt - delayMax );
       if ( shiftInit < j ) {
         shiftInit = j;
       }
       while ( ( shiftInit <= n ) &&
-              ( shiftOff + TCENTRE( shiftInit )*shiftDt < 0.0 ) ) {
+              ( shiftOff + TCENTRE( shiftInit ) * shiftDt < 0.0 ) ) {
         shiftInit++;
       }
     }
     shiftFinal = n;
     nMax = CWsignal->shift->data->length - 1;
-    if ( shiftOff + ( shiftFinal + delayMax )*shiftDt > nMax ) {
+    if ( shiftOff + ( shiftFinal + delayMax ) * shiftDt > nMax ) {
       INT4 j = ( INT4 )( ( nMax - shiftOff ) / shiftDt - delayMin + 1.0 );
       if ( shiftFinal > j ) {
         shiftFinal = j;
       }
       while ( ( shiftFinal >= i ) &&
-              ( ( INT4 )floor( shiftOff + TCENTRE( shiftFinal )*shiftDt ) > nMax ) ) {
+              ( ( INT4 )floor( shiftOff + TCENTRE( shiftFinal ) * shiftDt ) > nMax ) ) {
         shiftFinal--;
       }
     }

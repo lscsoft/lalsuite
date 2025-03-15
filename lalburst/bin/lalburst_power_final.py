@@ -82,7 +82,7 @@ import sqlite3
 import sys
 
 
-from ligo.lw import dbtables
+from igwn_ligolw import dbtables
 from lal import iterutils
 from lal import rate
 from lalburst import git_version

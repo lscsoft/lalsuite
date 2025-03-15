@@ -549,7 +549,7 @@ INT4 sumIHSarrayFAR( ihsfarStruct *outputfar, REAL4VectorAlignedArray *ihsvector
     //We have an if-else statement for when there are fewer than 10000 entries that will be in the tworows varaible
     //(only considering the number of rows we have summed together).
     REAL4VectorAligned *sampledtempihsvals = NULL;
-    if ( ( ihsvectorarray->length - ( ii - 1 ) )*ihsvectorarray->data[0]->length > 10000 ) {
+    if ( ( ihsvectorarray->length - ( ii - 1 ) ) * ihsvectorarray->data[0]->length > 10000 ) {
       //We sample the tworows array (up to the number of rows-1) without accepting any zeros
       //because zeros would come from the notched harmonics, which we won't want anyway
       sampledtempihsvals = sampleREAL4VectorAlignedArray_nozerosaccepted( tworows, ihsvectorarray->length - ( ii - 1 ), 10000, rng );
@@ -744,7 +744,7 @@ INT4 sumIHSarray( ihsMaximaStruct *output, const ihsfarStruct *inputfar, REAL4Ve
           } else {
             INT4 newIHSlocation = max_index_in_range( excessabovenoise, ( kk + 1 ) * minIndexForIHS, ( kk + 1 ) * maxIndexForIHS ) + 5;
             REAL4 newIHSvalue = tworows->data[ii]->data[newIHSlocation - 5];
-            if ( newIHSvalue > output->maxima->data[( ii - 2 )*ihsvalues->length - endloc + jj] ) {
+            if ( newIHSvalue > output->maxima->data[( ii - 2 ) * ihsvalues->length - endloc + jj] ) {
               output->locations->data[( ii - 2 )*ihsvalues->length - endloc + jj] = newIHSlocation;
               output->maxima->data[( ii - 2 )*ihsvalues->length - endloc + jj] = newIHSvalue;
             } /* if the new value is better than the previous value */

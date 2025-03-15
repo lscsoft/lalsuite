@@ -82,6 +82,7 @@ UNUSED static int read_vector_test(const char dir[], const char fname[], gsl_vec
 }
 
 #include "LALSimIMRSEOBNRROMUtilities.c"
+#include "LALSimIMRDataUtilities.h"
 
 #include <lal/LALConfig.h>
 #ifdef LAL_PTHREAD_LOCK

@@ -18,7 +18,7 @@ void LALSTPNFramelessAdaptiveWaveformEngine(LALStatus *status,
     );
 
 int XLALSTPNFramelessAdaptiveWaveformEngine(REAL4Vector *signalvec1,
-    REAL4Vector *signalvec2, UINT4 *countback, InspiralTemplate *params, 
+    REAL4Vector *signalvec2, UINT4 *countback, InspiralTemplate *params,
     InspiralInit *paramsInit
     );
 

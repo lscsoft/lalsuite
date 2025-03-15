@@ -187,7 +187,7 @@ int XLALSimIMRPhenomXPHM(
 {
   /* Variable to check correct calls to functions. */
   UINT4 status;
-  
+
   /*
   Set initial values of masses and z-components of spins to pass to IMRPhenomXSetWaveformVariables() so it can swap the
   matter parameters (and masses and spins) appropriately if m1 < m2, since the masses and spin vectors will also be
@@ -299,7 +299,7 @@ int XLALSimIMRPhenomXPHM(
   /* Initialize IMRPhenomX Precession struct and check that it generated successfully */
   IMRPhenomXPrecessionStruct *pPrec;
   pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
-  
+
   lalParams_aux = IMRPhenomXPHM_setup_mode_array(lalParams_aux);
 
   status = IMRPhenomXGetAndSetPrecessionVariables(
@@ -504,7 +504,7 @@ int XLALSimIMRPhenomXPHMFromModes(
   /* Initialize IMRPhenomX Precession struct and check that it generated successfully. */
   IMRPhenomXPrecessionStruct *pPrec;
   pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
-  
+
   lalParams_aux = IMRPhenomXPHM_setup_mode_array(lalParams_aux);
 
   status = IMRPhenomXGetAndSetPrecessionVariables(
@@ -687,9 +687,9 @@ int XLALSimIMRPhenomXPHMFromModes(
   /* Initialize IMR PhenomX Precession struct and check that it generated successfully */
   IMRPhenomXPrecessionStruct *pPrec;
   pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
-  
+
   lalParams_aux = IMRPhenomXPHM_setup_mode_array(lalParams_aux);
-  
+
   status = IMRPhenomXGetAndSetPrecessionVariables(
            pWF,
            pPrec,
@@ -773,12 +773,12 @@ static int IMRPhenomXPHM_hplushcross(
         If the input freqs_In is non-uniform the Multibanding has been already switche off.
     */
     REAL8 thresholdMB  = XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(lalParams);
-  
+
    if(pPrec->precessing_tag==3){
         status=IMRPhenomX_Initialize_Euler_Angles(pWF,pPrec,lalParams);
         XLAL_CHECK(status==XLAL_SUCCESS, XLAL_EDOM, "%s: Error in IMRPhenomX_Initialize_Euler_Angles.\n",__func__);
       }
-     
+
 
   /* Build the frequency array and initialize hptilde to the length of freqs. */
   REAL8Sequence *freqs;
@@ -794,7 +794,7 @@ static int IMRPhenomXPHM_hplushcross(
   /* Object to store the non-precessing 22 mode waveform and to be recycled when calling the 32 mode in multibanding. */
   COMPLEX16FrequencySeries *htilde22 = NULL;
 
-   
+
 
   /* Initialize the power of pi for the HM internal functions. */
   status = IMRPhenomX_Initialize_Powers(&powers_of_lalpiHM, LAL_PI);
@@ -856,6 +856,7 @@ static int IMRPhenomXPHM_hplushcross(
 
     /* Remap the J-frame sky location to use beta instead of ThetaJN */
     REAL8 betaPNR_ref = gsl_spline_eval(hm_angle_spline->beta_spline, pWF->fRef, hm_angle_spline->beta_acc);
+    if(isnan(betaPNR_ref) || isinf(betaPNR_ref)) XLAL_ERROR(XLAL_EDOM, "Error in %s: gsl_spline_eval for beta returned invalid value.\n",__func__);
     status = IMRPhenomX_PNR_RemapThetaJSF(betaPNR_ref, pWF, pPrec, lalParams);
     XLAL_CHECK(
         XLAL_SUCCESS == status,
@@ -863,9 +864,9 @@ static int IMRPhenomXPHM_hplushcross(
         "Error: IMRPhenomX_PNR_RemapThetaJSF failed in IMRPhenomX_PNR_GeneratePNRAngles.");
   }
 
-  /******************************************************/ 
+  /******************************************************/
   /******** Antisymmetric waveform generated here ********/
-  /******************************************************/ 
+  /******************************************************/
   REAL8Sequence *antiSym_amp = NULL;
   REAL8Sequence *antiSym_phi = NULL;
 
@@ -1079,11 +1080,11 @@ static int IMRPhenomXPHM_hplushcross(
 
         if(pPrec->precessing_tag==3)
          pPrec->gamma_in = 0.;
-       
+
         for (UINT4 idx = 0; idx < freqs->length; idx++)
         {
           double Mf             = pWF->M_sec * freqs->data[idx];
-          
+
           /* Do not generate waveform above Mf_max (default Mf = 0.3) */
           if(Mf <= (pWF->f_max_prime * pWF->M_sec))
           {
@@ -1157,7 +1158,7 @@ static int IMRPhenomXPHM_hplushcross(
         if( pWF->IMRPhenomXReturnCoPrec == 1 ) {
           return XLAL_SUCCESS;
         }
-        
+
       }
       else
       {
@@ -1184,7 +1185,7 @@ static int IMRPhenomXPHM_hplushcross(
         XLALSimIMRPhenomXPHMMultibandingGrid(&coarseFreqs, ell, emmprime, pWF, lalParams);
 
         UINT4 lenCoarseArray = coarseFreqs->length;
-        
+
 
         /* Euler angles */
         REAL8 alpha        = 0.0;
@@ -1325,14 +1326,15 @@ static int IMRPhenomXPHM_hplushcross(
               }
               break;
             }
-            
+
              case 310:
              case 311:
              case 320:
              case 321:
-             
+	     case 330:
+
             {
-                
+
                 /* Get the offset for the Euler angles alpha and epsilon. */
                 REAL8 alpha_offset_mprime = pPrec->alpha_ref- pPrec->alpha0;
                 REAL8 epsilon_offset_mprime = -pPrec->gamma_ref-pPrec->epsilon0;
@@ -1340,32 +1342,34 @@ static int IMRPhenomXPHM_hplushcross(
                 REAL8 cos_beta=0., gamma=0., alpha_i=0.;
                 REAL8 Mf;
                 int success;
-                
-                
+
+
                 /* Evaluate angles in coarse freq grid */
                 for(UINT4 j=0; j<lenCoarseArray; j++)
                 {
-                
+
                     success = 0;
                     Mf = coarseFreqs->data[j]*(2.0/emmprime);
 
-              
+
                 if(Mf< pPrec->ftrans_MRD)
                  {
                         success = gsl_spline_eval_e(pPrec->alpha_spline, Mf, pPrec->alpha_acc,&alpha_i);
                         success = success + gsl_spline_eval_e(pPrec->cosbeta_spline, Mf, pPrec->cosbeta_acc,&cos_beta);
                         success = success + gsl_spline_eval_e(pPrec->gamma_spline,  Mf, pPrec->gamma_acc, &gamma);
-                  
+
                         XLAL_CHECK(success == XLAL_SUCCESS, XLAL_EFUNC, "%s: Failed to interpolate Euler angles at f=%.7f. \n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mf,pWF->Mtot));
                  }
-                
+
                else {
-                   
+
                     if(pPrec->IMRPhenomXPrecVersion==320 || pPrec->IMRPhenomXPrecVersion==321 ){
-                    
+
                         alpha_i=alphaMRD(Mf,pPrec->alpha_params);
                         cos_beta=cos(betaMRD(Mf,pWF,pPrec->beta_params));
-                        
+                        success = gsl_spline_eval_e(pPrec->gamma_spline,  Mf, pPrec->gamma_acc, &gamma);
+                        if(success!=XLAL_SUCCESS){
+
                         if(j>0)
                         {
                             REAL8 dMf=(coarseFreqs->data[j]-coarseFreqs->data[j-1])* (2.0 / emmprime);
@@ -1373,50 +1377,51 @@ static int IMRPhenomXPHM_hplushcross(
                             success = gamma_from_alpha_cosbeta(&deltagamma, Mf,dMf,pWF,pPrec);
                             if(success!=XLAL_SUCCESS) gamma = pPrec->gamma_in;
                             else gamma = pPrec->gamma_in+deltagamma;
-                      
+
                         }
-                        
+
                        else
-                        
+
                         {
                             success = gsl_spline_eval_e(pPrec->gamma_spline, Mf, pPrec->gamma_acc,&gamma);
                             if(success!=XLAL_SUCCESS) gamma = pPrec->gamma_in;
                         }
-                   
+                        }
+
                             }
-                   
+
                     else{
-                    
+
                         alpha_i=pPrec->alpha_ftrans;
                         cos_beta=pPrec->cosbeta_ftrans;
                         gamma=pPrec->gamma_ftrans;
-    
+
                         }
-                    
+
                 }
 
                 pPrec->gamma_in = gamma;
-                
+
                 // make sure |cos(beta)| does not exceed 1 due to roundoff errors
                 if(fabs(cos_beta)>1)
                     cos_beta=copysign(1.0, cos_beta);
-                
+
                 valpha[j]= alpha_i- alpha_offset_mprime;
                 vepsilon[j] = -gamma - epsilon_offset_mprime;
- 
-                  
+
+
                 status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
                 XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
                 vbetah[j]   = acos(cBetah);
-                
+
             }
 
-           
+
             break;
           }
-                 
-                 
-                 
+
+
+
            default:
             {
               XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPrecVersion not recognized. Recommended default is 223.\n");
@@ -1506,7 +1511,7 @@ static int IMRPhenomXPHM_hplushcross(
         #if DEBUG == 1
         printf("fine_count, htildelm->length, offset = %i %i %i\n", fine_count, htildelm->data->length, offset);
         #endif
-           
+
 
         /************** TWISTING UP in the fine grid *****************/
         for (UINT4 idx = 0; idx < fine_count; idx++)
@@ -1521,7 +1526,7 @@ static int IMRPhenomXPHM_hplushcross(
           pPrec->cexp_i_alpha   = cexp_i_alpha[idx];
           pPrec->cexp_i_epsilon = cexp_i_epsilon[idx];
           pPrec->cexp_i_betah   = cexp_i_betah[idx];
-           
+
            if(pPrec->precessing_tag==3) pPrec->gamma_in = 0.;
 
           status = IMRPhenomXPHMTwistUp(Mf, hlmcoprec, pWF, pPrec, ell, emmprime, &hplus, &hcross);
@@ -1574,13 +1579,13 @@ static int IMRPhenomXPHM_hplushcross(
 
     LALFree(hm_angle_spline);
   }
-    
+
   // Free memory used to hold non-precesing XHM struct
   if (pWF->APPLY_PNR_DEVIATIONS && pWF->IMRPhenomXPNRForceXHMAlignment) {
     // Cleaning up
     LALFree(pPrec->pWF22AS);
   }
-  
+
   XLALDestroySphHarmFrequencySeries(*hlms);
   XLALFree(hlms);
   /*
@@ -1620,14 +1625,14 @@ static int IMRPhenomXPHM_hplushcross(
   gsl_spline_free(pPrec->alpha_spline);
   gsl_spline_free(pPrec->cosbeta_spline);
   gsl_spline_free(pPrec->gamma_spline);
-      
+
   gsl_interp_accel_free(pPrec->alpha_acc);
   gsl_interp_accel_free(pPrec->gamma_acc);
   gsl_interp_accel_free(pPrec->cosbeta_acc);
-      
+
   }
-  
-     
+
+
   #if DEBUG == 1
   printf("\n******Leaving IMRPhenomXPHM_hplushcross*****\n");
   #endif
@@ -1689,12 +1694,12 @@ static int IMRPhenomXPHM_hplushcross_from_modes(
   /* Initialize useful powers of pi for the higher modes internal code. */
   status = IMRPhenomX_Initialize_Powers(&powers_of_lalpiHM, LAL_PI);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initialize useful powers of LAL_PI.");
-  
+
   if(pPrec->precessing_tag==3){
         status=IMRPhenomX_Initialize_Euler_Angles(pWF,pPrec,lalParams);
         XLAL_CHECK(status==XLAL_SUCCESS, XLAL_EDOM, "%s: Error in IMRPhenomX_Initialize_Euler_Angles.\n",__func__);
       }
-     
+
   /* Loop over precessing modes */
   for(UINT4 ell = 2; ell <= 4; ell++)
   {
@@ -1771,7 +1776,7 @@ static int IMRPhenomXPHM_hplushcross_from_modes(
   /* Free memory */
   XLALDestroyValue(ModeArray);
   XLALDestroyREAL8Sequence(freqs);
-  
+
   if(pPrec->precessing_tag==3)
   {
   LALFree(pPrec->alpha_params);
@@ -1780,11 +1785,11 @@ static int IMRPhenomXPHM_hplushcross_from_modes(
   gsl_spline_free(pPrec->alpha_spline);
   gsl_spline_free(pPrec->cosbeta_spline);
   gsl_spline_free(pPrec->gamma_spline);
-      
+
   gsl_interp_accel_free(pPrec->alpha_acc);
   gsl_interp_accel_free(pPrec->gamma_acc);
   gsl_interp_accel_free(pPrec->cosbeta_acc);
-      
+
   }
 
 
@@ -1844,6 +1849,7 @@ static int IMRPhenomXPHMTwistUp(
     }
     else
     {
+
       switch(pPrec->IMRPhenomXPrecVersion)
       {
         case 101:    /* Post-Newtonian Euler angles. Single spin approximantion. See sections IV-B and IV-C in Precessing paper. */
@@ -1868,7 +1874,7 @@ static int IMRPhenomXPHMTwistUp(
           /* Get the offset for the Euler angles alpha and epsilon. */
           REAL8 alpha_offset_mprime = 0, epsilon_offset_mprime = 0;
           Get_alpha_epsilon_offset(&alpha_offset_mprime, &epsilon_offset_mprime, mprime, pPrec);
-          
+
           alpha       = vangles.x - alpha_offset_mprime;
           epsilon     = vangles.y - epsilon_offset_mprime;
           cos_beta    = vangles.z;
@@ -1879,79 +1885,76 @@ static int IMRPhenomXPHMTwistUp(
 
         break;
       }
-            
+
         case 310:
         case 311:
         case 320:
         case 321:
-        
+        case 330:
+
         {
           /* Get Euler angles. */
           int success = XLAL_SUCCESS;
           REAL8 Mfprime = Mf * (2.0 / mprime);
           REAL8 cos_beta=0., gamma=0., alpha_i=0.;
 
-            
+
             if(Mfprime< pPrec->ftrans_MRD)
           {
               success = success + gsl_spline_eval_e(pPrec->cosbeta_spline, Mfprime, pPrec->cosbeta_acc,&cos_beta);
               success = success + gsl_spline_eval_e(pPrec->gamma_spline,  Mfprime, pPrec->gamma_acc, &gamma);
               success = success + gsl_spline_eval_e(pPrec->alpha_spline, Mfprime, pPrec->alpha_acc,&alpha_i);
-              
+
               XLAL_CHECK(success == XLAL_SUCCESS, XLAL_EFUNC, "%s: Failed to evaluate angles at f=%.7f for (l,m)=(%d,%d). Got alpha=%.4f,cosbeta=%.4f,gamma=%.4f.\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mfprime,pWF->Mtot),l,mprime,alpha_i,cos_beta,gamma);
-              
+
           }
-            
-                
-                
+
+
+
             else {
-                
+
                 if(pPrec->IMRPhenomXPrecVersion==320 || pPrec->IMRPhenomXPrecVersion==321)
                 {
-                    
                     alpha_i=alphaMRD(Mfprime,pPrec->alpha_params);
                     cos_beta=cos(betaMRD(Mfprime,pWF,pPrec->beta_params));
-                    // if gamma was not previously initialised, try to evaluate it with the precomputed spline
-                    if(pPrec->gamma_in==0.){
                     success = gsl_spline_eval_e(pPrec->gamma_spline,  Mfprime, pPrec->gamma_acc, &gamma);
-                    XLAL_CHECK(success == XLAL_SUCCESS, XLAL_EFUNC, "%s: Failed to evaluate gamma at f=%.7f for (l,m)=(%d,%d).\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mfprime,pWF->Mtot),l,mprime);
-                    }
-                    else{
+
+                    if(success!=XLAL_SUCCESS)
+                   {
                     REAL8 deltagamma=0.;
                     success = gamma_from_alpha_cosbeta(&deltagamma, Mfprime, pWF->deltaMF*2./mprime,pWF,pPrec);
                     XLAL_CHECK(success == XLAL_SUCCESS, XLAL_EFUNC, "%s: Failed to evaluate gamma at f=%.7f for (l,m)=(%d,%d).\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mfprime,pWF->Mtot),l,mprime);
                     gamma =pPrec->gamma_in+deltagamma;
-                    
                     }
-            
+
                  }
            else{
                // just repeat the last cached value for the Euler angles
                     alpha_i = pPrec->alpha_ftrans;
                     cos_beta = pPrec->cosbeta_ftrans;
                     gamma = pPrec->gamma_ftrans;
-               
-            
+
+
                 }
             }
-         
-          
+
+
           pPrec->gamma_in = gamma;
-          
+
           REAL8 alpha_offset_mprime = pPrec->alpha_ref- pPrec->alpha0;
           REAL8 epsilon_offset_mprime = -pPrec->gamma_ref-pPrec->epsilon0;
 
           alpha  = alpha_i - alpha_offset_mprime;
           epsilon = -gamma - epsilon_offset_mprime;
-              
+
           INT4 status = 0;
           status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
           XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
           break;
         }
-            
-            
-            
+
+
+
       default:
       {
         XLAL_ERROR(XLAL_EINVAL,"Error. IMRPhenomXPrecVersion not recognized. Recommended default is 223.\n");
@@ -1966,7 +1969,7 @@ static int IMRPhenomXPHMTwistUp(
     cexp_i_epsilon = cexp(+I*epsilon);
     pPrec->cexp_i_betah = cBetah + I*sBetah;
     #endif
-    
+
    } // End of no multibanding
    else{ /*  For Multibanding  */
      cexp_i_alpha   = pPrec->cexp_i_alpha;
@@ -2034,7 +2037,7 @@ static int IMRPhenomXPHMTwistUp(
       COMPLEX16 A22emmstar = cexp_im_alpha_l2[m+2] * d22[m+2] *  conj(Y2mA[m+2]);
 
       hp_sum +=    A2m2emm + polarizationSymmetry * A22emmstar;
-      hc_sum += I*(A2m2emm - polarizationSymmetry * A22emmstar);  
+      hc_sum += I*(A2m2emm - polarizationSymmetry * A22emmstar);
     }
   }
 
@@ -2294,8 +2297,9 @@ static int IMRPhenomXPHMTwistUp(
 *        - 0: Switch off the multibanding.
 *
 *   MBandPrecVersion: Determines the algorithm to build the non-uniform frequency grid for the Euler angles.
-*        - 0: (DEFAULT) Not use multibanding.  Activated to 1 when PrecThresholdMband is non-zero.
+*        - 0: (DEFAULT) Not use multibanding.  Activated to 1 when PrecThresholdMband is non-zero. Note that the default for PrecThresholdMband is not zero, so this will turn on by default.
 *        - 1: Use the same grid that for the non-precessing modes. Activated when PrecThresholdMband is non-zero.
+*        - 2: This enables the conditionalPrecMBand flag defined in LALSimIMRPhenomX_precession.c, where the precession multibanding is disabled when q>7 and the opening angle dramatically closes near merger.
 **/
 
 
@@ -2437,11 +2441,14 @@ int XLALSimIMRPhenomXPHMOneMode(
   /* Initialize IMRPhenomX Precession struct and check that it generated successfully. */
   IMRPhenomXPrecessionStruct *pPrec;
   pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
-  
+
   // only relevant for SpinTaylor angles
   int pflag =XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
-  if(pflag==310||pflag==311||pflag==320||pflag==321){
-  pPrec->M_MIN = m, pPrec->M_MAX = l;
+  if(pflag==310||pflag==311||pflag==320||pflag==321||pflag==330){
+
+    pPrec->M_MIN = MAX(1,abs(m)), pPrec->M_MAX = l;
+    pPrec->L_MAX_PNR = l;
+
   }
 
 
@@ -2460,9 +2467,9 @@ int XLALSimIMRPhenomXPHMOneMode(
              PHENOMXDEBUG
            );
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
-  
+
   if(pPrec->precessing_tag==3){
-        
+
         status=IMRPhenomX_Initialize_Euler_Angles(pWF,pPrec,lalParams);
         XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_Initialize_Euler_Angles failed.\n");
       }
@@ -2551,7 +2558,7 @@ int XLALSimIMRPhenomXPHMOneMode(
   *hlmneg = XLALResizeCOMPLEX16FrequencySeries(*hlmneg, 0, n_full);
   XLAL_CHECK (*hlmneg, XLAL_ENOMEM, "Failed to resize hlmneg COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, pWF->fCut, n_full, pWF->fMax );
 
- 
+
  if(pPrec->precessing_tag==3)
   {
   LALFree(pPrec->alpha_params);
@@ -2560,7 +2567,7 @@ int XLALSimIMRPhenomXPHMOneMode(
   gsl_spline_free(pPrec->alpha_spline);
   gsl_spline_free(pPrec->cosbeta_spline);
   gsl_spline_free(pPrec->gamma_spline);
-      
+
   gsl_interp_accel_free(pPrec->alpha_acc);
   gsl_interp_accel_free(pPrec->gamma_acc);
   gsl_interp_accel_free(pPrec->cosbeta_acc);
@@ -2572,8 +2579,8 @@ int XLALSimIMRPhenomXPHMOneMode(
   LALFree(pPrec);
   XLALDestroyREAL8Sequence(freqs);
   XLALDestroyDict(lalParams_aux);
-  
-  
+
+
 
   return XLAL_SUCCESS;
 }
@@ -2694,11 +2701,18 @@ int XLALSimIMRPhenomXPHMFrequencySequenceOneMode(
   /* Initialize IMRPhenomX Precession struct and check that it generated successfully. */
   IMRPhenomXPrecessionStruct *pPrec;
   pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
-  
+
   // only relevant for SpinTaylor angles
   int pflag =XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
-  if(pflag==310||pflag==311||pflag==320||pflag==321){
-  pPrec->M_MIN = m, pPrec->M_MAX = l;
+  if(pflag==310||pflag==311||pflag==320||pflag==321||pflag==330){
+
+    pPrec->M_MIN = MAX(1,abs(m)), pPrec->M_MAX = l;
+    pPrec->L_MAX_PNR = l;
+  }
+
+  if(XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedAngles(lalParams_aux) == 1)
+  {
+    XLALSimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(lalParams_aux,0);
   }
 
   status = IMRPhenomXGetAndSetPrecessionVariables(
@@ -2716,9 +2730,9 @@ int XLALSimIMRPhenomXPHMFrequencySequenceOneMode(
              PHENOMXDEBUG
            );
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
-  
+
   if(pPrec->precessing_tag==3){
-        
+
         status=IMRPhenomX_Initialize_Euler_Angles(pWF,pPrec,lalParams);
         XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_Initialize_Euler_Angles failed.\n");
       }
@@ -2785,9 +2799,9 @@ int XLALSimIMRPhenomXPHMFrequencySequenceOneMode(
   #if DEBUG == 1
   printf("\n\n **** Call to IMRPhenomXPHM_OneMode complete. **** \n\n");
   #endif
-  
+
   //CHECK ME
-  
+
   if(pPrec->precessing_tag==3)
   {
   LALFree(pPrec->alpha_params);
@@ -2796,11 +2810,11 @@ int XLALSimIMRPhenomXPHMFrequencySequenceOneMode(
   gsl_spline_free(pPrec->alpha_spline);
   gsl_spline_free(pPrec->cosbeta_spline);
   gsl_spline_free(pPrec->gamma_spline);
-      
+
   gsl_interp_accel_free(pPrec->alpha_acc);
   gsl_interp_accel_free(pPrec->gamma_acc);
   gsl_interp_accel_free(pPrec->cosbeta_acc);
-      
+
   }
 
   /* Free memory */
@@ -3072,7 +3086,7 @@ static int IMRPhenomXPHM_OneMode(
           XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_LinearFrequencyMapTransitionFrequencies failed.\n");
         }
       }
-      
+
       for (UINT4 idx = 0; idx < freqs->length; idx++)
       {
           REAL8 Mf = pWF->M_sec * freqs->data[idx];
@@ -3097,11 +3111,9 @@ static int IMRPhenomXPHM_OneMode(
           pPrec->gammaPNR = gsl_spline_eval(hm_angle_spline->gamma_spline, f_mapped, hm_angle_spline->gamma_acc);
         }
 
-
-        
         // Twist up
         IMRPhenomXPHMTwistUpOneMode(Mf, hlmcoprec, hlmcoprec_antiSym, pWF, pPrec, ell, emmprime, m, hlm);
-        
+
 
         (*hlmpos)->data->data[idx + offset] += hlm->data[0];     // Positive frequencies. Freqs do 0, df, 2df, ...., fmax
         (*hlmneg)->data->data[idx + offset] += hlm->data[1];     // Negative frequencies. Freqs do 0, -df, -2df, ...., -fmax
@@ -3237,67 +3249,72 @@ static int IMRPhenomXPHMTwistUpOneMode(
       case 311:
       case 320:
       case 321:
-     
+      case 330:
+
       {
         /* Get Euler angles. */
         int success = XLAL_SUCCESS;
         REAL8 cos_beta=0., gamma=0., alpha_i=0.;
-        
+
         REAL8 alpha_offset_mprime = pPrec->alpha_ref- pPrec->alpha0;
         REAL8 epsilon_offset_mprime = -pPrec->gamma_ref-pPrec->epsilon0;
-          
+
         REAL8 Mfprime = Mf * (2.0 / mprime);
-        
+
           if(Mfprime< pPrec->ftrans_MRD)
         {
             success = success + gsl_spline_eval_e(pPrec->cosbeta_spline, Mfprime, pPrec->cosbeta_acc,&cos_beta);
             success = success + gsl_spline_eval_e(pPrec->gamma_spline,  Mfprime, pPrec->gamma_acc, &gamma);
             success = success + gsl_spline_eval_e(pPrec->alpha_spline, Mfprime, pPrec->alpha_acc,&alpha_i);
-            
+
             XLAL_CHECK(success == XLAL_SUCCESS, XLAL_EFUNC, "%s: Failed to interpolate angles at f=%.7f, got alpha_i=%.4f, cosbeta=%.4f, gamma=%.4f: \n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mfprime,pWF->Mtot),alpha_i,cos_beta,gamma);
-            
+
             pPrec->gamma_in = gamma;
-            
+
         }
-          
-              
-              
+
+
+
           else {
-              
+
               if(pPrec->IMRPhenomXPrecVersion==320 || pPrec->IMRPhenomXPrecVersion==321  )
               {
-                  
+
                   alpha_i=alphaMRD(Mfprime,pPrec->alpha_params);
                   cos_beta=cos(betaMRD(Mfprime,pWF,pPrec->beta_params));
-                  REAL8 deltagamma=0.;
-                  success = gamma_from_alpha_cosbeta(&deltagamma, Mfprime, pWF->deltaMF*2./mprime,pWF,pPrec);
-                  if(success!=XLAL_SUCCESS) gamma = pPrec->gamma_in;
-                  else gamma =pPrec->gamma_in+deltagamma;
+                  success = gsl_spline_eval_e(pPrec->gamma_spline,  Mfprime, pPrec->gamma_acc, &gamma);
+                  if(success!=XLAL_SUCCESS)
+                   {
+                    REAL8 deltagamma=0.;
+                    success = gamma_from_alpha_cosbeta(&deltagamma, Mfprime, pWF->deltaMF*2./mprime,pWF,pPrec);
+                    XLAL_CHECK(success == XLAL_SUCCESS, XLAL_EFUNC, "%s: Failed to evaluate gamma at f=%.7f for (l,m)=(%d,%d).\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mfprime,pWF->Mtot),l,mprime);
+                    gamma =pPrec->gamma_in+deltagamma;
+                    }
                   pPrec->gamma_in = gamma;
-          
+
                }
          else{
              // just repeat the last cached value for the Euler angles
                   alpha_i = pPrec->alpha_ftrans;
                   cos_beta = pPrec->cosbeta_ftrans;
                   gamma = pPrec->gamma_ftrans;
-             
-          
+
+
               }
           }
-          
-       
-       
-        
+
+
+
+
         alpha = alpha_i- alpha_offset_mprime;
         epsilon = -gamma - epsilon_offset_mprime;
-            
+
         INT4 status = 0;
         status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
         XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
         break;
       }
-    
+
     default:
     {
       XLAL_ERROR(XLAL_EINVAL,"Error. IMRPhenomXPrecVersion not recognized. Recommended default is 223.\n");
@@ -3403,11 +3420,11 @@ static int IMRPhenomXPHMTwistUpOneMode(
   COMPLEX16 eps_phase_hP_lmprime_neg;
 
   /* See eqs. E3-E4 in Precessing paper. */
-  COMPLEX16 exp_imprime_epsilon = cexp(mprime*I*epsilon);   
+  COMPLEX16 exp_imprime_epsilon = cexp(mprime*I*epsilon);
 
   eps_phase_hP_lmprime = 1./exp_imprime_epsilon * (hlmprime + hlmprime_antisym);
   eps_phase_hP_lmprime_neg = exp_imprime_epsilon * minus1l * conj(hlmprime - hlmprime_antisym);
- 
+
  /* Return h_lminertail */
  (hlminertial)->data[0] = eps_phase_hP_lmprime * hlm;
  (hlminertial)->data[1] = eps_phase_hP_lmprime_neg * hlmneg;

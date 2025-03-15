@@ -70,7 +70,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
     logp1_si, double gamma1, double gamma2, double gamma3);
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double 
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double
     gamma[], int size);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterSpectralDecomposition(
     double SDgamma0, double SDgamma1, double SDgamma2, double SDgamma3);
@@ -136,12 +136,12 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     LALSimNeutronStarEOS * eos, double epsrel);
 
 int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
-    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6, 
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos);
 
 int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *mass,
-    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6, 
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos, double epsrel);
 

@@ -3,27 +3,27 @@
 ## Dumps weights vectors or noise estimate for a set of sfts
 
 ## ./MultiWeights usage
-## 
-##  -d                    INT      set lalDebugLevel [0] 
-##   -h, --help            BOOL     Print this message [] 
-##   -f, --f0              REAL     Start search frequency [505] 
-##   -b, --fSearchBand     REAL     Search frequency band [0.05] 
-##       --printLog        BOOL     Print Log file [FALSE] 
-##   -D, --sftDir          STRING   SFT filename pattern [REQUIRED] 
-##       --linefiles       LIST     Comma separated List of linefiles (filenames must contain IFO name) [NULL] 
-##       --startTime       REAL     GPS start time of observation [0.0] 
-##       --endTime         REAL     GPS end time of observation [2147483647] 
-##       --timeStampsFile  STRING   Input time-stamps file [NULL] 
-##       --weightAM        BOOL     Use amplitude modulation weights [TRUE] 
-##       --weightNoise     BOOL     Use SFT noise weights [TRUE] 
-##       --dumpAllWeights  BOOL     Dump all weights [FALSE] 
-##       --dumpRelativeWeights BOOL     Dump IFO relative weights [FALSE] 
-##       --dumpNoise       BOOL     Dump Noise estimate [FALSE] 
-##   -E, --earthEphemeris  STRING   Earth Ephemeris file ["./earth05-09.dat"] 
-##   -S, --sunEphemeris    STRING   Sun Ephemeris file ["./sun05-09.dat"] 
-##       --AlphaWeight     REAL     sky Alpha for weight calculation [1] 
-##       --DeltaWeight     REAL     sky Delta for weight calculation [1] 
-##       --outfile         STRING   output file name ["./tempout"] 
+##
+##  -d                    INT      set lalDebugLevel [0]
+##   -h, --help            BOOL     Print this message []
+##   -f, --f0              REAL     Start search frequency [505]
+##   -b, --fSearchBand     REAL     Search frequency band [0.05]
+##       --printLog        BOOL     Print Log file [FALSE]
+##   -D, --sftDir          STRING   SFT filename pattern [REQUIRED]
+##       --linefiles       LIST     Comma separated List of linefiles (filenames must contain IFO name) [NULL]
+##       --startTime       REAL     GPS start time of observation [0.0]
+##       --endTime         REAL     GPS end time of observation [2147483647]
+##       --timeStampsFile  STRING   Input time-stamps file [NULL]
+##       --weightAM        BOOL     Use amplitude modulation weights [TRUE]
+##       --weightNoise     BOOL     Use SFT noise weights [TRUE]
+##       --dumpAllWeights  BOOL     Dump all weights [FALSE]
+##       --dumpRelativeWeights BOOL     Dump IFO relative weights [FALSE]
+##       --dumpNoise       BOOL     Dump Noise estimate [FALSE]
+##   -E, --earthEphemeris  STRING   Earth Ephemeris file ["./earth05-09.dat"]
+##   -S, --sunEphemeris    STRING   Sun Ephemeris file ["./sun05-09.dat"]
+##       --AlphaWeight     REAL     sky Alpha for weight calculation [1]
+##       --DeltaWeight     REAL     sky Delta for weight calculation [1]
+##       --outfile         STRING   output file name ["./tempout"]
 
 
 ## DataFiles="/sft/S5-LIGO/H1-1800SFT/*.sft";
@@ -59,7 +59,7 @@ cmdline = sprintf("/home/all64/lscsoft/lalapps/src/pulsar/hough/src/MultiWeights
 	 --weightAM=%.12g --weightNoise=%.12g \
 	 --dumpAllWeights=%.12g --dumpRelativeWeights=%.12g --dumpNoise=%.12g -d 0",\
        DataFiles, EarthE, SunE, fStart, fBand,  AlphaWeight, DeltaWeight,\
-       WeightAM, WeightNoise, DumpAllWeights, DumpRelativeW,DumpNoise); 
+       WeightAM, WeightNoise, DumpAllWeights, DumpRelativeW,DumpNoise);
 
 system ( cmdline );
 
@@ -78,7 +78,7 @@ cmdline = sprintf("/home/all64/lscsoft/lalapps/src/pulsar/hough/src/MultiWeights
 	 --weightAM=%.12g --weightNoise=%.12g \
 	 --dumpAllWeights=%.12g --dumpRelativeWeights=%.12g --dumpNoise=%.12g -d 0",\
        DataFiles, EarthE, SunE, fStart, fBand,  AlphaWeight, DeltaWeight,\
-       WeightAM, WeightNoise, DumpAllWeights, DumpRelativeW,DumpNoise); 
+       WeightAM, WeightNoise, DumpAllWeights, DumpRelativeW,DumpNoise);
 
 system ( cmdline );
 

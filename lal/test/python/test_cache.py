@@ -24,7 +24,7 @@ import sys
 
 import pytest
 
-from ligo import segments
+import igwn_segments as segments
 
 from lal import (
     LIGOTimeGPS,

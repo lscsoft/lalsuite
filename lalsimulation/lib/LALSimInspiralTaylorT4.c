@@ -48,7 +48,7 @@
 
 typedef struct
 tagexpnCoeffsTaylorT4 {
-   
+
    /*Angular velocity coefficient*/
    REAL8 av;
 
@@ -93,7 +93,7 @@ tagexpnFuncTaylorT4
  * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
  */
 
-static REAL8 
+static REAL8
 XLALSimInspiralAngularAcceleration4_0PN(
 	REAL8 v,		/**< post-Newtonian parameter */
 	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
@@ -101,7 +101,7 @@ XLALSimInspiralAngularAcceleration4_0PN(
 {
 	REAL8 ans;
 	REAL8 v9;
-    
+
 	v9 = pow(v, 9.0);
 
 	ans = ak->aatN * v9;
@@ -109,7 +109,7 @@ XLALSimInspiralAngularAcceleration4_0PN(
 	return ans;
 }
 
-static REAL8 
+static REAL8
 XLALSimInspiralAngularAcceleration4_2PN(
 	REAL8 v,		/**< post-Newtonian parameter */
 	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
@@ -117,7 +117,7 @@ XLALSimInspiralAngularAcceleration4_2PN(
 {
 	REAL8 ans;
 	REAL8 v2,v9,v10,v12;
-    
+
 	v2 = v*v;
 	v9 = pow(v, 9.0);
 	v10 = v9*v;
@@ -133,7 +133,7 @@ XLALSimInspiralAngularAcceleration4_2PN(
 	return ans;
 }
 
-static REAL8 
+static REAL8
 XLALSimInspiralAngularAcceleration4_3PN(
 	REAL8 v,		/**< post-Newtonian parameter */
 	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
@@ -141,7 +141,7 @@ XLALSimInspiralAngularAcceleration4_3PN(
 {
 	REAL8 ans;
 	REAL8 v2,v3,v9,v10,v12;
-    
+
 	v2 = v*v;
 	v3 = v2*v;
 	v9 = v3*v3*v3;
@@ -159,7 +159,7 @@ XLALSimInspiralAngularAcceleration4_3PN(
 	return ans;
 }
 
-static REAL8 
+static REAL8
 XLALSimInspiralAngularAcceleration4_4PN(
 	REAL8 v,		/**< post-Newtonian parameter */
 	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
@@ -167,7 +167,7 @@ XLALSimInspiralAngularAcceleration4_4PN(
 {
 	REAL8 ans;
 	REAL8 v2,v3,v4,v9,v10,v12;
-    
+
 	v2 = v*v;
 	v3 = v2*v;
 	v4 = v3*v;
@@ -187,7 +187,7 @@ XLALSimInspiralAngularAcceleration4_4PN(
 	return ans;
 }
 
-static REAL8 
+static REAL8
 XLALSimInspiralAngularAcceleration4_5PN(
 	REAL8 v,		/**< post-Newtonian parameter */
 	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
@@ -195,7 +195,7 @@ XLALSimInspiralAngularAcceleration4_5PN(
 {
 	REAL8 ans;
 	REAL8 v2,v3,v4,v5,v9,v10,v12;
-    
+
 	v2 = v*v;
 	v3 = v2*v;
 	v4 = v3*v;
@@ -217,7 +217,7 @@ XLALSimInspiralAngularAcceleration4_5PN(
 	return ans;
 }
 
-static REAL8 
+static REAL8
 XLALSimInspiralAngularAcceleration4_6PN(
 	REAL8 v,		/**< post-Newtonian parameter */
 	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
@@ -225,7 +225,7 @@ XLALSimInspiralAngularAcceleration4_6PN(
 {
 	REAL8 ans;
 	REAL8 v2,v3,v4,v5,v6,v9,v10,v12;
-    
+
 	v2 = v*v;
 	v3 = v2*v;
 	v4 = v3*v;
@@ -249,7 +249,7 @@ XLALSimInspiralAngularAcceleration4_6PN(
 	return ans;
 }
 
-static REAL8 
+static REAL8
 XLALSimInspiralAngularAcceleration4_7PN(
 	REAL8 v,		/**< post-Newtonian parameter */
 	expnCoeffsTaylorT4 *ak	/**< PN co-efficients and intrinsic parameters */
@@ -257,7 +257,7 @@ XLALSimInspiralAngularAcceleration4_7PN(
 {
 	REAL8 ans;
 	REAL8 v2,v3,v4,v5,v6,v7,v9,v10,v12;
-    
+
 	v2 = v*v;
 	v3 = v2*v;
 	v4 = v3*v;
@@ -292,7 +292,7 @@ typedef struct
 /**
  * This function is used in the call to the GSL integrator.
  */
-static int 
+static int
 XLALSimInspiralTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const double y[], double ydot[], void *params)
 {
 	XLALSimInspiralTaylorT4PNEvolveOrbitParams* p = (XLALSimInspiralTaylorT4PNEvolveOrbitParams*)params;
@@ -310,7 +310,7 @@ XLALSimInspiralTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const double y[],
  *
  * Inputs given in SI units.
  */
-static int 
+static int
 XLALSimInspiralTaylorT4Setup(
     expnCoeffsTaylorT4 *ak,         /**< coefficients for TaylorT4 evolution [modified] */
     expnFuncTaylorT4 *f,            /**< functions for TaylorT4 evolution [modified] */
@@ -422,7 +422,7 @@ XLALSimInspiralTaylorT4Setup(
             XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", __func__);
             XLAL_ERROR(XLAL_EINVAL);
     }
-  
+
   return 0;
 }
 
@@ -600,7 +600,7 @@ int XLALSimInspiralTaylorT4PNGenerator(
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR(XLAL_EINVAL);
 	}
@@ -656,13 +656,13 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT4PNModes(
 	/* Sanity check fRef value */
 	if( fRef < 0. )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
 				__func__, fRef);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
@@ -726,13 +726,13 @@ COMPLEX16TimeSeries *XLALSimInspiralTaylorT4PNMode(
 	/* Sanity check fRef value */
 	if( fRef < 0. )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n",
 				__func__, fRef);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 	if( fRef != 0. && fRef < f_min )
 	{
-		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n",
 				__func__, fRef, f_min);
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}

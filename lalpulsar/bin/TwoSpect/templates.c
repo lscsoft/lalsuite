@@ -991,5 +991,3 @@ REAL8 sqsincxoverxsqminusone( const REAL8 x )
   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
   return val * val;
 } /* sqsincxoverxsqminusone() */
-
-

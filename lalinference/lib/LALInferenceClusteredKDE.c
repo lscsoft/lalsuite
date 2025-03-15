@@ -961,7 +961,7 @@ gsl_matrix *mask_data(gsl_matrix *data, INT4 *mask) {
     INT4 new_N = 0;
     for (i = 0; i < N; i++)
         new_N += mask[i];
- 
+
     /* Return NULL if masked array is empty */
     gsl_matrix *masked_data = NULL;
     if (new_N > 0)

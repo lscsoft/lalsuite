@@ -38,9 +38,9 @@ import os
 import sys
 
 from lal.utils import CacheEntry
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw import utils as ligolw_utils
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw import utils as ligolw_utils
 from functools import reduce
 from lal import git_version
 

@@ -13,22 +13,22 @@ Build-Depends:
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
  python3-all-dev,
+ python3-igwn-ligolw (>= @MIN_PYTHON_LIGO_LW_VERSION@~),
+ python3-igwn-segments,
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
- python3-ligo-lw (>= @MIN_PYTHON_LIGO_LW_VERSION@~),
- python3-ligo-segments,
  python3-lscsoft-glue,
  python3-matplotlib,
  python3-numpy,
  python3-pil,
  python3-pytest,
- python3-scipy,
+ python3-scipy (>= @MIN_SCIPY_VERSION@~),
  python3-tqdm,
  rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-X-Python3-Version: >= 3.5
+X-Python3-Version: >= 3.6
 Standards-Version: 3.9.8
 
 Package: liblalburst@LIBMAJOR@
@@ -81,14 +81,14 @@ Depends:
  ${python3:Depends},
  ${shlibs:Depends},
  liblalburst@LIBMAJOR@ (= ${binary:Version}),
+ python3-igwn-ligolw,
+ python3-igwn-segments,
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
- python3-ligo-lw,
- python3-ligo-segments,
  python3-lscsoft-glue,
  python3-matplotlib,
- python3-scipy,
+ python3-scipy (>= @MIN_SCIPY_VERSION@~),
  python3-tqdm,
 Description: Python 3 bindings foar LALBurst
  The LVK Algorithm Burst Library for gravitational wave data analysis.
@@ -100,15 +100,15 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  liblalburst@LIBMAJOR@ (= ${binary:Version}),
+ python3-igwn-ligolw,
+ python3-igwn-segments,
  python3-lal,
  python3-lalburst (= ${binary:Version}),
  python3-lalmetaio,
- python3-ligo-lw,
- python3-ligo-segments,
  python3-matplotlib,
  python3-numpy,
  python3-pil,
- python3-scipy,
+ python3-scipy (>= @MIN_SCIPY_VERSION@~),
  python3-tqdm,
 Description: LVK Algorithm Library Burst
  The LVK Algorithm Burst Library for gravitational wave data analysis.

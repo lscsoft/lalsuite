@@ -31,7 +31,7 @@ import sys
 from optparse import OptionParser
 
 
-from ligo import segments
+import igwn_segments as segments
 
 
 from lal.utils import CacheEntry

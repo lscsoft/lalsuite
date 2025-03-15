@@ -385,7 +385,7 @@ static void Init_LALDATA(void)
  *   Mtot >= 12Msun
  *   10 <= fmin <= 1823
  *
- * Download the data file SEOBNRv2ChirpTimeSS.dat from 
+ * Download the data file SEOBNRv2ChirpTimeSS.dat from
  * https://dcc.ligo.org/LIGO-G1500097 and point LAL_DATA_PATH to it.
  *
  * @{

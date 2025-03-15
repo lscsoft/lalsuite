@@ -230,15 +230,15 @@ LALFindChirpTDTemplate (
     /* get the template norm right */
     if ( params->approximant==EOBNR )
     {
-     /* lalinspiral EOBNR code produces correct norm when 
+     /* lalinspiral EOBNR code produces correct norm when
         fed unit signalAmplitude and non-physical distance */
       tmplt->signalAmplitude = 1.0;
       tmplt->distance      = -1.0;
     }
     else if ( params->approximant==EOBNRv2 )
     {
-     /* this formula sets the ampl0 variable to 1.0 
-      * within the lalsimulation EOBNRv2 waveform engine 
+     /* this formula sets the ampl0 variable to 1.0
+      * within the lalsimulation EOBNRv2 waveform engine
       * which again produces a correct template norm     */
       tmplt->distance      = tmplt->totalMass*LAL_MRSUN_SI;
     }

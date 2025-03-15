@@ -18,7 +18,7 @@
  *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *  MA  02110-1301  USA
  */
- 
+
 #ifndef _LALINFERENCECALIBRATIONERRORS_H  /* Double-include protection. */
 #define _LALINFERENCECALIBRATIONERRORS_H
 #include <stdio.h>
@@ -45,4 +45,3 @@
 
 void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 #endif
-

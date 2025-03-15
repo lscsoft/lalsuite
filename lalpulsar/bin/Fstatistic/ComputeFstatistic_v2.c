@@ -787,7 +787,16 @@ int main( int argc, char *argv[] )
     REAL8 num_templates = numTemplates * GV.numFreqBins_FBand;        // 'templates' now refers to number of 'frequency-bands' in resampling case
 
     timing.NSFTs = GV.NSFTs;
-    timing.NFreq = ( UINT4 )( 1 + floor( GV.searchRegion.fkdotBand[0] / GV.dFreq ) );
+    if ( uvar.gridType == GRID_SPINDOWN_SQUARE || uvar.gridType == GRID_SPINDOWN_AGEBRK ) {
+      /* In this case, dFreq is not meaningful,
+       * but we can get the number of points from the lattice tiling code.
+       * The number of frequency points covered is dimension 2 of the lattice.
+       * (0 and 1 are sky locations which are not tiled.)
+       */
+      timing.NFreq = XLALNumDopplerPointsAtDimension( GV.scanState, 2 );
+    } else {
+      timing.NFreq = ( UINT4 )( 1 + floor( GV.searchRegion.fkdotBand[0] / GV.dFreq ) );
+    }
 
     // compute averages:
     timing.tauFstat    /= num_templates;
@@ -1828,8 +1837,8 @@ checkUserInputConsistency( const UserInput_t *uvar )
     if ( uvar->gridType == GRID_SPINDOWN_SQUARE || uvar->gridType == GRID_SPINDOWN_AGEBRK ) {
 
       /* Check that no grid spacings were given */
-      if ( uvar->df1dot != 0.0 || uvar->df2dot != 0.0 || uvar->df3dot != 0.0 ) {
-        XLALPrintError( "\nERROR: df{1,2,3}dot cannot be used with gridType={8,9}\n\n" );
+      if ( uvar->dFreq != 0.0 || uvar->df1dot != 0.0 || uvar->df2dot != 0.0 || uvar->df3dot != 0.0 ) {
+        XLALPrintError( "\nERROR: dFreq and df{1,2,3}dot cannot be used with gridType={8,9}\n\n" );
         XLAL_ERROR( XLAL_EINVAL );
       }
 

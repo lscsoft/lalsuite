@@ -67,7 +67,7 @@ subplot(5,1,4);
 
 subplot(5,1,5);
   axis([290 300 400 800]);
-  
+
 print(gcf, '-djpeg', ['H1maxAll_250_300.jpeg'])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -87,7 +87,7 @@ subplot(5,1,4);
 
 subplot(5,1,5);
   axis([340 350 400 800]);
-    
+
 print(gcf, '-djpeg', ['H1maxAll_300_350.jpeg'])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -105,7 +105,7 @@ subplot(5,1,4);
 
 subplot(5,1,5);
   axis([390 400 400 800]);
-    
+
 print(gcf, '-djpeg', ['H1maxAll_350_400.jpeg'])
 
 %print(gcf, '-djpeg', ['trend_01123_' channel '.jpeg'])

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Craig Robinson 
+*  Copyright (C) 2010 Craig Robinson
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -205,7 +205,7 @@ REAL8 GetNRPeakADDot( INT4 l, INT4 m, REAL8 eta )
   }
 }
 
-static inline 
+static inline
 REAL8 GetNRPeakOmega( INT4 l, INT4 m, REAL8 eta )
 {
   switch ( l )
@@ -260,7 +260,7 @@ REAL8 GetNRPeakOmega( INT4 l, INT4 m, REAL8 eta )
   }
 }
 
-static inline 
+static inline
 REAL8 GetNRPeakOmegaDot( INT4 l, INT4 m, REAL8 eta )
 {
   switch ( l )
@@ -325,7 +325,7 @@ REAL8 GetNRPeakOmegaDot( INT4 l, INT4 m, REAL8 eta )
 int XLALGetCalibratedNQCCoeffs( EOBNonQCCoeffs *coeffs,
                                 INT4            l,
                                 INT4            m,
-                                REAL8           eta 
+                                REAL8           eta
                                 )
 {
 
@@ -340,7 +340,7 @@ int XLALGetCalibratedNQCCoeffs( EOBNonQCCoeffs *coeffs,
     XLAL_ERROR( XLAL_EINVAL );
   }
 
-  /* All NQC coefficients are set to zero here */ 
+  /* All NQC coefficients are set to zero here */
   /* including coeffs->a4 that is not used in EOBNRv2 */
   memset( coeffs, 0, sizeof( *coeffs ) );
 
@@ -416,7 +416,7 @@ int XLALCalculateNQCCoefficients(
   /* Since the vectors we actually want are q etc * A, we will have to generate them here */
   REAL8Vector *q1LM = NULL;
   REAL8Vector *q2LM = NULL;
-  REAL8Vector *q3LM = NULL; 
+  REAL8Vector *q3LM = NULL;
 
   REAL8 a, aDot, aDDot;
   REAL8 omega, omegaDot;
@@ -438,7 +438,7 @@ int XLALCalculateNQCCoefficients(
 
   gsl_permutation *perm1 = NULL, *perm2 = NULL;
 
-  /* All NQC coefficients are set to zero here */ 
+  /* All NQC coefficients are set to zero here */
   /* including coeffs->a4 that is not used in EOBNRv2 */
   memset( coeffs, 0, sizeof( EOBNonQCCoeffs ) );
 

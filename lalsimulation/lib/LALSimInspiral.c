@@ -186,6 +186,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomTP),
     INITIALIZE_NAME(IMRPhenomTPHM),
     INITIALIZE_NAME(IMRPhenomXO4a),
+    INITIALIZE_NAME(IMRPhenomXPNR),
     INITIALIZE_NAME(IMRPhenomXAS_NRTidalv2),
     INITIALIZE_NAME(IMRPhenomXP_NRTidalv2),
     INITIALIZE_NAME(IMRPhenomXAS_NRTidalv3),
@@ -317,6 +318,7 @@ const LALSimInspiralGenerator *lalSimInspiralGeneratorTemplates[NumApproximants]
     [IMRPhenomXAS_NRTidalv3] = &lalIMRPhenomXAS_NRTidalv3GeneratorTemplate,
     [IMRPhenomXP_NRTidalv3] = &lalIMRPhenomXP_NRTidalv3GeneratorTemplate,
     [IMRPhenomXO4a] = &lalIMRPhenomXO4aGeneratorTemplate,
+    [IMRPhenomXPNR] = &lalIMRPhenomXPNRGeneratorTemplate,
     [Lackey_Tidal_2013_SEOBNRv2_ROM] = &lalLackey_Tidal_2013_SEOBNRv2_ROMGeneratorTemplate,
     [NRHybSur3dq8] = &lalNRHybSur3dq8GeneratorTemplate,
     [NRSur4d2s] = &lalNRSur4d2sGeneratorTemplate,
@@ -384,12 +386,12 @@ const LALSimInspiralGenerator *lalSimInspiralGeneratorTemplates[NumApproximants]
  *
  * @{
  */
- 
+
  /**
   * @name New Interface Generator Routines
   * @{
   */
-  
+
   /**
    * Destroy LALSimInspiralGenerator object.
    */
@@ -465,11 +467,11 @@ const char *XLALSimInspiralGeneratorName(LALSimInspiralGenerator *generator)
  * @name New Interface Waveform Routines
  * @{
  */
- 
+
 /**
  * Returns time-domain polarizations for a specific approximant.
  * Equivalent to XLALSimInspiralChooseTDWaveform(). Equivalent to XLALSimInspiralTD() if the option `condition` is activated in the LALDict.
- * The waveform arguments are inserted into the LALDict. The generator carries the info about the approximant and potentially extra data which could be recycled by the model to speed-up calculation.  
+ * The waveform arguments are inserted into the LALDict. The generator carries the info about the approximant and potentially extra data which could be recycled by the model to speed-up calculation.
  *
  * The parameters in the LALDict must be in SI units.
  */
@@ -492,7 +494,7 @@ int XLALSimInspiralGenerateTDWaveform(
 /**
  * Compute time-domain modes for a specific approximant.
  * Equivalent to XLALSimInspiralChooseTDModes(). The only difference is that the SphHarmSeries object needs to be passed as an argument to the function. The actual returned value is an integer which indicates success or error in the waveform evaluation (see https://lscsoft.docs.ligo.org/lalsuite/lal/group___x_l_a_l_error__h.html).
- * The waveform arguments are inserted into the LALDict. The generator carries the info about the approximant and potentially extra data which could be recycled by the model to speed-up calculation.  
+ * The waveform arguments are inserted into the LALDict. The generator carries the info about the approximant and potentially extra data which could be recycled by the model to speed-up calculation.
  *
  * The parameters in the LALDict must be in SI units.
  */
@@ -514,7 +516,7 @@ int XLALSimInspiralGenerateTDModes(
 /**
  * Returns frequency-domain polarizations for a specific approximant.
  * Equivalent to XLALSimInspiralChooseFDWaveform(). Equivalent to XLALSimInspiralFD() if the option `condition` is activated in the LALDict.
- * The waveform arguments are inserted into the LALDict. The generator carries the info about the approximant and potentially extra data which could be recycled by the model to speed-up calculation.  
+ * The waveform arguments are inserted into the LALDict. The generator carries the info about the approximant and potentially extra data which could be recycled by the model to speed-up calculation.
  *
  * The parameters in the LALDict must be in SI units.
  */
@@ -534,9 +536,9 @@ int XLALSimInspiralGenerateFDWaveform(
 }
 
 /**
- * Compute frequency-domain modes for a specific approximant. 
+ * Compute frequency-domain modes for a specific approximant.
  * Equivalent to XLALSimInspiralChooseFDModes. The only difference is that the SphHarmSeries object needs to be passed as an argument to the function. The actual returned value is an integer which indicates success or error in the waveform evaluation (see https://lscsoft.docs.ligo.org/lalsuite/lal/group___x_l_a_l_error__h.html).
- * The waveform arguments are inserted into the LALDict. The generator carries the info about the approximant and potentially extra data which could be recycled by the model to speed-up calculation.  
+ * The waveform arguments are inserted into the LALDict. The generator carries the info about the approximant and potentially extra data which could be recycled by the model to speed-up calculation.
  *
  * The parameters in the LALDict must be in SI units.
  */
@@ -738,7 +740,7 @@ void XLALSimInspiralParseDictionaryToChooseFDModes(
 
 
 
- 
+
  /** @} */
 
 /**
@@ -1539,9 +1541,9 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
  * It is relevant to mention why the arguments inclination and phiRef are needed for computing the h_lm.
  * For AS models the argument inclination is irrelevant and will not be use since it only enters in the Ylm. However, for the precessing model,
  * since the modes are returned in the J-frame, we need the inclination argument to carry out the Euler transformation from the co-precessing L-frame
- * to the inertial J-frame. Regarding the argument phiRef, this affects the output of the precessing model due to the same reason as before, while for the AS models 
+ * to the inertial J-frame. Regarding the argument phiRef, this affects the output of the precessing model due to the same reason as before, while for the AS models
  * it would not affect the output of SEOBNRv4HM_ROM, SEOBNRv5(HM)_ROM but will change the output of IMRPhenomHM and IMRPhenomXHM (this is due to the internals workings of the models).
- * If one wants to built the polarizations from the individual modes of ChooseFDModes must be aware of this behaviour. 
+ * If one wants to built the polarizations from the individual modes of ChooseFDModes must be aware of this behaviour.
  * Ideally, one would call ChooseFDModes with phiRef=0 to obtain the h_lms, then build the Fourier domain polarizations as
  *
  * h_+ (f) = 1/2 sum_{l=2} sum_{m=-l}^{m=l}  (  h_lm(f) * Y_lm(theta, vphi)  +  h*_lm(-f) * Y*_lm(theta, vphi)  )
@@ -2393,6 +2395,15 @@ int XLALSimInspiralPolarizationsFromChooseFDModes(
         XLAL_CHECK(XLAL_SUCCESS == ret, XLAL_EFUNC, "Error: XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame failed.\n");
         azimuthal = 0.;
         break;
+
+        case IMRPhenomXPNR:
+        phiRef_modes = phiRef;
+        d1=0, d2=0, d3=0, d4=0, d5=0;
+        ret = XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame(&d1, &d2, &d3, &theta, &d4, &d5, &zeta_polarization, m1, m2, f_ref, phiRef, inclination, S1x,S1y,S1z, S2x,S2y,S2z, LALparams);
+        XLAL_CHECK(XLAL_SUCCESS == ret, XLAL_EFUNC, "Error: XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame failed.\n");
+        azimuthal = 0.;
+        break;
+
         case SEOBNRv4HM_ROM:
 
         break;
@@ -2504,7 +2515,7 @@ tmpC=(*hctilde)->data->data[idx];
     Return polarizations for positive frequencies built by summing the individual modes present
     in the input array SphHarmFrequencySeries *hlms	computed with ChooseFDModes.
     Notice that in general the output may not be close to machine precision with ChooseFDWaveform due to differences in
-    computing the h_lms and in the use of the azimuthal angle. 
+    computing the h_lms and in the use of the azimuthal angle.
     For IMRPhenomXPHM, the argument theta should not be the inclination but theta_JN and phiRef should be 0.
 */
 int XLALSimInspiralPolarizationsFromSphHarmFrequencySeries(
@@ -4026,6 +4037,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case IMRPhenomTP:
         case IMRPhenomTPHM:
         case IMRPhenomXO4a:
+	case IMRPhenomXPNR:
         case ExternalPython:
         case SEOBNRv4HM_PA:
         case pSEOBNRv4HM_PA:
@@ -4100,6 +4112,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomPv3HM:
         case ExternalPython:
         case IMRPhenomXO4a:
+	case IMRPhenomXPNR:
             return 1;
 
         default:
@@ -4510,6 +4523,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomTP:
     case IMRPhenomTPHM:
     case IMRPhenomXO4a:
+    case IMRPhenomXPNR:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:
@@ -4639,6 +4653,7 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case IMRPhenomTP:
     case IMRPhenomTPHM:
     case IMRPhenomXO4a:
+    case IMRPhenomXPNR:
       spin_freq=LAL_SIM_INSPIRAL_SPINS_F_REF;
       break;
     case FindChirpPTF:
@@ -4831,6 +4846,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NumApproximants:
     case SEOBNRv4HM_PA:
     case IMRPhenomXO4a:
+    case IMRPhenomXPNR:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
     case TaylorF2:

@@ -424,4 +424,3 @@ int XLALWriteLIGOLwXMLArrayCOMPLEX16FrequencySeries(
 		XLAL_ERROR(XLAL_EIO);
 	return 0;
 }
-

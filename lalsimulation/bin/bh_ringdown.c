@@ -40,7 +40,7 @@
  * format.  The first column gives the time corresponding to each sample, the
  * second column gives the value of the plus-polarization of the waveform, and
  * the third column gives the value of the cross-polarization of the waveform.
- * 
+ *
  * ### Options
  *
  * <DL>
@@ -166,11 +166,11 @@ int parseargs( int argc, char **argv )
 	while (1) {
 		int option_index = 0;
 		int c;
-	
+
 		c = LALgetopt_long_only(argc, argv, args, long_options, &option_index);
 		if (c == -1) /* end of options */
 			break;
-	
+
 		switch (c) {
 			case 0: /* if option set a flag, nothing else to do */
 				if (long_options[option_index].flag)
@@ -212,14 +212,14 @@ int parseargs( int argc, char **argv )
 				exit(1);
 		}
 	}
-	
+
 	if ( LALoptind < argc ) {
 		fprintf(stderr, "extraneous command line arguments:\n");
 		while (LALoptind < argc)
 			fprintf(stderr, "%s\n", argv[LALoptind++]);
 		exit(1);
 	}
-	
+
 	if (a == a_invalid || l == l_invalid || m == m_invalid || M <= 0.0 || e <= 0.0 || e >= 1.0 || r <= 0.0 || i == i_invalid) {
 		fprintf(stderr, "must specify mass, spin, distance, frac. energy loss, l, m\n");
 		usage(argv[0]);
@@ -235,10 +235,10 @@ int parseargs( int argc, char **argv )
 		fprintf(stderr, "must specify m <= l\n");
 		exit(1);
 	}
-	
+
 	return 0;
 }
-	
+
 int usage( const char *program )
 {
 	fprintf(stderr, "usage: %s [options]\n", program);

@@ -242,7 +242,7 @@ elif os.path.exists(params_linear_path) and os.path.exists(params_quadratic_path
     selected_params_linear = np.load(params_linear_path)
     selected_params_quadratic = np.load(params_quadratic_path)
     fnodes_linear, B_linear = construct_nodes(selected_params_linear, flow_in_params, fhigh_in_params, deltaF_in_params, options.approximant, False)
-    fnodes_quadratic, B_quadratic = construct_nodes(selected_params_linear, flow_in_params, fhigh_in_params, deltaF_in_params, options.approximant, True)
+    fnodes_quadratic, B_quadratic = construct_nodes(selected_params_quadratic, flow_in_params, fhigh_in_params, deltaF_in_params, options.approximant, True)
 else:
     print("No ROQ data found. Please make sure that you have B_(linear, quadratic).npy "
           "and fnodes_(linear, quadratic).npy, or selected_params_(linear, quadratic).npy")

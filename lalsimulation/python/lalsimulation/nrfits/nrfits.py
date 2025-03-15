@@ -76,5 +76,3 @@ class NRFits(object):
                     extra_params_dict)
 
         return return_dict
-
-

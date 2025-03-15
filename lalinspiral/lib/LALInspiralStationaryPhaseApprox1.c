@@ -122,15 +122,15 @@ XLALInspiralStationaryPhaseApprox1 (
    if (signalvec->data == NULL)
      XLAL_ERROR(XLAL_EFAULT);
    if (params == NULL)
-     XLAL_ERROR(XLAL_EFAULT);     
+     XLAL_ERROR(XLAL_EFAULT);
 
    /* Set up the coefficients in post-Newtonian expansion, vlso, etc. */
    if ( XLALInspiralSetup(&ak, params) == XLAL_FAILURE )
      XLAL_ERROR(XLAL_EFUNC);
 
-   /* Set up the functions required for the chosen signal 
+   /* Set up the functions required for the chosen signal
       approximation scheme */
-   if ( XLALInspiralChooseModel(&func, &ak, params) 
+   if ( XLALInspiralChooseModel(&func, &ak, params)
 	== XLAL_FAILURE )
      XLAL_ERROR(XLAL_EFUNC);
 
@@ -210,7 +210,7 @@ XLALInspiralStationaryPhaseApprox1 (
                xmin = ak.v0;
                xmax = ak.vf;
                sign = 1.0;
-            } 
+            }
 
 	    psif = XLALREAL8RombergIntegrate(integratedfunction, funcParams, \
 					     xmin, xmax, integrationtype);

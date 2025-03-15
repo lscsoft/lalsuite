@@ -33,11 +33,11 @@ for j=1:nbands
   CHnew = reshape(Ch0, 2,nh);
   h0vec = CHnew(1,:);
   CLvec = CHnew(2,:);
- 
+
   UL=0;
   h01=h0vec(1);
   CL1=CLvec(1);
- 
+
   indices = find(CLvec > 0.95);
   if( length(indices)>0)
     k=indices(1);
@@ -60,12 +60,12 @@ for j=1:nbands
     h02 = h0vec(k);
     CL2 = CLvec(k);
     h01 = h0vec(k-1);
-    CL1 = CLvec(k-1);  
+    CL1 = CLvec(k-1);
     slope = (h02 - h01)/(CL2 -CL1);
     UL = h01 + slope * (0.95 - CL1);
   end
 
-   
+
 
  fprintf(fid,'%d %d %d %d %d \n', j-1, fmin(j), fmax(j), Nmax(j), UL );
 end

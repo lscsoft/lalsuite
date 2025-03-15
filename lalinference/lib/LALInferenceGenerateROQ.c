@@ -509,7 +509,7 @@ int complex_vector_maxabs_index( gsl_vector_complex *c ){
  * A modified Gram-Schmidt algorithm taken from the
  * <a href="https://bitbucket.org/sfield83/greedycpp">greedycpp</a> code.
  *
- * @param[out] ru A 1-by-(\c dim_RB + 1) complex vector returning a slice of the R matrix 
+ * @param[out] ru A 1-by-(\c dim_RB + 1) complex vector returning a slice of the R matrix
  * @param[out] ortho_basis A complex vector returning the orthogonal basis vector
  * @param[in] RB_space A complex matrix containing the existing set of orthonormal basis vectors
  * @param[in] wQuad A vector of weights for the inner products
@@ -527,7 +527,7 @@ void modified_gs_complex(gsl_vector_complex *ru,
   basis = gsl_vector_complex_alloc(quad_num);
 
   /* if not done, R matrix fills up below diagonal with .5 instead of 0 */
-  gsl_vector_complex_set_zero(ru); 
+  gsl_vector_complex_set_zero(ru);
 
   for(INT4 i = 0; i < dim_RB; i++){
     gsl_matrix_complex_get_row(basis, RB_space, i);
@@ -555,7 +555,7 @@ void modified_gs_complex(gsl_vector_complex *ru,
  * A modified Gram-Schmidt algorithm taken from the
  * <a href="https://bitbucket.org/sfield83/greedycpp">greedycpp</a> code.
  *
- * @param[out] ru A 1-by-(\c dim_RB + 1) vector returning a slice of the R matrix 
+ * @param[out] ru A 1-by-(\c dim_RB + 1) vector returning a slice of the R matrix
  * @param[out] ortho_basis A vector returning the orthogonal basis vector
  * @param[in] RB_space A matrix containing the existing set of orthonormal basis vectors
  * @param[in] wQuad A vector of weights for the inner products
@@ -573,7 +573,7 @@ void modified_gs(gsl_vector *ru,
   basis = gsl_vector_alloc(quad_num);
 
   /* if not done, R matrix fills up below diagonal with .5 instead of 0 */
-  gsl_vector_set_zero(ru); 
+  gsl_vector_set_zero(ru);
 
   for(INT4 i = 0; i < dim_RB; i++){
     gsl_matrix_get_row(basis, RB_space, i);
@@ -600,7 +600,7 @@ void modified_gs(gsl_vector *ru,
  * <a href="https://bitbucket.org/sfield83/greedycpp">greedycpp</a> code. This uses the method
  * given in \cite Hoffmann1989
  *
- * @param[out] ru A complex 1-by-(\c dim_RB + 1) vector returning a slice of the R matrix 
+ * @param[out] ru A complex 1-by-(\c dim_RB + 1) vector returning a slice of the R matrix
  * @param[out] ortho_basis A complex vector returning the orthogonal basis vector
  * @param[in] RB_space A complex matrix containing the existing set of orthonormal basis vectors
  * @param[in] wQuad A vector of weights for the inner products
@@ -629,7 +629,7 @@ void iterated_modified_gm_complex(gsl_vector_complex *ru,
   complex_normalise(wQuad, e);
 
   /* if not done, R matrix fills up below diagonal with .5 instead of 0 */
-  gsl_vector_complex_set_zero(ru);  
+  gsl_vector_complex_set_zero(ru);
 
   while( !flag ){
     gsl_vector_complex_memcpy(ortho_basis, e);
@@ -668,7 +668,7 @@ void iterated_modified_gm_complex(gsl_vector_complex *ru,
  * <a href="https://bitbucket.org/sfield83/greedycpp">greedycpp</a> code. This uses the method
  * given in \cite Hoffmann1989
  *
- * @param[out] ru A 1-by-(\c dim_RB + 1) vector returning a slice of the R matrix 
+ * @param[out] ru A 1-by-(\c dim_RB + 1) vector returning a slice of the R matrix
  * @param[out] ortho_basis A vector returning the orthogonal basis vector
  * @param[in] RB_space A matrix containing the existing set of orthonormal basis vectors
  * @param[in] wQuad A vector of weights for the inner products
@@ -696,7 +696,7 @@ void iterated_modified_gm(gsl_vector *ru,
   normalise(wQuad, e);
 
   /* if not done, R matrix fills up below diagonal with .5 instead of 0 */
-  gsl_vector_set_zero(ru);  
+  gsl_vector_set_zero(ru);
 
   while( !flag ){
     gsl_vector_memcpy(ortho_basis, e);
@@ -998,7 +998,7 @@ REAL8 LALInferenceGenerateCOMPLEX16OrthonormalBasis(COMPLEX16Array **RBin,
   COMPLEX16Array *RB = NULL;
   UINT4Vector *dims = NULL;
   gsl_matrix_complex_view RBview;
-  
+
   /* this memory should be freed here */
   ts_el         = gsl_vector_complex_alloc(cols);
   last_rb       = gsl_vector_complex_alloc(cols);
@@ -1014,7 +1014,7 @@ REAL8 LALInferenceGenerateCOMPLEX16OrthonormalBasis(COMPLEX16Array **RBin,
 
   gsl_vector_view deltaview;
   XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
-  
+
   /* normalise the training set */
   complex_normalise_training_set(&deltaview.vector, &TSview.matrix);
 
@@ -1312,10 +1312,10 @@ REAL8 LALInferenceEnrichREAL8Basis(const REAL8Vector *delta,
   size_t nts = tm->dimLength->data[0]; // number of new training vectors
 
   XLAL_CHECK_REAL8( dlength == tm->dimLength->data[1], XLAL_EFUNC, "New training set contains waveforms of different length to the original set!" );
-  
+
   gsl_vector_view deltaview;
   XLAL_CALLGSL( deltaview = gsl_vector_view_array(delta->data, delta->length) );
-  
+
   // get projection errors of new test model set against the reduced basis
   REAL8Vector *projerr = NULL;
   LALInferenceValidateREAL8OrthonormalBasis( &projerr, delta, *RB, testmodelsnew );
@@ -1340,7 +1340,7 @@ REAL8 LALInferenceEnrichREAL8Basis(const REAL8Vector *delta,
         else{
           XLAL_ERROR_REAL8(XLAL_EFUNC, "Vector of weights must either contain a single value, or be the same length as the other input vectors.");
         }
-        
+
         gsl_matrix_set_row( &tmview.matrix, keepcounter, &row.vector ); // copy row to earlier in the matrix
       }
       keepcounter++;
@@ -1471,7 +1471,7 @@ void LALInferenceValidateCOMPLEX16OrthonormalBasis(REAL8Vector **projerr,
     else{
       XLAL_ERROR_VOID( XLAL_EFUNC, "Vector of weights must either contain a single value, or be the same length as the other input vectors." );
     }
-    
+
     // get complex conjugate
     for ( j = 0; j < testrow->size; j++ ){ testrow->data[2*j+1] = -testrow->data[2*j+1]; }
 

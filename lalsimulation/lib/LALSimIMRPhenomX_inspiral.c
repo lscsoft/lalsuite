@@ -36,7 +36,7 @@
 
 /*
     Value of amplitude collocation point at 2/4 f^A_T, defined in Eq. 5.7 of arXiv:2001.11412
-   
+
     Effective spin parameterization used = chiPNHat
 */
 static double IMRPhenomX_Inspiral_Amp_22_v2(double eta, double S, double dchi, double delta, int InsAmpFlag){
@@ -75,7 +75,7 @@ static double IMRPhenomX_Inspiral_Amp_22_v2(double eta, double S, double dchi, d
 
 /*
     Value of amplitude collocation point at 3/4 f^A_T, defined in Eq. 5.7 of arXiv:2001.11412
-   
+
     Effective spin parameterization used = chiPNHat
 */
 static double IMRPhenomX_Inspiral_Amp_22_v3(double eta, double S, double dchi, double delta, int InsAmpFlag){
@@ -111,7 +111,7 @@ static double IMRPhenomX_Inspiral_Amp_22_v3(double eta, double S, double dchi, d
 
 /*
     Value of amplitude collocation point at 4/4 f^A_T, defined in Eq. 5.7 of arXiv:2001.11412
-   
+
     Effective spin parameterization used = chiPNHat
 */
 static double IMRPhenomX_Inspiral_Amp_22_v4(double eta, double S, double dchi, double delta, int InsAmpFlag){
@@ -390,7 +390,7 @@ static double IMRPhenomX_Inspiral_Amp_22_DAnsatz(double Mf, IMRPhenomXWaveformSt
 
 /*
     Value of phase collocation point at v_3. See section VII.A of arXiv:2001.11412
-   
+
     Effective spin parameterization used = chiPNHat
 */
 static double IMRPhenomX_Inspiral_Phase_22_v3(double eta, double S, double dchi, double delta, int InspPhaseFlag){
@@ -460,7 +460,7 @@ static double IMRPhenomX_Inspiral_Phase_22_v3(double eta, double S, double dchi,
 
 /*
     Value of phase collocation point for d13 = v1 - v3. See section VII.A of arXiv:2001.11412
-   
+
     Effective spin parameterization used = chiPNHat
 */
 static double IMRPhenomX_Inspiral_Phase_22_d13(double eta, double S, double dchi, double delta, int InspPhaseFlag){
@@ -528,14 +528,14 @@ static double IMRPhenomX_Inspiral_Phase_22_d13(double eta, double S, double dchi
 
 /*
     Value of phase collocation point for d23 = v2 - v3. See section VII.A of arXiv:2001.11412
-   
+
     Effective spin parameterization used = chiPNHat
 */
 static double IMRPhenomX_Inspiral_Phase_22_d23(double eta, double S, double dchi, double delta, int InspPhaseFlag){
 
 	double eta2  = eta*eta;
 	double eta3  = eta2*eta;
-	
+
 	double dchi2 = dchi * dchi;
 
 	double S2    = S*S;
@@ -597,7 +597,7 @@ static double IMRPhenomX_Inspiral_Phase_22_d23(double eta, double S, double dchi
 
 /*
     Value of phase collocation point for d43 = v4 - v3. See section VII.A of arXiv:2001.11412
-   
+
     Effective spin parameterization used = chiPNHat
 */
 static double IMRPhenomX_Inspiral_Phase_22_d43(double eta, double S, double dchi, double delta, int InspPhaseFlag){
@@ -608,7 +608,7 @@ static double IMRPhenomX_Inspiral_Phase_22_d43(double eta, double S, double dchi
 
 	double S2   = S*S;
 	double S3   = S2*S;
-	
+
 	double noSpin, eqSpin, uneqSpin;
 
 	switch ( InspPhaseFlag )
@@ -664,7 +664,7 @@ static double IMRPhenomX_Inspiral_Phase_22_d43(double eta, double S, double dchi
 
 /*
     Value of phase collocation point for d53 = v5 - v3. See section VII.A of arXiv:2001.11412
-   
+
     Effective spin parameterization used = chiPNHat
 */
 static double IMRPhenomX_Inspiral_Phase_22_d53(double eta, double S, double dchi, double delta, int InspPhaseFlag){

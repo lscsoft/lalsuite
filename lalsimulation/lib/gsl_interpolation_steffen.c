@@ -1,19 +1,19 @@
 /* This file is a slightly modified version of GSL's
  * interpolation/steffen.c
- * 
+ *
  * Copyright (C) 2014 Jean-François Caron
  * Modified by Jolien Creighton
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
@@ -21,7 +21,7 @@
 
 /* Author:  J.-F. Caron
  *
- * This interpolation method is taken from 
+ * This interpolation method is taken from
  * M.Steffen, "A simple method for monotonic interpolation in one dimension",
  * Astron. Astrophys. 239, 443-450 (1990).
  *
@@ -35,7 +35,7 @@
  */
 
 /* Modifications: Jolien Creighton
- * 
+ *
  * This file is included in LAL to provide the functionality present in newer
  * versions of GSL.  The only functional modification is to prepend lal_ to
  * avoid namespace collisions.  Other modifications are to suppress compiler
@@ -75,40 +75,40 @@ static void *
 steffen_alloc (size_t size)
 {
   steffen_state_t *state;
-  
+
   state = (steffen_state_t *) calloc (1, sizeof (steffen_state_t));
-  
+
   if (state == NULL)
     {
       GSL_ERROR_NULL("failed to allocate space for state", GSL_ENOMEM);
     }
 
   state->a = (double *) malloc (size * sizeof (double));
-  
+
   if (state->a == NULL)
     {
       steffen_free(state);
       GSL_ERROR_NULL("failed to allocate space for a", GSL_ENOMEM);
     }
-  
+
   state->b = (double *) malloc (size * sizeof (double));
-  
+
   if (state->b == NULL)
     {
       steffen_free(state);
       GSL_ERROR_NULL("failed to allocate space for b", GSL_ENOMEM);
     }
-  
+
   state->c = (double *) malloc (size * sizeof (double));
-  
+
   if (state->c == NULL)
     {
       steffen_free(state);
       GSL_ERROR_NULL("failed to allocate space for c", GSL_ENOMEM);
     }
-  
+
   state->d = (double *) malloc (size * sizeof (double));
-  
+
   if (state->d == NULL)
     {
       steffen_free(state);
@@ -147,7 +147,7 @@ steffen_init (void * vstate, const double x_array[],
 
   y_prime[0] = s0;
 
-  /* Now we calculate all the necessary s, h, p, and y' variables 
+  /* Now we calculate all the necessary s, h, p, and y' variables
      from 1 to N-2 (0 to size - 2 inclusive) */
   for (i = 1; i < (size - 1); i++)
     {
@@ -167,7 +167,7 @@ steffen_init (void * vstate, const double x_array[],
       /* This is a C equivalent of the FORTRAN statement below eqn 11 */
       y_prime[i] = (steffen_copysign(1.0,sim1) + steffen_copysign(1.0,si)) *
                     GSL_MIN(fabs(sim1),
-                            GSL_MIN(fabs(si), 0.5*fabs(pi))); 
+                            GSL_MIN(fabs(si), 0.5*fabs(pi)));
     }
 
   /*
@@ -229,7 +229,7 @@ steffen_eval (const void * vstate,
   const steffen_state_t *state = (const steffen_state_t *) vstate;
 
   size_t index;
-  
+
   if (a != 0)
     {
       index = gsl_interp_accel_find (a, x_array, size, x);
@@ -238,7 +238,7 @@ steffen_eval (const void * vstate,
     {
       index = gsl_interp_bsearch (x_array, x, 0, size - 1);
     }
-  
+
   /* evaluate */
   {
     const double x_lo = x_array[index];
@@ -265,7 +265,7 @@ steffen_eval_deriv (const void * vstate,
   size_t index;
 
   /* DISCARD_POINTER(y_array); /\* prevent warning about unused parameter *\/ */
-  
+
   if (a != 0)
     {
       index = gsl_interp_accel_find (a, x_array, size, x);
@@ -274,7 +274,7 @@ steffen_eval_deriv (const void * vstate,
     {
       index = gsl_interp_bsearch (x_array, x, 0, size - 1);
     }
-  
+
   /* evaluate */
   {
     double x_lo = x_array[index];
@@ -308,7 +308,7 @@ steffen_eval_deriv2 (const void * vstate,
     {
       index = gsl_interp_bsearch (x_array, x, 0, size - 1);
     }
-  
+
   /* evaluate */
   {
     const double x_lo = x_array[index];
@@ -327,7 +327,7 @@ steffen_eval_integ (const void * vstate,
                     double * result)
 {
   /* a and b are the boundaries of the integration. */
-  
+
   const steffen_state_t *state = (const steffen_state_t *) vstate;
 
   size_t i, index_a, index_b;
@@ -345,17 +345,17 @@ steffen_eval_integ (const void * vstate,
       index_a = gsl_interp_bsearch (x_array, a, 0, size - 1);
       index_b = gsl_interp_bsearch (x_array, b, 0, size - 1);
     }
-  
+
   *result = 0.0;
 
   /* Iterate over all the segments between data points and sum the */
   /* contributions into result. */
-  for(i=index_a; i<=index_b; i++) 
+  for(i=index_a; i<=index_b; i++)
     {
       const double x_hi = x_array[i + 1];
       const double x_lo = x_array[i];
       const double dx = x_hi - x_lo;
-      if(dx != 0.0) 
+      if(dx != 0.0)
         {
           /*
            * check if we are at a boundary point, so take the
@@ -375,7 +375,7 @@ steffen_eval_integ (const void * vstate,
           return GSL_EINVAL;
         }
     }
-  
+
   return GSL_SUCCESS;
 }
 
@@ -388,9 +388,9 @@ steffen_copysign(const double x, const double y)
   return x;
 }
 
-static const gsl_interp_type steffen_type = 
+static const gsl_interp_type steffen_type =
 {
-  "steffen", 
+  "steffen",
   3,
   &steffen_alloc,
   &steffen_init,

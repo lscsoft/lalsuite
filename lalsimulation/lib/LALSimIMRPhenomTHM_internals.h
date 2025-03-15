@@ -131,7 +131,7 @@ typedef struct tagIMRPhenomTPhase22Struct
 	REAL8 omegaRING_prec;
 
 	REAL8 MfRef;  // Dimensionless reference frequency
-	REAL8 Mfmin;  // Dimensionless minimum frequency	
+	REAL8 Mfmin;  // Dimensionless minimum frequency
 
 	REAL8 tRef;		// Reference time
 	REAL8 tmin;		// Minimum time
@@ -175,14 +175,14 @@ typedef struct tagIMRPhenomTHMPhaseStruct
 	REAL8 alpha1RD_prec;
 	REAL8 alpha2RD; // Angular damping frequency of the nlm = 2lm QNM
 	REAL8 alpha21RD; // Damping frequency difference between n=2 and n=1 QNM
-	
+
 	REAL8 domegaPeak;	// Frequency derivative at the peak amplitude time
 	REAL8 omegaRING;	// Angular ringdown frequency
 	REAL8 omegaRING_prec;
 
 	REAL8 phOffMerger;	// phase offset of merger phase
 	REAL8 phOffRD;		// phase offset of ringdown phase
-	
+
 } IMRPhenomTHMPhaseStruct;
 
 /* Struct for storing the coefficient values of the amplitude ansatz for the lm mode. */

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# != 1 ]; then 
+if [ $# != 1 ]; then
     echo "correct_tisi.sh ERROR : the time slide file should be given in argument"
     exit 1
 fi
@@ -22,12 +22,12 @@ tisi_file="$1.xml"
 
 new_tisi_file="new_${tisi_file}"
 tmp_tisi_file="tmp_${tisi_file}"
-rm -f ${new_tisi_file} ${tmp_tisi_file} 
+rm -f ${new_tisi_file} ${tmp_tisi_file}
 
 # read the file line by line
 config=0; number_of_timeslide=0; previous_offset=9999999;
 while read line; do
-    
+
     # re-write time slides based on L1 offsets
     if echo ${line} | grep -q 'time_slide:time_slide_id:'; then
 	if echo ${line} | grep -q '"L1"'; then
@@ -44,7 +44,7 @@ while read line; do
 		sed '/<Stream Name="time_slide:table" Type="Local" Delimiter=",">/a\ "V1","time_slide:time_slide_id:'$config'","process:process_id:0",'$V1offset',' ${new_tisi_file} > ${tmp_tisi_file}
 		mv ${tmp_tisi_file} ${new_tisi_file}
 		echo "ti-si ${config}: L1 offset=$L1offset, V1 offset=$V1offset"
-		
+
 		let 'config+=1'
 		previous_offset=${L1offset}
 	    fi

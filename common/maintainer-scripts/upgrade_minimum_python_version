@@ -1,0 +1,43 @@
+#!/bin/bash
+# Author: Karl Wette, 2025
+
+# Upgrade the minimum Python version required by LALSuite
+
+set -e
+
+if [ $# -ne 2 ]; then
+    echo "usage: $0 <old-min-py-version> <new-min-py-version>" >&2
+    exit 1
+fi
+
+OLD="$1"
+NEW="$2"
+
+OLDnodot=`echo ${OLD} | tr -d '.'`
+NEWnodot=`echo ${NEW} | tr -d '.'`
+
+for file in $(git ls-files -- '*.m4' '*configure.ac'); do
+    test ! -L "${file}" || continue
+
+    for MACRO in LALSUITE_REQUIRE_PYTHON LALSUITE_CHECK_PYTHON; do
+        sed -i.tmp "s/${MACRO}(\[${OLD}\])/${MACRO}(\[${NEW}\])/g" "${file}"
+        rm -f "${file}.tmp"
+    done
+
+done
+
+for file in $(git ls-files -- '**/control.in'); do
+    test ! -L "${file}" || continue
+
+    sed -i.tmp "s/X-Python3-Version: >= ${OLD}/X-Python3-Version: >= ${NEW}/g" "${file}"
+    rm -f "${file}.tmp"
+
+done
+
+for file in $(git ls-files -- '**/*.pretty.black'); do
+    test ! -L "${file}" || continue
+
+    sed -i.tmp "s/--target-version=py${OLDnodot}/--target-version=py${NEWnodot}/g" "${file}"
+    rm -f "${file}.tmp"
+
+done

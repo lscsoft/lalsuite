@@ -319,7 +319,7 @@ static int test_average(const REAL8 m1M)
   ret+=compare_value(-0.5*(XLALSimInspiralPNFlux_4PNQMS1nS1nCoeff(m1M)+XLALSimInspiralPNFlux_4PNQMS1vS1vCoeff(m1M)),XLALSimInspiralPNFlux_4PNQMS1OS1OCoeffAvg(m1M));
 
   ret+=compare_value(XLALSimInspiralTaylorT4wdot_4PNS1S2Coeff(eta),XLALSimInspiralTaylorT4wdot_4PNS1S2CoeffAvg(eta)+XLALSimInspiralTaylorT4wdot_4PNS1OS2OCoeffAvg(eta));
-  
+
   ret+=compare_value(XLALSimInspiralTaylorT4wdot_4PNS1S1Coeff(m1M),XLALSimInspiralTaylorT4wdot_4PNS1S1CoeffAvg(m1M)+XLALSimInspiralTaylorT4wdot_4PNS1OS1OCoeffAvg(m1M));
 
   ret+=compare_value(XLALSimInspiralTaylorT4wdot_4PNQMS1S1Coeff(m1M),XLALSimInspiralTaylorT4wdot_4PNQMS1S1CoeffAvg(m1M)+XLALSimInspiralTaylorT4wdot_4PNQMS1OS1OCoeffAvg(m1M));

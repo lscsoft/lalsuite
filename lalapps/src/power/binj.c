@@ -112,7 +112,7 @@ struct options {
 static struct options options_defaults(void)
 {
 	struct options defaults;
-	
+
 	defaults.gps_start_time = -1;
 	defaults.gps_end_time = -1;
 	defaults.population = -1;
@@ -144,7 +144,7 @@ static struct options options_defaults(void)
 
 static void print_usage(void)
 {
-	fprintf(stderr, 
+	fprintf(stderr,
 "lalapps_binj [options]\n" \
 "\n" \
 "Options:\n" \
@@ -166,7 +166,7 @@ static void print_usage(void)
 "	Set the bounds of the injection bandwidthds.  These only affect\n" \
 "	btlwnb waveforms.\n" \
 "\n" \
-	); fprintf(stderr, 
+	); fprintf(stderr,
 "--max-duration seconds\n" \
 "--min-duration seconds\n" \
 "	Set the bounds of the injection durations.  These only affect\n" \
@@ -178,7 +178,7 @@ static void print_usage(void)
 "	energies of btlwnb waveforms.  The units are M_{sun} / pc^{2} (solar\n" \
 "	masses per parsec^{2}).\n" \
 "\n" \
-	); fprintf(stderr, 
+	); fprintf(stderr,
 "--max-frequency hertz\n" \
 "--min-frequency hertz\n" \
 "	Set the bounds of the injection frequencies.  These are the centre\n" \
@@ -187,14 +187,14 @@ static void print_usage(void)
 "\n" \
 "--max-hrss value\n" \
 "--min-hrss value\n" \
-	); fprintf(stderr, 
+	); fprintf(stderr,
 "	Set the bounds of the injection h_{rss} values.  These only affect\n" \
 "	sine-Gaussian injections.  (Actually, these set the bounds of the\n" \
 "	product of the waveform's hrss and its duration, which makes the\n" \
 "	injections lie along the 50 efficiency curve better.  To convert to\n" \
 "	real hrss multiply by sqrt(2) pi f/Q.) \n" \
 "\n" \
-	); fprintf(stderr, 
+	); fprintf(stderr,
 "--output filename\n" \
 "	Select output name (default is too hard to explain).\n" \
 "\n" \
@@ -211,7 +211,7 @@ static void print_usage(void)
 "	injections should originate when generating a targeted population.\n" \
 "	Co-ordinates are in radians.\n" \
 "\n" \
-	); fprintf(stderr, 
+	); fprintf(stderr,
 "--seed value\n" \
 "	Set the random number generator's seed (0 = off, default = 0).\n" \
 "\n" \
@@ -246,7 +246,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 	return &(*proc_param)->next;
 }
 
-	
+
 #define ADD_PROCESS_PARAM(process, type) \
 	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, LALoptarg); } while(0)
 
@@ -527,7 +527,7 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 }
 
 
-/* 
+/*
  * ============================================================================
  *
  *                                XML Handling
@@ -665,7 +665,7 @@ static int set_instruments(ProcessTable *process, TimeSlide *time_slide_table_he
 }
 
 
-/* 
+/*
  * ============================================================================
  *
  *                                 Sequences
@@ -743,7 +743,7 @@ static double sequence_preset_next(gsl_rng *rng)
 #endif
 
 
-/* 
+/*
  * ============================================================================
  *
  *                Logarithmically-Distributed Random Variable
@@ -787,7 +787,7 @@ static double ran_flat_log_discrete(gsl_rng *rng, double a, double b, double rat
 }
 
 
-/* 
+/*
  * ============================================================================
  *
  *                          String Cusp Simulations
@@ -863,7 +863,7 @@ static SimBurst *random_string_cusp(double flow, double fhigh, double Alow, doub
 }
 
 
-/* 
+/*
  * ============================================================================
  *
  *                             BTLWNB Injections
@@ -959,7 +959,7 @@ static SimBurst *random_all_sky_btlwnb(double minf, double maxf, double minband,
 }
 
 
-/* 
+/*
  * ============================================================================
  *
  *                           All-Sky sine-Gaussians
@@ -1025,7 +1025,7 @@ static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q,
 }
 
 
-/* 
+/*
  * ============================================================================
  *
  *                                   Output
@@ -1074,7 +1074,7 @@ static void write_xml(const char *filename, const ProcessTable *process_table_he
 }
 
 
-/* 
+/*
  * ============================================================================
  *
  *                                Entry Point

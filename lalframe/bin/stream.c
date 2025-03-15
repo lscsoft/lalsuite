@@ -59,7 +59,7 @@
  * </DL>
  *
  * ### Environment
- * 
+ *
  * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
  * `lalfr-stream`.  Common values are: `LAL_DEBUG_LEVEL=0` which suppresses
  * error messages, `LAL_DEBUG_LEVEL=1`  which prints error messages alone,
@@ -72,9 +72,9 @@
  * The `lalfr-stream` utility exits 0 on success, and >0 if an error occurs.
  *
  * ### Examples
- * 
+ *
  * The command:
- * 
+ *
  *     lalfr-stream -c H1:LSC-STRAIN -g "H-*.gwf" -s 1000000000 -t 1000
  *
  * will stream 1000 seconds of `H1:LSC-STRAIN` data beginning at GPS time

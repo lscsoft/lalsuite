@@ -1216,7 +1216,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
       timeHplus->data->data[j]*=window->data->data[j];
     for (j=0; j<(UINT4) timeHcross->data->length; ++j)
       timeHcross->data->data[j]*=window->data->data[j];
-      
+
     for (j=0; j<(UINT4) freqHplus->data->length; ++j)
     {
       freqHplus->data->data[j]=0.0+I*0.0;
@@ -1276,7 +1276,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   if ( psd )
   {
     psd = XLALInterpolatePSD(psd,  deltaF);
-  } 
+  }
   for (j=lower; j<=(UINT4) upper; ++j)
   {
     /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */

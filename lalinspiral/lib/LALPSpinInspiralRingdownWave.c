@@ -627,7 +627,7 @@ INT4 XLALPSpinFinalMassSpin(
       }
     else {
       fprintf(stderr,"*** LALPSpinInspiralRingdownWave ERROR: Unphysical estimation of final Spin : %11.3e\n ",*finalSpin);
-     fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) )\n",params->mass1,params->mass2,params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2]); 
+     fprintf(stderr,"      (m1=%8.3f  m2=%8.3f s1=(%8.3f,%8.3f,%8.3f) s2=(%8.3f,%8.3f,%8.3f) )\n",params->mass1,params->mass2,params->spin1[0],params->spin1[1],params->spin1[2],params->spin2[0],params->spin2[1],params->spin2[2]);
      fprintf(stderr,"***                                    Code aborts\n");
       *finalSpin = 0.;
       XLAL_ERROR( XLAL_ERANGE);
@@ -699,7 +699,7 @@ INT4 XLALPSpinInspiralAttachRingdownWave (
         XLAL_ERROR( XLAL_EFAILED );
       }
 
-      /* Create memory for the ring-down and full waveforms, derivatives of inspirals 
+      /* Create memory for the ring-down and full waveforms, derivatives of inspirals
 	 and waveforms and its derivative values at the attach point */
 
       rdwave = XLALCreateREAL8Vector( Nrdwave );

@@ -40,11 +40,11 @@
 
 struct CommandLineArgsTag {
   double f;                /* frequency */
-  double logGmustart;      
-  double logGmuend;        
+  double logGmustart;
+  double logGmuend;
   int  nGmu;
-  double logpstart;        
-  double logpend;          
+  double logpstart;
+  double logpend;
   int  np;
   char *efficiencyfile;
 } CLA;
@@ -85,7 +85,7 @@ int main( int argc, char *argv[] )
 	char filename[FILENAME_MAX];
 	FILE *fp;
 	int i,j,k;
-  
+
 	cs_cosmo_functions_t cosmofns = XLALCSCosmoFunctionsAlloc( exp( lnz_min ), dlnz, numz );
 
 	/* read the command line */
@@ -94,7 +94,7 @@ int main( int argc, char *argv[] )
 
 	/* read efficiency function */
 	if (ReadEfficiencyFile(CLA)) return 2;
-	
+
 	snprintf( filename, sizeof( filename ), "gammaLL.dat");
 	fp = fopen( filename, "w" );
 	fprintf( fp,"%%     p           Gmu       gammaAverage     gammaMin      gammaMax\n");
@@ -102,7 +102,7 @@ int main( int argc, char *argv[] )
 	for ( i = 0; i <  CLA.nGmu; i++ )
 	  {
 	    Gmu = pow(10.0,CLA.logGmustart+i*(CLA.logGmuend-CLA.logGmustart)/(CLA.nGmu-1));
-	    	       
+
 	    RAve = 0.0;
 	    RMin = 0.0;
 	    RMax = 0.0;
@@ -130,12 +130,12 @@ int main( int argc, char *argv[] )
 
 	    for ( k = 0; k <  CLA.np; k++ )
 	      {
-		p=pow(10.0, CLA.logpstart+k*(CLA.logpend-CLA.logpstart)/(CLA.np));    
+		p=pow(10.0, CLA.logpstart+k*(CLA.logpend-CLA.logpstart)/(CLA.np));
 		fprintf(stdout,"%%Computing effective rate for Gmu=%e, p=%e\n ",Gmu, p);
 		fprintf( fp,"%e  %e  %e  %e  %e\n", p, Gmu,RAve*c/p,RMin*c/p,RMax*c/p);
 	      }
 	  }
-		
+
 	fclose( fp );
 
 	free(amp);
@@ -171,7 +171,7 @@ double finddRdzdA(double Gmu, double f, double Gamma, double A, double z, double
 double nu(double Gmu, double Gamma, double A, double z, double phit, double phiA)
 {
   double l = pow( A / Gmu / H0 * pow(1.0+z,1.0/3.0)* phiA, 3.0/2.0);
-  
+
   /* Alex's loop distribution */
   double alpha=1e-1;
   double nuR=0.4*15*sqrt(alpha);
@@ -187,9 +187,9 @@ double nu(double Gmu, double Gamma, double A, double z, double phit, double phiA
   crateR = 0.0;
   if( (l < alpha*t) && (t < teq) )
     crateR = nuR * pow(t,-1.5) * pow( l + Gamma*Gmu/H0 * phit, -2.5 );
-    
+
   /* Radiation stragglers */
-  crateRadStragglers = 0.0; 
+  crateRadStragglers = 0.0;
   if ( (l <  alpha*teq-Gamma*Gmu*(t-teq) ) && ( t > teq ) )
     crateRadStragglers = nuR*pow(teq, 0.5)/t/t* pow( l + Gamma*Gmu/H0 * phit, -2.5);
 
@@ -197,7 +197,7 @@ double nu(double Gmu, double Gamma, double A, double z, double phit, double phiA
   crateM = 0.0;
   if( (l < alpha*t) && (t > teq) && (l >  alpha*teq-Gamma*Gmu*(t-teq)) )
     crateM = nuM / t / t / ( l + Gamma*Gmu/H0 * phit) / ( l + Gamma*Gmu/H0 * phit);
- 
+
   cuspdist = 3.0/A * (crateR+crateRadStragglers+crateM);
 
   return cuspdist;
@@ -209,7 +209,7 @@ int ReadEfficiencyFile(struct CommandLineArgsTag CLA)
 {
 
   char line[256];
-  
+
   int i=0;
   FILE *fpEff;
 
@@ -234,10 +234,10 @@ int ReadEfficiencyFile(struct CommandLineArgsTag CLA)
   if (Namp>1)
     {
       /* Allocate amplitude, efficiency and efficieny error arrays */
-      lnamp  = calloc( Namp, sizeof( *lnamp ) ); 
-      eff    = calloc( Namp, sizeof( *eff ) ); 
-      Deff   = calloc( Namp, sizeof( *Deff ) ); 
-      amp    = calloc( Namp, sizeof( *amp ) ); 
+      lnamp  = calloc( Namp, sizeof( *lnamp ) );
+      eff    = calloc( Namp, sizeof( *eff ) );
+      Deff   = calloc( Namp, sizeof( *Deff ) );
+      amp    = calloc( Namp, sizeof( *amp ) );
 
       /*read them from the file */
       i=0;
@@ -291,15 +291,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   };
   char args[] = "ha:b:c:d:e:f:g:i:";
 
-  CLA->f=               -300;     
-  CLA->logGmustart=     -300;      
-  CLA->logGmuend=       -300;        
+  CLA->f=               -300;
+  CLA->logGmustart=     -300;
+  CLA->logGmuend=       -300;
   CLA->nGmu=            -1;
   CLA->logpstart=       -300;
   CLA->logpend=         -300;
   CLA->np=              -1;
   CLA->efficiencyfile=  NULL;
-  
+
 
   /* Scan through list of command line arguments */
   while ( 1 )
@@ -420,4 +420,3 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
   return errflg;
 }
-

@@ -1,7 +1,7 @@
 Parameters inputs & units
 ==========================
 
-This page should provide a user with an overview on how :code:`GWSignal` manages the various parameters entering the waveform. 
+This page should provide a user with an overview on how :code:`GWSignal` manages the various parameters entering the waveform.
 
 Parameters dictionary
 ---------------------
@@ -58,10 +58,10 @@ Every parameter should always have :code:`astropy` units. They can be added manu
 
 
 
-The units to a python dictionary can be set automatically while using the function :code:`lalsimulation.gwsignal.core.utils.add_params_units`. The :code:`units_sys` can be set 
+The units to a python dictionary can be set automatically while using the function :code:`lalsimulation.gwsignal.core.utils.add_params_units`. The :code:`units_sys` can be set
 either to 'S.I.' or 'Cosmo'. For example::
 
-	import lalsimulation 
+	import lalsimulation
 	m1 = 60.
 	m2 = 30.
 	s1x = 0.
@@ -117,7 +117,7 @@ Extra parameters
 In the case where your waveform require the usage of extra non-standard parameters in gravitational waves (refer to :ref:`Reference to standard GW parameters` for a the standard gw parameters as implemented in :code:`GWSignal`), these should be added as part of the metadata of your waveform generator as a dictionary in the following way::
 
 	gen.metadata["extra_parameters"] = {'param_1':u.dimensionless_unscaled,'param_2':u.solMass}
-	
+
 Then the parameters enter the waveform dictionary as the standard ones::
 
 	python_dict = {'param_1':2*u.dimensionless_unscaled,

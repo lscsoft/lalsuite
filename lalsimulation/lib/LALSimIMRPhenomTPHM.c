@@ -65,12 +65,12 @@
  *
  * @brief C code for the IMRPhenomTP phenomenological waveform model.
  *
- * This is a precessing time domain model covering the L=2 sector of Spin-Weighted Spherical Harmonic modes through applying the 'twisting-up' procedure 
+ * This is a precessing time domain model covering the L=2 sector of Spin-Weighted Spherical Harmonic modes through applying the 'twisting-up' procedure
  * [Phys. Rev. D 91, 024043 (2015), Phys.Rev.D85,084003 (2012), Phys. Rev. D 86, 104063 (2012)] to the dominant non-precessing mode from the IMRPhenomT model.
  *
  * Different versions for the Euler angles employed in the 'twisting-up' of IMRPhenomT can be selected through
  * the WaveformParams option 'PhenomXPrecVersion'.
- * 
+ *
  * A specific version can be passed with a 5-digit number specification: #####, where tree first digits have to correspond to a valid
  * precessing version of the models IMRPhenomXP/IMRPhenomXPHM, fourth digit selects EulerRDVersion internal option, and 5 digit selects
  * EulerGammaVersion internal option (example, 22310 will select PhenomXPrecVersion=223 for the MSA/NNLO angles calculation, EulerRDVersion=1
@@ -149,7 +149,7 @@ int XLALSimIMRPhenomTP(
   		return status;
   }
 
- 
+
   /* Compute modes in the L0 frame */
 
   SphHarmTimeSeries *hlm = NULL;
@@ -207,7 +207,7 @@ int XLALSimIMRPhenomTP(
 
 /**
  * Routine to compute time-domain polarizations for the IMRPhenomTPHM model.
- * 
+ *
  */
 int XLALSimIMRPhenomTPHM(
   REAL8TimeSeries **hp,       /**< [out] TD waveform for plus polarisation */
@@ -285,9 +285,9 @@ int XLALSimIMRPhenomTPHM(
  This is a wrapper for ChooseTDModes with the following justification: it is desirable to mantain a formal dependence on reference phase
  and inclination for producing the L0 modes employed in the polarisations, in the function XLALSimIMRPhenomTPHM_L0Modes. Although by construction
  L0 frame modes are independent of these parameters, this will allow to check if this actually satisfied if a new angle description is included.
- Since for ChooseTDModes one cannot pass these parameters, they are set to 0 in this wrapper. 
+ Since for ChooseTDModes one cannot pass these parameters, they are set to 0 in this wrapper.
  */
-SphHarmTimeSeries* XLALSimIMRPhenomTPHM_ChooseTDModes( 
+SphHarmTimeSeries* XLALSimIMRPhenomTPHM_ChooseTDModes(
   REAL8 m1_SI,                /**< Mass of companion 1 (kg) */
   REAL8 m2_SI,                /**< Mass of companion 2 (kg) */
   REAL8 chi1x,                /**< x component of primary spin*/
@@ -321,11 +321,11 @@ SphHarmTimeSeries* XLALSimIMRPhenomTPHM_ChooseTDModes(
 
 /**
  * Routine to compute a list of the time-domain modes of the IMRPhenomTPHM model in the inertial L0-frame.
- * This function calls XLALSimIMRPhenomTPHM_JModes for producing the modes in the J-frame and the Euler angles employed 
- * in the rotation between the co-precessing frame and the J-frame. Then it reads the angles value corresponding to the 
+ * This function calls XLALSimIMRPhenomTPHM_JModes for producing the modes in the J-frame and the Euler angles employed
+ * in the rotation between the co-precessing frame and the J-frame. Then it reads the angles value corresponding to the
  * specified reference frequency and performs and inverse global rotation with these angles from the J-frame to the L0-frame.
  */
-int XLALSimIMRPhenomTPHM_L0Modes( 
+int XLALSimIMRPhenomTPHM_L0Modes(
   SphHarmTimeSeries **hlmI,   /**< [out] Modes in the intertial L0=z frame*/
   REAL8 m1_SI,                /**< Mass of companion 1 (kg) */
   REAL8 m2_SI,                /**< Mass of companion 2 (kg) */
@@ -348,7 +348,7 @@ int XLALSimIMRPhenomTPHM_L0Modes(
 
   UINT4 status;
 
- 
+
   *hlmI = NULL;
   REAL8TimeSeries *alphaTS = NULL;
   REAL8TimeSeries *cosbetaTS= NULL;
@@ -442,7 +442,7 @@ int XLALSimIMRPhenomTPHM_JModes(
 {
 
   UINT4 status;
-  
+
   /* Compute co-precessing modes and Euler angles */
   *hlmJ = NULL;
   status = XLALSimIMRPhenomTPHM_CoprecModes(hlmJ, alphaTS, cosbetaTS, gammaTS, af, m1_SI, m2_SI, chi1x,chi1y,chi1z,chi2x,chi2y,chi2z,distance,inclination,deltaT,fmin,fRef,phiRef,lalParams,only22);
@@ -453,12 +453,12 @@ int XLALSimIMRPhenomTPHM_JModes(
   PhenomT_precomputed_sqrt *SQRT;
   SQRT  = XLALMalloc(sizeof(PhenomT_precomputed_sqrt));
   IMRPhenomTPHM_SetPrecomputedSqrt(SQRT);
-  
+
   status = PhenomTPHM_RotateModes(*hlmJ, *gammaTS, *cosbetaTS, *alphaTS, SQRT);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: Internal function PhenomTPHM_RotateModes has failed.");
-  
+
   LALFree(SQRT);
-  
+
   return status;
 }
 
@@ -500,11 +500,11 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
   if(distance <= 0.0) { XLAL_ERROR(XLAL_EDOM, "Distance must be positive and greater than 0.\n");    }
   if(fRef > 0.0 && fRef < fmin){ XLAL_ERROR(XLAL_EDOM, "fRef must be >= f_min or =0 to use f_min.\n"); }
 
-  /* Swap components if m2>m1 */  
+  /* Swap components if m2>m1 */
   if(m1_SI < m2_SI)
   {
     REAL8 auxswap;
-    
+
     auxswap = m2_SI;
     m2_SI = m1_SI;
     m1_SI = auxswap;
@@ -521,7 +521,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
     chi2z = chi1z;
     chi1z = auxswap;
   }
-  
+
   REAL8 mass_ratio = m1_SI / m2_SI;
   REAL8 chi1L = chi1z;
   REAL8 chi2L = chi2z;
@@ -579,7 +579,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
     XLAL_ERROR(XLAL_EDOM, "Incorrect format/values for PhenomXPrecVersion option.\n");
   }
 
-  
+
   INT4 status;
 
   /* Use an auxiliar laldict to not overwrite the input argument */
@@ -594,7 +594,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
   /* Setup mode array */
   UINT4 LMAX;
   LALValue *ModeArray = NULL;
-  
+
   if(only22==0)
   {
     XLAL_CHECK(check_input_mode_array_THM(lalParams_aux) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
@@ -613,10 +613,10 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
       XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
       /* Insert ModeArray into lalParams */
       XLALSimInspiralWaveformParamsInsertModeArray(lalParams_aux, ModeArray);
-    }    
+    }
     LMAX = 2;
-  }  
-  
+  }
+
   /* Select maximum L for which modes have to be activated */
 
   if(XLALSimInspiralModeArrayIsModeActive(ModeArray, 5, 5)==1||XLALSimInspiralModeArrayIsModeActive(ModeArray, 5, -5)==1)
@@ -656,7 +656,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
   status = IMRPhenomXGetAndSetPrecessionVariables(pWFX, pPrec, m1_SI, m2_SI, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, lalParams_aux, 0);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
 
-  pWF->afinal_prec = pWFX->afinal; // Set final spin to its precessing value 
+  pWF->afinal_prec = pWFX->afinal; // Set final spin to its precessing value
   if(reconsMerger!=1)
   {
         pWF->afinal = pWFX->afinal; // FIXME: Internal option, will be removed before merging to master.
@@ -665,7 +665,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
   IMRPhenomTPhase22Struct *pPhase;
   pPhase = XLALMalloc(sizeof(IMRPhenomTPhase22Struct));
   status   = IMRPhenomTSetPhase22Coefficients(pPhase, pWF);
-  XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: Internal function IMRPhenomTSetPhase22Coefficients has failed.");  
+  XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: Internal function IMRPhenomTSetPhase22Coefficients has failed.");
 
   /* Length of the required sequence and length of the different inspiral regions of the 22 phase. */
   size_t length = pPhase->wflength;
@@ -689,7 +689,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
   XLALGPSAdd(&ligotimegps_zero, pPhase->tminSec);
 
-  /* Compute 22 phase and x=(0.5*omega_22)^(2/3), needed for all modes. 
+  /* Compute 22 phase and x=(0.5*omega_22)^(2/3), needed for all modes.
   Depending on the inspiral region, theta is defined with a fitted t0 parameter or with t0=0. */
 
   if(pWF->inspVersion!=0) // If reconstruction is non-default, this will compute frequency, phase and PN expansion parameter x from TaylorT3 with fitted t0 for the early inspiral region-
@@ -783,7 +783,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
       IMRPhenomTPhase22Struct *pPhase2;
       pPhase2 = XLALMalloc(sizeof(IMRPhenomTPhase22Struct));
       status   = IMRPhenomTSetPhase22Coefficients(pPhase2, pWF);
-      XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: Internal function IMRPhenomTSetPhase22Coefficients has failed."); 
+      XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: Internal function IMRPhenomTSetPhase22Coefficients has failed.");
 
       for(UINT4 jdx = length_insp; jdx < length; jdx++)
       {
@@ -792,7 +792,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
         w22 = IMRPhenomTomega22(t, 0.0, pWF, pPhase2);
         xorb->data[jdx] = pow(0.5*w22,2./3);
         ph22 = IMRPhenomTPhase22(t, 0.0, pWF, pPhase2);
-    
+
         phi22->data[jdx] = ph22;
       }
 
@@ -811,7 +811,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
 
   *hlmJ = NULL;
 
-  INT4 posMode, negMode; 
+  INT4 posMode, negMode;
 
   for (UINT4 ell = 2; ell <= LMAX; ell++)
   {
@@ -852,7 +852,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
     }
 
   }
-  
+
   /*Free structures and destroy sequences and dict */
   XLALDestroyValue(ModeArray);
   LALFree(pPhase);
@@ -866,7 +866,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
   XLALDestroyREAL8Sequence(timesVec);
 
   XLALDestroyDict(lalParams_aux);
-  
+
   return status;
 }
 

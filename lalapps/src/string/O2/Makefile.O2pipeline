@@ -1,21 +1,21 @@
 dag:
 	#generate injection and background xml files
 	lalapps_gen_timeslides --instrument H1=0:0:0 --instrument L1=78.7653294765398375645:78.7653294765398375645:0 O2_injection_time_slides.xml.gz
-	lalapps_gen_timeslides --inspiral-num-slides=3000:H1=0,L1=3.5449077018110318 O2_background_time_slides_6000.xml.gz	
+	lalapps_gen_timeslides --inspiral-num-slides=3000:H1=0,L1=3.5449077018110318 O2_background_time_slides_6000.xml.gz
 # segments
 	ligolw_segment_query_dqsegdb --segment-url=https://segments.ligo.org --query-segments --gps-start-time 1164499217 --gps-end-time 1187740818 --include-segments=H1:DCH-CLEAN_SCIENCE_C02:1 | ligolw_print -t segment -c start_time -c end_time -d ' ' > ./h1.science
 	ligolw_segment_query_dqsegdb --segment-url=https://segments.ligo.org --query-segments --include-segments L1:DCH-CLEAN_SCIENCE_C02:1 --gps-start-time 1164499217 --gps-end-time 1187740818 | ligolw_print -t segment -c start_time -c end_time -d ' ' > ./l1.science
 # exclude segments flagged by CAT1 and CAT4
 	git clone  https://git.ligo.org/detchar/veto-definitions.git
 	ligolw_segments_from_cats_dqsegdb --separate-categories --veto-categories 1 --ifo-list H1,L1 --gps-start-time 1164499217 --gps-end-time 1187740818 --veto-file ./veto-definitions/burst/O2/H1L1V1-HOFT_C02_REPRO2A_O2_BURST_COSMICSTRING.xml --segment-url https://segments.ligo.org
-	ligolw_print -t segment -c start_time -c end_time -d ' ' H1-VETOTIME_CAT1-1164499217-23241601.xml > ./h1.cat1 
+	ligolw_print -t segment -c start_time -c end_time -d ' ' H1-VETOTIME_CAT1-1164499217-23241601.xml > ./h1.cat1
 	ligolw_print -t segment -c start_time -c end_time -d ' ' L1-VETOTIME_CAT1-1164499217-23241601.xml > ./l1.cat1
 	ligolw_segments_from_cats_dqsegdb --separate-categories --veto-categories 4 --ifo-list H1,L1 --gps-start-time 1164499217 --gps-end-time 1187740818 --veto-file ./veto-definitions/burst/O2/H1L1V1-HOFT_C02_REPRO2A_O2_BURST_COSMICSTRING.xml --segment-url https://segments.ligo.org
 	ligolw_print -t segment -c start_time -c end_time -d ' ' H1-VETOTIME_CAT4-1164499217-23241601.xml > ./h1.cat4
 	ligolw_print -t segment -c start_time -c end_time -d ' ' L1-VETOTIME_CAT4-1164499217-23241601.xml > ./l1.cat4
 	segexpr 'intersection(./h1.science,veto(./h1.cat1),veto(./h1.cat4))' > ./h1.science_aftercat1_cat4
 	segexpr 'intersection(./l1.science,veto(./l1.cat1),veto(./l1.cat4))' > ./l1.science_aftercat1_cat4
-# download CAT 2 
+# download CAT 2
 	ligolw_segments_from_cats_dqsegdb --separate-categories --veto-categories 2 --ifo-list H1,L1 --gps-start-time 1164499217 --gps-end-time 1187740818 --veto-file ./veto-definitions/burst/O2/H1L1V1-HOFT_C02_REPRO2A_O2_BURST_COSMICSTRING.xml --segment-url https://segments.ligo.org
 	ligolw_print -t segment -c start_time -c end_time -d ' ' H1-VETOTIME_CAT2-1164499217-23241601.xml > ./h1.cat2_without_hveto_upv
 	ligolw_print -t segment -c start_time -c end_time -d ' ' L1-VETOTIME_CAT2-1164499217-23241601.xml > ./l1.cat2_without_hveto_upv

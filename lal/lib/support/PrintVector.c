@@ -15,8 +15,8 @@
 #define FUNC CONCAT3(LAL,TYPECODE,PrintVector)
 
 
-void FUNC ( VTYPE *vector ) 
-{ 
+void FUNC ( VTYPE *vector )
+{
   int i;
   static int filenum=0;
   FILE *fp;

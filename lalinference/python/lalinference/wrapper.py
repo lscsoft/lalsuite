@@ -229,4 +229,3 @@ class LALInferenceCBCWrapper(object):
             except KeyError:
                 pass
         return bounds
-

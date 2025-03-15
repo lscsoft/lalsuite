@@ -763,4 +763,3 @@ int XLALFrameFileName( char *fname, size_t size, const char *chname, const LIGOT
   LALFree( desc );
   return detflgs;
 }
-

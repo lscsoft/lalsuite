@@ -180,7 +180,3 @@ void LALHOUGHCalcParamPLUT( LALStatus    *status,
   /* normal exit */
   RETURN( status );
 }
-
-
-
-

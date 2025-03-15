@@ -117,13 +117,13 @@ def test_SEOBNRv4HM_ROM():
     """
     LAL_DATA_PATH = os.environ['LAL_DATA_PATH']
     for D in LAL_DATA_PATH.split(':'):
-        path = Path(D) / "SEOBNRv4HMROM.hdf5"
+        path = Path(D) / "SEOBNRv4HMROM_v1.0.hdf5"
         if path.is_file():
             have_ROM_data_file = True
             break
     else:
         pytest.skip(
-            "SEOBNRv4HMROM.hdf5 not found in $LAL_DATA_PATH:{}".format(LAL_DATA_PATH),
+            "SEOBNRv4HMROM_v1.0.hdf5 not found in $LAL_DATA_PATH:{}".format(LAL_DATA_PATH),
         )
 
     expected_result = np.array([1443.7534142,   59.1517559, 1443.7534142,  231.6504798])

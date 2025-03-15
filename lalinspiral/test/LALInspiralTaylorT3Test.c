@@ -116,7 +116,7 @@ int main(void) {
 	params.distance = 1e6 * LAL_PC_SI;
 	params.ieta = 1;
 
-	
+
 
 	dt = 1. / params.tSampling;
 

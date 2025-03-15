@@ -33,13 +33,10 @@ BuildRequires: make
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python3x
-BuildRequires: python-srpm-macros
-BuildRequires: python3-rpm-macros
-BuildRequires: epel-rpm-macros
-BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-BuildRequires: python%{python3_pkgversion}-pytest
+BuildRequires: python3-devel
+BuildRequires: python3-lal >= @MIN_LAL_VERSION@
+BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+BuildRequires: python3dist(pytest)
 
 # octave
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
@@ -50,8 +47,7 @@ BuildRequires: octave-devel
 #%%package -n lalmetaio
 Summary: LVK Algorithm MetaIO Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
-Obsoletes: python2-%{name} <= 2.0.2-1
+Requires: python3-%{name} = %{version}-%{release}
 %description
 The LVK Algorithm MetaIO Library for gravitational wave data analysis.
 This package provides the runtime tools.
@@ -81,15 +77,13 @@ package contains files needed build applications that use the LAL MetaIO
 library.
 
 # python3x-lalmetaio
-%package -n python%{python3_pkgversion}-%{name}
+%package -n python3-%{name}
 Summary: Python %{python3_version} Bindings for LALMetaIO
 Requires: lib%{name} = %{version}-%{release}
-Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
-Obsoletes: python2-%{name} < 2.0.3-1
-%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-%description -n python%{python3_pkgversion}-%{name}
+Requires: python3
+Requires: python3-lal >= @MIN_LAL_VERSION@
+Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
+%description -n python3-%{name}
 The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings for LALMetaIO.
 
@@ -144,7 +138,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files -n python%{python3_pkgversion}-%{name}
+%files -n python3-%{name}
 %defattr(-,root,root)
 %doc README.md
 %license COPYING

@@ -191,12 +191,3 @@ void SFT2Periodogram( LALStatus  *status,
   /* normal exit */
   RETURN( status );
 }
-
-
-
-
-
-
-
-
-

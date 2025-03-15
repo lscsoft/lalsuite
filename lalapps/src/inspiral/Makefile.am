@@ -15,7 +15,6 @@ SPININJSRC = spininj.c
 RANDOMBANKSRC = randombank.c
 NINJASRC = ninja.c
 FRNINJASRC = fr_ninja.c
-CALCEXPSNRSRC = calcexpsnr.c
 COINJSRC = coinj.c
 STOCHBANKSRC = stochasticbank.c
 
@@ -29,7 +28,6 @@ lalapps_gwf2xml_SOURCES = $(GWF2XMLSRC)
 lalapps_randombank_SOURCES = $(RANDOMBANKSRC)
 lalapps_ninja_SOURCES = $(NINJASRC)
 lalapps_fr_ninja_SOURCES = $(FRNINJASRC)
-lalapps_calcexpsnr_SOURCES = $(CALCEXPSNRSRC)
 lalapps_coinj_SOURCES = $(COINJSRC)
 lalapps_cbc_stochasticbank_SOURCES = $(STOCHBANKSRC)
 
@@ -50,7 +48,6 @@ bin_PROGRAMS += \
 	lalapps_inspfrinj \
 	lalapps_gwf2xml \
 	lalapps_ninja \
-	lalapps_calcexpsnr \
 	$(END_OF_LIST)
 endif
 

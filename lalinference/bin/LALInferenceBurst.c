@@ -1,4 +1,4 @@
-/* 
+/*
  *  InferenceNest.c:  Nested Sampling using LALInference
  *
  *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]){
   Bayesian analysis tool using Nested Sampling algorithm\n\
   for Burst analysis. Uses LALInference library for back-end.\n\n\
   Arguments for each section follow:\n\n";
-  
+
   LALInferenceRunState *state;
   ProcessParamsTable *procParams=NULL;
   int helpflag=0;
@@ -63,13 +63,13 @@ int main(int argc, char *argv[]){
     fprintf(stdout,"%s",help);
 	helpflag=1;
   }
-  
+
   /* initialise runstate based on command line */
   /* This includes reading in the data */
   /* And performing any injections specified */
   /* And allocating memory */
   state = LALInferenceInitRunState(procParams);
-  
+
   ProcessParamsTable *ppt=NULL;
   if (!helpflag && (ppt=LALInferenceGetProcParamVal(state->commandLine,"--binj"))){
     /* Perform injections if data successful read or created */
@@ -81,12 +81,12 @@ int main(int argc, char *argv[]){
 		    LALInferenceInjectInspiralSignal(state->data, state->commandLine);
   }
   if (!helpflag && LALInferenceGetProcParamVal(state->commandLine,"--inject_from_mdc")){
-      fprintf(stdout,"WARNING: Injecting a signal from MDC has not been carefully tested yet! \n"); 
+      fprintf(stdout,"WARNING: Injecting a signal from MDC has not been carefully tested yet! \n");
       LALInferenceInjectFromMDC(state->commandLine, state->data);
   }
 
-  /* Simulate calibration errors. 
-  * NOTE: this must be called after both ReadData and (if relevant) 
+  /* Simulate calibration errors.
+  * NOTE: this must be called after both ReadData and (if relevant)
   * injectInspiralTD/FD are called! */
   if(!helpflag) LALInferenceApplyCalibrationErrors(state->data, state->commandLine);
   /* Set up the appropriate functions for the nested sampling algorithm */
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]){
     }
   /* Set up structures for nested sampling */
   LALInferenceNestedSamplingAlgorithmInit(state);
-  
+
   for(INT4 i=0;i<state->nthreads;i++)
   {
     state->threads[i].cycle=LALInferenceSetupDefaultInspiralProposalCycle(state->threads[i].proposalArgs);
@@ -129,25 +129,23 @@ int main(int argc, char *argv[]){
 
   /* Choose the likelihood and set some auxiliary variables */
   LALInferenceInitLikelihood(state);
-  
+
   /* Exit since we printed all command line arguments */
   if(state == NULL || LALInferenceGetProcParamVal(state->commandLine,"--help"))
   {
     exit(0);
   }
-  
+
   /* Call setupLivePointsArray() to populate live points structures */
   LALInferenceSetupLivePointsArray(state);
-  
+
   /* write injection with noise evidence information from algorithm */
   // SALVO FIXME
   //LALInferencePrintInjectionSample(state);
-  
+
   /* Call nested sampling algorithm */
   state->algorithm(state);
-  
+
   /* end */
   return(0);
 }
-
-

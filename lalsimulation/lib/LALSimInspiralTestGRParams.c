@@ -15,7 +15,7 @@
  *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *  MA  02110-1301  USA
  */
- 
+
 #include  <lal/LALSimInspiralTestGRParams.h>
 
 /**
@@ -34,7 +34,7 @@ LALSimInspiralTestGRParam *XLALSimInspiralCreateTestGRParam(
         )
 {
         LALSimInspiralTestGRParam *parameter = (LALSimInspiralTestGRParam *)XLALMalloc(sizeof(LALSimInspiralTestGRParam));
-        if (parameter) 
+        if (parameter)
         {
             parameter->data =  (LALSimInspiralTestGRParamData *)XLALMalloc(sizeof(LALSimInspiralTestGRParamData));
             memcpy(parameter->data->name, name, 32);
@@ -56,23 +56,23 @@ int XLALSimInspiralAddTestGRParam(
 {
     LALSimInspiralTestGRParam *temp;
     temp = *parameter;
-    if (*parameter==NULL) 
+    if (*parameter==NULL)
     {
-        temp = XLALSimInspiralCreateTestGRParam(name,value); 
+        temp = XLALSimInspiralCreateTestGRParam(name,value);
         //temp->next=NULL;
         *parameter=temp;
     }
-    else 
+    else
     {
 
         if (!XLALSimInspiralTestGRParamExists(*parameter, name))
         {
             temp = *parameter;
              while(temp->next!=NULL) {temp=temp->next;}
-            LALSimInspiralTestGRParam *newParam = XLALSimInspiralCreateTestGRParam(name,value);        
+            LALSimInspiralTestGRParam *newParam = XLALSimInspiralCreateTestGRParam(name,value);
             temp->next = newParam;
         }
-        else 
+        else
         {
             XLALPrintError("XLAL Error - %s: parameter '%s' exists already! Not added to the structure\n",
                     __func__, name);
@@ -93,7 +93,7 @@ int XLALSimInspiralSetTestGRParam(
         const double value 		/**< New value for parameter */
         )
 {
-    if (XLALSimInspiralTestGRParamExists(parameter, name)) 
+    if (XLALSimInspiralTestGRParamExists(parameter, name))
     {
         while(parameter)
         {
@@ -119,15 +119,15 @@ double XLALSimInspiralGetTestGRParam(
         const char *name 	   /**< Name of parameter to be retrieved */
         )
 {
-    if (XLALSimInspiralTestGRParamExists(parameter, name)) 
+    if (XLALSimInspiralTestGRParamExists(parameter, name))
         {
-            while(parameter) 
+            while(parameter)
             {
                 if(!strcmp(parameter->data->name, name)) return parameter->data->value;
                 parameter=parameter->next;
             }
         }
-    else 
+    else
     {
         XLALPrintError("XLAL Error - %s: parameter '%s' unknown!\n",
                 __func__, name);
@@ -158,7 +158,7 @@ int XLALSimInspiralPrintTestGRParam(
 {
     if (parameter!=NULL)
     {
-        while(parameter) 
+        while(parameter)
         {
             fprintf(fp,"%s %10.5f\n",parameter->data->name,parameter->data->value);
             parameter=parameter->next;

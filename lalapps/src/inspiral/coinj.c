@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
       {0,0,0,0}
     };
 
-  /*taken from Calibration CVS file: 
+  /*taken from Calibration CVS file:
    * calibration/frequencydomain/runs/S5/H1/model/V3/H1DARMparams_849677446.m */
   actuationParams[LAL_IFO_H1].ETMXcal = -0.795e-9;
   actuationParams[LAL_IFO_H1].pendFX  = 0.767;
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
   actuationParams[LAL_IFO_H1].pendQY  = 10.0;
   actuationParams[LAL_IFO_H1].length  = 4000.0;
 
-  /*taken from Calibration CVS file: 
+  /*taken from Calibration CVS file:
    * calibration/frequencydomain/runs/S5/H2/model/V3/H2DARMparams_849678155.m */
   actuationParams[LAL_IFO_H2].ETMXcal = -0.876e-9;
   actuationParams[LAL_IFO_H2].pendFX  = 0.749;
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
   actuationParams[LAL_IFO_H2].pendQY  = 10.0;
   actuationParams[LAL_IFO_H2].length  = 2000.0;
 
-  /*taken from Calibration CVS file: 
+  /*taken from Calibration CVS file:
    * calibration/frequencydomain/runs/S5/L1/model/V3/L1DARMparams_841930071.m */
   actuationParams[LAL_IFO_L1].ETMXcal = -0.447e-9;
   actuationParams[LAL_IFO_L1].pendFX  = 0.766;
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
           break;
         case 'o':
           strncpy(outputpath,LALoptarg,999);
-          break;          
+          break;
         case 'r':
           if(!strcmp("strain",LALoptarg))          injectionResponse = unityResponse;
           else if(!strcmp("etmx",LALoptarg))   injectionResponse = actuationX;
@@ -302,12 +302,12 @@ int main(int argc, char *argv[])
       if((this_injection.geocent_end_time.gpsSeconds-(int)LeadupTime )<GPSstart || (this_injection.geocent_end_time.gpsSeconds-(int)LeadupTime)>GPSend) continue;
 
       if(det_idx==LAL_IFO_T1||det_idx==LAL_IFO_G1||det_idx==LAL_IFO_H2) continue; /* Don't generate for GEO or TAMA */
-  
+
       switch(det_idx)
         {
         case LAL_IFO_H1: sprintf(det_name,"H1"); PSD=&LALLIGOIPsd; PSDscale=9E-46; detectorFlags = LAL_LHO_4K_DETECTOR_BIT; break;
         case LAL_IFO_H2: sprintf(det_name,"H2"); PSD=&LALLIGOIPsd; PSDscale=9E-46; detectorFlags = LAL_LHO_2K_DETECTOR_BIT; break;
-        case LAL_IFO_L1: sprintf(det_name,"L1"); PSD=&LALLIGOIPsd; PSDscale=9E-46; detectorFlags = LAL_LLO_4K_DETECTOR_BIT; break; 
+        case LAL_IFO_L1: sprintf(det_name,"L1"); PSD=&LALLIGOIPsd; PSDscale=9E-46; detectorFlags = LAL_LLO_4K_DETECTOR_BIT; break;
         case LAL_IFO_V1: sprintf(det_name,"V1"); PSD=&LALVIRGOPsd; PSDscale=1.0; detectorFlags = LAL_VIRGO_DETECTOR_BIT;  break;
         case LAL_IFO_G1: sprintf(det_name,"G1"); PSD=&LALGEOPsd; PSDscale=1E-46; detectorFlags = LAL_GEO_600_DETECTOR_BIT;  break;
         case LAL_IFO_T1: sprintf(det_name,"T1"); PSD=&LALTAMAPsd; PSDscale=75E-46; detectorFlags = LAL_TAMA_300_DETECTOR_BIT; break;
@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
       if(this_injection.mass1<2.0 && this_injection.mass2<2.0) sprintf(massBin,"BNS");
       else if(this_injection.mass1<2.0 || this_injection.mass2<2.0) sprintf(massBin,"NSBH");
       else sprintf(massBin,"BBH");
-      
+
       if (!(skipASCIIoutput)){
         result = snprintf(outfilename,sizeof(outfilename),"%s%s%i_CBC_%s_%i_%s_%s.txt",outputpath,"/",inj_epoch.gpsSeconds,massBin,inj_num,injtype,det_name);
         if (result < 0 || (size_t)result > sizeof(outfilename) - 1)
@@ -453,9 +453,9 @@ int main(int argc, char *argv[])
         /* clear frame */
         XLALFrameFree( frame );
 
-        
+
       }
-        
+
       if(TimeSeries==actuationTimeSeries) XLALDestroyREAL4TimeSeries(TimeSeries);
       else {
         if(injectionResponse) XLALDestroyREAL4TimeSeries(actuationTimeSeries);
@@ -525,7 +525,7 @@ int main(int argc, char *argv[])
       injTable=injTable->next;
       inj_num++;
     }
- 
+
 
   }while(injTable!=NULL);
 

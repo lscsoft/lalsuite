@@ -72,10 +72,14 @@ void NRSurRemnant_LoadH5File(
 ) {
 
     char *path = XLAL_FILE_RESOLVE_PATH(NRSurRemnant_DATAFILE);
-    if (path==NULL) {
-        XLAL_ERROR_VOID(XLAL_ENOENT,
-            "Unable to find data file %s in $LAL_DATA_PATH\n",
-            NRSurRemnant_DATAFILE);
+    if (path==NULL){
+        XLAL_ERROR_VOID(XLAL_EIO,
+        "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
+        "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
+        "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
+        "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
+        "https://git.ligo.org/lscsoft/lalsuite-extra\n",
+        NRSurRemnant_DATAFILE);
     }
 
     char *dir = dirname(path);

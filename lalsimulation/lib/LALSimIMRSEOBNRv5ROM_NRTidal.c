@@ -43,12 +43,12 @@
 #include "LALSimIMRSEOBNRv5ROM_NRTidal.h"
 
 /**
- * Function to internally add 2PN and 3PN spin-spin terms 
+ * Function to internally add 2PN and 3PN spin-spin terms
  * to be able to include spin-induced quadrupole moments
  * in those terms; the BBH terms are excluded
  * From LALSimInspiralPNCoefficients.c:XLALSimInspiralPNPhasing_F2()
  * Compute 2.0PN SS, QM, and self-spin
- * See Eq. (6.24) in arXiv:0810.5336 
+ * See Eq. (6.24) in arXiv:0810.5336
  * 9b,c,d in arXiv:astro-ph/0504538
  */
 void Self_spin_phase_contributions(
@@ -79,7 +79,7 @@ void Self_spin_phase_contributions(
   pn_ss3 += 5.L/84.L*(9407.L+ 8218.L * m2M - 2016.L * m2Msq) * qm_def2 * m2Msq * chi2sq;
 
   const REAL8 pfaN = 3.L/(128.L * eta);
-  // The leading order term pfa->v[0] is positive and so the 
+  // The leading order term pfa->v[0] is positive and so the
   // self-spin corrections should be added to a postive phasing.
 
 
@@ -182,7 +182,7 @@ int SEOBNRv5ROM_NRTidal_Core(
     // if uniform sampling and fHigh > NRTIDAL_FMAX then resize htilde
     // so that it goes up to the user fHigh but is filled with zeros
     // beyond NRTIDAL_FMAX (this does not apply to NSBH)
-    if (fHigh > NRTIDAL_FMAX && NRTidal_version != NRTidalv2NSBH_V) 
+    if (fHigh > NRTIDAL_FMAX && NRTidal_version != NRTidalv2NSBH_V)
       {
 	// resize
 	// n_full is the next power of 2 +1.
@@ -308,7 +308,7 @@ int SEOBNRv5ROM_NRTidal_Core(
 
   if (fHz_final > freqs->data[freqs->length-1])
     fHz_final = freqs->data[freqs->length-1];
-  
+
   REAL8 t_corr_s = gsl_spline_eval_deriv(spline_phi, fHz_final, acc_phi) / (2*LAL_PI);
 
   // Now correct phase
@@ -330,7 +330,7 @@ int SEOBNRv5ROM_NRTidal_Core(
   XLALDestroyREAL8Sequence(phi_tidal);
   XLALDestroyREAL8Sequence(amp_tidal);
   XLALDestroyREAL8Sequence(planck_taper);
-  
+
 
   return XLAL_SUCCESS;
 }
@@ -396,7 +396,7 @@ int XLALSimIMRSEOBNRv5ROMNRTidalFrequencySequence(
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
   LALDict *LALparams,                           /**< linked list containing the extra testing GR parameters */
-  NRTidal_version_type NRTidal_version          /**< Version of NRTides; only NRTidalv3 (arXiv:2311.07456) */ 
+  NRTidal_version_type NRTidal_version          /**< Version of NRTides; only NRTidalv3 (arXiv:2311.07456) */
 )
 {
   if (!freqs) XLAL_ERROR(XLAL_EFAULT);

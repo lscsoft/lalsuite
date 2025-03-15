@@ -16,16 +16,4 @@ As :code:`GWSignal` is packaged with LALSuite, it can be pip installed from the 
 Install GWSignal from Source
 ------------------------------
 
-Clone the LALSuite `repository <https://git.ligo.org/lscsoft/lalsuite>`_ and install the software :
-
-.. code-block:: console
-
-    (.home) $ git clone git@git.ligo.org:lscsoft/lalsuite.git
-    (.home) $ conda env create -f common/conda/environment.yml
-    (.home) $ conda activate lalsuite-dev
-    (.lalsuite-dev) $ ./00boot
-    (.lalsuite-dev) $ ./configure --prefix=${CONDA_PREFIX}
-    (.lalsuite-dev) $ make
-    (.lalsuite-dev) $ make install
-
-See the LALSuite `repository <https://git.ligo.org/lscsoft/lalsuite>`_ for further details / options for the :code:`./configure` step.
+See the LALSuite `README <https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md>`_ for instructions on cloning the LALSuite repository and buiding LALSuite from source.

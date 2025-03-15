@@ -1,4 +1,4 @@
-/* 
+/*
  *  LALInferenceReadData.c:  Bayesian Followup functions
  *
  *  Copyright (C) 2013 Salvatore Vitale
@@ -86,7 +86,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 	UINT4 i=0,j=0;
 	int si=0;
   LIGOTimeGPS injstart;
-	REAL8 SNR=0.0,NetworkSNR=0.0;// previous_snr=0.0; 
+	REAL8 SNR=0.0,NetworkSNR=0.0;// previous_snr=0.0;
 	memset(&injstart,0,sizeof(LIGOTimeGPS));
 	COMPLEX16FrequencySeries *injF=NULL;
  // FILE *rawWaveform=NULL;
@@ -103,9 +103,9 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
           MindeltaT = MindeltaT>thisData->timeData->deltaT ? thisData->timeData->deltaT : MindeltaT;
           thisData  = thisData->next;
 	}
-  
+
 	thisData=IFOdata;
-	
+
 	if(!LALInferenceGetProcParamVal(commandLine,"--binj")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
 	if(LALInferenceGetProcParamVal(commandLine,"--event")){
 	    event= atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
@@ -124,7 +124,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 	REPORTSTATUS(&status);
   Ninj=-1;
   while(injTable){Ninj++;injTable=injTable->next;}
-	if(Ninj < event){ 
+	if(Ninj < event){
 	    fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--binj")->value);
 	    exit(1);
   }
@@ -134,22 +134,22 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 	injEvent->next = NULL;
   tslide=XLALTimeSlideTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value);
 	REPORTSTATUS(&status);
-    
+
   /* If it is the case, inject burst in the FreqDomain */
   int FDinj=0;
   if (injTable)
     if(XLALSimBurstImplementedFDApproximants(XLALGetBurstApproximantFromString(injEvent->waveform))) FDinj=1;
-    
-    
+
+
 	if (FDinj)
     {
          InjectBurstFD(thisData, injEvent, commandLine);
          return;
     }
-    
+
 	/* Begin loop over interferometers */
 	while(thisData){
-   
+
 		memcpy(&bufferStart,&thisData->timeData->epoch,sizeof(LIGOTimeGPS));
 		XLALGPSAdd(&bufferStart,(REAL8) thisData->timeData->data->length * thisData->timeData->deltaT);
 		XLALGPSAdd(&bufferStart,-bufferLength);
@@ -163,7 +163,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
                                                                            thisData->timeData->data->length);
 		if(!inj8Wave) XLAL_ERROR_VOID(XLAL_EFUNC);
 		for(i=0;i<inj8Wave->data->length;i++) inj8Wave->data->data[i]=0.0;
-    
+
     REAL8 Q, centre_frequency;
     Q=injEvent->q;
     centre_frequency=injEvent->frequency;
@@ -214,16 +214,16 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
     char filename[320];
     sprintf(filename,"%s_timeInjection.dat",thisData->name);
     FILE* file=fopen(filename, "w");
-    for(j=0;j<inj8Wave->data->length;j++){   
+    for(j=0;j<inj8Wave->data->length;j++){
       fprintf(file, "%.6f\t%lg\n", XLALGPSGetREAL8(&thisData->timeData->epoch) + thisData->timeData->deltaT*j, inj8Wave->data->data[j]);
     }
     fclose(file);
     sprintf(filename,"%s_freqInjection.dat",thisData->name);
     file=fopen(filename, "w");
     /* NOTE: Here I (salvo) got rid of the division by WinNorm that was done in the CBC version of this routine. This is because burst signals are short and centered in the middle of the segment. Thus, the actual signal will be in the flat part of the Tuckey window. */
-    for(j=0;j<injF->data->length;j++){   
+    for(j=0;j<injF->data->length;j++){
       thisData->freqData->data->data[j]+=(injF->data->data[j]);
-      fprintf(file, "%lg %lg \t %lg\n", thisData->freqData->deltaF*j, creal(injF->data->data[j]), cimag(injF->data->data[j]));    
+      fprintf(file, "%lg %lg \t %lg\n", thisData->freqData->deltaF*j, creal(injF->data->data[j]), cimag(injF->data->data[j]));
     }
     fclose(file);
 
@@ -236,7 +236,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
     if (!ppt){
       PrintSNRsToFile(IFOdata , SNRpath);
     }
-    
+
     NetworkSNR=sqrt(NetworkSNR);
     fprintf(stdout,"Network SNR of event %d = %.1e\n",event,NetworkSNR);
     thisData=IFOdata;
@@ -265,7 +265,7 @@ void LALInferenceBurstInjectionToVariables(SimBurst *theEventTable, LALInference
     REAL8 duration=theEventTable->duration;
     REAL8 dec = theEventTable->dec;
     REAL8 ra = theEventTable->ra;
-    
+
     LALInferenceAddVariable(vars, "quality", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "frequency", &f0, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
@@ -301,7 +301,7 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , char SNRpath[] ){
     NetSNR+=(thisData->SNR*thisData->SNR);
     thisData=thisData->next;
   }
-  if (nIFO>1){ 
+  if (nIFO>1){
     fprintf(snrout,"Network:\t");
     fprintf(snrout,"%4.2f\n",sqrt(NetSNR));
   }
@@ -317,7 +317,7 @@ void InjectBurstFD(LALInferenceIFOData *IFOdata, SimBurst *inj_table, ProcessPar
   INT4 errnum;
   char SNRpath[FILENAME_MAX+16];
   ProcessParamsTable *ppt=NULL;
-  ppt = NULL; 
+  ppt = NULL;
   ppt = LALInferenceGetProcParamVal(commandLine,"--outfile");
   if (ppt)
     snprintf(SNRpath,sizeof(SNRpath), "%s_snr.txt", ppt->value);
@@ -325,7 +325,7 @@ void InjectBurstFD(LALInferenceIFOData *IFOdata, SimBurst *inj_table, ProcessPar
     snprintf(SNRpath,sizeof(SNRpath), "snr.txt");
   //REAL8 WinNorm = sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
   BurstApproximant approx = XLALGetBurstApproximantFromString(inj_table->waveform);
-  
+
   if( (int) approx == XLAL_FAILURE)
     ABORTXLAL(&status);
 

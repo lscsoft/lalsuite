@@ -66,7 +66,7 @@ static int EnforcePrimaryMassIsm1(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8 *l
     lambda2_tmp = *lambda2;
     m1_tmp   = *m1;
     m2_tmp   = *m2;
-  } else { 
+  } else {
     lambda1_tmp = *lambda2;
     lambda2_tmp = *lambda1;
     m1_tmp   = *m2;
@@ -86,7 +86,7 @@ static int EnforcePrimaryMassIsm1(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8 *l
 }
 
 /**
- * function to swap masses, spins, and lambda to enforce m1 >= m2, This is mainly for NRTidalv3, 
+ * function to swap masses, spins, and lambda to enforce m1 >= m2, This is mainly for NRTidalv3,
  * which has a merger frequency fit that is dependent on the aligned spin component. See Eq. (41)
  * in https://arxiv.org/pdf/2311.07456.pdf.
  */
@@ -236,11 +236,11 @@ double XLALSimNRTunedTidesMergerFrequency_v3(
   REAL8 Xa_3 = Xa_2*Xa;
   REAL8 Xb_2 = Xb*Xb;
   REAL8 Xb_3 = Xb_2*Xb;
-  
+
   REAL8 kappa2eff = 3.0*nu*(Xa_3*lambda1 + Xb_3*lambda2);
-  
+
   const REAL8 a_0 = 0.22;
-  
+
   const REAL8 a_1M = 0.80;
   const REAL8 a_1S = 0.25;
   const REAL8 b_1S = -1.99; /**< This was not written in 2311.07456, but can be found in Table 2 of 2210.16366.*/
@@ -264,7 +264,7 @@ double XLALSimNRTunedTidesMergerFrequency_v3(
   const REAL8 p_4T = a_4T*(1.0 + b_4T*Xval);
 
   const REAL8 kappa2eff2 = kappa2eff*kappa2eff;
-  
+
   const REAL8 Sval = Xa_2*chi1_AS + Xb_2*chi2_AS;
 
   const REAL8 QM = 1.0 + a_1M*Xval;
@@ -278,7 +278,7 @@ double XLALSimNRTunedTidesMergerFrequency_v3(
 
   const REAL8 Qfit = a_0*QM*QS*QT;
 
-  const REAL8 Momega_merger = nu*Qfit*(LAL_TWOPI); 
+  const REAL8 Momega_merger = nu*Qfit*(LAL_TWOPI);
 
 
   /* convert from angular frequency to frequency (divide by 2*pi)
@@ -337,7 +337,7 @@ static double SimNRTunedTidesFDTidalPhase(
   return tidal_phase;
 }
 
-/** 
+/**
  * Tidal amplitude corrections; only available for NRTidalv2;
  * Eq 24 of arxiv:1905.06011
  */
@@ -357,7 +357,7 @@ static REAL8 SimNRTunedTidesFDTidalAmplitude(
   REAL8 poly = 1.0;
   const REAL8 n1   = 4.157407407407407;
   const REAL8 n289 = 2519.111111111111;
-  const REAL8 d    = 13477.8073677; 
+  const REAL8 d    = 13477.8073677;
 
   poly = (1.0 + n1*x + n289*pow(x, 2.89))/(1+d*pow(x,4.));
   ampT = - prefac*pow(x,3.25)*poly;
@@ -383,8 +383,8 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v2_Coeffs(REAL8 *NRTidalv2_coeffs)
   return XLAL_SUCCESS;
 }
 
-/** 
- * NRTunedTidesFDTidalPhase is Eq 22 of https://arxiv.org/abs/1905.06011 
+/**
+ * NRTunedTidesFDTidalPhase is Eq 22 of https://arxiv.org/abs/1905.06011
  * and is a function of x = angular_orb_freq^(2/3)
  */
 static double SimNRTunedTidesFDTidalPhase_v2(
@@ -426,7 +426,7 @@ static double SimNRTunedTidesFDTidalPhase_v2(
   return tidal_phase;
 }
 
-/** 
+/**
  * Coefficients or the PN tidal phase correction, at 7.5PN, to connect with NRTidalv3 Phase post-merger,
  * see Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf
  */
@@ -474,7 +474,7 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< o
                const REAL8 lambda2, /**< dimensionless tidal deformability of companion 2*/
                const REAL8 PN_coeffs[10] /**< 7.5 PN coefficients to be used for constraints*/
                )
-{ 
+{
   REAL8 Xb = 1.0 - Xa; //secondary mass divided by total mass
   REAL8 q = Xa/Xb;
 
@@ -482,20 +482,20 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< o
   const REAL8 s10 =   1.273000423; //s10
   const REAL8 s11 =   3.64169971e-03; //s11
   const REAL8 s12 =   1.76144380e-03; //s12
-  
+
   const REAL8 s20 =   2.78793291e+01; //s20
   const REAL8 s21 =   1.18175396e-02; //s21
-  const REAL8 s22 =   -5.39996790e-03; //s22 
-  
+  const REAL8 s22 =   -5.39996790e-03; //s22
+
   const REAL8 s30 =   1.42449682e-01; //s30
   const REAL8 s31 =   -1.70505852e-05; //s31
-  const REAL8 s32 =   3.38040594e-05; //s32 
+  const REAL8 s32 =   3.38040594e-05; //s32
 
   REAL8 m1_SI = Xa * mtot * LAL_MSUN_SI;
   REAL8 m2_SI = Xb * mtot * LAL_MSUN_SI;
 
   REAL8 kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
-  
+
   NRTidalv3_coeffs[0] = s10 + s11*kappa2T + s12*q*kappa2T; // s1
   NRTidalv3_coeffs[1] = s20 + s21*kappa2T + s22*q*kappa2T; // s2
   NRTidalv3_coeffs[2] = s30 + s31*kappa2T + s32*q*kappa2T; // s3
@@ -521,12 +521,12 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< o
   const REAL8 n_5over21 =  6.26517157e+02; //n_5over21
   const REAL8 n_5over22 =  5.53629706e+02; //n_5over22
   const REAL8 n_5over23 =  8.84823087e+01; //n_5over23
-  
+
   const REAL8 n_30 =  4.05483848e+02; //n_30
   const REAL8 n_31 =  -4.25525054e+02; //n_31
   const REAL8 n_32 = -1.92004957e+02; //n_32
   const REAL8 n_33 =  -5.10967553e+01; //n_33
-  
+
   const REAL8 d_10 =  3.80343306e+00; //d_10
   const REAL8 d_11 =  -2.52026996e+01; //d_11
   const REAL8 d_12 =  -3.08054443e+00; //d_12
@@ -534,7 +534,7 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< o
   NRTidalv3_coeffs[6] = n_5over20 + n_5over21*Xa + n_5over22*kappaA_alpha + n_5over23*Xa_beta; //n_5over2A
   NRTidalv3_coeffs[7] = n_30 + n_31*Xa + n_32*kappaA_alpha + n_33*Xa_beta; //n_3A
   NRTidalv3_coeffs[8] = d_10 + d_11*Xa + d_12*Xa_beta; //d_1A
-  
+
   NRTidalv3_coeffs[9] = n_5over20  + n_5over21*Xb  + n_5over22*kappaB_alpha + n_5over23*Xb_beta; //n_5over2B
   NRTidalv3_coeffs[10] = n_30 + n_31*Xb + n_32*kappaB_alpha + n_33*Xb_beta; //n_3B
   NRTidalv3_coeffs[11] = d_10 + d_11*Xb + d_12*Xb_beta; //d_1B
@@ -566,7 +566,7 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< o
   return XLAL_SUCCESS;
 }
 
-/** 
+/**
  * Tidal phase correction for NRTidalv3, Eq. (27,30), from Abac, et. al. (2023) (https://arxiv.org/pdf/2311.07456.pdf)
  * and is a function of x = angular_orb_freq^(2./3.)
  */
@@ -579,8 +579,8 @@ static double SimNRTunedTidesFDTidalPhase_v3(
 {
   REAL8 M_omega = LAL_PI * fHz * (mtot * LAL_MTSUN_SI); //dimensionless angular GW frequency
 
-  REAL8 s1 = NRTidalv3_coeffs[0]; 
-  REAL8 s2 = NRTidalv3_coeffs[1]; 
+  REAL8 s1 = NRTidalv3_coeffs[0];
+  REAL8 s2 = NRTidalv3_coeffs[1];
 
   REAL8 exps2s3 = NRTidalv3_coeffs[3];
 
@@ -606,7 +606,7 @@ static double SimNRTunedTidesFDTidalPhase_v3(
   REAL8 n_5over2A = NRTidalv3_coeffs[6];
   REAL8 n_3A = NRTidalv3_coeffs[7];
   REAL8 d_1A = NRTidalv3_coeffs[8];
-  
+
   REAL8 n_5over2B = NRTidalv3_coeffs[9];
   REAL8 n_3B = NRTidalv3_coeffs[10];
   REAL8 d_1B = NRTidalv3_coeffs[11];
@@ -632,22 +632,22 @@ static double SimNRTunedTidesFDTidalPhase_v3(
   /* Pade approximant, see Eq. (32) of https://arxiv.org/pdf/2311.07456.pdf. */
   REAL8 numA = 1.0 + (n_1A*PN_x) + (n_3over2A*PN_x_3over2) + (n_2A*PN_x_2) + (n_5over2A*PN_x_5over2) + (n_3A*PN_x_3);
   REAL8 denA = 1.0 + (d_1A*PN_x) + (d_3over2A*PN_x_3over2);// + (d_2A*PN_x_2);
-  
+
   REAL8 numB = 1.0 + (n_1B*PN_x) + (n_3over2B*PN_x_3over2) + (n_2B*PN_x_2) + (n_5over2B*PN_x_5over2) + (n_3B*PN_x_3);
   REAL8 denB = 1.0 + (d_1B*PN_x) + (d_3over2B*PN_x_3over2);// + (d_2B*PN_x_2);
 
   REAL8 ratioA = numA/denA;
   REAL8 ratioB = numB/denB;
-  
+
   REAL8 tidal_phaseA = factorA*ratioA;
   REAL8 tidal_phaseB = factorB*ratioB;
-  
+
   REAL8 tidal_phase = tidal_phaseA + tidal_phaseB;
 
   return tidal_phase;
 }
 
-/** 
+/**
  * PN tidal phase correction, at 7.5PN, to connect with NRTidalv3 Phase post-merger,
  * see Eq. (22) and (45) of https://arxiv.org/pdf/2311.07456.pdf
  * and is a function of x = angular_orb_freq^(2./3.)
@@ -691,14 +691,14 @@ static double SimNRTunedTidesFDTidalPhase_PN(
 
   REAL8 tidal_phasePNA = factorA*(1.0 + (c_1A*PN_x) + (c_3over2A*PN_x_3over2) + (c_2A*PN_x_2) + (c_5over2A*PN_x_5over2));
   REAL8 tidal_phasePNB = factorB*(1.0 + (c_1B*PN_x) + (c_3over2B*PN_x_3over2) + (c_2B*PN_x_2) + (c_5over2B*PN_x_5over2));
-    
+
   REAL8 tidal_phasePN = tidal_phasePNA + tidal_phasePNB;
 
   return tidal_phasePN;
 }
 
-/** Function to call amplitude tidal series only; 
- * done for convenience to use for PhenomD_NRTidalv2 and 
+/** Function to call amplitude tidal series only;
+ * done for convenience to use for PhenomD_NRTidalv2 and
  * SEOBNRv4_ROM_NRTidalv2
  */
 
@@ -716,7 +716,7 @@ int XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(
   REAL8 f_dim_to_Hz;
   int errcode = EnforcePrimaryMassIsm1(&m1_SI, &m2_SI, &lambda1, &lambda2);
   XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "EnforcePrimaryMassIsm1 failed");
-  
+
   if( lambda1 < 0 || lambda2 < 0 )
   XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for NRTidal models", lambda1, lambda2);
 
@@ -729,7 +729,7 @@ int XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(
 
   if ((*fHz).data[(*fHz).length - 1] > 1.)
     f_dim_to_Hz = 1.;
-  else 
+  else
     f_dim_to_Hz = mtot*LAL_MTSUN_SI;
 
   /* tidal coupling constant.*/
@@ -744,9 +744,9 @@ int XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(
 /**
  * Function to call the frequency domain tidal correction
  * over an array of input frequencies. This is
- * Equation (7) in arXiv:1706.02969 when NRTidal_version is NRTidal_V, 
- * or Equations (17)-(21) (for phasing) and Equation (24) (for amplitude) 
- * in arXiv:1905.06011 when NRTidal_version is NRTidalv2_V, 
+ * Equation (7) in arXiv:1706.02969 when NRTidal_version is NRTidal_V,
+ * or Equations (17)-(21) (for phasing) and Equation (24) (for amplitude)
+ * in arXiv:1905.06011 when NRTidal_version is NRTidalv2_V,
  * or Equations (17)-(21) in arXiv:1905.06011 when NRTidal_version is NRTidalv2NoAmpCorr_V.
  * NoNRT_V specifies NO tidal phasing or amplitude is being added.
  * Note internally we use m1>=m2 - this is enforced in the code.
@@ -785,11 +785,11 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
    * This is enforced in the code below and we swap the lambda's
    * accordingly. For NRTidalv3, we also swap the aligned spin components chi1_AS and chi2_AS, on which the new merger frequency fit is dependent.
    */
-  
+
 
   int errcode = EnforcePrimaryMassIsm1_v3(&m1_SI, &m2_SI, &lambda1, &lambda2, &chi1_AS, &chi2_AS);
   XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "EnforcePrimaryMassIsm1_v3 failed");
-  
+
   if( lambda1 < 0 || lambda2 < 0 )
   XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for NRTidal models", lambda1, lambda2);
 
@@ -830,7 +830,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
     REAL8 NRTidalv3_coeffs[20];
     XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2, PN_coeffs);
-    REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; 
+    REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum;
     for (UINT4 i = 0; i < (*fHz).length; i++) {
         (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], mtot, NRTidalv3_coeffs, PN_coeffs);
         if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]) {
@@ -895,18 +895,18 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     XLAL_ERROR( XLAL_EINVAL, "Trying to add NRTides to a BBH waveform!" );
   else
     XLAL_ERROR( XLAL_EINVAL, "Unknown version of NRTidal being used! At present, NRTidal_V, NRTidalv2_V, NRTidalv2NSBH_V, NRTidalv2NoAmpCorr_V and NoNRT_V are the only known ones!" );
-  
+
   return XLAL_SUCCESS;
 }
 
 /**
- * Function to add 3.5PN spin-squared and 3.5PN spin-cubed terms. 
+ * Function to add 3.5PN spin-squared and 3.5PN spin-cubed terms.
  * The spin-squared terms occur with the spin-induced quadrupole moment terms
- * while the spin-cubed terms occur with both spin-induced quadrupole as well as 
- * octupole moments. The terms are computed in arXiv:1806.01772 and are 
+ * while the spin-cubed terms occur with both spin-induced quadrupole as well as
+ * octupole moments. The terms are computed in arXiv:1806.01772 and are
  * explicitly written out in Eq 27 of arXiv:1905.06011. The following terms
  * are specifically meant for BNS systems, and are added to the NRTidalv2
- * extensions of the approximants IMRPhenomPv2, IMRPhenomD and SEOBNRv4_ROM. 
+ * extensions of the approximants IMRPhenomPv2, IMRPhenomD and SEOBNRv4_ROM.
  */
 
 void XLALSimInspiralGetHOSpinTerms(

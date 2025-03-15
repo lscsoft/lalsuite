@@ -12,7 +12,7 @@ coverage:
   needs: []
   variables:
     CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
-    ENVIRONMENT_FILE: "common/conda/environment.yml"
+    ENVIRONMENT_FILE: "./conda-dev-env.yml"
   before_script:
     - !reference [.build-init]
     - !reference [.conda-init]

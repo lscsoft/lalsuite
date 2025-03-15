@@ -953,7 +953,7 @@ static REAL8 XLALvrP4PN( void *params )
 
   dA = (dNA * DA - NA * dDA)/ DA2;
   d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/(DA2 * DA);
- 
+
   v = cbrt(pr3in->omega);
   FDIS = -pr3in->in3copy.flux(v, pr3in->in3copy.coeffs)/(eta* pr3in->omega);
 
@@ -1279,7 +1279,7 @@ int XLALEOBWaveformForInjection(
 
     /* Allocate the waveform structures. */
     if ( ( waveform->a = (REAL4TimeVectorSeries *)
-       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) 
+       LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL )
     {
       XLALDestroyREAL4Vector(ff);
       XLALDestroyREAL4Vector(a);
@@ -1385,7 +1385,7 @@ int XLALEOBWaveformForInjection(
         XLAL_ERROR( XLAL_EFUNC );
       }
       memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
-        
+
       waveform->h->data = XLALCreateREAL4VectorSequence( count, 2 );
       if ( !(waveform->h->data) )
       {

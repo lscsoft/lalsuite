@@ -102,4 +102,3 @@ def make_disk_plot(post,outpath=None):
   cbar.solids.set_edgecolor("face")
   plt.savefig(os.path.join(outpath,"comp_spin_pos.png"), bbox_inches='tight')
   plt.clf()
-

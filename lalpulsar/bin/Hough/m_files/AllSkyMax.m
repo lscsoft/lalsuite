@@ -1,10 +1,10 @@
-% 
+%
 %
 %  Matlab script to get the maximum numbercount values of the Hough map results
 %  for the different frequency bins.
 %  It will look into all the different patches
- 
-% Remember to add the path where this file is located: 
+
+% Remember to add the path where this file is located:
 % addpath  /local_data/badkri/src/pulsar/hough/m_files
 %   To run simply type AllSkyMax
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -31,13 +31,13 @@ FreqValues =[];
 MaxValues=[];
 
 for filenumber = 0:Nbands; %the  current frequency band
-  
+
   filenumber
-  
-%%%% The 1st sky patch. Initializing 
+
+%%%% The 1st sky patch. Initializing
   skypatch = 1;
      ThisDir = strcat(DirName, int2str( skypatch ));
-     ThisDir = strcat(OutDir,ThisDir);   
+     ThisDir = strcat(OutDir,ThisDir);
      file = strcat(prefix, int2str( filenumber ));
      file = strcat(file, sufix);
      file = strcat(ThisDir,file);
@@ -47,13 +47,13 @@ for filenumber = 0:Nbands; %the  current frequency band
      xMax = output(:,4);
      clear output;
 
-     Length = length(xMax); 
+     Length = length(xMax);
      freq = xFreq(1:NspinValues:Length)';
      XX =  reshape(xMax, NspinValues, Length/NspinValues );
      TheMax= max(XX);
-   
+
 %%%% The remaining sky patches
-  
+
   for skypatch = 2:NskyPatches;
      ThisDir = strcat(DirName, int2str( skypatch ));
      ThisDir = strcat(OutDir,ThisDir);
@@ -69,7 +69,7 @@ for filenumber = 0:Nbands; %the  current frequency band
      maxi= max(XX);
      TheMax= max(TheMax, maxi);
   end
-  
+
   FreqValues = [FreqValues,freq];
   MaxValues  = [MaxValues,TheMax];
 end
@@ -82,5 +82,3 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 save AllSkyMaxResults FreqValues MaxValues
-  
-

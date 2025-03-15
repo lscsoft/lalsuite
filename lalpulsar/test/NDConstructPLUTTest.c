@@ -362,7 +362,7 @@ int main( int argc, char *argv[] )
 
   /* initializing output  space */
   pointer = &( PHMD[0] );
-  for ( k = 0; k < ( xSide + 1 )*ySide; ++k ) {
+  for ( k = 0; k < ( xSide + 1 ) * ySide; ++k ) {
     *pointer = 0;
     ++pointer;
   }

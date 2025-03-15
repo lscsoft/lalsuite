@@ -47,10 +47,10 @@ from collections import ChainMap, Counter
 import warnings
 
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
-from ligo.lw.utils import coincs as ligolw_coincs
-from ligo import segments
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
+from igwn_ligolw.utils import coincs as ligolw_coincs
+import igwn_segments as segments
 import lal
 from . import offsetvector
 
@@ -370,8 +370,8 @@ class singlesqueue(object):
 		lal.LIGOTimeGPS object.  If some other type is used, it
 		must support arithmetic and comparison with python float
 		objects and lal.LIGOTimeGPS objects, and support comparison
-		with ligo.segments.PosInfinity and
-		ligo.segments.NegInfinity, and it must have a .__dict__ or
+		with igwn_segments.PosInfinity and
+		igwn_segments.NegInfinity, and it must have a .__dict__ or
 		other mechanism allowing an additional attribute named
 		.event to be set on the object.  The builtin float type is
 		not suitable, but a subclass of float would be.
@@ -853,7 +853,8 @@ class TimeSlideGraphNode(object):
 			# the unused events returned by the doubles
 			# generator in the len==2 code path.
 			assert not coinc_windows
-			self.components = (coincgen_doubles_type.singlesqueue(0.),)
+			offset, = offset_vector.values()
+			self.components = (coincgen_doubles_type.singlesqueue(offset, 0.),)
 			self.index = self.components[0].index
 		else:
 			raise ValueError("offset_vector cannot be empty")
@@ -1606,82 +1607,112 @@ class CoincRates(object):
 
 		self.rate_factors = {}
 		for instruments in self.all_instrument_combos:
-		# choose the instrument whose TOA forms the "epoch" of the
-		# coinc.  to improve the convergence rate this should be
-		# the instrument with the smallest Cartesian product of
-		# coincidence windows with other instruments (so that
-		# coincidence with this instrument provides the tightest
-		# prior constraint on the time differences between the
-		# other instruments).
+		# choose the instrument whose event time forms the "epoch"
+		# of the coinc.  which we choose is irrelevant
+			# frozenset of names
 			key = instruments
-			anchor = min(instruments, key = lambda a: sum(math.log(self.tau[frozenset((a, b))]) for b in instruments - set([a])))
-			instruments = tuple(instruments - set([anchor]))
-		# the computation of a coincidence rate starts by computing
-		# \mu_{1} * \mu_{2} ... \mu_{N} * 2 * \tau_{12} * 2 *
-		# \tau_{13} ... 2 * \tau_{1N}.  this is the rate at which
-		# events from instrument 1 are coincident with events from
-		# all of instruments 2...N.  the factors of 2 are because
-		# to be coincident the time difference can be anywhere in
-		# [-tau, +tau], so the size of the coincidence window is 2
-		# tau.  removing the factor of
+			# name, list of names
+			anchor, *instruments = instruments
+		# to understand the calculation consider the following
+		# diagram.  this depicts the inter-instrument time delays
+		# for candidates in a three-detector network.
 		#
-		#	\prod_{i} \mu_{i}
+		#                   3
+		#     t3-t2 = const ^
+		#              /    |      t2-t1 = const
+		#          |  /     |        |
+		#        --+-/------+--------+-- t3-t1 = const
+		#          |/XXXXXXX|XXXXXXXX|
+		#          /XXXXXXXX|XXXXXXXX|
+		#         /|XXXXXXXX|XXXXXXXX|
+		#       ---|--------1--------|---> 2
+		#          |XXXXXXXX|XXXXXXXX|/
+		#          |XXXXXXXX|XXXXXXXX/
+		#          |XXXXXXXX|XXXXXXX/|
+		#        --+--------+------/-+-- t3-t1 = const
+		#          |        |     /  |
+		#   t2-t1 = const   |    /
+		#                     t3-t2 = const
 		#
-		# leaves
+		# in this example the time of the event seen in detector 1
+		# (arbitrary) is represented by the origin.  the x axis
+		# indicates the time difference between the event seen in
+		# detector 2 and the event seen in detector 1, while the y
+		# axis depicts the time differenc between the event seen in
+		# detector 3 and the event seen in detector 1.  in this
+		# parameter space, the coincidence windows take the form of
+		# half-spaces:  for example, the requirement that |t2-t1|
+		# <= const becomes two t2-t1=const half-space boundaries,
+		# in this case vertical lines parallel to the y-axis.
+		# similarly, the requirement that |t3-t1| <= const becomes
+		# a pair of t3-t1=const half-space boundaries parallel to
+		# the x-axis.  the requirement that |t3-t2| <= const can
+		# also be shown in this space, that requirement becomes a
+		# third pair of half-space boundaries, this time at 45
+		# degrees to the axes.
 		#
-		#	\prod_{i} 2 \tau_{1i}.
+		# in this 2-dimensional parameter space, all valid 3-way
+		# mutual coincidences must fall within the shaded region
+		# marked with "X"s, meaning their (t2-t1) and (t3-t1)
+		# values must fall in that area.  this is the intersection
+		# of the 6 half-spaces.
 		#
-		# in the N-1 dimensional space defined by the time
-		# differences between each instrument and the anchor
-		# instrument, the coincidence windows between instruments
-		# define pairs of half-space boundaries.  for the
-		# coincidence windows between each instrument and the
-		# anchor instrument these boundaries are perpendicular to
-		# co-ordinate axes, while for other pairs of instruments
-		# the coincidence windows correspond to planes angled at 45
-		# degrees in various orientations.  altogether they define
-		# a convex polyhedron containing the origin.
+		# all of this generalizes to more than 3 detectors,
+		# becoming an (N-1)-dimensional space of the \Delta t's,
+		# with the allowed volume being the intersection of the
+		# half-spaces defined by the coincidence windows.  it's
+		# aparent that the final quantity we seek here is the
+		# volume of the convex polyhedron defined by all of the
+		# constraints.  this can be computed using the qhull
+		# library's half-space intersection implementation.
 		#
-		# the product of taus, above, is the volume of the
-		# rectangular polyhedron defined by the anchor instrument
-		# constraints alone.  it's aparent that the final quantity
-		# we seek here is the volume of the convex polyhedron
-		# defined by all of the constraints.  this can be computed
-		# using the qhull library's half-space intersection
-		# implementation.
-		#
-		# the half-space instersection code assumes constraints of
-		# the form
+		# the half-space instersection code requires constraints be
+		# provided to it in the form
 		#
 		#	A x + b <= 0,
 		#
 		# where A has size (n constraints x m dimensions), where
-		# for N instruments m = N-1.  each coincidence window
+		# for N instruments m = N-1.  in this form, x is the vector
+		# of time differences between the events seen in each of
+		# the detectors and the event seen in the "anchor"
+		# instrument at the origin.  each coincidence window
 		# between an instrument, i, and the anchor imposes two
 		# constraints of the form
 		#
 		#	+/-t_{i} - \tau_{1i} <= 0
 		#
-		# for a total of 2*(N-1) constraints.  each coincidence
-		# window between a pair of (non-anchor) instruments imposes
-		# two constraints of the form
+		# giving 2*(N-1) constraints.  additionally, each
+		# coincidence window between a pair of non-anchor
+		# instruments imposes two constraints of the form
 		#
 		#	+/-(t_{i} - t_{j}) - \tau_{ij} <= 0
 		#
-		# for a total (N-1)*(N-2) constraints.  altogether there
-		# are
+		# for an additional (N-1)*(N-2) constraints.  altogether
+		# there are
 		#
 		#	n = (N-1)^2 + (N-1) = m * (m + 1)
 		#
 		# constraints
+		#
+		# the "rate factor" we compute below is the volume in units
+		# of time^(N-1) of the convex polyhedron described above.
+		# this is the proportionality constant giving us the rate
+		# of N-way mutual coincidences
+		#
+		# coinc rate = (polyhedron volume) \\prod_{i} \\mu_{i}.
+		#
+		# the volume has units of time^(N-1), the \\mu have units
+		# of 1/time, there are N of them, so as hoped the rate of
+		# coincidences has units of 1/time.
+
 			if not instruments:
 				# one-instrument case, no-op
 				self.rate_factors[key] = 1.
 			elif len(instruments) == 1:
 				# two-instrument (1-D) case, don't use qhull
-				self.rate_factors[key] = 2. * self.tau[frozenset((anchor, instruments[0]))]
+				self.rate_factors[key] = 2. * self.tau[key]
 			else:
-				# three- and more instrument (2-D and
+				# three and more instrument (2-D and
 				# higher) case
 				dimensions = len(instruments)	# anchor not included
 				halfspaces = numpy.zeros((dimensions * (dimensions + 1), dimensions + 1), dtype = "double")
@@ -1703,67 +1734,7 @@ class CoincRates(object):
 				# the origin is in the interior
 				interior = numpy.zeros((len(instruments),), dtype = "double")
 				# compute volume
-				try:
-					self.rate_factors[key] = spatial.ConvexHull(spatial.HalfspaceIntersection(halfspaces, interior).intersections).volume
-				except AttributeError:
-					# fall-through to old version
-					pass
-				else:
-					# it worked, continue
-					continue
-
-				# old stone-throwing version in case qhull
-				# is not available.  FIXME:  remove when we
-				# are sure it's not needed.  for each
-				# instrument 2...N, the interval within
-				# which an event is coincident with
-				# instrument 1
-				windows = tuple((-self.tau[frozenset((anchor, instrument))], +self.tau[frozenset((anchor, instrument))]) for instrument in instruments)
-				# pre-assemble a sequence of instrument
-				# index pairs and the maximum allowed
-				# \Delta t between them to avoid doing the
-				# work associated with assembling the
-				# sequence inside a loop
-				ijseq = tuple((i, j, self.tau[frozenset((instruments[i], instruments[j]))]) for (i, j) in itertools.combinations(range(len(instruments)), 2))
-				# compute the numerator and denominator of
-				# the fraction of events coincident with
-				# the anchor instrument that are also
-				# mutually coincident.  this is done by
-				# picking a vector of allowed \Delta ts and
-				# testing them against the coincidence
-				# windows.  the loop's exit criterion is
-				# arrived at as follows.  after d trials,
-				# the number of successful outcomes is a
-				# binomially-distributed RV with variance =
-				# d p (1 - p) <= d/4 where p is the
-				# probability of a successful outcome.  we
-				# quit when the ratio of the bound on the
-				# standard deviation of the number of
-				# successful outcomes (\sqrt{d/4}) to the
-				# actual number of successful outcomes (n)
-				# falls below rel accuracy: \sqrt{d/4} / n
-				# < rel accuracy, or
-				#
-				# \sqrt{d} < 2 * rel accuracy * n
-				#
-				# note that if the true probability is 0,
-				# so that n=0 identically, then the loop
-				# will never terminate; from the nature of
-				# the problem we know 0<p<1 so the loop
-				# will, eventually, terminate.
-				math_sqrt = math.sqrt
-				random_uniform = random.uniform
-				two_epsilon = 2. * abundance_rel_accuracy
-				n, d = 0, 0
-				while math_sqrt(d) >= two_epsilon * n:
-					dt = tuple(random_uniform(*window) for window in windows)
-					if all(abs(dt[i] - dt[j]) <= maxdt for i, j, maxdt in ijseq):
-						n += 1
-					d += 1
-				self.rate_factors[key] = float(n) / float(d)
-				for instrument in instruments:
-					self.rate_factors[key] *= 2. * self.tau[frozenset((anchor, instrument))]
-
+				self.rate_factors[key] = spatial.ConvexHull(spatial.HalfspaceIntersection(halfspaces, interior).intersections).volume
 		# done computing rate_factors
 
 
@@ -1956,6 +1927,14 @@ class CoincRates(object):
 		>>> x = iter(coincrates.random_instruments(H1 = 0.001, L1 = 0.002, V1 = 0.003))
 		>>> x.next()	# doctest: +SKIP
 		(frozenset(['H1', 'L1']), -3.738788683913535)
+
+		NOTE:  the generator yields instrument combinations drawn
+		uniformly from the set of allowed instrument combinations,
+		but this is not considered part of the definition of the
+		behaviour of this generator and this implementation detail
+		should not be relied upon by calling code.  It is stated
+		here simply for clarity in case it helps improve
+		optimization choices elsewhere.
 		"""
 		# guaranteed non-empty
 		lnP_instruments = self.lnP_instruments(**rates)

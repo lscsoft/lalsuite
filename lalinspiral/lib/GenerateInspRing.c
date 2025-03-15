@@ -624,4 +624,3 @@ XLALDeriveRingdownParameters(
       ringInj->hrss_l, ringInj->hrss_l);
   return( ringInj );
 }
-

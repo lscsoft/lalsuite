@@ -30,7 +30,7 @@ WHERE
 		WHERE
 			program == 'lalburst_injfind'
 	);
-	
+
 DELETE FROM
 	search_summary
 WHERE
@@ -61,7 +61,7 @@ WHERE
 					program == 'lalburst_injfind'
 			)
 	);
-	
+
 DELETE FROM
 	coinc_event
 WHERE

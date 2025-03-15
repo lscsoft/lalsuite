@@ -150,7 +150,7 @@ static int XLALSpinHcapNumericalDerivative(
   /* NQC coefficients container */
   EOBNonQCCoeffs *nqcCoeffs = NULL;
 
-  /* Set up pointers for GSL */ 
+  /* Set up pointers for GSL */
   params.values  = values;
   params.params  = (SpinEOBParams *)funcParams;
   nqcCoeffs      = params.params->nqcCoeffs;
@@ -227,7 +227,7 @@ static int XLALSpinHcapNumericalDerivative(
     }
     else
     {
-      XLAL_CALLGSL( gslStatus = gsl_deriv_central( &F, values[i], 
+      XLAL_CALLGSL( gslStatus = gsl_deriv_central( &F, values[i],
                       STEP_SIZE, &tmpDValues[i], &absErr ) );
     }
     if ( gslStatus != GSL_SUCCESS )
@@ -284,7 +284,7 @@ static int XLALSpinHcapNumericalDerivative(
   //chiA = 0.5 * ( magS1 / (mass1*mass1) - magS2 / (mass2*mass2) );
 
   sKerr.length = 3;
-  sKerr.data   = sKerrData; 
+  sKerr.data   = sKerrData;
   XLALSimIMRSpinEOBCalculateSigmaKerr( &sKerr, mass1, mass2, &s1, &s2 );
 
   sStar.length = 3;
@@ -295,7 +295,7 @@ static int XLALSpinHcapNumericalDerivative(
 
   //XLALSimIMREOBCalcSpinFacWaveformCoefficients( params.params->eobParams->hCoeffs, mass1, mass2, eta, a, chiS, chiA );
   //XLALSimIMRCalculateSpinEOBHCoeffs( params.params->seobCoeffs, eta, a );
- 
+
   rVec.length = pVec.length = 3;
   rVec.data   = rData;
   pVec.data   = pData;
@@ -361,7 +361,7 @@ static int XLALSpinHcapNumericalDerivative(
 
   dLhatx = (dLx*magL - Lx*dMagL)/(magL*magL);
   dLhaty = (dLy*magL - Ly*dMagL)/(magL*magL);
-  
+
   /* Finn Chernoff convention is used here. TODO: implement the geometric precessing convention */
   if ( Lhatx == 0.0 && Lhaty == 0.0 )
   {

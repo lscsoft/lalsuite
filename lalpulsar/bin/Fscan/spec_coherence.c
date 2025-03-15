@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2021 Evan Goetz
+*  Copyright (C) 2021-2025 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -46,12 +46,14 @@ int main( int argc, char **argv )
   REAL8 f0 = 0, deltaF = 0;
   CHAR outbase[256], outfile0[512];
 
-  CHAR *SFTpattA = NULL, *SFTpattB = NULL, *outputDir = NULL, *outputBname = NULL;
+  CHAR *SFTpattA = NULL, *SFTpattB = NULL, *outputDir = NULL, *outputBname = NULL, *header = NULL;
   INT4 startGPS = 0, endGPS = 0;
   REAL8 f_min = 0.0, f_max = 0.0, timebaseline = 0;
 
   /* Default for output directory */
   XLAL_CHECK_MAIN( ( outputDir = XLALStringDuplicate( "." ) ) != NULL, XLAL_EFUNC );
+
+  BOOLEAN allow_skipping = 0;
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &SFTpattA,      "ChASFTs",         STRING, 'p', REQUIRED, "SFT location/pattern. Possibilities are:\n"
                                           " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -64,6 +66,8 @@ int main( int argc, char **argv )
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputDir,    "outputDir",    STRING, 'd', OPTIONAL, "Output directory for data files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputBname,  "outputBname",  STRING, 'o', OPTIONAL, "Base name of output files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &timebaseline, "timeBaseline", REAL8,  't', REQUIRED, "The time baseline of sfts" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &allow_skipping, "allow_skipping", BOOLEAN, 'x', OPTIONAL, "Allow to exit without an error if no SFTs are found" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &header,       "header",       STRING, 'H', OPTIONAL, "Header line in the output file; if not provided then no header line will be made" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   BOOLEAN should_exit = 0;
   XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -87,13 +91,10 @@ int main( int argc, char **argv )
   printf( "Calling XLALSFTdataFind with SFTpattB=%s\n", SFTpattB );
   XLAL_TRY( catalog_b = XLALSFTdataFind( SFTpattB, &constraints ), errnumB );
 
-  /* Ensure that some SFTs were found given the start and end time and IFO constraints unless the file "nosfts" is present */
+  /* Ensure that some SFTs were found given the start and end time and IFO constraints unless --allow_skipping is true */
   if ( errnumA != 0 || errnumB != 0 ) {
-    CHAR XLAL_INIT_DECL( path_a, [4096] );
-    CHAR XLAL_INIT_DECL( path_b, [4096] );
-    snprintf( path_a, sizeof( path_a ), "%s/nosfts", dirname( SFTpattA ) );
-    if ( errnumA != 0 && access( path_a, F_OK ) == 0 ) {
-      LogPrintf( LOG_CRITICAL, "Channel A %s found no SFTs but 'nosfts' file was present. Exiting.\n", SFTpattA );
+    if ( errnumA != 0 && allow_skipping ) {
+      LogPrintf( LOG_CRITICAL, "Channel A %s found no SFTs, exiting without error due to --allow_skipping=true\n", SFTpattA );
       if ( catalog_a != NULL ) {
         XLALDestroySFTCatalog( catalog_a );
       }
@@ -105,9 +106,8 @@ int main( int argc, char **argv )
     } else if ( errnumA != 0 ) {
       XLAL_ERROR_MAIN( errnumA );
     }
-    snprintf( path_b, sizeof( path_b ), "%s/nosfts", dirname( SFTpattB ) );
-    if ( errnumB != 0 && access( path_b, F_OK ) == 0 ) {
-      LogPrintf( LOG_CRITICAL, "Channel B %s found no SFTs but 'nosfts' file was present. Exiting.\n", SFTpattB );
+    if ( errnumB != 0 && allow_skipping ) {
+      LogPrintf( LOG_CRITICAL, "Channel B %s found no SFTs, exiting without error due to --allow_skipping=true\n", SFTpattB );
       if ( catalog_a != NULL ) {
         XLALDestroySFTCatalog( catalog_a );
       }
@@ -138,6 +138,11 @@ int main( int argc, char **argv )
   COHOUT = fopen( outfile0, "w" );
   fopenerr = errno;
   XLAL_CHECK_MAIN( COHOUT != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile0, strerror( fopenerr ) );
+
+  // Write header line to files, if provided
+  if ( XLALUserVarWasSet( &header ) ) {
+    fprintf( COHOUT, "# %s\n", header );
+  }
 
   UINT4 nAve = 0;
 

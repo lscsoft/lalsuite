@@ -18,10 +18,10 @@ routine of how large we should allocate the Series to be before
 calling the read frequency series module */
 
 
-void FUNC ( LALStatus* status, 
+void FUNC ( LALStatus* status,
                               STYPE *series,
 	                      const CHAR *filename )
- 
+
 {
   REAL8Vector		*f=NULL;
   REAL8			*fPtr;
@@ -32,18 +32,18 @@ void FUNC ( LALStatus* status,
   CHAR			line[MaxLineLength];  /*holds data from each line*/
   LALUnit		tempUnit;
   CHARVector            *string=NULL;
-  
+
   /* need to declare error section here */
   INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT( filename != NULL, status, READFTSERIESH_EFILENOTFOUND,
 	  READFTSERIESH_MSGEFILENOTFOUND );
-  
+
   /* if (filename == NULL) return; */
 
   fp = LALFopen( filename, "r" );
-  if (fp == NULL) 
+  if (fp == NULL)
   {
     ABORT( status, READFTSERIESH_EFILENOTFOUND,
 	   READFTSERIESH_MSGEFILENOTFOUND );
@@ -52,7 +52,7 @@ void FUNC ( LALStatus* status,
   /* limited to line of data not exceeding MaxLineLength chars*/
 
   if (fgets(line,sizeof(line),fp) == NULL)
-  { 
+  {
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
 
@@ -67,12 +67,12 @@ void FUNC ( LALStatus* status,
   }
   /* Change trailing linefeed to '\0' */
   if ( changeCharToNull(series->name, '\n', series->name + LALNameLength) )
-  {	
+  {
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
 
   if (fgets(line,sizeof(line),fp) == NULL)
-  { 
+  {
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
 
@@ -80,13 +80,13 @@ void FUNC ( LALStatus* status,
   {
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
-  if (line[2] == '\n') 
+  if (line[2] == '\n')
   {
     series->epoch.gpsSeconds = 0;
     series->epoch.gpsNanoSeconds = 0;
   }
   else if ( sscanf( line, "# Epoch is %d seconds, %d nanoseconds\n",
-	            &(series->epoch.gpsSeconds), 
+	            &(series->epoch.gpsSeconds),
                     &(series->epoch.gpsNanoSeconds) )
 	    != 2 )
   {
@@ -94,8 +94,8 @@ void FUNC ( LALStatus* status,
   }
 
   TRY( LALCHARCreateVector(status->statusPtr, &string, MaxLineLength), status );
-  
-  if (fgets(line,sizeof(line),fp) == NULL) 
+
+  if (fgets(line,sizeof(line),fp) == NULL)
   {
     TRY( LALCHARDestroyVector( status->statusPtr, &string ), status );
     ABORT( status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE );
@@ -103,7 +103,7 @@ void FUNC ( LALStatus* status,
 
   if (!strcmp(line,"# Units are ()\n"))
   {
-    series->sampleUnits = lalDimensionlessUnit; 
+    series->sampleUnits = lalDimensionlessUnit;
   }
   else {
     if ( sscanf( line, "# Units are (%[^)]", string->data ) != 1 )
@@ -123,45 +123,45 @@ void FUNC ( LALStatus* status,
 
   TRY( LALDCreateVector(status->statusPtr, &f, series->data->length),
        status );
-  
+
   fPtr = &(f->data[0]);
   fStopPtr = fPtr + f->length;
   outputPtr = &(series->data->data[0]);
-  
-  if(fgets(line,sizeof(line),fp) == NULL) 
+
+  if(fgets(line,sizeof(line),fp) == NULL)
   {
     TRY( LALDDestroyVector( status->statusPtr, &f ), status );
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
-  
+
   while(fgets(line,sizeof(line),fp)!=NULL)
   {
     /*change arg so we dereference pointer */
-    if ( sscanf(line, FMT, fPtr, ARG) != 1 + NARGS ) 
+    if ( sscanf(line, FMT, fPtr, ARG) != 1 + NARGS )
     {
       TRY( LALDDestroyVector( status->statusPtr, &f ), status );
       ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
     }
     *(outputPtr) = data.value;
     fPtr++;
-    outputPtr++;	
-    
+    outputPtr++;
+
     if (fPtr > fStopPtr) {
       TRY( LALDDestroyVector( status->statusPtr, &f ), status );
       ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
     }
   }
-  if (fPtr != fStopPtr) 
+  if (fPtr != fStopPtr)
   {
     TRY( LALDDestroyVector( status->statusPtr, &f ), status );
     ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
   }
-  
+
   (series->deltaF) = ( f->data[1] - f->data[0] );
   (series->f0) = f->data[0];
-  
+
   TRY( LALDDestroyVector( status->statusPtr, &f ), status );
-  
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

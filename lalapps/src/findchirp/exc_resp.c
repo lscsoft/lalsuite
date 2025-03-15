@@ -73,7 +73,7 @@ int main ( int argc, char *argv[] )
   REAL4 f_max = 3000.0;
   REAL4 df;
   FILE  *l1_fp = NULL, *h2_fp = NULL, *h1_fp = NULL;
-  
+
   /* parse options */
   while ( 0 < ( opt = LALgetopt( argc, argv, "hVvL:H:n:" ) ) )
   {
@@ -107,7 +107,7 @@ int main ( int argc, char *argv[] )
     usage( program );
     return 1;
   }
-  
+
   df = (f_max - f_min) / ( (REAL4) numpts );
 
   l1_fp = fopen( "L1:LSC-ETMX_response", "w" );
@@ -119,24 +119,24 @@ int main ( int argc, char *argv[] )
     return 1;
   }
 
-  fprintf( l1_fp, "# epoch = %lli\n", 0LL ); 
+  fprintf( l1_fp, "# epoch = %lli\n", 0LL );
   fprintf( l1_fp, "# f0 = %e\n", (REAL8) f_min );
   fprintf( l1_fp, "# deltaF = %e\n", (REAL8) df );
-  fprintf( h2_fp, "# epoch = %lli\n", 0LL ); 
+  fprintf( h2_fp, "# epoch = %lli\n", 0LL );
   fprintf( h2_fp, "# f0 = %e\n", (REAL8) f_min );
   fprintf( h2_fp, "# deltaF = %e\n", (REAL8) df );
-  fprintf( h1_fp, "# epoch = %lli\n", 0LL ); 
+  fprintf( h1_fp, "# epoch = %lli\n", 0LL );
   fprintf( h1_fp, "# f0 = %e\n", (REAL8) f_min );
   fprintf( h1_fp, "# deltaF = %e\n", (REAL8) df );
 
   for ( k = 0; k < numpts; ++k )
   {
     REAL4 f = f_min + (REAL4) k * df;
-    REAL4 l1_r = ( L1_PEND_F0 * L1_PEND_F0 * L1_DC_RESP * 1e-9 ) / 
+    REAL4 l1_r = ( L1_PEND_F0 * L1_PEND_F0 * L1_DC_RESP * 1e-9 ) /
       ( L1_LENGTH * f * f );
-    REAL4 h2_r = ( H2_PEND_F0 * H2_PEND_F0 * H2_DC_RESP * 1e-9 ) / 
+    REAL4 h2_r = ( H2_PEND_F0 * H2_PEND_F0 * H2_DC_RESP * 1e-9 ) /
       ( H2_LENGTH * f * f );
-    REAL4 h1_r = ( H1_PEND_F0 * H1_PEND_F0 * H1_DC_RESP * 1e-9 ) / 
+    REAL4 h1_r = ( H1_PEND_F0 * H1_PEND_F0 * H1_DC_RESP * 1e-9 ) /
       ( H1_LENGTH * f * f );
     fprintf( l1_fp, "%e %e\n", l1_r, 0.0 );
     fprintf( h2_fp, "%e %e\n", h2_r, 0.0 );

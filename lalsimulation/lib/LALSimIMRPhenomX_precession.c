@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2018/2019 Geraint Pratten
  *
@@ -23,7 +22,7 @@
  #endif
 
 /**
- * \author Geraint Pratten
+ * \author Geraint Pratten, Marta Colleoni, Eleanor Hamilton
  *
  */
 
@@ -39,9 +38,9 @@
 #include "LALSimIMRPhenomX_precession.h"
 #include "LALSimIMRPhenomX_PNR.h"
 #include "LALSimIMRPhenomXHM_qnm.h"
-     
+
 #include <lal/LALAdaptiveRungeKuttaIntegrator.h>
-     
+
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -97,46 +96,25 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   pPrec->sqrt2p5 = 1.58113883008419;
 
   pPrec->debug_prec = debug_flag;
-  
+
+  /* Sort out version-specific flags */
+
   // Get IMRPhenomX precession version from LAL dictionary
   pPrec->IMRPhenomXPrecVersion = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams);
   if (pPrec->IMRPhenomXPrecVersion == 300) pPrec->IMRPhenomXPrecVersion = 223;
-  
+
+  // default to NNLO angles if in-plane spins are negligible and one of the SpinTaylor options has been selected. The solutions would be dominated by numerical noise.
   REAL8 chi_in_plane = sqrt(chi1x*chi1x+chi1y*chi1y+chi2x*chi2x+chi2y*chi2y);
+
+  if(chi_in_plane<1e-6 && pPrec->IMRPhenomXPrecVersion==330)
+  {
+  pPrec->IMRPhenomXPrecVersion=102;
+  }
+
   if(chi_in_plane<1e-7 && (pPrec->IMRPhenomXPrecVersion==320||pPrec->IMRPhenomXPrecVersion==321||pPrec->IMRPhenomXPrecVersion==310||pPrec->IMRPhenomXPrecVersion==311))
   {
   pPrec->IMRPhenomXPrecVersion=102;
   }
-  
-  if( (pPrec->IMRPhenomXPrecVersion==320||pPrec->IMRPhenomXPrecVersion==321||pPrec->IMRPhenomXPrecVersion==310||pPrec->IMRPhenomXPrecVersion==311))
-  {
-    
-  int status=XLAL_SUCCESS;
-  pPrec->PNarrays = XLALMalloc(sizeof(PhenomXPInspiralArrays));
-  
-  // check mode array to estimate frequency range over which splines will need to be evaluated
-  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
-  if (ModeArray != NULL)
-  {
-   IMRPhenomX_GetandSetModes(ModeArray,pPrec);
-   XLALDestroyValue(ModeArray);
-  }
-
-  // buffer for GSL interpolation to succeed
-  REAL8 buffer=(pWF->deltaF>0.)? 3.*pWF->deltaF: 0.5;
-  REAL8 flow=(pWF->fMin-buffer)*2./pPrec->M_MAX;
-  XLAL_CHECK(flow>0.,XLAL_EDOM,"Error in %s: starting frequency for SpinTaylor angles must be positive!",__func__);
-  status=IMRPhenomX_InspiralAngles_SpinTaylor(pPrec->PNarrays,chi1x,chi1y,chi1z,chi2x,chi2y,chi2z,flow,pPrec->IMRPhenomXPrecVersion,pWF,lalParams);
-  
-  // if PN numerical integration fails, default to MSA+fallback to NNLO
-  if(status==XLAL_FAILURE) {
-                            LALFree(pPrec->PNarrays);
-                            XLAL_PRINT_WARNING("Warning: due to a failure in the SpinTaylor routines, the model will default to MSA angles.");
-                            pPrec->IMRPhenomXPrecVersion=223;
-                            }
- // end of SpinTaylor code
-  
-            }
 
   // Get expansion order for MSA system of equations. Default is taken to be 5.
   pPrec->ExpansionOrder        = XLALSimInspiralWaveformParamsLookupPhenomXPExpansionOrder(lalParams);
@@ -155,66 +133,17 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   // Set toggle for polarization calculation: +1 for symmetric waveform (default), -1 for antisymmetric waveform; refer to XXXX.YYYYY for details
   pPrec->PolarizationSymmetry = 1.0;
 
-  //
-  int pflag = pPrec->IMRPhenomXPrecVersion;
-  if(pflag != 101 && pflag != 102 && pflag != 103 && pflag != 104 && pflag != 220 && pflag != 221 && pflag != 222 && pflag != 223 && pflag != 224 && pflag!=310 && pflag!=311 && pflag!=320 && pflag!=321)
-  {
-    XLAL_ERROR(XLAL_EINVAL, "Error in IMRPhenomXGetAndSetPrecessionVariables: Invalid precession flag. Allowed versions are 101, 102, 103, 104, 220, 221, 222, 223, 224, 310, 311, 320 or 321.\n");
+  /* allow for conditional disabling of precession multibanding given mass ratio and opening angle */
+  pPrec->conditionalPrecMBand = 0;
+  pPrec->MBandPrecVersion = XLALSimInspiralWaveformParamsLookupPhenomXPHMMBandVersion(lalParams);
+  if(pPrec->MBandPrecVersion == 2){
+    pPrec->MBandPrecVersion = 0; /* current default value is 0 */
+    pPrec->conditionalPrecMBand = 1;
   }
 
-  switch( pflag )
-    {
-        case 101: // NNLO single spin PNEuler angles + 2PN non-spinning L
-        case 102: // NNLO single spin PNEuler angles + 3PN spinning L
-        case 103: // NNLO single spin PNEuler angles + 4PN spinning L
-        case 104: // NNLO single spin PNEuler angles + 4PN spinning L + LOS terms in L
-    {
-      break;
-    }
-    case 220: // MSA using expressions as detailed in arXiv:1703.03967. Defaults to NNLO v102 if MSA fails.
-    case 221: // MSA using expressions as detailed in arXiv:1703.03967. Terminal failure if MSA fails.
-    case 222: // MSA using expressions as implemented in LALSimInspiralFDPrecAngles. Terminal failure if MSA fails.
-    case 223: // MSA using expressions as implemented in LALSimInspiralFDPrecAngles. Defaults to NNLO v102 if MSA fails.
-    case 224: // MSA using expressions as detailed in arXiv:1703.03967, with \zeta_0 and \phi_{z,0} as in LALSimInspiralFDPrecAngles.  Defaults to NNLO v102 if MSA fails.
-    {
-       /*
-          Double-spin model using angles from Chatziioannou et al, PRD, 95, 104004, (2017), arXiv:1703.03967
-          Uses 3PN L
-       */
-       #if DEBUG == 1
-        printf("Initializing MSA system...\n");
-       #endif
 
-       if(pPrec->ExpansionOrder < -1 || pPrec->ExpansionOrder > 5)
-       {
-         XLAL_ERROR(XLAL_EINVAL, "Error in IMRPhenomXGetAndSetPrecessionVariables: Invalid expansion order for MSA corrections. Default is 5, allowed values are [-1,0,1,2,3,4,5].\n");
-       }
-       break;
 
-    }
-            
-    case 310: // Numerical integration of SpinTaylor equations, constant angles in MRD
-    case 311: // Numerical integration of SpinTaylor equations, constant angles in MRD, BBH precession
-    case 320: // Numerical integration of SpinTaylor equations, analytical continuation in MRD
-    case 321: // Numerical integration of SpinTaylor equations, analytical continuation in MRD, BBH precession
-        {
-           break;
-        }
-            
-            
-        default:
-        {
-            XLAL_ERROR(XLAL_EINVAL, "Error in IMRPhenomXGetAndSetPrecessionVariables: IMRPhenomXPrecessionVersion not recognized.\n");
-      break;
-        }
-    }
-    
-  // get first digit of precessing version: this tags the method employed to compute the Euler angles
-  // 1: NNLO; 2: MSA; 3: SpinTaylor (numerical)
-  int precversionTag=(pPrec->IMRPhenomXPrecVersion-(pPrec->IMRPhenomXPrecVersion%100))/100;
-  pPrec->precessing_tag=precversionTag;
-  
-    /* Define a number of convenient local parameters */
+  /* Define a number of convenient local parameters */
   const REAL8 m1        = m1_SI / pWF->Mtot_SI;   /* Normalized mass of larger companion:   m1_SI / Mtot_SI */
   const REAL8 m2        = m2_SI / pWF->Mtot_SI;   /* Normalized mass of smaller companion:  m2_SI / Mtot_SI */
   const REAL8 M         = (m1 + m2);              /* Total mass in solar units */
@@ -358,6 +287,264 @@ int IMRPhenomXGetAndSetPrecessionVariables(
 
   pPrec->pWF22AS = NULL;
 
+  // get first digit of precessing version: this tags the method employed to compute the Euler angles
+  // 1: NNLO; 2: MSA; 3: SpinTaylor (numerical)
+  int precversionTag=(pPrec->IMRPhenomXPrecVersion-(pPrec->IMRPhenomXPrecVersion%100))/100;
+
+  /* start of SpinTaylor code */
+  if(precversionTag==3)
+  {
+  // allocate memory to store arrays with results of the PN precession equations
+  int status=XLAL_SUCCESS;
+  pPrec->PNarrays = XLALMalloc(sizeof(PhenomXPInspiralArrays));
+  pPrec->L_MAX_PNR=pPrec->M_MAX;
+
+  // check mode array to estimate frequency range over which splines will need to be evaluated
+  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
+  INT4 LMAX_PNR = 2;
+  if (ModeArray != NULL)
+  {
+    if(XLALSimInspiralModeArrayIsModeActive(ModeArray, 4, 4)){
+      LMAX_PNR = 4;
+    }
+    else if((XLALSimInspiralModeArrayIsModeActive(ModeArray, 3, 3))||(XLALSimInspiralModeArrayIsModeActive(ModeArray, 3, 2))){
+      LMAX_PNR = 3;
+    }
+   pPrec->L_MAX_PNR = LMAX_PNR;
+   IMRPhenomX_GetandSetModes(ModeArray,pPrec);
+   XLALDestroyValue(ModeArray);
+  }
+  // buffer for GSL interpolation to succeed
+  // set first to fMin
+  REAL8 flow = pWF->fMin;
+
+  if(pWF->deltaF==0.) pWF->deltaMF = get_deltaF_from_wfstruct(pWF);
+
+  // if PNR angles are disabled, step back accordingly to the waveform's frequency grid step
+  if(PNRUseTunedAngles==false)
+  {
+
+    pPrec->integration_buffer = (pWF->deltaF>0.)? 3.*pWF->deltaF: 0.5;
+    flow = (pWF->fMin-pPrec->integration_buffer)*2./pPrec->M_MAX;
+
+  }
+  // if PNR angles are enabled, adjust buffer to the requirements of IMRPhenomX_PNR_GeneratePNRAngleInterpolants
+  else{
+
+    size_t iStart_here;
+
+    if (pWF->deltaF == 0.) iStart_here = 0;
+    else{
+      iStart_here= (size_t)(pWF->fMin / pWF->deltaF);
+      flow = iStart_here * pWF->deltaF;
+    }
+
+    REAL8 fmin_HM_inspiral = flow * 2.0 / pPrec->M_MAX;
+
+    INT4 precVersion = pPrec->IMRPhenomXPrecVersion;
+    // fill in a fake value to allow the next code to work
+    pPrec->IMRPhenomXPrecVersion = 223;
+    status = IMRPhenomX_PNR_GetAndSetPNRVariables(pWF, pPrec);
+    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_GetAndSetPNRVariables failed in IMRPhenomXGetAndSetPrecessionVariables.\n");
+
+    /* generate alpha parameters to catch edge cases */
+    IMRPhenomX_PNR_alpha_parameters *alphaParams = XLALMalloc(sizeof(IMRPhenomX_PNR_alpha_parameters));
+    IMRPhenomX_PNR_beta_parameters *betaParams = XLALMalloc(sizeof(IMRPhenomX_PNR_beta_parameters));
+    status = IMRPhenomX_PNR_precompute_alpha_coefficients(alphaParams, pWF, pPrec);
+    XLAL_CHECK(
+        XLAL_SUCCESS == status,
+        XLAL_EFUNC,
+        "Error: IMRPhenomX_PNR_precompute_alpha_coefficients failed.\n");
+    status = IMRPhenomX_PNR_precompute_beta_coefficients(betaParams, pWF, pPrec);
+    XLAL_CHECK(
+        XLAL_SUCCESS == status,
+        XLAL_EFUNC,
+        "Error: IMRPhenomX_PNR_precompute_beta_coefficients failed.\n");
+    status = IMRPhenomX_PNR_BetaConnectionFrequencies(betaParams);
+    XLAL_CHECK(
+        XLAL_SUCCESS == status,
+        XLAL_EFUNC,
+        "Error: IMRPhenomX_PNR_BetaConnectionFrequencies failed.\n");
+    pPrec->IMRPhenomXPrecVersion = precVersion;
+    REAL8 Mf_alpha_upper = alphaParams->A4 / 3.0;
+    REAL8 Mf_low_cut = (3.0 / 3.5) * Mf_alpha_upper;
+    REAL8 MF_high_cut = betaParams->Mf_beta_lower;
+    LALFree(alphaParams);
+    LALFree(betaParams);
+
+    if((MF_high_cut > pWF->fCutDef) || (MF_high_cut < 0.1 * pWF->fRING)){
+      MF_high_cut = pWF->fRING;
+    }
+    if((Mf_low_cut > pWF->fCutDef) || (MF_high_cut < Mf_low_cut)){
+      Mf_low_cut = MF_high_cut / 2.0;
+    }
+
+    REAL8 flow_alpha = XLALSimIMRPhenomXUtilsMftoHz(Mf_low_cut * 0.65 * pPrec->M_MAX / 2.0, pWF->Mtot);
+
+    if(flow_alpha < flow){
+      // flow is approximately in the intermediate region of the frequency map
+      // conservatively reduce flow to account for potential problems in this region
+      flow = fmin_HM_inspiral / 1.5;
+    }
+    else{
+      REAL8 Mf_RD_22 = pWF->fRING;
+      REAL8 Mf_RD_lm = IMRPhenomXHM_GenerateRingdownFrequency(pPrec->L_MAX_PNR, pPrec->M_MAX, pWF);
+      REAL8 fmin_HM_ringdowm = XLALSimIMRPhenomXUtilsMftoHz(XLALSimIMRPhenomXUtilsHztoMf(flow, pWF->Mtot) - (Mf_RD_lm - Mf_RD_22), pWF->Mtot);
+      flow = ((fmin_HM_ringdowm < fmin_HM_inspiral)&&(fmin_HM_ringdowm > 0.0)) ? fmin_HM_ringdowm : fmin_HM_inspiral;
+    }
+
+
+    double pnr_interpolation_deltaf = IMRPhenomX_PNR_HMInterpolationDeltaF(flow, pWF, pPrec);
+    pPrec->integration_buffer = 1.4*pnr_interpolation_deltaf;
+    flow = (flow - 2.0 * pnr_interpolation_deltaf < 0) ? flow / 2.0 : flow - 2.0 * pnr_interpolation_deltaf;
+
+    iStart_here = (size_t)(flow / pnr_interpolation_deltaf);
+    flow = iStart_here * pnr_interpolation_deltaf;
+  }
+
+  XLAL_CHECK(flow>0.,XLAL_EDOM,"Error in %s: starting frequency for SpinTaylor angles must be positive!",__func__);
+  status = IMRPhenomX_InspiralAngles_SpinTaylor(pPrec->PNarrays,&pPrec->fmin_integration,chi1x,chi1y,chi1z,chi2x,chi2y,chi2z,flow,pPrec->IMRPhenomXPrecVersion,pWF,lalParams);
+  // convert the min frequency of integration to geometric units for later convenience
+  pPrec->Mfmin_integration = XLALSimIMRPhenomXUtilsHztoMf(pPrec->fmin_integration,pWF->Mtot);
+
+  if (pPrec->IMRPhenomXPrecVersion == 330)
+  {
+
+    REAL8 chi1x_evolved = chi1x;
+    REAL8 chi1y_evolved = chi1y;
+    REAL8 chi1z_evolved = chi1z;
+    REAL8 chi2x_evolved = chi2x;
+    REAL8 chi2y_evolved = chi2y;
+    REAL8 chi2z_evolved = chi2z;
+
+    // in case that SpinTaylor angles generate, overwrite variables with evolved spins
+    if(status!=XLAL_FAILURE)  {
+      size_t lenPN = pPrec->PNarrays->V_PN->data->length;
+
+      REAL8 chi1x_temp = pPrec->PNarrays->S1x_PN->data->data[lenPN-1];
+      REAL8 chi1y_temp = pPrec->PNarrays->S1y_PN->data->data[lenPN-1];
+      REAL8 chi1z_temp = pPrec->PNarrays->S1z_PN->data->data[lenPN-1];
+
+      REAL8 chi2x_temp = pPrec->PNarrays->S2x_PN->data->data[lenPN-1];
+      REAL8 chi2y_temp = pPrec->PNarrays->S2y_PN->data->data[lenPN-1];
+      REAL8 chi2z_temp = pPrec->PNarrays->S2z_PN->data->data[lenPN-1];
+
+      REAL8 Lx = pPrec->PNarrays->LNhatx_PN->data->data[lenPN-1];
+      REAL8 Ly = pPrec->PNarrays->LNhaty_PN->data->data[lenPN-1];
+      REAL8 Lz = pPrec->PNarrays->LNhatz_PN->data->data[lenPN-1];
+
+      // orbital separation vector not stored in PN arrays
+      //REAL8 nx = pPrec->PNarrays->E1x->data->data[lenPN-1];
+      //REAL8 ny = pPrec->PNarrays->E1y->data->data[lenPN-1];
+
+      // rotate to get x,y,z components in L||z frame
+      REAL8 phi = atan2( Ly, Lx );
+      REAL8 theta = acos( Lz / sqrt(Lx*Lx + Ly*Ly + Lz*Lz) );
+      //REAL8 kappa = atan( ny/nx );
+
+      IMRPhenomX_rotate_z(-phi, &chi1x_temp, &chi1y_temp, &chi1z_temp);
+      IMRPhenomX_rotate_y(-theta, &chi1x_temp, &chi1y_temp, &chi1z_temp);
+      //IMRPhenomX_rotate_z(-kappa, &chi1x_temp, &chi1y_temp, &chi1z_temp);
+
+      IMRPhenomX_rotate_z(-phi, &chi2x_temp, &chi2y_temp, &chi2z_temp);
+      IMRPhenomX_rotate_y(-theta, &chi2x_temp, &chi2y_temp, &chi2z_temp);
+      //IMRPhenomX_rotate_z(-kappa, &chi2x_temp, &chi2y_temp, &chi2z_temp);
+
+      chi1x_evolved = chi1x_temp;
+      chi1y_evolved = chi1y_temp;
+      chi1z_evolved = chi1z_temp;
+
+      chi2x_evolved = chi2x_temp;
+      chi2y_evolved = chi2y_temp;
+      chi2z_evolved = chi2z_temp;
+    }
+
+    pPrec->chi1x_evolved = chi1x_evolved;
+    pPrec->chi1y_evolved = chi1y_evolved;
+    pPrec->chi1z_evolved = chi1z_evolved;
+    pPrec->chi2x_evolved = chi2x_evolved;
+    pPrec->chi2y_evolved = chi2y_evolved;
+    pPrec->chi2z_evolved = chi2z_evolved;
+
+    //printf("%f, %f, %f, %f, %f, %f\n", chi1x, chi1y, chi1z, chi2x, chi2y, chi2z);
+    //printf("%f, %f, %f, %f, %f, %f\n", chi1x_evolved, chi1y_evolved, chi1z_evolved, chi2x_evolved, chi2y_evolved, chi2z_evolved);
+    //printf("----\n");
+  }
+
+  // if PN numerical integration fails, default to MSA+fallback to NNLO
+  if(status==XLAL_FAILURE) {
+                            LALFree(pPrec->PNarrays);
+                            XLAL_PRINT_WARNING("Warning: due to a failure in the SpinTaylor routines, the model will default to MSA angles.");
+                            pPrec->IMRPhenomXPrecVersion=223;
+                            }
+ // end of SpinTaylor code
+
+            }
+
+
+
+  /* update  precessing version to catch possible fallbacks of SpinTaylor angles */
+  precversionTag=(pPrec->IMRPhenomXPrecVersion-(pPrec->IMRPhenomXPrecVersion%100))/100;
+  int pflag = pPrec->IMRPhenomXPrecVersion;
+
+
+  if(pflag != 101 && pflag != 102 && pflag != 103 && pflag != 104 && pflag != 220 && pflag != 221 && pflag != 222 && pflag != 223 && pflag != 224 && pflag!=310 && pflag!=311 && pflag!=320 && pflag!=321 && pflag!=330)
+  {
+    XLAL_ERROR(XLAL_EINVAL, "Error in IMRPhenomXGetAndSetPrecessionVariables: Invalid precession flag. Allowed versions are 101, 102, 103, 104, 220, 221, 222, 223, 224, 310, 311, 320, 321 or 330.\n");
+  }
+
+  switch( pflag )
+    {
+        case 101: // NNLO single spin PNEuler angles + 2PN non-spinning L
+        case 102: // NNLO single spin PNEuler angles + 3PN spinning L
+        case 103: // NNLO single spin PNEuler angles + 4PN spinning L
+        case 104: // NNLO single spin PNEuler angles + 4PN spinning L + LOS terms in L
+    {
+      break;
+    }
+    case 220: // MSA using expressions as detailed in arXiv:1703.03967. Defaults to NNLO v102 if MSA fails.
+    case 221: // MSA using expressions as detailed in arXiv:1703.03967. Terminal failure if MSA fails.
+    case 222: // MSA using expressions as implemented in LALSimInspiralFDPrecAngles. Terminal failure if MSA fails.
+    case 223: // MSA using expressions as implemented in LALSimInspiralFDPrecAngles. Defaults to NNLO v102 if MSA fails.
+    case 224: // MSA using expressions as detailed in arXiv:1703.03967, with \zeta_0 and \phi_{z,0} as in LALSimInspiralFDPrecAngles.  Defaults to NNLO v102 if MSA fails.
+    {
+       /*
+          Double-spin model using angles from Chatziioannou et al, PRD, 95, 104004, (2017), arXiv:1703.03967
+          Uses 3PN L
+       */
+       #if DEBUG == 1
+        printf("Initializing MSA system...\n");
+       #endif
+
+       if(pPrec->ExpansionOrder < -1 || pPrec->ExpansionOrder > 5)
+       {
+         XLAL_ERROR(XLAL_EINVAL, "Error in IMRPhenomXGetAndSetPrecessionVariables: Invalid expansion order for MSA corrections. Default is 5, allowed values are [-1,0,1,2,3,4,5].\n");
+       }
+       break;
+
+    }
+
+    case 310: // Numerical integration of SpinTaylor equations, constant angles in MRD
+    case 311: // Numerical integration of SpinTaylor equations, constant angles in MRD, BBH precession
+    case 320: // Numerical integration of SpinTaylor equations, analytical continuation in MRD
+    case 321: // Numerical integration of SpinTaylor equations, analytical continuation in MRD, BBH precession
+    case 330: // Numerical integration of SpinTaylor equations, PNR angles, analytic joining
+        {
+           break;
+        }
+
+
+        default:
+        {
+            XLAL_ERROR(XLAL_EINVAL, "Error in IMRPhenomXGetAndSetPrecessionVariables: IMRPhenomXPrecessionVersion not recognized.\n");
+      break;
+        }
+    }
+
+
+  pPrec->precessing_tag=precversionTag;
+
+
   /* Calculate parameter for two-spin to single-spin map used in PNR and XCP */
   /* Initialize PNR variables */
   pPrec->chi_singleSpin = 0.0;
@@ -376,7 +563,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
 
   UINT4 status = IMRPhenomX_PNR_GetAndSetPNRVariables(pWF, pPrec);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_GetAndSetPNRVariables failed in IMRPhenomXGetAndSetPrecessionVariables.\n");
-  
+
   pPrec->alphaPNR = 0.0;
   pPrec->betaPNR = 0.0;
   pPrec->gammaPNR = 0.0;
@@ -389,7 +576,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC,
   "Error: IMRPhenomX_PNR_GetAndSetCoPrecParams failed \
   in IMRPhenomXGetAndSetPrecessionVariables.\n");
-  
+
   /*..#...#...#...#...#...#...#...#...#...#...#...#...#...#...*/
 
 
@@ -477,6 +664,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
     case 311:
     case 320:
     case 321:
+    case 330:
     {
       pPrec->L0   = 1.0;
       pPrec->L1   = 0.0;
@@ -557,10 +745,10 @@ int IMRPhenomXGetAndSetPrecessionVariables(
 
       break;
     }
-          
+
     default:
     {
-      XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPrecVersion not recognized. Requires version 101, 102, 103, 104, 220, 221, 222, 223, 224, 310, 311, 320 or 321.\n");
+      XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPrecVersion not recognized. Requires version 101, 102, 103, 104, 220, 221, 222, 223, 224, 310, 311, 320, 321 or 330.\n");
       break;
     }
   }
@@ -930,6 +1118,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
     case 311:
     case 320:
     case 321:
+    case 330:
     {
       pPrec->alpha1    = 0;
       pPrec->alpha2    = 0;
@@ -945,7 +1134,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
     }
     default:
     {
-      XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPrecVersion not recognized. Requires version 101, 102, 103, 104, 220, 221, 222, 223, 224, 310, 311, 320 or 321.\n");
+      XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPrecVersion not recognized. Requires version 101, 102, 103, 104, 220, 221, 222, 223, 224, 310, 311, 320, 321 or 330.\n");
       break;
     }
   }
@@ -1015,8 +1204,26 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   pPrec->cexp_i_epsilon = 0.;
   pPrec->cexp_i_betah   = 0.;
 
+  /*
+      Check whether maximum opening angle becomes larger than \pi/2 or \pi/4.
+
+      If (L + S_L) < 0, then Wigner-d Coefficients will not track the angle between J and L, meaning
+      that the model may become pathological as one moves away from the aligned-spin limit.
+
+      If this does not happen, then max_beta will be the actual maximum opening angle.
+
+      This function uses a 2PN non-spinning approximation to the orbital angular momentum L, as
+      the roots can be analytically derived.
+
+      Returns XLAL_PRINT_WARNING if model is in a pathological regime.
+  */
+
+
+  // When L + SL < 0 and q>7, we disable multibanding
+  IMRPhenomXPCheckMaxOpeningAngle(pWF,pPrec,lalParams);
+
   /* Activate multibanding for Euler angles it threshold !=0. Only for PhenomXPHM. */
-  if(XLALSimInspiralWaveformParamsLookupPhenomXPHMThresholdMband(lalParams)==0)
+  if(XLALSimInspiralWaveformParamsLookupPhenomXPHMThresholdMband(lalParams)==0.)
   {
     /* User switched off multibanding */
     pPrec->MBandPrecVersion = 0;
@@ -1033,8 +1240,14 @@ int IMRPhenomXGetAndSetPrecessionVariables(
       pPrec->MBandPrecVersion = 0;
       XLALSimInspiralWaveformParamsInsertPhenomXHMThresholdMband(lalParams, 0.);
     }
+    if(pPrec->IMRPhenomXPrecVersion == 330 && pWF->q > 7){
+      /* this is here as a safety catch in case */
+      XLAL_PRINT_WARNING("Multibanding may lead to pathological behaviour in this case. Disabling multibanding .\n");
+      XLALSimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(lalParams, 0.);
+      pPrec->MBandPrecVersion = 0;
+    }
 
-    if(pPrec->IMRPhenomXPrecVersion < 200)
+    else if(pPrec->IMRPhenomXPrecVersion < 200)
     {
       /* The NNLO angles can have a worse, even pathological, behaviour for high mass ratio and double spin cases.
        The waveform will look noisy, we switch off the multibanding for mass ratio above 8 to avoid worsen even more the waveform. */
@@ -1053,6 +1266,15 @@ int IMRPhenomXGetAndSetPrecessionVariables(
     }
 
   }
+
+  /* At high mass ratios, we find there can be numerical instabilities in the model, although the waveforms continue to be well behaved.
+   * We warn to user of the possibility of these instabilities.
+   */
+  //printf(pWF->q);
+  if( pWF->q > 80 )
+    {
+      XLAL_PRINT_WARNING("Very high mass ratio, possibility of numerical instabilities. Waveforms remain well behaved.\n");
+    }
 
 
   const REAL8 ytheta  = pPrec->thetaJN;
@@ -1079,20 +1301,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   pPrec->Y43          = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 4,  3);
   pPrec->Y44          = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 4,  4);
 
-  /*
-      Check whether maximum opening angle becomes larger than \pi/2 or \pi/4.
-
-      If (L + S_L) < 0, then Wigner-d Coefficients will not track the angle between J and L, meaning
-      that the model may become pathological as one moves away from the aligned-spin limit.
-
-      If this does not happen, then max_beta will be the actual maximum opening angle.
-
-      This function uses a 2PN non-spinning approximation to the orbital angular momentum L, as
-      the roots can be analytically derived.
-
-      Returns XLAL_PRINT_WARNING if model is in a pathological regime.
-  */
-  IMRPhenomXPCheckMaxOpeningAngle(pWF,pPrec);
+  pPrec->LALparams = lalParams;
 
   return XLAL_SUCCESS;
 }
@@ -1160,7 +1369,7 @@ INT4 IMRPhenomX_SetPrecessingRemnantParams(
   if (fsflag == 4 && pPrec->precessing_tag!=3) fsflag = 3;
 
   /* For PhenomPNR, we wil use the PhenomPv2 final spin function's result, modified such that its sign is given by sign( cos(betaRD) ). See the related fsflag case below. */
-  if (PNRUseTunedCoprec) fsflag = 5;
+  if (PNRUseTunedCoprec && fsflag < 6) fsflag = 5;
 
   /* When tuning the coprecessing model, we wish to enforce use of the non-precessing final spin. See the related fsflag case below. */
   if (PNRUseInputCoprecDeviations) fsflag = 6;
@@ -1249,6 +1458,21 @@ INT4 IMRPhenomX_SetPrecessingRemnantParams(
         pWF->afinal_prec = pWF->afinal_nonprec;
       }
       break;
+
+    case 7:
+    {
+
+      INT2 sign = 1;
+      sign = copysign(1, cos(pWF->betaRD) );
+
+      /* Calculate final spin using the same spin version adopted for XPHM-SpinTaylor */
+      double afinal_prec = XLALSimIMRPhenomXPrecessingFinalSpin2017(pWF->eta,chi1L,chi2L,pPrec->chiTot_perp);
+
+      // Define the PNR final spin to be the above final spin magnitude, with direction given by sign of cos betaRD
+      pWF->afinal_prec = sign * fabs(afinal_prec);
+    }
+      break;
+
     default:
     {
       XLAL_ERROR(XLAL_EDOM,"Error: XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod version not recognized. Requires PhenomXPFinalSpinMod of 0, 1, 2, 3, or 5.\n");
@@ -1281,6 +1505,12 @@ INT4 IMRPhenomX_SetPrecessingRemnantParams(
   {
         XLAL_PRINT_WARNING("Warning: Final spin magnitude %g > 1. Setting final spin magnitude = 1.", pWF->afinal);
         pWF->afinal = copysign(1.0, pWF->afinal);
+  }
+
+  if( fabs(pWF->afinal_prec) > 1.0 )
+  {
+        XLAL_PRINT_WARNING("Warning: Final spin magnitude %g > 1. Setting final spin magnitude = 1.", pWF->afinal_prec);
+	pWF->afinal_prec = copysign(1.0, pWF->afinal_prec);
   }
 
   /* Update ringdown and damping frequency: no precession; to be used for PNR tuned deviations */
@@ -1361,7 +1591,7 @@ void Get_alphaepsilon_atfref(REAL8 *alpha_offset, REAL8 *epsilon_offset, UINT4 m
     *alpha_offset    = vangles.x - pPrec->alpha0;
     *epsilon_offset  = vangles.y - pPrec->epsilon0;
   }
-  
+
   else
   {
     double logomega_ref    = log(omega_ref);
@@ -1910,7 +2140,8 @@ int IMRPhenomXWignerdCoefficients(
 */
 int IMRPhenomXPCheckMaxOpeningAngle(
   IMRPhenomXWaveformStruct *pWF,      /**< IMRPhenomX Waveform Struct */
-  IMRPhenomXPrecessionStruct *pPrec   /**< IMRPhenomXP Precession Struct */
+  IMRPhenomXPrecessionStruct *pPrec,   /**< IMRPhenomXP Precession Struct */
+   LALDict *lalParams /**< LAL dictionary */
 )
 {
     const REAL8 eta           = pWF->eta;
@@ -1937,6 +2168,12 @@ int IMRPhenomXPCheckMaxOpeningAngle(
     if ((L_min + pPrec->SL) < 0. && pPrec->chi_p > 0.)
     {
       XLAL_PRINT_WARNING("The maximum opening angle exceeds Pi/2.\nThe model may be pathological in this regime.");
+      if((pWF->q > 7.0) && (pPrec->conditionalPrecMBand == 1)){
+      XLAL_PRINT_WARNING("Multibanding may lead to pathological behaviour in this case. Disabling multibanding.\n");
+      XLALSimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(lalParams, 0.);
+      pPrec->MBandPrecVersion = 0;
+      }
+
     }
     else if (max_beta > LAL_PI_4)
     {
@@ -3551,14 +3788,14 @@ vector IMRPhenomX_vector_rotate_y(const REAL8 angle, const vector v1)
   return v2;
 }
 
-     
+
 /** Function to rotate vector about z axis by given angle */
 void IMRPhenomX_rotate_z(const REAL8 angle, REAL8 *vx, REAL8 *vy, REAL8 *vz)
 {
   const REAL8 tmpx = *vx;
   const REAL8 tmpy = *vy;
   const REAL8 tmpz = *vz;
-    
+
   REAL8  cosa=cos(angle), sina=sin(angle);
 
   REAL8 tmp1 = tmpx*cosa - tmpy*sina;
@@ -3575,7 +3812,7 @@ void IMRPhenomX_rotate_y(REAL8 angle, REAL8 *vx, REAL8 *vy, REAL8 *vz)
   const REAL8 tmpx = *vx;
   const REAL8 tmpy = *vy;
   const REAL8 tmpz = *vz;
-    
+
   REAL8  cosa=cos(angle), sina=sin(angle);
 
   REAL8 tmp1 = + tmpx*cosa + tmpz*sina;
@@ -3618,7 +3855,7 @@ vector IMRPhenomX_vector_PolarToCartesian_components(const REAL8 mag, const REAL
 
   return v1;
 }
-     
+
 
 /** used in numerical evaluation of Euler angles */
 static REAL8TimeSeries *appendTS(REAL8TimeSeries *start, REAL8TimeSeries *end) {
@@ -3635,99 +3872,99 @@ static REAL8TimeSeries *appendTS(REAL8TimeSeries *start, REAL8TimeSeries *end) {
 
     return start;
 }
-     
-     
+
+
 /** Analytical continuation for alpha angle in MRD */
 int alphaMRD_coeff(gsl_spline spline_alpha, gsl_interp_accel accel_alpha, double fmaxPN, IMRPhenomXWaveformStruct *pWF, PhenomXPalphaMRD *alpha_params){
-    
+
     int success = GSL_SUCCESS;
-  
+
     double ftrans = fmaxPN;
     double f1 = 0.97 *ftrans ;
     double f2 = 0.99 *ftrans ;
     double f1sq = f1*f1, f2sq = f2*f2;
     double f1cube = f1sq*f1;
-   
+
     double alpha1, alpha2, dalpha1;
-    
+
     success = gsl_spline_eval_e(&spline_alpha, f1, &accel_alpha,&alpha1);
     alpha1 = -alpha1;
     if(success != GSL_SUCCESS)
         {
         XLALPrintError("XLAL Error - %s: Alpha could not be interpolated at f=%.5f\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(f1,pWF->Mtot));
-      
+
         }
-    
+
     success = success + gsl_spline_eval_deriv_e (&spline_alpha, f1, &accel_alpha,&dalpha1);
     dalpha1 = -dalpha1;
     if(success != GSL_SUCCESS)
         {
         XLALPrintError("XLAL Error - %s: dalpha/df could not be interpolated at f=%.5f\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(f1,pWF->Mtot));
-     
+
         }
-        
-    
+
+
     success = success + gsl_spline_eval_e (&spline_alpha, f2, &accel_alpha,&alpha2);
     alpha2 = -alpha2;
     if(success != GSL_SUCCESS)
         {
         XLALPrintError("XLAL Error - %s: Alpha could not be interpolated at f=%.5f\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(f2,pWF->Mtot));
-    
+
         }
-    
+
     double aC=0., bC=0., cC=0.;
-    
-    if(success == GSL_SUCCESS){  
-    
+
+    if(success == GSL_SUCCESS){
+
      aC = (f1cube*(f1 - f2)*(f1 + f2)*dalpha1 + 2*(pow(f1,4) - 2*f1sq*f2sq)*alpha1 + 2*pow(f2,4)*alpha2)/(2.*pow(f1sq - f2sq,2));
-         
+
      bC = (pow(f1,4)*f2sq*(f1*(f1 - f2)*(f1 + f2)*dalpha1 + 2*f2sq*(-alpha1 + alpha2)))/(2.*pow(f1sq - f2sq,2));
 
      cC = (f1sq*(f1*(-pow(f1,4) + pow(f2,4))*dalpha1 + 4*pow(f2,4)*(alpha1 - alpha2)))/(2.*pow(f1sq - f2sq,2));
-    
+
     }
     alpha_params->aRD = aC;
     alpha_params->bRD = bC;
     alpha_params->cRD = cC;
-    
+
     return success;
-    
-    
+
+
           }
-     
+
 double alphaMRD(double Mf, PhenomXPalphaMRD *alpha_params){
-              
+
     double Mf2 = Mf*Mf;
     double Mf4 = Mf2*Mf2;
     double minalpha=alpha_params->aRD + alpha_params->bRD/Mf4 + alpha_params->cRD/Mf2;
-         
+
     return (-minalpha);
-         
+
           }
 
 double dalphaMRD(double Mf, PhenomXPalphaMRD *alpha_params){
-              
+
     double Mf2 = Mf*Mf;
     double Mf3 = Mf2*Mf;
     double Mf5 = Mf2*Mf3;
-         
+
     return (4.*alpha_params->bRD/Mf5+2.*alpha_params->cRD/Mf3);
-         
+
           }
 
 /** Function to determine coefficients of analytical continuation of beta through MRD */
 int betaMRD_coeff(gsl_spline spline_cosb, gsl_interp_accel accel_cosb, double fmaxPN, IMRPhenomXWaveformStruct *pWF, IMRPhenomXPrecessionStruct *pPrec){
-    
+
     int success = GSL_SUCCESS;
     double fdamp = pWF->fDAMP;
-    
+
     QNMFits *qnms = (QNMFits *) XLALMalloc(sizeof(QNMFits));
     IMRPhenomXHM_Initialize_QNMs(qnms);
     pPrec->beta_params->dfdamp = qnms->fdamp_lm[0](pWF->afinal)/pWF->Mfinal-fdamp;
     LALFree(qnms);
-    
+
     double kappa = 2.*LAL_PI*pPrec->beta_params->dfdamp;
-    
+
     double f1 = 0.97 *fmaxPN ;
     double f2 = 0.98 *fmaxPN ;
     double f1sq = f1*f1, f2sq = f2*f2 ;
@@ -3735,99 +3972,123 @@ int betaMRD_coeff(gsl_spline spline_cosb, gsl_interp_accel accel_cosb, double fm
 
     double cosbeta1;
     success = gsl_spline_eval_e(&spline_cosb, f1, &accel_cosb, &cosbeta1);
-    
+
     double dcosbeta2;
     success=gsl_spline_eval_deriv_e (&spline_cosb, f2, &accel_cosb,&dcosbeta2);
-        
+
     double cosbeta2;
     success = gsl_spline_eval_e(&spline_cosb, f2, &accel_cosb,&cosbeta2);
-    
+
     double cosbetamax;
     success = gsl_spline_eval_e(&spline_cosb, pPrec->fmax_inspiral, &accel_cosb, &cosbetamax);
-        
+
     double aC,bC,cC,dC;
-    
+
     if(fabs(cosbeta1)>1 || fabs(cosbeta2)>1 || fabs(cosbetamax)>1||success!=GSL_SUCCESS)
      {
-       
+
        aC=0.;
        bC=0.;
        cC=0.;
        dC=0. ;
        pPrec->beta_params->flat_RD=true;
        success = GSL_SUCCESS;
-		
      }
 
     else{
-   
+
     double beta1 =  acos(cosbeta1);
     double beta2 =  acos(cosbeta2);
     double sqrtarg = 1.-cosbeta2*cosbeta2;
     double dbeta2 = - dcosbeta2/sqrt((sqrtarg <= 0. ? 1. : sqrtarg));
-       
-        
-    double off = (cosbetamax < 0. ? LAL_PI : 0.);
-    
+
+    double off;
+    if (pPrec->IMRPhenomXPrecVersion==330)
+      {
+	double betaRD = IMRPhenomX_PNR_GenerateRingdownPNRBeta( pWF, pPrec);
+	off = betaRD;
+      }
+    else
+      {
+	off = (cosbetamax < 0. ? LAL_PI : 0.);
+      }
+
     aC= (-(ef1*pow(f1,4)*(off - beta1)) + ef2*pow(f2,3)*(f2*(-f1 + f2)*dbeta2 + (-(f2*(3 + f2*kappa)) + f1*(4 + f2*kappa))*(off - beta2)))/pow(f1 - f2,2);
-    
+
     bC =(2*ef1*pow(f1,4)*f2*(off - beta1) + ef2*pow(f2,3)*((f1 - f2)*f2*(f1 + f2)*dbeta2 - (-(f2sq*(2 + f2*kappa)) + f1sq*(4 + f2*kappa))*(off - beta2)))/pow(f1 - f2,2);
-    
+
     cC =(-(ef1*pow(f1,4)*f2sq*(off - beta1)) + ef2*f1*pow(f2,4)*(f2*(-f1 + f2)*dbeta2 + (-(f2*(2 + f2*kappa)) + f1*(3 + f2*kappa))*(off - beta2)))/pow(f1 - f2,2);
-    
+
     dC = off;
-    
-        
+
+
     pPrec->beta_params->flat_RD=false;
-    
+
      }
-     
+
     pPrec->beta_params->aRD = aC;
     pPrec->beta_params->bRD = bC;
     pPrec->beta_params->cRD = cC;
     pPrec->beta_params->dRD = dC;
-    
-    pPrec->beta_params->cosbeta_sign =  copysign(1.0, cosbetamax);
-    
-    return success;
-         
-          }
-  
 
-     
+    pPrec->beta_params->cosbeta_sign =  copysign(1.0, cosbetamax);
+
+    return success;
+
+          }
+
+
+
 double betaMRD(double Mf, UNUSED IMRPhenomXWaveformStruct *pWF,PhenomXPbetaMRD *beta_params){
-    
+
     double beta=0.;
-    
+
     if(beta_params->flat_RD)
+      {
         beta=acos(beta_params->cosbeta_sign);
+      }
     else
     {
     double kappa = 2.*LAL_PI*beta_params->dfdamp;
     double Mf2 = Mf*Mf;
     double Mf3 = Mf2* Mf;
-        beta = exp(-Mf*kappa)/Mf*(beta_params->aRD/Mf+beta_params->bRD/(Mf2)+beta_params->cRD/Mf3)+beta_params->dRD;
-    
+    beta = exp(-Mf*kappa)/Mf*(beta_params->aRD/Mf+beta_params->bRD/(Mf2)+beta_params->cRD/Mf3)+beta_params->dRD;
     }
-         
+
     return(beta);
-    
           }
-     
+
+// define here and not in header file due to betaParams
+
+double beta_connection(double Mf, const IMRPhenomX_PNR_beta_parameters *betaParams);
+
+double beta_connection(double Mf, const IMRPhenomX_PNR_beta_parameters *betaParams){
+
+    double b0 = betaParams->beta_interp_0;
+    double b1 = betaParams->beta_interp_1;
+    double b2 = betaParams->beta_interp_2;
+    double b3 = betaParams->beta_interp_3;
+
+    double beta = b0 + b1*Mf + b2*Mf*Mf + b3*Mf*Mf*Mf;
+
+    return(beta);
+
+    }
+
 
 /* Integrate minimal rotation condition to compute gamma once alpha and beta are known
    Uses Boole's rule
 */
 int gamma_from_alpha_cosbeta(double *gamma, double Mf, double deltaMf,IMRPhenomXWaveformStruct *pWF,IMRPhenomXPrecessionStruct *pPrec){
-    
+
     REAL8 Mf_high = Mf+deltaMf;
     REAL8 alphadoti, Mf_aux, gammai;
     REAL8 step = (Mf_high-Mf)*0.25;
-    
+
     double alphadotcosbeta[5], cosbeta_aux[5];
-    
+
     int status_alpha=GSL_SUCCESS, status_beta=GSL_SUCCESS;
-    
+
     if(Mf<=pPrec->ftrans_MRD)
     {
         for(UINT4 jdx=0; jdx<5; jdx++){
@@ -3838,26 +4099,26 @@ int gamma_from_alpha_cosbeta(double *gamma, double Mf, double deltaMf,IMRPhenomX
             XLAL_CHECK(status_alpha == GSL_SUCCESS && status_beta==GSL_SUCCESS, XLAL_EFUNC, "Error in %s: could not evaluate splines for alpha and/or gamma angles.\n",__func__);
             alphadotcosbeta[jdx]=cosbeta_aux[jdx]*alphadoti;
                                       }
-        
+
     }
-    
+
     else
     {
         for(UINT4 jdx=0; jdx<5; jdx++){
-            
+
             Mf_aux=Mf+jdx*step;
             cosbeta_aux[jdx] = cos(betaMRD(Mf_aux,pWF,pPrec->beta_params));
             alphadoti = dalphaMRD(Mf_aux,pPrec->alpha_params);
             alphadotcosbeta[jdx]=cosbeta_aux[jdx]*alphadoti;
                                   }
     }
-    
+
     gammai= -2.*step/45.*(7.*alphadotcosbeta[0]+32.*alphadotcosbeta[1]+12.*alphadotcosbeta[2]+32.*alphadotcosbeta[3]+7.*alphadotcosbeta[4]);
     *gamma = gammai;
-    
+
     return(status_beta+status_alpha);
 
-    
+
 }
 
 /** This function evaluates the SpinTaylor Euler angles on a frequency grid passed by the user. Used in LALSimIMRPhenomX.c. */
@@ -3878,7 +4139,7 @@ int IMRPhenomXPSpinTaylorAnglesIMR(
          REAL8 fmax = freqsIN->data[freqsIN->length-1];
          // some useful quantities in geom units
          REAL8 Mfmin=XLALSimIMRPhenomXUtilsHztoMf(fmin,pWF->Mtot);
-        
+
          /* Sanity checks */
          if(fmin    <= 0.0) { XLAL_ERROR(XLAL_EDOM, "fmin must be positive.\n");                          }
          if(fmax    <= 0.0) { XLAL_ERROR(XLAL_EDOM, "fmax must be positive.\n");                          }
@@ -3886,55 +4147,55 @@ int IMRPhenomXPSpinTaylorAnglesIMR(
          if(fRef < fmin){ XLAL_ERROR(XLAL_EDOM, "fRef must be >= fmin.\n"); }
 
          size_t output_length = freqsIN->length;
-        
+
          //Evaluate splines for alpha and cosbeta
          status=IMRPhenomX_InterpolateAlphaBeta_SpinTaylor(pWF,pPrec,LALparams);
          XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Error in %s: IMRPhenomX_InterpolateAlphaBeta_SpinTaylor failed.\n",__func__);
-         
+
          //Evaluate splines for gamma
          status = IMRPhenomX_InterpolateGamma_SpinTaylor(fmin,fmax,pWF,pPrec);
          XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Error in %s: IMRPhenomX_InterpolateGamma_SpinTaylor failed.\n",__func__);
-         
+
          REAL8 alphamin=0., cosbetamin=0.;
-        
+
          status = gsl_spline_eval_e(pPrec->alpha_spline, Mfmin, pPrec->alpha_acc,&alphamin);
          if( status != GSL_SUCCESS)
          {
          XLALPrintError("Error in %s: could not evaluate alpha(f_min). Got alpha=%.4f \n",__func__,alphamin);
          XLAL_ERROR(XLAL_EFUNC);}
-         
+
          status = gsl_spline_eval_e(pPrec->cosbeta_spline, Mfmin, pPrec->cosbeta_acc,&cosbetamin);
          if ( status != GSL_SUCCESS)
          {XLALPrintError("Error in %s: could not evaluate cosbeta(f_min). Got cosbeta=%.4f \n",__func__,cosbetamin);
          XLAL_ERROR(XLAL_EFUNC);}
-        
+
          // check if we can evaluate alpha(fref) using PN or MRD analytical continuation
-         
+
          if(pWF->MfRef<=pPrec->ftrans_MRD)
              status=gsl_spline_eval_e(pPrec->alpha_spline, pWF->MfRef, pPrec->alpha_acc, &pPrec->alpha_ref);
          else if(pPrec->IMRPhenomXPrecVersion==320||pPrec->IMRPhenomXPrecVersion==321)
              pPrec->alpha_ref = alphaMRD(pWF->MfRef,pPrec->alpha_params);
          else
              status=gsl_spline_eval_e(pPrec->alpha_spline, pPrec->ftrans_MRD, pPrec->alpha_acc, &pPrec->alpha_ref);
-         
+
          XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Error in %s: could not evaluate alpha(f_ref).\n",__func__);
-        
+
          *alphaFS = XLALCreateREAL8Sequence(output_length);
          *cosbetaFS = XLALCreateREAL8Sequence(output_length);
          *gammaFS = XLALCreateREAL8Sequence(output_length);
 
          REAL8 alphaOff = pPrec->alpha0;
          pPrec->alpha_offset=-pPrec->alpha_ref+alphaOff;
-         
-         (*gammaFS)->data[0] = 0.;
+
+	 (*gammaFS)->data[0] = 0.;
          (*alphaFS)->data[0] = alphamin-pPrec->alpha_ref+alphaOff;
          (*cosbetaFS)->data[0] = cosbetamin;
-         
-    
+
+
          REAL8 alphai=0., cosbetai=0., gammai=0.;
          REAL8 Mf;
-         
-         
+
+
          for( UINT4 i = 1; i < output_length; i++ ){
 
              Mf=XLALSimIMRPhenomXUtilsHztoMf(freqsIN->data[i],pWF->Mtot);
@@ -3956,9 +4217,9 @@ int IMRPhenomXPSpinTaylorAnglesIMR(
 
 
              else {
-                 
+
                  if(pPrec->IMRPhenomXPrecVersion==320 || pPrec->IMRPhenomXPrecVersion==321 ){
-                     
+
                      (*alphaFS)->data[i]=alphaMRD(Mf,pPrec->alpha_params)+pPrec->alpha_offset;
                      REAL8 beta_MRD=betaMRD(Mf,pWF,pPrec->beta_params);
                      (*cosbetaFS)->data[i]=cos(beta_MRD);
@@ -3968,9 +4229,9 @@ int IMRPhenomXPSpinTaylorAnglesIMR(
                      (*gammaFS) -> data[i] = (*gammaFS)-> data[i-1]+deltagamma;
                      else (*gammaFS) -> data[i] = (*gammaFS)-> data[i-1];
                      }
-                
+
                  // just continue angles into RD with constant values
-                 
+
                  else{
                      (*alphaFS)->data[i]=(*alphaFS)->data[i-1];
                      (*cosbetaFS)->data[i]=(*cosbetaFS)-> data[i-1];
@@ -3978,13 +4239,14 @@ int IMRPhenomXPSpinTaylorAnglesIMR(
                      }
              }
 
+
          }
-         
+
          return status;
 
      }
 
-/**  This function builds and stores splines for  \f$\alpha\f$  and \f$\cos\beta\f$ in the frequency range covered by PN, and computes a spline for \f$\gamma\f$ between fmin and fmax   */
+/**  This function builds and stores splines for  \f$\alpha\f$  and \f$\cos\beta\f$ in the frequency range covered by PN, and computes a spline for \f$\gamma\f$ between fmin and fmax. Used in XLALSimIMRPhenomX_PNR_GeneratePNRAngles.  */
 int IMRPhenomX_SpinTaylorAnglesSplinesAll(
        REAL8 fmin,                           /**< [in]  Minimum frequency of the gamma spline [in]*/
        REAL8 fmax,                           /**< [in]  Maximum frequency of the gamma spline [in]*/
@@ -3996,7 +4258,7 @@ int IMRPhenomX_SpinTaylorAnglesSplinesAll(
 
          int status = XLAL_SUCCESS;
          REAL8 fRef= pWF->fRef;
-        
+
          /* Sanity checks */
          if(fmin    <= 0.0) { XLAL_ERROR(XLAL_EDOM, "fmin must be positive.\n");                          }
          if(fmax    <= 0.0) { XLAL_ERROR(XLAL_EDOM, "fmax must be positive.\n");                          }
@@ -4006,26 +4268,26 @@ int IMRPhenomX_SpinTaylorAnglesSplinesAll(
          //Evaluate splines for alpha and cosbeta
          status=IMRPhenomX_InterpolateAlphaBeta_SpinTaylor(pWF,pPrec,LALparams);
          XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Error in %s: IMRPhenomX_InterpolateAlphaBeta_SpinTaylor failed.\n",__func__);
-         
+
          //Evaluate splines for gamma
          status = IMRPhenomX_InterpolateGamma_SpinTaylor(fmin,fmax,pWF,pPrec);
          XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Error in %s: IMRPhenomX_InterpolateGamma_SpinTaylor failed.\n",__func__);
-        
+
          // check if we can evaluate alpha(fref) using PN or an analytical continuation
-         
+
          if(pWF->MfRef<=pPrec->ftrans_MRD)
              status=gsl_spline_eval_e(pPrec->alpha_spline, pWF->MfRef, pPrec->alpha_acc, &pPrec->alpha_ref);
          else if(pPrec->IMRPhenomXPrecVersion==320||pPrec->IMRPhenomXPrecVersion==321)
              pPrec->alpha_ref = alphaMRD(pWF->MfRef,pPrec->alpha_params);
          else
              status=gsl_spline_eval_e(pPrec->alpha_spline, pPrec->ftrans_MRD, pPrec->alpha_acc, &pPrec->alpha_ref);
-         
+
          XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Error in %s: could not evaluate alpha(f_ref).\n",__func__);
-         
+
          return status;
 
      }
-     
+
 /** This function computes gamma from the minimal rotation condition and stores a spline for it */
 int IMRPhenomX_InterpolateGamma_SpinTaylor(
        REAL8 fmin,               /**< starting frequency (Hz) */
@@ -4037,20 +4299,18 @@ int IMRPhenomX_InterpolateGamma_SpinTaylor(
 
          int status = XLAL_SUCCESS;
          REAL8 fRef= pWF->fRef;
-         
+
          // some useful quantities in geom units
          REAL8 Mfmin=XLALSimIMRPhenomXUtilsHztoMf(fmin,pWF->Mtot);
-        
+
          /* Sanity checks */
          if(fmin    <= 0.0) { XLAL_ERROR(XLAL_EDOM, "fmin must be positive.\n");                          }
          if(fmax    <= 0.0) { XLAL_ERROR(XLAL_EDOM, "fmax must be positive.\n");                          }
          if(fmax    <= fmin) { XLAL_ERROR(XLAL_EDOM, "fmax must be larger than fmin.\n");                          }
          if(fRef < fmin){ XLAL_ERROR(XLAL_EDOM, "fRef must be >= fmin.\n"); }
-        
-         REAL8 seglen=XLALSimInspiralChirpTimeBound(pWF->fRef, pWF->m1_SI, pWF->m2_SI, pWF->chi1L,pWF->chi2L);
-         REAL8 deltaFv1= 1./MAX(4.,pow(2, ceil(log(seglen)/log(2))));
-         REAL8 deltaF = MIN(deltaFv1,0.1);
-         REAL8 deltaMF = XLALSimIMRPhenomXUtilsHztoMf(deltaF,pWF->Mtot);
+
+         REAL8 deltaMF = get_deltaF_from_wfstruct(pWF);
+         REAL8 deltaF = XLALSimIMRPhenomXUtilsMftoHz(deltaMF,pWF->Mtot);
          // length of frequency series expected by the user
          size_t iStart = (size_t) (fmin / deltaF);
          size_t iStop  = (size_t) (fmax / deltaF) + 1;
@@ -4060,18 +4320,18 @@ int IMRPhenomX_InterpolateGamma_SpinTaylor(
          XLALPrintError("Error in %s: no. of points is insufficient for spline interpolation of gamma",__func__);
          XLAL_ERROR(XLAL_EFUNC);
          }
-         
-        
+
+
          REAL8Sequence *frequencies = NULL;
          frequencies=XLALCreateREAL8Sequence(output_length);
          frequencies->data[0]=Mfmin;
-         
+
          REAL8Sequence *gamma_array = NULL;
          gamma_array=XLALCreateREAL8Sequence(output_length);
          gamma_array->data[0]=0.;
          REAL8 Mf;
          int gamma_status=GSL_SUCCESS;
-         
+
          for( UINT4 i = 1; i < output_length; i++ )
          {
 
@@ -4093,11 +4353,11 @@ int IMRPhenomX_InterpolateGamma_SpinTaylor(
                      gamma_array->data[i]=gamma_array->data[i-1];
                      }
                   }
-                  
+
                   if(gamma_status!=GSL_SUCCESS) status=gamma_status;
 
          }
-         
+
          if(status==GSL_SUCCESS)
          {
             pPrec->gamma_acc = gsl_interp_accel_alloc();
@@ -4105,28 +4365,28 @@ int IMRPhenomX_InterpolateGamma_SpinTaylor(
             gsl_spline_init(pPrec->gamma_spline, frequencies->data, gamma_array -> data, output_length);
             pPrec->gamma_ref=gsl_spline_eval(pPrec->gamma_spline, pWF->MfRef, pPrec->gamma_acc);
          }
-         
+
          else{
-         
+
           gsl_spline_free(pPrec->alpha_spline);
           gsl_interp_accel_free(pPrec->alpha_acc);
-                  
+
           gsl_spline_free(pPrec->cosbeta_spline);
           gsl_interp_accel_free(pPrec->cosbeta_acc);
-         
-         
+
+
          }
-         
-        
+
+
          XLALDestroyREAL8Sequence(frequencies);
          XLALDestroyREAL8Sequence(gamma_array);
-         
+
          return status;
 
      }
-  
-     
-     
+
+
+
 /** This function computes cubic splines of the alpha and beta inspiral Euler angles, which are then stored into a IMRPhenomXPrecessionStruct structure.
  - If the user passed PhenomXPFinalSpinMod=4, the function corrects the estimate for the final precessing spin based on the result of the PN integration.
  - For versions 32*, the function also computes the parameters needed to obtain a smooth MRD continuation of alpha/beta.
@@ -4140,107 +4400,112 @@ int IMRPhenomX_InterpolateAlphaBeta_SpinTaylor(
 {
 
               int status = XLAL_SUCCESS;
-             
+
               size_t lenPN = pPrec->PNarrays->V_PN->data->length;
-              
+
               REAL8Sequence *fgw =NULL ;
               /* Setup sequences for angles*/
               REAL8Sequence *alpha = NULL;
               REAL8Sequence *alphaaux = NULL;
               REAL8Sequence *cosbeta = NULL;
-             
-              
+
+
               fgw=XLALCreateREAL8Sequence(lenPN);
               alpha=XLALCreateREAL8Sequence(lenPN);
               alphaaux=XLALCreateREAL8Sequence(lenPN);
               cosbeta=XLALCreateREAL8Sequence(lenPN);
-            
-              
+
+
               REAL8 fgw_Mf, fgw_Hz, Mfmax_PN=0.;
               // i_max is used to discard possibly unphysical points in the calculation of the final spin
               UINT8 i_max=0;
               REAL8 LNhatx_temp,LNhaty_temp,LNhatz_temp;
-              
+
               for(UINT8 i=0; i < lenPN; i++){
-                  
+
                   LNhatx_temp = (pPrec->PNarrays->LNhatx_PN->data->data[i]);
                   LNhaty_temp = (pPrec->PNarrays->LNhaty_PN->data->data[i]);
                   LNhatz_temp = (pPrec->PNarrays->LNhatz_PN->data->data[i]);
-                  
+
                   IMRPhenomX_rotate_z(-pPrec->phiJ_Sf,  &LNhatx_temp, &LNhaty_temp, &LNhatz_temp);
                   IMRPhenomX_rotate_y(-pPrec->thetaJ_Sf, &LNhatx_temp, &LNhaty_temp, &LNhatz_temp);
                   IMRPhenomX_rotate_z(-pPrec->kappa,  &LNhatx_temp, &LNhaty_temp, &LNhatz_temp);
-                    
+
                   fgw_Hz= pow(pPrec->PNarrays->V_PN->data->data[i],3.)/pPrec->piGM;
                   fgw_Mf= XLALSimIMRPhenomXUtilsHztoMf(fgw_Hz,pWF->Mtot);
-                  
+
                   if(fgw_Hz>0.){
-                  
+
                   /* Compute Euler angles in the J frame */
                   alphaaux->data[i] = atan2(LNhaty_temp, LNhatx_temp);
                   cosbeta->data[i] = LNhatz_temp;
                   fgw->data[i] = fgw_Mf;
-                                  
                   Mfmax_PN = fgw_Mf;
                   i_max = i;
                   }
-                      
+
                   else
                       break;
-                      
+
 
               }
-    
-            REAL8 fmax_inspiral = Mfmax_PN-pWF->deltaMF;
+
+            REAL8 fmax_inspiral;
+            if(pPrec->IMRPhenomXPNRUseTunedAngles)
+            fmax_inspiral = Mfmax_PN;
+            else
+            fmax_inspiral = Mfmax_PN-pWF->deltaMF;
+
             if(fmax_inspiral > pWF->fRING-pWF->fDAMP) fmax_inspiral = 1.020 * pWF->fMECO;
 
             pPrec->ftrans_MRD = 0.98*fmax_inspiral;
             pPrec->fmax_inspiral= fmax_inspiral;
-            
+
+
             // Interpolate alpha
             XLALSimIMRPhenomXUnwrapArray(alphaaux->data, alpha->data, lenPN);
+
             pPrec->alpha_acc = gsl_interp_accel_alloc();
             pPrec->alpha_spline = gsl_spline_alloc(gsl_interp_cspline, lenPN);
 
-            
             status = gsl_spline_init(pPrec->alpha_spline, fgw->data, alpha->data, lenPN);
-            
+
             if (status != GSL_SUCCESS)
             {
                  XLALPrintError("Error in %s: error in computing gsl spline for alpha.\n",__func__);
             }
-              
+
             // Interpolate cosbeta
             pPrec->cosbeta_acc = gsl_interp_accel_alloc();
             pPrec->cosbeta_spline = gsl_spline_alloc(gsl_interp_cspline, lenPN);
             status =gsl_spline_init(pPrec->cosbeta_spline, fgw->data, cosbeta->data, lenPN);
-            
+
             if (status != GSL_SUCCESS)
             {
                  XLALPrintError("Error in %s: error in computing gsl spline for cos(beta).\n",__func__);
             }
-            
+
             REAL8 cosbetamax;
-            
+
             status = gsl_spline_eval_e(pPrec->cosbeta_spline, fmax_inspiral, pPrec->cosbeta_acc,&cosbetamax);
             if(status != GSL_SUCCESS)
             {
                 XLALPrintError("Error in %s: error in computing cosbeta.\n",__func__);
             }
-                                
+
             // estimate final spin using spins at the end of the PN integration
-            
+
             if(XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod(LALparams)==4){
-            
+
             REAL8 m1 = pWF->m1_SI / pWF->Mtot_SI;
             REAL8 m2 = pWF->m2_SI / pWF->Mtot_SI;
-           
+
             vector Lnf  = {pPrec->PNarrays->LNhatx_PN->data->data[i_max],pPrec->PNarrays->LNhaty_PN->data->data[i_max],pPrec->PNarrays->LNhatz_PN->data->data[i_max]};
             REAL8 Lnorm = sqrt(IMRPhenomX_vector_dot_product(Lnf,Lnf));
             vector S1f  = {pPrec->PNarrays->S1x_PN->data->data[i_max],pPrec->PNarrays->S1y_PN->data->data[i_max],pPrec->PNarrays->S1z_PN->data->data[i_max]};
             vector S2f  = {pPrec->PNarrays->S2x_PN->data->data[i_max],pPrec->PNarrays->S2y_PN->data->data[i_max],pPrec->PNarrays->S2z_PN->data->data[i_max]};
 
-            
+
             REAL8 dotS1L = IMRPhenomX_vector_dot_product(S1f,Lnf)/Lnorm;
             REAL8 dotS2L  = IMRPhenomX_vector_dot_product(S2f,Lnf)/Lnorm;
             vector S1_perp = IMRPhenomX_vector_diff(S1f,IMRPhenomX_vector_scalar(Lnf, dotS1L));
@@ -4250,29 +4515,29 @@ int IMRPhenomX_InterpolateAlphaBeta_SpinTaylor(
             vector Stot_perp = IMRPhenomX_vector_sum(S1_perp,S2_perp);
             REAL8 S_perp_norm = sqrt(IMRPhenomX_vector_dot_product(Stot_perp,Stot_perp));
             REAL8 chi_perp_norm = S_perp_norm *pow(m1 + m2,2)/pow(m1,2);
-            
+
             pWF->afinal= copysign(1.0, cosbetamax)* XLALSimIMRPhenomXPrecessingFinalSpin2017(pWF->eta,dotS1L,dotS2L,chi_perp_norm);
-    
+
             pWF->fRING     = evaluate_QNMfit_fring22(pWF->afinal) / (pWF->Mfinal);
             pWF->fDAMP     = evaluate_QNMfit_fdamp22(pWF->afinal) / (pWF->Mfinal);
             }
-            
+
             // initialize parameters for RD continuation
             pPrec->alpha_params    = XLALMalloc(sizeof(PhenomXPalphaMRD));
             pPrec->beta_params    = XLALMalloc(sizeof(PhenomXPbetaMRD));
-            
-            if(pPrec->IMRPhenomXPrecVersion==320 || pPrec->IMRPhenomXPrecVersion==321){
-            
-            status = alphaMRD_coeff(*pPrec->alpha_spline, *pPrec->alpha_acc, pPrec->fmax_inspiral, pWF, pPrec->alpha_params);
+
+            if(pPrec->IMRPhenomXPrecVersion==320 || pPrec->IMRPhenomXPrecVersion==321 || pPrec->IMRPhenomXPrecVersion==330 ){
+
+	    status = alphaMRD_coeff(*pPrec->alpha_spline, *pPrec->alpha_acc, pPrec->fmax_inspiral, pWF, pPrec->alpha_params);
             if(status!=XLAL_SUCCESS) XLALPrintError("XLAL Error in %s: error in computing parameters for MRD continuation of Euler angles.\n",__func__);
-                     
-        
+
+
             status = betaMRD_coeff(*pPrec->cosbeta_spline, *pPrec->cosbeta_acc, pPrec->fmax_inspiral, pWF, pPrec);
              if(status!=XLAL_SUCCESS) XLALPrintError("XLAL Error in %s: error in computing parameters for MRD continuation of Euler angles.\n",__func__);
-                       
+
             }
-              
-            
+
+
             XLALDestroyREAL8TimeSeries(pPrec->PNarrays->V_PN);
             XLALDestroyREAL8TimeSeries(pPrec->PNarrays->S1x_PN);
             XLALDestroyREAL8TimeSeries(pPrec->PNarrays->S1y_PN);
@@ -4286,34 +4551,35 @@ int IMRPhenomX_InterpolateAlphaBeta_SpinTaylor(
             XLALFree(pPrec->PNarrays);
 
 
-                         
+
             XLALDestroyREAL8Sequence(fgw);
             XLALDestroyREAL8Sequence(alphaaux);
             XLALDestroyREAL8Sequence(cosbeta);
             XLALDestroyREAL8Sequence(alpha);
-            
+
             if(status != GSL_SUCCESS){
-            
+
             gsl_spline_free(pPrec->alpha_spline);
             gsl_spline_free(pPrec->cosbeta_spline);
             gsl_interp_accel_free(pPrec->alpha_acc);
             gsl_interp_accel_free(pPrec->cosbeta_acc);
-            
-            
-            }
-   
 
-              
+
+            }
+
+
+
             return status;
 
           }
 
-     
+
 
 
 /** Wrapper of  XLALSimInspiralSpinTaylorPNEvolveOrbit : if integration is successful, stores arrays containing PN solution in  a PhenomXPInspiralArrays struct  */
 int IMRPhenomX_InspiralAngles_SpinTaylor(
             PhenomXPInspiralArrays *arrays, /**< [out] Struct containing solutions returned by PNEvolveOrbit   */
+            double* fmin_PN, /**< [out] Minimum frequency in PN solutions array   */
             REAL8 chi1x,   /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) at fRef */
             REAL8 chi1y,   /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) at fRef */
             REAL8 chi1z,   /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) at fRef */
@@ -4329,24 +4595,24 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
 
               int status = XLAL_SUCCESS;
               REAL8 fRef=pWF->fRef;
-              
+
               /* Sanity checks */
               if(fmin    <= 0.0) { XLAL_ERROR(XLAL_EDOM, "fmin must be positive.\n");                          }
               if(fRef < fmin){ XLAL_ERROR(XLAL_EDOM, "fRef must be >= fmin.\n"); }
 
-              
+
               REAL8 m1_SI=pWF->m1_SI,m2_SI=pWF->m2_SI;
               REAL8 s1x=chi1x, s1y=chi1y, s1z=chi1z;
               REAL8 s2x=chi2x, s2y=chi2y, s2z=chi2z;
-              
+
               UNUSED REAL8 piGM = LAL_PI * (pWF->m1_SI + pWF->m2_SI) * (LAL_G_SI / LAL_C_SI) / (LAL_C_SI * LAL_C_SI);
 
               REAL8 quadparam1=pWF->quadparam1;
               REAL8 quadparam2=pWF->quadparam2;
               REAL8 lambda1=pWF->lambda1;
               REAL8 lambda2=pWF->lambda2;
-    
-              
+
+
               // Tidal parameters are preloaded in aligned spin waveform structure. If using BH values in the twisting up, overwrite these. Note that the aligned spin model (i.e. the co-precessing modes) will still be using the NS tidal parameters
               if (PrecVersion==311 || PrecVersion==321)
               {
@@ -4355,20 +4621,20 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
                 lambda1 = 0.;
                 lambda2 = 0.;
               }
-              
-              
+
+
               int phaseO = XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALparams);
               int spinO = XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams);
               int tideO = XLALSimInspiralWaveformParamsLookupPNTidalOrder(LALparams);
               int lscorr = XLALSimInspiralWaveformParamsLookupLscorr(LALparams);
               if(lscorr!=0) XLAL_PRINT_WARNING("IMRPhenomXP with SpinTaylor angles was only reviewed for lscorr=0.\n");
 
-              
+
               // enforce default orders if user does not specify any: this is added to ensure backward compatibility should default PN orders change in the future
               if(phaseO == -1)  XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALparams,7);
               if(spinO == -1)  XLALSimInspiralWaveformParamsInsertPNSpinOrder(LALparams,6);
               if(tideO == -1)  XLALSimInspiralWaveformParamsInsertPNTidalOrder(LALparams,12);
-             
+
                /* Initialize needed time series */
               REAL8TimeSeries *V = NULL;
               REAL8TimeSeries *Phi = NULL;
@@ -4384,53 +4650,53 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
               REAL8TimeSeries *E1x = NULL;
               REAL8TimeSeries *E1y = NULL;
               REAL8TimeSeries *E1z = NULL;
-              
-              
-             
+
+
+
               REAL8 lnhatx,lnhaty,lnhatz, e1y,e1z,e1x;
               lnhatx = lnhaty = e1y = e1z = 0;
               lnhatz = e1x = 1.;
-              
+
               // if the user does not specify any SpinTaylor approximant, default to SpinTaylorT4
               const char * approx_name=XLALSimInspiralWaveformParamsLookupPhenomXPSpinTaylorVersion(LALparams);
               if(approx_name==NULL)
                   approx_name="SpinTaylorT4";
               Approximant approx = XLALSimInspiralGetApproximantFromString(approx_name);
-              
+
               REAL8 fS,fE;
-              
+
               REAL8 fMECO_Hz=XLALSimIMRPhenomXUtilsMftoHz(pWF->fMECO,pWF->Mtot);
-             
+
               // for versions 32* to work, we need to start integration in the inspiral
                if(fmin>fMECO_Hz &&(PrecVersion==320 || PrecVersion==321))
               {
                   fmin=fMECO_Hz;
               }
-              
+
               REAL8 fCut = XLALSimIMRPhenomXUtilsMftoHz(pWF->fRING+8.*pWF->fDAMP,pWF->Mtot);
               int n;
-              
+
               REAL8 coarse_fac = (float)XLALSimInspiralWaveformParamsLookupPhenomXPSpinTaylorCoarseFactor(LALparams);
+
               if(coarse_fac  < 1) { XLAL_ERROR(XLAL_EDOM, "Coarse factor must be >= 1!\n");}
-            
+
               REAL8 deltaT_coarse = 0.5*coarse_fac/(fCut);
-    
+
               fS=fmin;
               fE=fCut;
 
-             
               if( fRef < LAL_REAL4_EPS  || fabs(fRef - fmin) < LAL_REAL4_EPS )
-                  
+
               {
                   fRef = fmin;
-              
+
                   n=XLALSimInspiralSpinTaylorPNEvolveOrbit(&V, &Phi, &S1x, &S1y, &S1z, &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z, deltaT_coarse, m1_SI, m2_SI,fS,fE,s1x,s1y,s1z,s2x,s2y,s2z,lnhatx,lnhaty,lnhatz,e1x,e1y,e1z,lambda1,lambda2,quadparam1, quadparam2, spinO, tideO, phaseO, lscorr, approx);
-              
+
                   if( n < 0 )
                           XLAL_ERROR(XLAL_EFUNC);
               }
-              
-              
+
+
               else if((fRef - fmin) > LAL_REAL4_EPS )
               {
                   /* Integrate backward to fStart */
@@ -4442,17 +4708,17 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
                           deltaT_coarse, m1_SI, m2_SI, fS, fE, s1x, s1y, s1z, s2x, s2y,
                           s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
                   quadparam1, quadparam2, spinO, tideO, phaseO, lscorr, approx);
-                  
-                
+
+
                   if( n < 0 )  XLAL_ERROR(XLAL_EFUNC);
-                
+
 
                   if(V->data->length>1){
 
                   REAL8TimeSeries *V2=NULL, *Phi2=NULL, *S1x2=NULL, *S1y2=NULL, *S1z2=NULL, *S2x2=NULL, *S2y2=NULL, *S2z2=NULL;
                   REAL8TimeSeries *LNhatx2=NULL, *LNhaty2=NULL, *LNhatz2=NULL, *E1x2=NULL, *E1y2=NULL, *E1z2=NULL;
 
-                  
+
                   /* Integrate forward to end of waveform */
                   fS = fRef;
                   fE = fCut;
@@ -4463,9 +4729,9 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
                           s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
                   quadparam1, quadparam2, spinO, tideO, phaseO, lscorr, approx);
                   if( n < 0 )  XLAL_ERROR(XLAL_EFUNC);
-                 
 
-                  
+
+
                   // Stitch 2nd set of vectors onto 1st set.
                   V = appendTS(V, V2);
                   Phi = appendTS(Phi, Phi2);
@@ -4484,7 +4750,7 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
                   }
 
                   else{
-                  
+
                 XLALDestroyREAL8TimeSeries( V );
                 XLALDestroyREAL8TimeSeries( Phi );
                 XLALDestroyREAL8TimeSeries( S1x );
@@ -4501,77 +4767,77 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
                 XLALDestroyREAL8TimeSeries( E1z );
                 // the failure will be caught by GetAndSetPrecessionVariables. If the integration fails, the waveform generation will default to prec. version 223
                 return(XLAL_FAILURE);
-			
+
                        }
 
                 }
-              
+
               else
               {
                   XLAL_ERROR(XLAL_EFUNC);
               }
-              
+
               size_t copyLength;
-              
+
               if(coarse_fac>1)
               {
               // at high frequencies, perform a fine integration
               // stop some bins before the last one
-              
+
               int lenLow=V->data->length;
               int nbuffer=MIN(9,lenLow-1);
-              
+
               if(lenLow-1-nbuffer<0) nbuffer=lenLow-1;
-              
+
               copyLength=lenLow-1-nbuffer;
-              
+
               REAL8 vtrans = V->data->data[lenLow-1-nbuffer];
               REAL8 ftrans = pow(vtrans,3.)/piGM;
-              
+
               REAL8 LNhatx_trans=LNhatx->data->data[lenLow-1-nbuffer];
               REAL8 LNhaty_trans=LNhaty->data->data[lenLow-1-nbuffer];
               REAL8 LNhatz_trans=LNhatz->data->data[lenLow-1-nbuffer];
-              
+
               REAL8 E1x_trans, E1y_trans, E1z_trans;
               E1x_trans = E1x->data->data[lenLow-1-nbuffer];
               E1y_trans = E1y->data->data[lenLow-1-nbuffer];
               E1z_trans = E1z->data->data[lenLow-1-nbuffer];
-              
+
               REAL8 S1x_trans, S1y_trans, S1z_trans, S2x_trans, S2y_trans, S2z_trans;
               S1x_trans = S1x->data->data[lenLow-1-nbuffer];
               S1y_trans = S1y->data->data[lenLow-1-nbuffer];
               S1z_trans = S1z->data->data[lenLow-1-nbuffer];
-              
+
               S2x_trans = S2x->data->data[lenLow-1-nbuffer];
               S2y_trans = S2y->data->data[lenLow-1-nbuffer];
               S2z_trans = S2z->data->data[lenLow-1-nbuffer];
-                                    
+
               fS=ftrans;
               fE=fCut;
               REAL8 deltaT = 0.5/(fCut);
-              
+
               XLAL_CHECK(fS > 0., XLAL_EFUNC, "Error: Transition frequency in PN integration is not positive.\n");
- 
+
               REAL8TimeSeries *Phi_PN=NULL, *E1x_PN=NULL, *E1y_PN=NULL, *E1z_PN=NULL;
-              
+
               n=XLALSimInspiralSpinTaylorPNEvolveOrbit(&arrays->V_PN, &Phi_PN, &arrays->S1x_PN, &arrays->S1y_PN, &arrays->S1z_PN, &arrays->S2x_PN, &arrays->S2y_PN, &arrays->S2z_PN, &arrays->LNhatx_PN, &arrays->LNhaty_PN, &arrays->LNhatz_PN, &E1x_PN, &E1y_PN, &E1z_PN, deltaT, m1_SI, m2_SI,fS,fE,S1x_trans,S1y_trans,S1z_trans,S2x_trans,S2y_trans,S2z_trans,LNhatx_trans,LNhaty_trans,LNhatz_trans,E1x_trans, E1y_trans, E1z_trans,lambda1,lambda2,quadparam1, quadparam2, spinO, tideO, phaseO, lscorr, approx);
-              
+
               // free high frequency arrays
               XLALDestroyREAL8TimeSeries( Phi_PN );
               XLALDestroyREAL8TimeSeries( E1x_PN );
               XLALDestroyREAL8TimeSeries( E1y_PN );
               XLALDestroyREAL8TimeSeries( E1z_PN );
-              
+
               if( n < 0 )
                           XLAL_ERROR(XLAL_EFUNC);
-              
+
               size_t lenPN=lenLow-nbuffer-1+arrays->V_PN->data->length;
 
               if(lenPN < 4) {
                 XLALPrintError("Error in %s: no. of points is insufficient for spline interpolation",__func__);
                 XLAL_ERROR(XLAL_EFUNC);
 				}
-                            
+
               // resize series to full length (coarse+fine)
               XLALResizeREAL8TimeSeries(arrays->V_PN,-(lenLow-nbuffer-1),lenPN);
               XLALResizeREAL8TimeSeries(arrays->LNhatx_PN,-(lenLow-nbuffer-1),lenPN);
@@ -4583,17 +4849,17 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
               XLALResizeREAL8TimeSeries(arrays->S2x_PN,-(lenLow-nbuffer-1),lenPN);
               XLALResizeREAL8TimeSeries(arrays->S2y_PN,-(lenLow-nbuffer-1),lenPN);
               XLALResizeREAL8TimeSeries(arrays->S2z_PN,-(lenLow-nbuffer-1),lenPN);
-              
+
               }
-              
+
               else{
-              
+
                 copyLength=V->data->length-1;
                 if(copyLength < 4) {
                 XLALPrintError("Error in %s: no. of points is insufficient for spline interpolation",__func__);
                 XLAL_ERROR(XLAL_EFUNC);
 				}
-                
+
                 LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO;
 
                 /* allocate memory for output vectors */
@@ -4618,11 +4884,11 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
                 arrays->LNhatz_PN = XLALCreateREAL8TimeSeries( "LNHAT_Z_COMPONENT", &ligotimegps_zero, 0.,
                         deltaT_coarse, &lalDimensionlessUnit, copyLength);
 
-                          
-              
+
+
               }
 
-        
+
               // copy coarse-grid data into fine-grid arrays
               memcpy(arrays->V_PN->data->data,V->data->data,(copyLength)*sizeof(REAL8));
               memcpy(arrays->LNhatx_PN->data->data,LNhatx->data->data,(copyLength)*sizeof(REAL8));
@@ -4634,8 +4900,8 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
               memcpy(arrays->S2x_PN->data->data,S2x->data->data,(copyLength)*sizeof(REAL8));
               memcpy(arrays->S2y_PN->data->data,S2y->data->data,(copyLength)*sizeof(REAL8));
               memcpy(arrays->S2z_PN->data->data,S2z->data->data,(copyLength)*sizeof(REAL8));
-              
-              
+
+
               XLALDestroyREAL8TimeSeries( V );
               XLALDestroyREAL8TimeSeries( Phi );
               XLALDestroyREAL8TimeSeries( S1x );
@@ -4650,15 +4916,16 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
               XLALDestroyREAL8TimeSeries( E1x );
               XLALDestroyREAL8TimeSeries( E1y );
               XLALDestroyREAL8TimeSeries( E1z );
-              
+
               // check that the first frequency node returned is indeed below the fmin requested, to avoid interpolation errors. If not return an error which will trigger the fallback to MSA
               REAL8 fminPN=pow(arrays->V_PN->data->data[0],3.)/piGM;
+              *fmin_PN = fminPN;
               if(fminPN<0.||fminPN>fmin) return(XLAL_FAILURE);
 
               return status;
 
           }
-          
+
 
 
 /** Wrapper of IMRPhenomX_SpinTaylorAnglesSplinesAll: fmin and fmax are determined by the function based on the mode content and binary's parameters . Used in LALSimIMRPhenomXPHM.c */
@@ -4671,42 +4938,44 @@ int IMRPhenomX_Initialize_Euler_Angles(
 {
       int status = XLAL_SUCCESS;
       REAL8 thresholdPMB  = XLALSimInspiralWaveformParamsLookupPhenomXPHMThresholdMband(lalParams);
-      
+
+      /* See if PNR angles were turned off in pPrec check */
+      REAL8 buffer=pPrec->integration_buffer, fminAngles;
+
       // start below fMin to avoid interpolation artefacts
-      REAL8 buffer = (pWF->deltaF>0.) ? 3.*pWF->deltaF : 0.5;
-      REAL8 fminAngles = (pWF->fMin-buffer)*2./pPrec->M_MAX;
+      fminAngles = (pWF->fMin-buffer)*2./pPrec->M_MAX;
       // check we still pass a meaningful fmin
       XLAL_CHECK(fminAngles > 0., XLAL_EFUNC, "Error - %s: fMin is too low and numerical angles could not be computed.\n",__func__);
-     
+
       // If MB is on, we take advantage of the fact that we can compute angles on an array
-      
+
       if(thresholdPMB>0.)
         pPrec->Mfmax_angles = pWF->fRING+4.*pWF->fDAMP;
       else
         pPrec->Mfmax_angles = (MAX(pWF->MfMax,pWF->fRING+4.*pWF->fDAMP)+XLALSimIMRPhenomXUtilsHztoMf(buffer,pWF->Mtot))*2./pPrec->M_MIN;
       REAL8 fmaxAngles = XLALSimIMRPhenomXUtilsMftoHz(pPrec->Mfmax_angles,pWF->Mtot);
-      
+
       // we add a few bins to fmax to make sure we do not run into interpolation errors
       status = IMRPhenomX_SpinTaylorAnglesSplinesAll(fminAngles,fmaxAngles,pWF,pPrec,lalParams);
       XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "%s: IMRPhenomX_SpinTaylorAnglesSplinesAll failed.",__func__);
-      
+
       status = gsl_spline_eval_e(pPrec->alpha_spline, pPrec->ftrans_MRD, pPrec->alpha_acc,&pPrec->alpha_ftrans);
       XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "%s: could not compute alpha et the end of inspiral.",__func__);
-      
+
       status = gsl_spline_eval_e(pPrec->cosbeta_spline, pPrec->ftrans_MRD, pPrec->cosbeta_acc,&pPrec->cosbeta_ftrans);
       XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "%s: could not compute cosbeta et the end of inspiral.",__func__);
-      
+
       status = gsl_spline_eval_e(pPrec->gamma_spline, pPrec->ftrans_MRD, pPrec->gamma_acc,&pPrec->gamma_ftrans);
       XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "%s: could not compute gamma et the end of inspiral.",__func__);
-      
+
       return status;
-      
+
 }
 
 
 
-     
-     
+
+
 /** XLAL function that  evaluates the SpinTaylor Euler angles on a frequency grid passed by the user. Used in LALSimIMRPhenomX.c. */
 int XLALSimIMRPhenomXPSpinTaylorAngles(
             REAL8Sequence **alphaFS,              /**< [out] Alpha angle frequency series [out] */
@@ -4731,7 +5000,7 @@ int XLALSimIMRPhenomXPSpinTaylorAngles(
 
               int status = XLAL_SUCCESS;
               int pversion = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(LALparams);
-                  
+
               /* Sanity checks */
               if(fRef  <  0.0) { XLAL_ERROR(XLAL_EDOM, "fRef must be positive or set to 0 to ignore.\n");  }
               if(deltaF   <= 0.0) { XLAL_ERROR(XLAL_EDOM, "deltaF must be positive.\n");                         }
@@ -4745,7 +5014,7 @@ int XLALSimIMRPhenomXPSpinTaylorAngles(
               size_t iStart = (size_t) (fmin / deltaF);
               size_t iStop  = (size_t) (fmax / deltaF) + 1;
               size_t output_length = iStop-iStart;
-              
+
               status = XLALIMRPhenomXPCheckMassesAndSpins(&m1_SI,&m2_SI,&s1x,&s1y,&s1z,&s2x,&s2y,&s2z);
               XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: XLALIMRPhenomXPCheckMassesAndSpins failed.\n");
 
@@ -4767,49 +5036,49 @@ int XLALSimIMRPhenomXPSpinTaylorAngles(
               //Evaluate splines for alpha and cosbeta
               status=IMRPhenomX_InterpolateAlphaBeta_SpinTaylor(pWF,pPrec,LALparams);
               XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Error in %s: IMRPhenomX_InterpolateAlphaBeta_SpinTaylor failed.\n",__func__);
-              
+
               REAL8 alphamin=0., cosbetamin=0.;
               int success=XLAL_SUCCESS;
               REAL8 Mfmin=XLALSimIMRPhenomXUtilsHztoMf(fmin,pWF->Mtot);
-              
+
               success = gsl_spline_eval_e(pPrec->alpha_spline, Mfmin, pPrec->alpha_acc,&alphamin);
               success = success + gsl_spline_eval_e(pPrec->cosbeta_spline, Mfmin, pPrec->cosbeta_acc,&cosbetamin);
               XLAL_CHECK(XLAL_SUCCESS == success, XLAL_EFUNC, "Error: %s: could not evaluate angles at fMin.\n",__func__);
-              
-              
+
+
               // check if we can evaluate alpha(fref) using PN or an analytical continuation
-              
+
               if(pWF->MfRef<pPrec->ftrans_MRD)
                   success=gsl_spline_eval_e(pPrec->alpha_spline, pWF->MfRef, pPrec->alpha_acc, &pPrec->alpha_ref);
               else if(pPrec->IMRPhenomXPrecVersion==320||pPrec->IMRPhenomXPrecVersion==321)
                   pPrec->alpha_ref = alphaMRD(pWF->MfRef,pPrec->alpha_params);
               else
                   success=gsl_spline_eval_e(pPrec->alpha_spline, pPrec->ftrans_MRD, pPrec->alpha_acc, &pPrec->alpha_ref);
-                  
+
               XLAL_CHECK(XLAL_SUCCESS == success, XLAL_EFUNC, "Error: %s: could not evaluate angles at fRef.\n",__func__);
 
-             
+
 
               *alphaFS = XLALCreateREAL8Sequence(output_length);
               *cosbetaFS = XLALCreateREAL8Sequence(output_length);
               *gammaFS = XLALCreateREAL8Sequence(output_length);
 
-      
+
               REAL8 alphaOff = pPrec->alpha0;
               pPrec->alpha_offset=-pPrec->alpha_ref+alphaOff;
-              
+
               // determine offset for gamma et the end
               (*gammaFS)->data[0] = 0.;
               (*alphaFS)->data[0] = alphamin-pPrec->alpha_ref+alphaOff;
               (*cosbetaFS)->data[0] = cosbetamin;
-              
-         
+
+
               REAL8 alphai=0., cosbetai=0., gammai=0.;
               REAL8 Mf;
               REAL8Sequence *frequencies = NULL;
               frequencies=XLALCreateREAL8Sequence(output_length);
               frequencies->data[0]=Mfmin;
-              
+
               for( UINT4 i = 1; i < output_length; i++ ){
 
                   Mf=Mfmin+i*pWF->deltaMF;
@@ -4817,7 +5086,7 @@ int XLALSimIMRPhenomXPSpinTaylorAngles(
                   REAL8 deltagamma=0.;
 
                   if(Mf<pPrec->ftrans_MRD)
-                  
+
 
                           {
 
@@ -4827,7 +5096,7 @@ int XLALSimIMRPhenomXPSpinTaylorAngles(
                                if(success != XLAL_SUCCESS)
                                     XLALPrintError("%s: Interpolation of SpinTaylor angles failed at f=%.5f)\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mf,pWF->Mtot));
                               gammai=(*gammaFS)->data[i-1]+deltagamma;
-                             
+
                               (*alphaFS)->data[i] = alphai+pPrec->alpha_offset;
                               (*cosbetaFS)->data[i] = cosbetai;
                               (*gammaFS)-> data[i] = gammai;
@@ -4837,9 +5106,9 @@ int XLALSimIMRPhenomXPSpinTaylorAngles(
 
 
                   else {
-                      
+
                       if(pPrec->IMRPhenomXPrecVersion==320 || pPrec->IMRPhenomXPrecVersion==321){
-                          
+
                           (*alphaFS)->data[i]=alphaMRD(Mf,pPrec->alpha_params)+pPrec->alpha_offset;
                           REAL8 beta_MRD=betaMRD(Mf,pWF,pPrec->beta_params);
                           (*cosbetaFS)->data[i]=cos(beta_MRD);
@@ -4848,71 +5117,208 @@ int XLALSimIMRPhenomXPSpinTaylorAngles(
                                     XLALPrintError("%s: could not integrate minimal rotation condition at f=%.5f)\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mf,pWF->Mtot));
                           gammai=(*gammaFS)->data[i-1]+deltagamma;
                           (*gammaFS)-> data[i] =gammai;
-                          
+
                           }
-                     
+
                       // just continue angles into RD with constant values
-                      
+
                       else{
                           (*alphaFS)->data[i]=(*alphaFS)->data[i-1];
                           (*cosbetaFS)->data[i]=(*cosbetaFS)-> data[i-1];
                           (*gammaFS) -> data[i]=(*gammaFS)-> data[i-1];
                           }
                   }
-                  
+
 
               }
-              
-              
+
+
               pPrec->gamma_acc = gsl_interp_accel_alloc();
               pPrec->gamma_spline = gsl_spline_alloc(gsl_interp_cspline, output_length);
               gsl_spline_init(pPrec->gamma_spline, frequencies->data, (*gammaFS) -> data, output_length);
               pPrec->gamma_ref=gsl_spline_eval(pPrec->gamma_spline, pWF->MfRef, pPrec->gamma_acc);
-              
+
               for( UINT4 i = 0; i < output_length; i++ ) (*gammaFS) -> data[i]=(*gammaFS)-> data[i]-pPrec->gamma_ref-pPrec->epsilon0;
-              
+
               LALFree(pPrec->alpha_params);
               LALFree(pPrec->beta_params);
-              
+
               gsl_spline_free(pPrec->alpha_spline);
               gsl_interp_accel_free(pPrec->alpha_acc);
-                  
+
               gsl_spline_free(pPrec->cosbeta_spline);
               gsl_interp_accel_free(pPrec->cosbeta_acc);
-                
+
               gsl_spline_free(pPrec->gamma_spline);
               gsl_interp_accel_free(pPrec->gamma_acc);
-              
+
 
               LALFree(pWF);
               LALFree(pPrec);
               XLALDestroyREAL8Sequence(frequencies);
 
-              
+
               return status;
 
           }
-          
+
+
+/* Piecewise function to return the IMR alpha angle in PhenomXPNR (which corresponds to IMRPhenomXPrecVersion=330  */
+
+REAL8 alpha_SpinTaylor_IMR(
+    REAL8 Mf, /**< Frequency in geometric units at which the function is to be evaluated  */
+    IMRPhenomXWaveformStruct *pWF, /**< PhenomX waveform struct  */
+    IMRPhenomXPrecessionStruct *pPrec /**< PhenomX precssion struct */
+    )
+{
+    REAL8 alpha=0.;
+    int status=GSL_SUCCESS;
+
+    // inspiral angle
+    if(Mf<pPrec->ftrans_MRD){
+
+        status=gsl_spline_eval_e(pPrec->alpha_spline, Mf, pPrec->alpha_acc,&alpha);
+        XLAL_CHECK(status == GSL_SUCCESS, XLAL_EFUNC,"%s: error in alpha interpolation at f=%.12f, when fmin_integration=%.12f, with input parameters q=%.12f, Mtot=%.12f MSUN, chi1=[%.12f,%.12f,%.12f], chi2=[%.12f,%.12f,%.12f].\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mf,pWF->Mtot),pPrec->fmin_integration,pWF->q, pWF->Mtot, pPrec->chi1x,pPrec->chi1y,pPrec->chi1z,pPrec->chi2x,pPrec->chi2y,pPrec->chi2z);
+        alpha = alpha+pPrec->alpha_offset;
+    }
+
+    // continuation past the inspiral region
+    else{
+
+        if(pPrec->IMRPhenomXPrecVersion==320 || pPrec->IMRPhenomXPrecVersion==321 || pPrec->IMRPhenomXPrecVersion==330)
+            {
+            alpha=alphaMRD(Mf,pPrec->alpha_params)+pPrec->alpha_offset;
+            }
+        else{
+
+            status=gsl_spline_eval_e(pPrec->alpha_spline, pPrec->ftrans_MRD, pPrec->alpha_acc,&alpha);
+            XLAL_CHECK(status == GSL_SUCCESS, XLAL_EFUNC,"%s: error in alpha interpolation at f=%.12f, when fmin_integration=%.12f, with input parameters q=%.12f, Mtot=%.12f MSUN, chi1=[%.12f,%.12f,%.12f], chi2=[%.12f,%.12f,%.12f].\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mf,pWF->Mtot),pPrec->fmin_integration,pWF->q, pWF->Mtot, pPrec->chi1x,pPrec->chi1y,pPrec->chi1z,pPrec->chi2x,pPrec->chi2y,pPrec->chi2z);
+
+            }
+
+       }
+
+return(alpha);
+
+}
+
+/* declared here due to betaParams */
+REAL8 beta_SpinTaylor_IMR(REAL8 Mf,IMRPhenomXWaveformStruct *pWF, IMRPhenomXPrecessionStruct *pPrec, const IMRPhenomX_PNR_beta_parameters *betaParams);
+
+/* wrapper of IMR beta angle: used for PNR angles */
+REAL8 beta_SpinTaylor_IMR(
+    REAL8 Mf,
+    IMRPhenomXWaveformStruct *pWF,
+    IMRPhenomXPrecessionStruct *pPrec,
+    const IMRPhenomX_PNR_beta_parameters *betaParams
+    )
+{
+    REAL8 beta=0., cosbeta=0.;
+    int status=GSL_SUCCESS;
+
+    // inspiral angle
+    double ftrans;
+    if (pPrec->UseMRbeta)
+      {
+	if( pPrec->IMRPhenomXPrecVersion != 330 )
+	  {
+	    ftrans = pPrec->ftrans_MRD;
+	  }
+	else
+	  {
+	    ftrans = ( pPrec->ftrans_MRD <= 0.9*betaParams->Mf_beta_lower ) ? pPrec->ftrans_MRD - 0.0005 : 0.9*betaParams->Mf_beta_lower - 0.0005;
+	  }
+      }
+    else
+      {
+	ftrans = pPrec->ftrans_MRD;
+      }
+
+    if(Mf<ftrans){
+
+        status=gsl_spline_eval_e(pPrec->cosbeta_spline, Mf, pPrec->cosbeta_acc,&cosbeta);
+        XLAL_CHECK(status == GSL_SUCCESS, XLAL_EFUNC,"%s: error in beta interpolation at f=%.12f, when fmin_integration=%.12f, with input parameters q=%.12f, Mtot=%.12f MSUN, chi1=[%.12f,%.12f,%.12f], chi2=[%.12f,%.12f,%.12f].\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mf,pWF->Mtot),pPrec->fmin_integration,pWF->q, pWF->Mtot, pPrec->chi1x,pPrec->chi1y,pPrec->chi1z,pPrec->chi2x,pPrec->chi2y,pPrec->chi2z);
+        cosbeta = MAX(-1, MIN(1, cosbeta));
+        beta=acos(cosbeta);
+    }
+
+    // continuation past the inspiral region
+    else{
+
+        int pflag = pPrec->IMRPhenomXPrecVersion;
+	  switch( pflag )
+	  {
+	  case 310:
+	  case 311:
+	    {
+	      status=gsl_spline_eval_e(pPrec->cosbeta_spline, pPrec->ftrans_MRD, pPrec->cosbeta_acc,&cosbeta);
+	      XLAL_CHECK(status == GSL_SUCCESS, XLAL_EFUNC,"%s: error in beta interpolation at f=%.12f, when fmin_integration=%.12f, with input parameters q=%.12f, Mtot=%.12f MSUN, chi1=[%.12f,%.12f,%.12f], chi2=[%.12f,%.12f,%.12f].\n",__func__,XLALSimIMRPhenomXUtilsMftoHz(Mf,pWF->Mtot),pPrec->fmin_integration,pWF->q,pWF->Mtot, pPrec->chi1x,pPrec->chi1y,pPrec->chi1z,pPrec->chi2x,pPrec->chi2y,pPrec->chi2z);
+	      cosbeta = MAX(-1, MIN(1, cosbeta));
+	      beta=acos(cosbeta);
+
+	      break;
+	    }
+	  case 320:
+	  case 321:
+            {
+	      beta=betaMRD(Mf,pWF,pPrec->beta_params);
+
+	      break;
+            }
+	  case 330:
+	    {
+	      if (pPrec->UseMRbeta)
+		{
+		  beta = beta_connection(Mf, betaParams);
+		}
+	      else
+		{
+		  beta = betaMRD(Mf,pWF,pPrec->beta_params);
+		}
+	      break;
+	    }
+      default:
+      {
+         XLAL_ERROR(XLAL_EDOM, "Precessing version %d is not supported by PhenomX with SpinTaylor angles.\n",pflag);
+      }
+	  }
+
+    }
+
+return(beta);
+
+}
+
 
 
 void IMRPhenomX_GetandSetModes(LALValue *ModeArray,IMRPhenomXPrecessionStruct *pPrec){
-    
+
     INT2Sequence *modeseq;
     modeseq=XLALSimInspiralModeArrayReadModes(ModeArray);
-     
+
     int nmodes=modeseq->length/2;
     float M_MAX=1., M_MIN=4.;
     for(int jj=0; jj<nmodes; jj++)
     {
-      if(modeseq->data[2*jj+1]>M_MAX) M_MAX=(float)(modeseq->data[2*jj+1]);
+      if(abs(modeseq->data[2*jj+1])>M_MAX) M_MAX=(float)abs(modeseq->data[2*jj+1]);
       if(abs(modeseq->data[2*jj+1])<M_MIN) M_MIN=(float)abs(modeseq->data[2*jj+1]);
       }
-    
+
     XLALDestroyINT2Sequence(modeseq);
-  
+
     pPrec->M_MIN = M_MIN; pPrec->M_MAX=M_MAX;
     return;
-     
+
+}
+
+double get_deltaF_from_wfstruct(IMRPhenomXWaveformStruct *pWF){
+
+  REAL8 seglen=XLALSimInspiralChirpTimeBound(pWF->fRef, pWF->m1_SI, pWF->m2_SI, pWF->chi1L,pWF->chi2L);
+  REAL8 deltaFv1= 1./MAX(4.,pow(2, ceil(log(seglen)/log(2))));
+  REAL8 deltaF = MIN(deltaFv1,0.1);
+  REAL8 deltaMF = XLALSimIMRPhenomXUtilsHztoMf(deltaF,pWF->Mtot);
+  return(deltaMF);
+
 }
 
 /** Core twisting up routine for SpinTaylor angles */
@@ -4924,7 +5330,7 @@ int IMRPhenomXPTwistUp22_NumericalAngles(
   IMRPhenomXPrecessionStruct *pPrec,        /**< IMRPhenomXP Precession Struct */
   COMPLEX16 *hp,                            /**< [out] h_+ polarization \f$\tilde h_+\f$ */
   COMPLEX16 *hc                             /**< [out] h_x polarization \f$\tilde h_x\f$ */
-     
+
 )
 {
   XLAL_CHECK(hp  != NULL, XLAL_EFAULT);
@@ -4936,8 +5342,8 @@ int IMRPhenomXPTwistUp22_NumericalAngles(
 
   double epsilon=-(gamma-pPrec->gamma_ref)+pPrec->epsilon0;
 
-  if(pPrec->IMRPhenomXPrecVersion!=310 && pPrec->IMRPhenomXPrecVersion!=311 && pPrec->IMRPhenomXPrecVersion!=320 && pPrec->IMRPhenomXPrecVersion!=321) XLAL_ERROR(XLAL_EDOM, "Error in IMRPhenomXPTwistUp22_NumericalAngles, incorrect precessing version passed (must be 310, 311, 320,or 321)!\n");
-  
+  if(pPrec->IMRPhenomXPrecVersion!=310 && pPrec->IMRPhenomXPrecVersion!=311 && pPrec->IMRPhenomXPrecVersion!=320 && pPrec->IMRPhenomXPrecVersion!=321 && pPrec->IMRPhenomXPrecVersion!=330) XLAL_ERROR(XLAL_EDOM, "Error in IMRPhenomXPTwistUp22_NumericalAngles, incorrect precessing version passed (must be 310, 311, 320, 321 or 330)!\n");
+
   INT4 status = 0;
   status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
   XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
@@ -4992,9 +5398,8 @@ int IMRPhenomXPTwistUp22_NumericalAngles(
 
   return XLAL_SUCCESS;
 }
-     
+
 
 #ifdef __cplusplus
 }
 #endif
-

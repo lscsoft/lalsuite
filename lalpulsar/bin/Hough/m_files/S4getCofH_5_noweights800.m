@@ -25,20 +25,20 @@ for bandnumber = fshift+1:(fshift+Nbands); %the  current frequency band
    ncstring = strcat(basestring, '_nc');
    Ncount = load(ncstring);
    h0val  = load(h0string);
-   
+
    nMonteCarlos=length(Ncount);
    nh0=length(h0val);
-   
+
    fprintf(fid,'%d  %d %d ', fmin, fmax, Sigmax(bandnumber) );
-   
-   
+
+
    for h0num=1:nh0
       x=Ncount(:, h0num+1);
       kkcount = find(x>Sigmax(bandnumber));
       CH(h0num) = length(kkcount)/nMonteCarlos;
       fprintf(fid,' %d %d ', h0val(h0num), CH(h0num) );
    end
-   
+
 
    h0vec =h0val;
    CLvec = CH;
@@ -81,12 +81,12 @@ for bandnumber = fshift+1:(fshift+Nbands); %the  current frequency band
      else
        h0min = UL*0.95;
      end
-       
+
      large = find(CH > 0.955);
      h0max = h0val(large(1));
    end
 
-   
+
    fprintf(fid,' %d  %d %d \n', h0min, h0max, UL);
    bandnumber
 

@@ -1,5 +1,5 @@
 /* pylal.dq standard style sheet
- * Duncan Macleod <duncan.macleod@ligo.org> 
+ * Duncan Macleod <duncan.macleod@ligo.org>
  * /
 
 /************/
@@ -268,7 +268,7 @@ table.menu {
   border-radius: 10px;
   -moz-border-radius: 10px;
   color: black;
-} 
+}
 
 table.menu td {
   font-weight: bold;
@@ -279,7 +279,7 @@ table.menu td {
 
 table.list {
   padding: .2em;
-  vertical-align: top;  
+  vertical-align: top;
   background-color: white;
   border: 0;
 }
@@ -352,7 +352,7 @@ div.menutab a{
 /*                          IMG                           */
 /**********************************************************/
 
-img { 
+img {
   margin: 0%;
   padding: 0;
   border: 2;

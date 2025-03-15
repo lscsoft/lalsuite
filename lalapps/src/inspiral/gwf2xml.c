@@ -17,13 +17,13 @@
 *  MA  02110-1301  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: gwf2xml.c
  *
  * Author: Fairhurst, S
  *
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -40,8 +40,8 @@
 #include <lal/LIGOMetadataTables.h>
 
 #define SNR_MIN 6.
-#define SNR_MAX 1.e+10  
-#define SIM_MIN 1.0e-30  
+#define SNR_MAX 1.e+10
+#define SIM_MIN 1.0e-30
 #define SIM_MAX 1.0e+10
 
 
@@ -63,7 +63,7 @@ static char * ignore_const(const char *s)
   return u.s;
 }
 
-static int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent, 
+static int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
     FrEvent *frameEvent )
 {
   FrEvent              *frEvt   = NULL;
@@ -71,21 +71,21 @@ static int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
   int                   numEvt  = 0;
   double                timeAfter = 0;
 
-  /* If we already have events in snglInspiralEvent, 
+  /* If we already have events in snglInspiralEvent,
    * wind on to the end of the list */
   for( snglEvt = *snglInspiralEvent; snglEvt; snglEvt=snglEvt->next);
 
   /* store the frameEvents in the snglInspiral linked list */
-  for(frEvt=frameEvent; frEvt; frEvt=frEvt->next, ++numEvt) 
+  for(frEvt=frameEvent; frEvt; frEvt=frEvt->next, ++numEvt)
   {
     if ( !(*snglInspiralEvent) )
     {
-      *snglInspiralEvent = snglEvt = (SnglInspiralTable * ) 
+      *snglInspiralEvent = snglEvt = (SnglInspiralTable * )
         LALCalloc( 1, sizeof(SnglInspiralTable) );
     }
     else
     {
-      snglEvt = snglEvt->next = (SnglInspiralTable * ) 
+      snglEvt = snglEvt->next = (SnglInspiralTable * )
         LALCalloc( 1, sizeof(SnglInspiralTable) );
     }
 
@@ -122,21 +122,21 @@ static int frSimEvent2simInspiral (SimInspiralTable **simInspiralEvent,
   SimInspiralTable     *simEvt     = NULL;
   int                   numSim     = 0;
 
-  /* If we already have events in snglInspiralEvent, 
+  /* If we already have events in snglInspiralEvent,
    * wind on to the end of the list */
   for( simEvt = *simInspiralEvent; simEvt; simEvt = simEvt->next);
 
   /* store the frameEvents in the snglInspiral linked list */
-  for( frSimEvt = frSimEvent; frSimEvt; frSimEvt = frSimEvt->next, ++numSim) 
+  for( frSimEvt = frSimEvent; frSimEvt; frSimEvt = frSimEvt->next, ++numSim)
   {
     if ( !(*simInspiralEvent) )
     {
-      *simInspiralEvent = simEvt = (SimInspiralTable * ) 
+      *simInspiralEvent = simEvt = (SimInspiralTable * )
         LALCalloc( 1, sizeof(SimInspiralTable) );
     }
     else
     {
-      simEvt = simEvt->next = (SimInspiralTable * ) 
+      simEvt = simEvt->next = (SimInspiralTable * )
         LALCalloc( 1, sizeof(SimInspiralTable) );
     }
 
@@ -201,7 +201,7 @@ int main( int argc, char *argv[] )
   while (1)
   {
     /* LALgetopt arguments */
-    static struct LALoption long_options[] = 
+    static struct LALoption long_options[] =
     {
       {"help",                    no_argument,            0,              'h'},
       {"input",                   required_argument,      0,              'i'},
@@ -284,7 +284,7 @@ int main( int argc, char *argv[] )
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
         exit( 1 );
-    }   
+    }
   }
 
   if ( LALoptind < argc )
@@ -305,7 +305,7 @@ int main( int argc, char *argv[] )
 
   iFile = FrFileINew(inputFileName);
 
-  /* set start time, duration and amplitude window 
+  /* set start time, duration and amplitude window
      this should be turned into command line arguments */
 
   tStart   = FrFileITStart(iFile);
@@ -313,16 +313,16 @@ int main( int argc, char *argv[] )
   duration = tEnd - tStart;
 
   /* read in the events */
-  frameEvent = FrEventReadT(iFile, ignore_const("*clustered"), tStart, duration, 
+  frameEvent = FrEventReadT(iFile, ignore_const("*clustered"), tStart, duration,
       snrMin, snrMax);
 
 
   /*Write out details of events to SnglInspiralTable*/
-  numEvt = frEvent2snglInspiral( &snglInspiralEvent, frameEvent); 
+  numEvt = frEvent2snglInspiral( &snglInspiralEvent, frameEvent);
 
   fprintf( stdout, "Read in %d triggers from frEvent structure in %s\n",
       numEvt, inputFileName );
-  
+
   /* free the frame events */
   FrEventFree(frameEvent);
 
@@ -333,11 +333,11 @@ int main( int argc, char *argv[] )
    *
    */
 
-  frSimEvent  = FrSimEventReadT (iFile, ignore_const("cb*"), tStart, duration, 
+  frSimEvent  = FrSimEventReadT (iFile, ignore_const("cb*"), tStart, duration,
       simMin, simMax);
 
   /*Write out details of events to SnglInspiralTable*/
-  numSim = frSimEvent2simInspiral( &simInspiralEvent, frSimEvent); 
+  numSim = frSimEvent2simInspiral( &simInspiralEvent, frSimEvent);
 
   fprintf( stdout, "Read in %d injections from frEvent structure in %s\n",
       numSim, inputFileName );
@@ -346,7 +346,7 @@ int main( int argc, char *argv[] )
   FrSimEventFree(frSimEvent);
 
 
-        /* 
+        /*
          *
          * write a search summary table
          *
@@ -357,7 +357,7 @@ int main( int argc, char *argv[] )
 
   searchsumm->in_start_time.gpsSeconds = tStart;
   searchsumm->in_end_time.gpsSeconds = tEnd;
-  
+
   searchsumm->out_start_time.gpsSeconds = tStart;
   searchsumm->out_end_time.gpsSeconds = tEnd;
   searchsumm->nnodes = 1;
@@ -369,7 +369,7 @@ int main( int argc, char *argv[] )
         {
           searchsumm->nevents = numSim;
         }
-        
+
 
   /*
    *

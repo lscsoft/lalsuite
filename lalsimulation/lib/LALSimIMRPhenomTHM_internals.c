@@ -161,7 +161,7 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
 	REAL8 dchi = wf->dchi;   // Dimensionless spin difference chi1L - chi2L
 	REAL8 delta = wf->delta; // Asymmetry parameter
 	pPhase->dtM = wf->dtM; // Dimensionless sampling rate
-	
+
 	/* Calibrated value of TaylorT3 t0 parameter for matching frequency at TaylorT3 theta=0.33.
 	If 4 regions are selected for reconstruction, first inspiral region will be employ TaylorT3 with this value of t0.
 	With this, it is ensured that the early inspiral is described by the proper TaylorT3 PN description.
@@ -183,7 +183,7 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
 	pPhase->omegaRING_prec = 2*LAL_PI*evaluate_QNMfit_fring22(wf->afinal_prec) / (wf->Mfinal);
 	pPhase->alpha1RD_prec  = 2*LAL_PI*evaluate_QNMfit_fdamp22(wf->afinal_prec) / (wf->Mfinal);
 
-	pPhase->EulerRDslope = 2*LAL_PI*(evaluate_QNMfit_fring22(wf->afinal_prec) / (wf->Mfinal) - evaluate_QNMfit_fring21(wf->afinal_prec) / (wf->Mfinal)); // FIXME: 
+	pPhase->EulerRDslope = 2*LAL_PI*(evaluate_QNMfit_fring22(wf->afinal_prec) / (wf->Mfinal) - evaluate_QNMfit_fring21(wf->afinal_prec) / (wf->Mfinal)); // FIXME:
 	if(wf->afinal<0)
 	{
 		pPhase->EulerRDslope = -pPhase->EulerRDslope;
@@ -465,7 +465,7 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
 	/* *** PHASE CONTINUITY BETWEEN REGIONS ********** */
 	/* *********************************************** */
 
-	/* Phase of the different regions correspond to the analytical integration of the frequency ansatz. 
+	/* Phase of the different regions correspond to the analytical integration of the frequency ansatz.
 	Here we adapt the corresponding offsets for each phase ansatz in order to obtain continuity between regions */
 
 	/* First we set the offsets to zero in order to call the phase ansatzs without the offsets */
@@ -484,7 +484,7 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
 	REAL8 phMECOmerger = IMRPhenomTMergerPhaseAnsatz22(tCut, pPhase); //Value of merger phase at merger-ringdown boundary
 
 	pPhase->phOffMerger = phMECOinsp - phMECOmerger; // Needed offset for merger ansatz in order to match inspiral phase value at the boundary
-	pPhase->phOffRD = IMRPhenomTMergerPhaseAnsatz22(0, pPhase); //Neded offset for ringdown ansatz in order to match merger phase value at the boundary 
+	pPhase->phOffRD = IMRPhenomTMergerPhaseAnsatz22(0, pPhase); //Neded offset for ringdown ansatz in order to match merger phase value at the boundary
 
 
     /* *********************************************** */
@@ -492,7 +492,7 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
 	/* *********************************************** */
 
 
-	/* Waveform lenght is determined by the time spent from the starting frequency to the peak amplitude time of the 22 mode, with the addition of 500M after that time for 
+	/* Waveform lenght is determined by the time spent from the starting frequency to the peak amplitude time of the 22 mode, with the addition of 500M after that time for
 	having a sufficient ringdown window for sane Fourier tranforms */
 
 	/* Starting time is determined as the time at which starting frequency occurs, and it is determined by root finding employing the frequency function */
@@ -607,7 +607,7 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
     	pPhase->wflength_insp_late = floor((tCut - tEarly + wf->dtM)/wf->dtM);
     	pPhase->wflength_insp_early = floor((tEarly - pPhase->tmin + wf->dtM)/wf->dtM);
     }
-    
+
 
 
 	return XLAL_SUCCESS;
@@ -700,7 +700,7 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 
     	pAmp->amp3halfPNreal = (-2173*LAL_PI)/756. - (2495*eta*LAL_PI)/378. + (40*pow(eta,2)*LAL_PI)/27.;
     	pAmp->amp3halfPNimag = (14333*eta)/162. - (4066*pow(eta,2))/945.;
- 
+
     	pAmp->amplog = -428/105.;
 	}
 
@@ -896,7 +896,7 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 	/* Ringdown ansatz coefficients as defined in in eq. [6-8] of Damour&Nagar 2014 (https://arxiv.org/pdf/1406.0401.pdf).
 	See also eq.26c-e of THM paper: https://dcc.ligo.org/DocDB/0172/P2000524/001/PhenomTHM_SH-3.pdf
 	Essentially, c3 is the only calibrated coefficient. c2 accounts for the effect of the first overtone in the early ringdown, and c1 and c4 fix the peak amplitude and null derivative at peak */
-	
+
 	pAmp->alpha1RD = 2*LAL_PI*fDAMP;
 	pAmp->alpha2RD = 2*LAL_PI*fDAMPn2;
 	pAmp->alpha21RD = 0.5*(pAmp->alpha2RD - pAmp->alpha1RD); //Coefficient c_2 of ringdown amplitude ansatz as defined in equation 7 of Damour&Nagar 2014 (https://arxiv.org/pdf/1406.0401.pdf) and eq.26d of https://dcc.ligo.org/DocDB/0172/P2000524/001/PhenomTHM_SH-3.pdf
@@ -924,7 +924,7 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 	{
 		pAmp->c2_prec = -0.5*pAmp->alpha1RD_prec/tanhc3;
 	}
-	
+
 
 	pAmp->c1 = ampPeak*pAmp->alpha1RD*coshc3*coshc3/pAmp->c2;
 	pAmp->c1_prec = ampPeak*pAmp->alpha1RD_prec*coshc3*coshc3/pAmp->c2_prec;
@@ -971,7 +971,7 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 		bi = (1./pAmp->fac0/xx)*(ampInspCP[idx] - ampoffset); // Solution vector: collocation point value minus the know PN part of the ansatz, factored by the amplitude factor to not include it in each basis function (the powers of x)
 
 		gsl_vector_set(b,idx,bi); // Set b vector
-		
+
 		/*Set basis matrix elements, Basis functions are the higher order powers of x that we add to the PN ansatz */
 		gsl_matrix_set(A,idx,0,x4);
 		gsl_matrix_set(A,idx,1,x4half);
@@ -1021,7 +1021,7 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 	gsl_vector_set(b,0,ampinsp); // Set solution vector: Continuity with the inspiral region
 
 	/* Here we compute the needed hyperbolic secant functions for the merger ansatz basis matrix */
-	/* Time parameterisation of merger ansatz is in tau=t-tshift, so peak occurs at tau=0 */ 
+	/* Time parameterisation of merger ansatz is in tau=t-tshift, so peak occurs at tau=0 */
 	phi = gsl_complex_rect(pAmp->alpha1RD*(tCut-pAmp->tshift),0);
 	gsl_complex sechphi = gsl_complex_sech(phi);
 	REAL8 sech1 = GSL_REAL(sechphi);
@@ -1075,7 +1075,7 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 	We carry the sign of the inspiral amplitude derivative. */
 	REAL8 theta2 = pow(-eta*tCut/5.,-1./8);
 	REAL8 theta1 = pow(-eta*(tCut-0.000001)/5,-1./8);
-	REAL8 omega2 = IMRPhenomTomega22(tCut, theta2, wf, pPhase); 
+	REAL8 omega2 = IMRPhenomTomega22(tCut, theta2, wf, pPhase);
 	REAL8 omega1 = IMRPhenomTomega22(tCut-0.000001, theta1, wf, pPhase);
 	REAL8 x1 = pow(0.5*omega1,2./3);
 	REAL8 x2 = pow(0.5*omega2,2./3);
@@ -1161,7 +1161,7 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 	REAL8 tCut = tCUT_Freq;  // Inspiral ending time (t=-150M)
 
 	/*Store twice orbital frequency at t=-150, for higher mode reconstruction*/
-	REAL8 thetaCut = pow(-eta*tCut/5,-1./8); 
+	REAL8 thetaCut = pow(-eta*tCut/5,-1./8);
 	REAL8 omegaCut =  IMRPhenomTomega22(tCut, thetaCut, wf, pPhase);
 
 	REAL8 omegaCutPNAMP = pAmplm->omegaCutPNAMP; // Value of the phase derivative coming from complex inspiral amplitude at the boundary time.
@@ -1186,7 +1186,7 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 	Essentially, we compute the needed ringdown and damping frequencies of each mode for the ringdown ansatz:
 	   -Coefficient c1 is defined in Eq. [9] of Damour&Nagar 2014 (10.1103/PhysRevD.90.024054, https://arxiv.org/abs/1406.0401).
 	   -Coefficients c2 and c3 are calibrated to NR/Teukolsky data.
-	   -Coefficient c4 is set to zero. 
+	   -Coefficient c4 is set to zero.
 	We also store the value of the rescaled frequencies and frequency derivatives at the boundaries, and the collocation point value. */
 
 
@@ -1471,7 +1471,7 @@ double IMRPhenomTTaylorT3(REAL8 theta, IMRPhenomTPhase22Struct *pPhase){
    REAL8 theta6 = theta3*theta3;
    REAL8 theta7 = theta4*theta3;
 
-   REAL8 fac = theta3/8; 
+   REAL8 fac = theta3/8;
    REAL8 logterm = (107*log(theta))/280.;
 
    REAL8 out = (1 + pPhase->omega1PN*theta2 + pPhase->omega1halfPN*theta3 + pPhase->omega2PN*theta4 + pPhase->omega2halfPN*theta5 + pPhase->omega3PN*theta6 + logterm*theta6 + pPhase->omega3halfPN*theta7);
@@ -1488,7 +1488,7 @@ double IMRPhenomTInspiralOmegaAnsatz22(REAL8 theta, IMRPhenomTPhase22Struct *pPh
    REAL8 theta12 = theta11*theta;
    REAL8 theta13 = theta12*theta;
 
-   REAL8 fac = theta*theta*theta/8; 
+   REAL8 fac = theta*theta*theta/8;
 
    REAL8 taylort3 = IMRPhenomTTaylorT3(theta, pPhase);
 
@@ -1539,8 +1539,8 @@ double IMRPhenomTInspiralPhaseTaylorT3(REAL8 thetabar, IMRPhenomTWaveformStruct 
 
 	REAL8 eta = wf->eta;
 
-	REAL8 aux = (pow(5,-0.625)*pow(eta,-1)*pow(thetabar,-5)*(-168 - 280*pPhase->omega1PN*pow(5,0.25)*pow(thetabar,2) - 420*pPhase->omega1halfPN*pow(5,0.375)*pow(thetabar,3) - 
-       840*pPhase->omega2PN*pow(5,0.5)*pow(thetabar,4) + 840*pPhase->omega2halfPN*log(thetabar)*pow(5,0.625)*pow(thetabar,5) - 321*pow(5,0.75)*pow(thetabar,6) + 
+	REAL8 aux = (pow(5,-0.625)*pow(eta,-1)*pow(thetabar,-5)*(-168 - 280*pPhase->omega1PN*pow(5,0.25)*pow(thetabar,2) - 420*pPhase->omega1halfPN*pow(5,0.375)*pow(thetabar,3) -
+       840*pPhase->omega2PN*pow(5,0.5)*pow(thetabar,4) + 840*pPhase->omega2halfPN*log(thetabar)*pow(5,0.625)*pow(thetabar,5) - 321*pow(5,0.75)*pow(thetabar,6) +
        840*pPhase->omega3PN*pow(5,0.75)*pow(thetabar,6) + 321*log(thetabar*pow(5,0.125))*pow(5,0.75)*pow(thetabar,6) + 420*pPhase->omega3halfPN*pow(5,0.875)*pow(thetabar,7)))/84.;
 
     return aux;
@@ -1552,9 +1552,9 @@ double IMRPhenomTInspiralPhaseAnsatz22(REAL8 t, REAL8 thetabar, IMRPhenomTWavefo
 
 	REAL8 eta = wf->eta;
 
-	REAL8 aux = -(pow(5,-0.625)*pow(eta,-2)*pow(t,-1)*pow(thetabar,-7)*(3*(-107 + 280*pPhase->omega3PN)*pow(5,0.75) + 321*log(thetabar*pow(5,0.125))*pow(5,0.75) + 420*pPhase->omega3halfPN*thetabar*pow(5,0.875) + 
-        56*(25*pPhase->omegaInspC1 + 3*eta*t)*pow(thetabar,2) + 1050*pPhase->omegaInspC2*pow(5,0.125)*pow(thetabar,3) + 280*(3*pPhase->omegaInspC3 + eta*pPhase->omega1PN*t)*pow(5,0.25)*pow(thetabar,4) + 
-        140*(5*pPhase->omegaInspC4 + 3*eta*pPhase->omega1halfPN*t)*pow(5,0.375)*pow(thetabar,5) + 120*(5*pPhase->omegaInspC5 + 7*eta*pPhase->omega2PN*t)*pow(5,0.5)*pow(thetabar,6) + 
+	REAL8 aux = -(pow(5,-0.625)*pow(eta,-2)*pow(t,-1)*pow(thetabar,-7)*(3*(-107 + 280*pPhase->omega3PN)*pow(5,0.75) + 321*log(thetabar*pow(5,0.125))*pow(5,0.75) + 420*pPhase->omega3halfPN*thetabar*pow(5,0.875) +
+        56*(25*pPhase->omegaInspC1 + 3*eta*t)*pow(thetabar,2) + 1050*pPhase->omegaInspC2*pow(5,0.125)*pow(thetabar,3) + 280*(3*pPhase->omegaInspC3 + eta*pPhase->omega1PN*t)*pow(5,0.25)*pow(thetabar,4) +
+        140*(5*pPhase->omegaInspC4 + 3*eta*pPhase->omega1halfPN*t)*pow(5,0.375)*pow(thetabar,5) + 120*(5*pPhase->omegaInspC5 + 7*eta*pPhase->omega2PN*t)*pow(5,0.5)*pow(thetabar,6) +
         525*pPhase->omegaInspC6*pow(5,0.625)*pow(thetabar,7) + 105*eta*pPhase->omega2halfPN*t*log(-t)*pow(5,0.625)*pow(thetabar,7)))/84.;
 
     return aux + pPhase->phOffInsp;
@@ -1720,7 +1720,7 @@ COMPLEX16 IMRPhenomTInspiralAmpAnsatzHM(REAL8 x, IMRPhenomTHMAmpStruct *pAmp)
 	REAL8 ampreal = pAmp->ampN + pAmp->amp0halfPNreal*xhalf + pAmp->amp1PNreal*x + pAmp->amp1halfPNreal*x1half + pAmp->amp2PNreal*x2  + pAmp->amp2halfPNreal*x2half + pAmp->amp3PNreal*x3 + pAmp->amp3halfPNreal*x3half + pAmp->amplog*log(16*x)*x3;
 	REAL8 ampimag = pAmp->amp0halfPNimag*xhalf + pAmp->amp1PNimag*x + pAmp->amp1halfPNimag*x1half + pAmp->amp2PNimag*x2  + pAmp->amp2halfPNimag*x2half + pAmp->amp3PNimag*x3 + pAmp->amp3halfPNimag*x3half;
 	COMPLEX16 amp = crect(ampreal + pAmp->inspC1*x4 + pAmp->inspC2*x4half + pAmp->inspC3*x5, ampimag);
-	
+
 	return fac*amp;
 }
 
@@ -1740,7 +1740,7 @@ double ComplexAmpOrientation(REAL8 xref, IMRPhenomTHMAmpStruct *pAmp)
 
 	REAL8 ampreal = pAmp->ampN + pAmp->amp0halfPNreal*xhalf + pAmp->amp1PNreal*xref + pAmp->amp1halfPNreal*x1half + pAmp->amp2PNreal*x2  + pAmp->amp2halfPNreal*x2half + pAmp->amp3PNreal*x3 + pAmp->amp3halfPNreal*x3half + pAmp->amplog*log(16*xref)*x3;
 	REAL8 ampimag = pAmp->amp0halfPNimag*xhalf + pAmp->amp1PNimag*xref + pAmp->amp1halfPNimag*x1half + pAmp->amp2PNimag*x2  + pAmp->amp2halfPNimag*x2half + pAmp->amp3PNimag*x3 + pAmp->amp3halfPNimag*x3half;
-	
+
 	return atan2(ampimag,ampreal + pAmp->inspC1*x4 + pAmp->inspC2*x4half + pAmp->inspC3*x5);
 }
 
@@ -1858,7 +1858,7 @@ double IMRPhenomTHMPhase(
   	REAL8 phiInsp,
   	IMRPhenomTHMPhaseStruct *pPhaseHM,
   	UNUSED IMRPhenomTHMAmpStruct *pAmpHM
-)	
+)
 {
   REAL8 ph;
 
@@ -1928,7 +1928,7 @@ double GetTimeOfFreq(double t, void *params)
 
 REAL8 GetEulerSlope(REAL8 af, REAL8 mf)
 {
-	REAL8 EulerRDslope = 2*LAL_PI*(evaluate_QNMfit_fring22(af) / (mf) - evaluate_QNMfit_fring21(af) / (mf)); // FIXME: 
+	REAL8 EulerRDslope = 2*LAL_PI*(evaluate_QNMfit_fring22(af) / (mf) - evaluate_QNMfit_fring21(af) / (mf)); // FIXME:
 	if(af<0)
 	{
 		EulerRDslope = -EulerRDslope;

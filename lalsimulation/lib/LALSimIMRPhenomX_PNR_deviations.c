@@ -45,13 +45,18 @@ extern "C" {
 
 
 
-// MU1 fit implementation 
+// MU1 fit implementation
 // Header formatting for MU1 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_MU1_l2m2( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_MU1_l2m2( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
+
+	// // Flatten in eta
+	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
+	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
+	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
 
 	// Preliminaries
 	double u = cos(theta);
@@ -72,13 +77,18 @@ double IMRPhenomXCP_MU1_l2m2( double theta, double eta, double a1 ){
 
 
 
-// MU2 fit implementation 
+// MU2 fit implementation
 // Header formatting for MU2 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_MU2_l2m2( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_MU2_l2m2( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
+
+        // // Flatten in eta
+	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
+	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
+	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
 
 	// Preliminaries
 	double u = cos(theta);
@@ -99,13 +109,18 @@ double IMRPhenomXCP_MU2_l2m2( double theta, double eta, double a1 ){
 
 
 
-// MU3 fit implementation 
+// MU3 fit implementation
 // Header formatting for MU3 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_MU3_l2m2( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_MU3_l2m2( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
+
+       	// // Flatten in eta
+	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
+	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
+	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
 
 	// Preliminaries
 	double u = cos(theta);
@@ -126,13 +141,18 @@ double IMRPhenomXCP_MU3_l2m2( double theta, double eta, double a1 ){
 
 
 
-// NU4 fit implementation 
+// NU4 fit implementation
 // Header formatting for NU4 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_NU4_l2m2( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_NU4_l2m2( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
+
+        //// Flatten in eta
+	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
+	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
+	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
 
 	// Preliminaries
 	double u = cos(theta);
@@ -153,13 +173,18 @@ double IMRPhenomXCP_NU4_l2m2( double theta, double eta, double a1 ){
 
 
 
-// NU5 fit implementation 
+// NU5 fit implementation
 // Header formatting for NU5 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_NU5_l2m2( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_NU5_l2m2( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
+
+   	// // Flatten in eta
+	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
+	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
+	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
 
 	// Preliminaries
 	double u = cos(theta);
@@ -180,13 +205,18 @@ double IMRPhenomXCP_NU5_l2m2( double theta, double eta, double a1 ){
 
 
 
-// NU6 fit implementation 
+// NU6 fit implementation
 // Header formatting for NU6 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_NU6_l2m2( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_NU6_l2m2( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
+
+	// // Flatten in eta
+	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
+	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
+	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
 
 	// Preliminaries
 	double u = cos(theta);
@@ -207,13 +237,18 @@ double IMRPhenomXCP_NU6_l2m2( double theta, double eta, double a1 ){
 
 
 
-// ZETA1 fit implementation 
+// ZETA1 fit implementation
 // Header formatting for ZETA1 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_ZETA1_l2m2( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_ZETA1_l2m2( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
+
+	// // Flatten in eta
+	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
+	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
+	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
 
 	// Preliminaries
 	double u = cos(theta);
@@ -234,13 +269,18 @@ double IMRPhenomXCP_ZETA1_l2m2( double theta, double eta, double a1 ){
 
 
 
-// ZETA2 fit implementation 
+// ZETA2 fit implementation
 // Header formatting for ZETA2 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_ZETA2_l2m2( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_ZETA2_l2m2( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
+
+	// // Flatten in eta
+	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
+	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
+	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
 
 	// Preliminaries
 	double u = cos(theta);
@@ -261,13 +301,18 @@ double IMRPhenomXCP_ZETA2_l2m2( double theta, double eta, double a1 ){
 
 
 
-// NU0 fit implementation 
+// NU0 fit implementation
 // Header formatting for NU0 of (l,m)=(2,2) multipole
-double IMRPhenomXCP_NU0_l2m2( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_NU0_l2m2( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
+
+	// // Flatten in eta
+	// eta = ( eta >= 0.09876 ) ? eta : 0.09876;
+	// a1  = ( a1  <= 0.8     ) ? a1  : 0.8;
+	// a1  = ( a1  >= 0.2     ) ? a1  : 0.2;
 
 	// Preliminaries
 	double u = cos(theta);
@@ -286,13 +331,13 @@ double IMRPhenomXCP_NU0_l2m2( double theta, double eta, double a1 ){
 
 } // END of NU0 (2,2) fit implementation
 
-// MU1 fit implementation 
+// MU1 fit implementation
 // Header formatting for MU1 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_MU1_l3m3( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_MU1_l3m3( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
 
 	// Preliminaries
 	double u = cos(theta);
@@ -314,13 +359,13 @@ double IMRPhenomXCP_MU1_l3m3( double theta, double eta, double a1 ){
 
 
 
-// MU2 fit implementation 
+// MU2 fit implementation
 // Header formatting for MU2 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_MU2_l3m3( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_MU2_l3m3( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
 
 	// Preliminaries
 	double u = cos(theta);
@@ -342,13 +387,13 @@ double IMRPhenomXCP_MU2_l3m3( double theta, double eta, double a1 ){
 
 
 
-// MU3 fit implementation 
+// MU3 fit implementation
 // Header formatting for MU3 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_MU3_l3m3( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_MU3_l3m3( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
 
 	// Preliminaries
 	double u = cos(theta);
@@ -370,13 +415,13 @@ double IMRPhenomXCP_MU3_l3m3( double theta, double eta, double a1 ){
 
 
 
-// MU4 fit implementation 
+// MU4 fit implementation
 // Header formatting for MU4 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_MU4_l3m3( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_MU4_l3m3( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
 
 	// Preliminaries
 	double u = cos(theta);
@@ -398,13 +443,13 @@ double IMRPhenomXCP_MU4_l3m3( double theta, double eta, double a1 ){
 
 
 
-// NU4 fit implementation 
+// NU4 fit implementation
 // Header formatting for NU4 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_NU4_l3m3( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_NU4_l3m3( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
 
 	// Preliminaries
 	double u = cos(theta);
@@ -426,13 +471,13 @@ double IMRPhenomXCP_NU4_l3m3( double theta, double eta, double a1 ){
 
 
 
-// NU5 fit implementation 
+// NU5 fit implementation
 // Header formatting for NU5 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_NU5_l3m3( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_NU5_l3m3( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
 
 	// Preliminaries
 	double u = cos(theta);
@@ -454,13 +499,13 @@ double IMRPhenomXCP_NU5_l3m3( double theta, double eta, double a1 ){
 
 
 
-// NU6 fit implementation 
+// NU6 fit implementation
 // Header formatting for NU6 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_NU6_l3m3( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_NU6_l3m3( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
 
 	// Preliminaries
 	double u = cos(theta);
@@ -482,13 +527,13 @@ double IMRPhenomXCP_NU6_l3m3( double theta, double eta, double a1 ){
 
 
 
-// ZETA1 fit implementation 
+// ZETA1 fit implementation
 // Header formatting for ZETA1 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_ZETA1_l3m3( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_ZETA1_l3m3( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
 
 	// Preliminaries
 	double u = cos(theta);
@@ -510,13 +555,13 @@ double IMRPhenomXCP_ZETA1_l3m3( double theta, double eta, double a1 ){
 
 
 
-// ZETA2 fit implementation 
+// ZETA2 fit implementation
 // Header formatting for ZETA2 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_ZETA2_l3m3( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_ZETA2_l3m3( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
 
 	// Preliminaries
 	double u = cos(theta);
@@ -538,13 +583,13 @@ double IMRPhenomXCP_ZETA2_l3m3( double theta, double eta, double a1 ){
 
 
 
-// NU0 fit implementation 
+// NU0 fit implementation
 // Header formatting for NU0 of (l,m)=(3,3) multipole
-double IMRPhenomXCP_NU0_l3m3( double theta, double eta, double a1 ){ 
+double XLALSimIMRPhenomXCP_NU0_l3m3( double theta, double eta, double a1 ){
 
 	/*
 	Hola, soy un codigo escribido por "4b_document_fits.py". Dat script is geschreven door een mens die niet kan worden genoemd.
-	*/  
+	*/
 
 	// Preliminaries
 	double u = cos(theta);

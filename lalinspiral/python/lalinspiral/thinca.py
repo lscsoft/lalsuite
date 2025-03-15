@@ -29,8 +29,8 @@ import math
 import operator
 
 
-from ligo.lw import ligolw
-from ligo.lw import lsctables
+from igwn_ligolw import ligolw
+from igwn_ligolw import lsctables
 from lalburst import offsetvector
 from lalburst import snglcoinc
 from . import _thinca

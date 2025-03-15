@@ -164,7 +164,7 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform_PA (COMPLEX16 * restrict hlm,
   /* Calculate the non-Keplerian velocity */
   if (params->alignedSpins)
     {
-     
+
       vPhi = r * cbrt (vPhi);
       vPhi *= Omega;
       vPhi2 = vPhi * vPhi;

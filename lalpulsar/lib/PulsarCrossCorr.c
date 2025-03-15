@@ -559,4 +559,3 @@ void LALCalculateEstimators( LALStatus    *status,
 
 
 }
-

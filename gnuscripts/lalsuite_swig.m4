@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 122
+# serial 124
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -74,11 +74,11 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   ])
   LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[true],[
     # Python is required to configure Python wrappings
-    LALSUITE_REQUIRE_PYTHON([3.5])
+    LALSUITE_REQUIRE_PYTHON([3.6])
   ])
   AS_IF([test "${swig_build_iface}" = true],[
     # Python is required to run generate_swig_iface.py
-    LALSUITE_REQUIRE_PYTHON([3.5])
+    LALSUITE_REQUIRE_PYTHON([3.6])
   ])
   AC_CONFIG_COMMANDS_PRE([
     # used to include SWIG dependency files into lalsuite_swig.am
@@ -489,14 +489,14 @@ EOF
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_octave_cxxflags}
       -Wno-address
+      -Wno-deprecated-declarations
+      -Wno-format-extra-args
+      -Wno-stringop-overflow
+      -Wno-tautological-compare
       -Wno-uninitialized
-      -Wno-unused-variable
       -Wno-unused-but-set-variable
       -Wno-unused-result
-      -Wno-format-extra-args
-      -Wno-tautological-compare
-      -Wno-deprecated-declarations
-      -Wno-stringop-overflow
+      -Wno-unused-variable
       -fno-strict-aliasing
       -O0
       -Wp[,]-U_FORTIFY_SOURCE
@@ -630,13 +630,14 @@ EOD`]
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_python_cflags}
       -Wno-address
+      -Wno-deprecated-declarations
+      -Wno-format-extra-args
+      -Wno-stringop-overflow
+      -Wno-tautological-compare
       -Wno-uninitialized
-      -Wno-unused-variable
       -Wno-unused-but-set-variable
       -Wno-unused-result
-      -Wno-format-extra-args
-      -Wno-tautological-compare
-      -Wno-stringop-overflow
+      -Wno-unused-variable
       -fno-strict-aliasing
       ],[SWIG_PYTHON_CFLAGS="${SWIG_PYTHON_CFLAGS} ${flag}"]
     )

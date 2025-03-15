@@ -165,7 +165,7 @@ void printf_timeseries2 (UINT4 n, REAL4 *signal1, REAL4 *signal2, REAL8 delta);
 void ParseParameters(UINT4 argc, CHAR **argv, OtherParamIn *otherIn);
 void LALGenerateInspiralWaveformHelp(void);
 void readPSD(REAL8 *psd, REAL4 Df, UINT4 length);
-void buildhoft(LALStatus *status, REAL4Vector *wave, 
+void buildhoft(LALStatus *status, REAL4Vector *wave,
         InspiralTemplate *params, OtherParamIn *otherIn);
 
 
@@ -709,7 +709,7 @@ int main (int argc , char **argv) {
   if (otherIn.PrintParameters)
   {
     fprintf(stderr, "#Testing Inspiral Signal Generation Codes:\n");
-    fprintf(stderr, "#Signal n=%d, t0=%e, t2=%e, t3=%e\n", 
+    fprintf(stderr, "#Signal n=%d, t0=%e, t2=%e, t3=%e\n",
         n, params.t0, params.t2, params.t3);
     fprintf(stderr,"#size in bins %d\n",n);
     fprintf(stderr,"#size in seconds %f\n",params.tC);
@@ -759,7 +759,7 @@ int main (int argc , char **argv) {
           ampFac  = -2.0 * params.mu * LAL_MRSUN_SI/params.distance;
           crossFac = ampFac * 2.0 * cosI;
           params.signalAmplitude = crossFac;
-          SUB(LALInspiralWaveTemplates(&status, dummy, signal2, &params), 
+          SUB(LALInspiralWaveTemplates(&status, dummy, signal2, &params),
               &status);
           XLALREAL4VectorFFT(signal1, signal2, revp);
           break;
@@ -815,7 +815,7 @@ int main (int argc , char **argv) {
           ampFac  = -2.0 * params.mu * LAL_MRSUN_SI/params.distance;
           crossFac = ampFac * 2.0 * cosI;
           params.signalAmplitude = crossFac;
-          SUB(LALInspiralWaveTemplates(&status, dummy, signal1, &params), 
+          SUB(LALInspiralWaveTemplates(&status, dummy, signal1, &params),
               &status);
           break;
         case 3:
@@ -871,13 +871,13 @@ int main (int argc , char **argv) {
         signal2->data[j] = sIm / sqrt(psd->data[i]);
         if( otherIn.realImag == 1 )
         {
-          if(otherIn.output) fprintf(f3, "%e %e %e %e\n", f, 
+          if(otherIn.output) fprintf(f3, "%e %e %e %e\n", f,
             sRe/(psd->data[i]), sIm/(psd->data[i]), psd->data[i]);
           if(otherIn.output) fprintf(f4, "%e %e %e\n", f, sRe, sIm);
         }
         else
         {
-          if(otherIn.output) fprintf(f3, "%e %e %e\n", 
+          if(otherIn.output) fprintf(f3, "%e %e %e\n",
             f, sMag, psd->data[i]);
           if(otherIn.output) fprintf(f4, "%e %e\n", f, hMag);
         }
@@ -898,8 +898,8 @@ int main (int argc , char **argv) {
     dist = (params.distance/(LAL_PC_SI*1e6))*(rho/rhoDet);
     if( otherIn.PrintParameters )
     {
-      fprintf(stderr, "mass1: %e, mass2: %e, # samples: %d,\nSNR: %e, " 
-          "distance at which SNR=8: %e\n", params.mass1, params.mass2, 
+      fprintf(stderr, "mass1: %e, mass2: %e, # samples: %d,\nSNR: %e, "
+          "distance at which SNR=8: %e\n", params.mass1, params.mass2,
           signal2->length, rho, dist);
     }
     signal2->data[0] = 0.;
@@ -916,7 +916,7 @@ int main (int argc , char **argv) {
 
   if (otherIn.PrintParameters)
   {
-    fprintf(stderr, "fFinal = %f Hz tFinal = %f seconds\n" , 
+    fprintf(stderr, "fFinal = %f Hz tFinal = %f seconds\n" ,
         params.fFinal, params.tC);
     fprintf(stderr, "the inspiral structure after the call "
         "to the waveform generation:\n");
@@ -1153,7 +1153,7 @@ void readPSD(REAL8 *psd, REAL4 Df, UINT4 length)
   return;
 }
 
-void buildhoft(LALStatus *status, REAL4Vector *wave, 
+void buildhoft(LALStatus *status, REAL4Vector *wave,
         InspiralTemplate *params, OtherParamIn *otherIn)
 {
   REAL4 Fp, Fc, hp, hc, A1, A2, cosshift, sinshift;
@@ -1172,7 +1172,7 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
   memset( &simTable, 0, sizeof(SimInspiralTable) );
   /* ... and populate it with desired parameter values */
   /*simTable.waveform = otherIn->waveformString;*/
-  memcpy( simTable.waveform, otherIn->waveformString, 
+  memcpy( simTable.waveform, otherIn->waveformString,
           sizeof(otherIn->waveformString) );
 
   if (strstr(simTable.waveform,"PhenSpinTaylorRD")) {
@@ -1222,7 +1222,7 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
   case LAL_INSPIRAL_INTERACTION_ALL:
 	strcat(simTable.waveform,"ALL");
 	break;
-		  
+
   }
 
   simTable.mass1 = params->mass1;
@@ -1258,7 +1258,7 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
   simTable.amp_order = params->ampOrder;
   sprintf(simTable.taper, "TAPER_NONE");
   /* We'll taper (or not) later in code, so just set TAPER_NONE here */
-    
+
   theta = params->sourceTheta;
   phi   = params->sourcePhi;
   psi   = params->polarisationAngle;
@@ -1270,7 +1270,7 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
   /* This function fills a CoherentGW with info to construct h(t) */
   LALGenerateInspiral(status, &waveform, &simTable, &ppnParams);
 
-    
+
   if( waveform.h == NULL ) /* build h(t) from a, phi, shift */
   {
     len = waveform.phi->data->length;
@@ -1312,7 +1312,7 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
     len=waveform.h->data->length < wave->length ? waveform.h->data->length : wave->length;
     for(i = 0; i < len; i++)
       {
-	wave->data[i] = Fp * waveform.h->data->data[2*i] 
+	wave->data[i] = Fp * waveform.h->data->data[2*i]
 	  + Fc * waveform.h->data->data[2*i+1];
       }
     for (i=len;i<wave->length;i++) wave->data[i]=0.;

@@ -789,13 +789,13 @@ static void IMRPhenomXHM_RD_Amp_Coefficients(IMRPhenomXWaveformStruct *pWF22, IM
                 pAmp->RDCoefficient[2] = sqrt(pAmp->RDCoefficient[0] / (rdcp2 * pWFHM->fDAMP));
                 pAmp->RDCoefficient[1] = 0.5 * pAmp->RDCoefficient[2] * log(rdcp1 / rdcp3);
             }
-                       
+
             if (pWFHM->RingdownAmpVeto == 1){
               pAmp->RDCoefficient[1] = 1;
               pAmp->RDCoefficient[2] = 1.35;
               pAmp->RDCoefficient[0] = pAmp->CollocationPointsValuesAmplitudeRD[2] * pWFHM->fDAMP * pAmp->RDCoefficient[2] * pAmp->RDCoefficient[2];
             }
-            
+
             if(pWFHM->fAmpRDfalloff > 0){
                 IMRPhenomX_UsefulPowers powers_of_RDfalloff;
                 IMRPhenomX_Initialize_Powers(&powers_of_RDfalloff, pWFHM->fAmpRDfalloff);
@@ -826,7 +826,7 @@ static void IMRPhenomXHM_RDAux_Amp_Coefficients(IMRPhenomXWaveformStruct *pWF22,
     if (pWFHM->RingdownAmpVeto == 2 && pAmp->CollocationPointsValuesAmplitudeRDAux[pAmp->nCollocPtsRDAux - 1] < pAmp->CollocationPointsValuesAmplitudeRDAux[pAmp->nCollocPtsRDAux]){
         pAmp->CollocationPointsValuesAmplitudeRDAux[pAmp->nCollocPtsRDAux - 1] = pAmp->CollocationPointsValuesAmplitudeRDAux[pAmp->nCollocPtsRDAux];
     }
-    
+
     pAmp->CollocationPointsFreqsAmplitudeRDAux[0] = pAmp->fAmpMatchIM;
     pAmp->CollocationPointsFreqsAmplitudeRDAux[1] = 0.5 * (pAmp->fAmpMatchIM + pAmp->fRDAux); // First Chebyshev node
     pAmp->CollocationPointsFreqsAmplitudeRDAux[2] = pAmp->fRDAux;
@@ -945,7 +945,7 @@ static double IMRPhenomXHM_RD_Amp_Ansatz(IMRPhenomX_UsefulPowers *powers_of_Mf, 
             XLAL_ERROR_REAL8(XLAL_EINVAL, "Error in IMRPhenomXHM_RD_Amp_Ansatz: IMRPhenomXHMRingdownAmpVersion = %i is not valid. \n", RDAmpFlag);
         }
     }
-    
+
     return ampRD;
 }
 
@@ -1473,7 +1473,7 @@ static double IMRPhenomXHM_RD_Phase_DerAnsatz(double ff, IMRPhenomX_UsefulPowers
     double frd   = pWFHM->fRING;
     double fda   = pWFHM->fDAMP;
     double ddphaseRD;
-    
+
 
     switch ( pWFHM->MixingOn )
     {
@@ -1492,7 +1492,7 @@ static double IMRPhenomXHM_RD_Phase_DerAnsatz(double ff, IMRPhenomX_UsefulPowers
                 /* ansatz: alpha0 + (alpha2)/(f^2)+ (alpha4)/(f^4)  + alphaL*(fdamplm)/((fdamplm)^2 + (f - fRDlm)^2)*/
                 ddphaseRD = -2*pPhase->alpha2_S*powers_of_f->m_three - 4*(pPhase->alpha4_S)*powers_of_f->m_five - 2*( pPhase->alphaL_S* fda * (ff-frd)/pow(fda*fda +(ff - frd)*(ff - frd), 2) ) ;
             }
-            else{ 
+            else{
                 /* ansatz: a0 + a1/f + a2/f^2 + a3/f^4  + a4*fdamplm/(fdamplm^2 + (f - fRDlm)^2) */
                 ddphaseRD = ( - pPhase->RDCoefficient[1] * powers_of_f->m_two - 2 * pPhase->RDCoefficient[2] * powers_of_f->m_three - 4 * pPhase->RDCoefficient[3] * powers_of_f->m_five - 2 * pPhase->RDCoefficient[4]*fda*(ff-frd) / pow(fda*fda + (ff - frd)*(ff - frd), 2)  );
             }

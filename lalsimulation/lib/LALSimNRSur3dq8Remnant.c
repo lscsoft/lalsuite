@@ -26,10 +26,12 @@
  * \brief NRSur3dq8Remnant model for remnant BH mass, spin and recoil kick for
  * aligned-spin BBH.
  *
- * The binary data file is available at:
- * https://dcc.ligo.org/LIGO-T1900034/public.
- * Get the lalsuite-extra repo or put the data into a location in your
+ * The binary data file (NRSur3dq8Remnant_v1.0.h5) is available at:
+ * https://git.ligo.org/waveforms/software/lalsuite-waveform-data.
+ * Get the lalsuite-waveform-data repo or put the data into a location in your
  * LAL_DATA_PATH.
+ * The data is also available on CIT at /home/lalsimulation_data and via CVMFS
+ * at /cvmfs/shared.storage.igwn.org/igwn/shared/auxiliary/obs_sci/cbc/waveform/lalsimulation_data
  *
  * **Paper**: https://arxiv.org/abs/1809.09125,
  *    https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.122.011101.
@@ -78,6 +80,7 @@
 #include <lal/LALSimIMR.h>
 
 #include "LALSimNRSurRemnantUtils.h"
+#include "LALSimIMRDataUtilities.h"
 
 #include "LALSimNRSur3dq8Remnant.h"
 
@@ -134,13 +137,16 @@ static void NRSur3dq8Remnant_Init_LALDATA(void) {
     int ret = AlignedSpinNRSurRemnant_Init(&__lalsim_NRSur3dq8Remnant_data,
             file);
 
+    ret |= ROM_check_canonical_file_basename(file,NRSur3dq8Remnant_DATAFILE,
+            "CANONICAL_FILE_BASENAME");
+
     XLALH5FileClose(file);
     if (ret != XLAL_SUCCESS) {
         XLAL_ERROR_VOID(XLAL_FAILURE, "Failure loading data from %s\n",
                 NRSur3dq8Remnant_DATAFILE);
     }
     #else
-    XLAL_ERROR_VOID(XLAL_FAILURE,  "Failure loading data from %s. HDF5 support is not enabled.\n", 
+    XLAL_ERROR_VOID(XLAL_FAILURE,  "Failure loading data from %s. HDF5 support is not enabled.\n",
         NRSur3dq8Remnant_DATAFILE);
     #endif
 

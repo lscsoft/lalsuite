@@ -22,7 +22,7 @@
    returns 1 if both tidal parameters zero, otherwise returns 0 */
 #define checkTidesZero(lambda1, lambda2) \
     (((lambda1) != 0. || (lambda2) != 0. ) ? 0 : 1)
-    
+
 #define SANITY_WARNINGS(m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, deltaT, fmin, params) \
     do { \
         if ((deltaT) > 1.) \
