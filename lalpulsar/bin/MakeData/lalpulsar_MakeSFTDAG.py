@@ -85,6 +85,8 @@ __date__ = git_version.date
 #               rate
 # 10/2024  eag; Modify workflow for version 3 SFTs and HTCondor file transfer
 #               workflow
+# 12/2024  eag; Modify workflow to use lalpulsar_MoveSFTs script instead of
+#               remapping files
 
 
 def sft_name_from_vars(
@@ -207,24 +209,23 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
         else:
             sft_start += args.time_baseline
         sft_end = sft_start + args.time_baseline
-    # condor needs this to be a comma separated list
-    outputfiles = ",".join(outputfiles)
-    # condor needs this to be a semi-colon separated list (why?!)
-    remap = ";".join(remap)
 
     # gw_data_find job
     if not args.cache_file:
         dagFID.write(f"JOB {datafind} {Path(dagFID.name).parent / 'datafind.sub'}\n")
         dagFID.write(f"RETRY {datafind} 1\n")
         dagFID.write(
-            f'VARS {datafind} gpsstarttime="{startTimeDatafind}" gpsendtime="{endTimeDatafind}" observatory="{site}" inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n'
+            f'VARS {datafind} gpsstarttime="{startTimeDatafind}" '
+            f'gpsendtime="{endTimeDatafind}" observatory="{site}" '
+            f'inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n'
         )
 
     # MakeSFT job
     dagFID.write(f"JOB {MakeSFTs} {Path(dagFID.name).parent / 'MakeSFTs.sub'}\n")
     dagFID.write(f"RETRY {MakeSFTs} 1\n")
     dagFID.write(
-        f'VARS {MakeSFTs} argList="{argStr}" cachefile="{cacheFile}" outputfiles="{outputfiles}" remapfiles="{remap}" tagstring="{tagStringOut}"\n'
+        f'VARS {MakeSFTs} argList="{argStr}" cachefile="{cacheFile}" '
+        f'tagstring="{tagStringOut}"\n'
     )
     if not args.cache_file:
         dagFID.write(f"PARENT {datafind} CHILD {MakeSFTs}\n")
@@ -507,6 +508,20 @@ parser.add_argument(
           order)",
 )
 parser.add_argument(
+    "--movesfts-path",
+    type=Path,
+    help="string specifying the lalpulsar_MoveSFTs executable, \
+          or a path to it; if not set, will use \
+          MOVESFTS_PATH env variable or system default (in that \
+          order)",
+)
+parser.add_argument(
+    "--no-validate",
+    dest="validate",
+    action="store_false",
+    help="do not validate created SFTs",
+)
+parser.add_argument(
     "-Y",
     "--request-memory",
     type=int,
@@ -662,7 +677,7 @@ if len(args.channel_name) > 1 and args.observing_run == 0:
         "--observing-kind and --observing-revision"
     )
 
-# Set the data find executable and lalpulsar_MakeSFTs executable
+# Set executables for gw_data_find, lalpulsar_MakeSFTs, and lalpulsar_MoveSFTs
 dataFindExe = "gw_data_find"
 if args.datafind_path:
     if args.datafind_path.is_file():
@@ -684,6 +699,17 @@ elif "MAKESFTS_PATH" in os.environ:
     makeSFTsExe = Path("$ENV(MAKESFTS_PATH)") / makeSFTsExe
 else:
     makeSFTsExe = Path("@LALSUITE_BINDIR@") / makeSFTsExe
+
+moveSFTsExe = "lalpulsar_MoveSFTs"
+if args.movesfts_path:
+    if args.movesfts_path.is_file():
+        moveSFTsExe = args.movesfts_path
+    else:
+        moveSFTsExe = args.movesfts_path / moveSFTsExe
+elif "MOVESFTS_PATH" in os.environ:
+    moveSFTsExe = Path("$ENV(MOVESFTS_PATH)") / moveSFTsExe
+else:
+    moveSFTsExe = Path("@LALSUITE_BINDIR@") / moveSFTsExe
 
 # try and make a directory to store the cache files and job logs
 try:
@@ -787,6 +813,7 @@ path_to_dag_file = args.dag_file.parent
 dag_filename = args.dag_file.name
 datafind_sub = path_to_dag_file / "datafind.sub"
 makesfts_sub = path_to_dag_file / "MakeSFTs.sub"
+movesfts_sub = path_to_dag_file / "MoveSFTs.sub"
 
 # create datafind.sub
 if not args.cache_file:
@@ -833,12 +860,31 @@ with open(makesfts_sub, "w") as MakeSFTsFID:
     MakeSFTsFID.write("RequestCpus = 1\n")
     MakeSFTsFID.write("should_transfer_files = yes\n")
     MakeSFTsFID.write("transfer_input_files = $(cachefile)\n")
-    MakeSFTsFID.write("transfer_output_files = $(outputfiles)\n")
-    # condor needs transfer_output_remaps to be in quotes (why?!)
-    MakeSFTsFID.write('transfer_output_remaps = "$(remapfiles)"\n')
     if "MAKESFTS_PATH" in os.environ and not args.makesfts_path:
         MakeSFTsFID.write("getenv = MAKESFTS_PATH\n")
     MakeSFTsFID.write("queue 1\n")
+
+# create MoveSFTs.sub
+with open(movesfts_sub, "w") as MoveSFTsFID:
+    MoveSFTsLogFile = f"{args.log_path}/MoveSFTs_{dag_filename}.log"
+    MoveSFTsFID.write("universe = local\n")
+    MoveSFTsFID.write(f"executable = {moveSFTsExe}\n")
+    MoveSFTsFID.write("arguments = ")
+    if not args.validate:
+        MoveSFTsFID.write("$(opts) ")
+    MoveSFTsFID.write("-s $(sourcedirectory) -c $(channels) -d $(destdirectory)\n")
+    MoveSFTsFID.write(f"accounting_group = {args.accounting_group}\n")
+    MoveSFTsFID.write(f"accounting_group_user = {args.accounting_group_user}\n")
+    MoveSFTsFID.write(f"log = {MoveSFTsLogFile}\n")
+    MoveSFTsFID.write(f"error = {args.log_path}/MoveSFTs.err\n")
+    MoveSFTsFID.write(f"output = {args.log_path}/MoveSFTs.out\n")
+    MoveSFTsFID.write("notification = never\n")
+    MoveSFTsFID.write(f"request_memory = 1GB\n")
+    MoveSFTsFID.write(f"request_disk = 10MB\n")
+    MoveSFTsFID.write("RequestCpus = 1\n")
+    if "MOVESFTS_PATH" in os.environ and not args.movesfts_path:
+        MoveSFTsFID.write("getenv = MOVESFTS_PATH\n")
+    MoveSFTsFID.write("queue 1\n")
 
 # create the DAG file with the jobs to run
 with open(args.dag_file, "w") as dagFID:
@@ -1043,6 +1089,23 @@ with open(args.dag_file, "w") as dagFID:
                 )
         # END while (endTimeAllNodes < args.analysis_end_time)
     # END for seg in segList
+
+    # Write the move SFTs job to the DAG
+    # Move SFTs
+    dagFID.write(f"JOB MoveSFTs {Path(dagFID.name).parent / 'MoveSFTs.sub'}\n")
+    dagFID.write(f"RETRY MoveSFTs 1\n")
+    dagFID.write(f"VARS MoveSFTs ")
+    if not args.validate:
+        dagFID.write('opts="--no-validate" ')
+    dagFID.write(
+        f'sourcedirectory="." '
+        f"channels=\"{' '.join(args.channel_name)}\" "
+        f"destdirectory=\"{' '.join([str(p) for p in args.output_sft_path])}\"\n"
+    )
+    dagFID.write(
+        f"PARENT {' '.join([f'MakeSFTs_{n}' for n in range(1, nodeCount+1)])} CHILD MoveSFTs\n"
+    )
+
 # Close the DAG file
 
 # Update actual end time of the last job and print out the times all jobs will run on:

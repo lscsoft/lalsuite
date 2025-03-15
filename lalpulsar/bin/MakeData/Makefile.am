@@ -58,6 +58,7 @@ if HAVE_PYTHON
 pybin_scripts = \
 	lalpulsar_CopyPublicSFTs \
 	lalpulsar_MakeSFTDAG \
+	lalpulsar_MoveSFTs \
 	$(END_OF_LIST)
 
 endif
