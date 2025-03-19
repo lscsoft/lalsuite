@@ -55,6 +55,9 @@ int select_mean_std_from_vect( REAL8 *mean, REAL8 *std, const REAL8Vector *means
 
 int main( int argc, char **argv )
 {
+  lalUserVarHelpBrief = "Arithmetic and noise-weighted averge spectrum and persistency from SFTs for Fscan";
+  lalUserVarHelpDescription = "Provide SFTs to this program for computing arithmetic and noise-weighted average spectra and  persistency of frequency bins above background, optionally track frequency bins above threshold or specific frequency bins, saved as ASCII data files for use by Fscan";
+
   FILE *SPECOUT = NULL, *WTOUT = NULL, *LINEOUT = NULL;
   int fopenerr = 0;
 
