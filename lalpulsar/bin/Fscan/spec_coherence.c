@@ -34,6 +34,9 @@
 
 int main( int argc, char **argv )
 {
+  lalUserVarHelpBrief = "Compute coherence between two channels from SFTs for Fscan";
+  lalUserVarHelpDescription = "Provide SFTs to this program for computing coherence between two channels, saved as ASCII data file for use by Fscan";
+
   FILE *COHOUT = NULL;
   int fopenerr = 0;
 

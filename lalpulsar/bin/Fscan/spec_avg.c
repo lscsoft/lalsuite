@@ -36,6 +36,9 @@
 
 int main( int argc, char **argv )
 {
+  lalUserVarHelpBrief = "Normalize and average SFTs and compute spectrogram from SFTs for Fscan";
+  lalUserVarHelpDescription = "Provide SFTs to this program for computing normalized and averaged spectra and spectrogram saved as ASCII data files for use by Fscan";
+
   FILE *fp  = NULL, *fp2 = NULL, *fp3 = NULL, *fp4 = NULL;
   int fopenerr = 0;
 
