@@ -24,7 +24,7 @@ typedef struct tagParamData {
   const CHAR *fitFlag; /* add a TEMPO-style fitting flag to some parameters */
 } ParamData;
 
-#define NUMPARS 89
+#define NUMPARS 103
 
 /* setup a collection of allowed .par file parameters */
 ParamData p[NUMPARS] = {
@@ -49,12 +49,20 @@ ParamData p[NUMPARS] = {
   /* position parameters */
   { "RAJ",      "12:34:56.7",   "3.29407",          "1.23",         "8.94481e-05",  "1" },
   { "ra",       "12:34:56.7",   "3.29407",          "1.23",         "8.94481e-05",  " " }, /* use lower case input name*/
+  { "ELONG",    "188.73630842", "3.29407",          "1.0",          "0.01745",      " " },
+  { "LAMBDA",   "188.73630842", "3.29407",          "1.0",          "0.01745",      " " },
   { "DECJ",     "-12:34:56.7",  "-0.21960",         "1.23",         "5.96321e-06",  " " },
   { "DEC",      "-12:34:56.7",  "-0.21960",         "1.23",         "5.96321e-06",  " " },
-  { "POSEPOCH", "54321.0",      "870652748.81600",  NULL,           NULL,  " " },
+  { "ELAT",     "-12.58215318", "-0.21960",         "1.0",          "0.01745",      " " },
+  { "BETA",     "-12.58215318", "-0.21960",         "1.0",          "0.01745",      " " },
+  { "POSEPOCH", "54321.0",      "870652748.81600",  NULL,           NULL,           " " },
   { "PMRA",     "12.345",       "1.89654e-15",      "1.23",         "1.88963e-16",  " " },
-  { "EPHEM",    "DE405",        "DE405",            NULL,           NULL,  " " },
+  { "PMELONG",  "12.345",       "1.89654e-15",      "1.23",         "1.88963e-16",  " " },
+  { "PMLAMBDA", "12.345",       "1.89654e-15",      "1.23",         "1.88963e-16",  " " },
+  { "EPHEM",    "DE405",        "DE405",            NULL,           NULL,           " " },
   { "PMDEC",    "-12.345",      "-1.89654e-15",     "1.23",         "1.88963e-16",  "1" },
+  { "PMELAT",   "-12.345",      "-1.89654e-15",     "1.23",         "1.88963e-16",  "1" },
+  { "PMBETA",   "-12.345",      "-1.89654e-15",     "1.23",         "1.88963e-16",  "1" },
   { "DIST",     "123.00000",    "3.79538e+21",      "12.30000",     "3.79538e+20",  " " },
   /* glitch parameters */
   { "GLEP_1",   "54321.0",      "870652748.81600",  "0.00123",      "106.27200",    " " },
@@ -124,9 +132,16 @@ ParamData p[NUMPARS] = {
   { "PHI0SCALAR",   "2.10230",      "2.10230",          "0.11",         "0.11000",      " " },
   { "PHI0SCALAR_F", "0.476",        "0.47600",          "0.12",         "0.12000",      " " },
   /* transient signal parameters */
-  { "TRANSIENTWINDOWTYPE", "RECT",  "RECT",             NULL,           NULL,           " " },
-  { "TRANSIENTSTARTTIME", "54321.0", "870652748.81600", NULL,           NULL,           " " },
-  { "TRANSIENTTAU", "1.23",         "106272.00000",     NULL,           NULL,           " " },
+  { "TRANSIENTWINDOWTYPE", "RECT",    "RECT",            NULL, NULL, " " },
+  { "TRANSIENTSTARTTIME",  "54321.0", "870652748.81600", NULL, NULL, " " },
+  { "TRANSIENTTAU",        "1.23",    "106272.00000",    NULL, NULL, " " },
+  /* TEMPO parameters */
+  { "UNITS",     "TDB",     "TDB",     NULL, NULL, " " },
+  { "EPHEM",     "DE405",   "DE405",   NULL, NULL, " " },
+  { "T2CMETHOD", "TEMPO",   "TEMPO",   NULL, NULL, " " },
+  { "TIMEEPH",   "FB90",    "FB90",    NULL, NULL, " " },
+  { "CLK",       "TT(TAI)", "TT(TAI)", NULL, NULL, " " },
+  { "NRES",      "532.1",   "0.00053", NULL, NULL, " " },
 };
 
 
