@@ -141,7 +141,7 @@ ParamData p[NUMPARS] = {
   { "T2CMETHOD", "TEMPO",   "TEMPO",   NULL, NULL, " " },
   { "TIMEEPH",   "FB90",    "FB90",    NULL, NULL, " " },
   { "CLK",       "TT(TAI)", "TT(TAI)", NULL, NULL, " " },
-  { "NRES",      "532.1",   "0.00053", NULL, NULL, " " },
+  { "TRES",      "532.1",   "0.00053", NULL, NULL, " " },
 };
 
 
