@@ -24,7 +24,7 @@ typedef struct tagParamData {
   const CHAR *fitFlag; /* add a TEMPO-style fitting flag to some parameters */
 } ParamData;
 
-#define NUMPARS 103
+#define NUMPARS 102
 
 /* setup a collection of allowed .par file parameters */
 ParamData p[NUMPARS] = {
@@ -137,7 +137,6 @@ ParamData p[NUMPARS] = {
   { "TRANSIENTTAU",        "1.23",    "106272.00000",    NULL, NULL, " " },
   /* TEMPO parameters */
   { "UNITS",     "TDB",     "TDB",     NULL, NULL, " " },
-  { "EPHEM",     "DE405",   "DE405",   NULL, NULL, " " },
   { "T2CMETHOD", "TEMPO",   "TEMPO",   NULL, NULL, " " },
   { "TIMEEPH",   "FB90",    "FB90",    NULL, NULL, " " },
   { "CLK",       "TT(TAI)", "TT(TAI)", NULL, NULL, " " },
