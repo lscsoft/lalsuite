@@ -61,13 +61,12 @@ extern const char * const lalSimNeutronStarEOSNames[111];
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
 //CUTER-dev // TODO why can I not name this LAL blabla ??
-struct eosDouble{ // PHILDAVIS here !
+struct eosDouble{ // PHILDAVIS here make it a structure that can have more than 2 EoSs
   LALSimNeutronStarEOS * eos_low;
   LALSimNeutronStarEOS * eos_up;
-  // Add an int for the number of Phase transitions TODO
   double hpt;
+  double ppt;
   double delta_eps;
-  int flag_up;
 };
 
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
@@ -156,15 +155,14 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     LALSimNeutronStarEOS * eos, double epsrel);
 
 //CUTER-dev
-
 int XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(double *radius, double *mass,
     double *baryon_mass, double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    LALSimNeutronStarEOS * eos1,LALSimNeutronStarEOS * eos2, double *pt_var, double epsrel);
+    struct eosDouble eosPT, double epsrel);
 
 int XLALSimNeutronStarPTODEIntegrate(
     double *radius, double *mass, double *baryon_mass,
     double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    LALSimNeutronStarEOS * eos1, LALSimNeutronStarEOS * eos2, double *pt_var);
+    struct eosDouble eosPT);
 
 int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
@@ -182,13 +180,13 @@ int XLALSimNeutronStarVirialPTODEIntegrate(
     double *radius, double *mass, double *baryon_mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    LALSimNeutronStarEOS * eos1, LALSimNeutronStarEOS * eos2, double *pt_var);
+    struct eosDouble eosPT);
 
 int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(
     double *radius, double *mass, double *baryon_mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    LALSimNeutronStarEOS * eos1,  LALSimNeutronStarEOS * eos2, double *pt_var, double epsrel);
+    struct eosDouble eosPT, double epsrel);
 
 /* MASS-RADIUS TYPE RELATIONSHIP ROUTINES */
 

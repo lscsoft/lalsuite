@@ -654,7 +654,7 @@ struct eosDouble XLALSimNeutronStarDoubleTabData(double *nbdat, double *edat, do
                                      double *yedat, double *cs2dat, size_t ndat,
                                      size_t id_pt)
 {
-    struct eosDouble eos_two_pt;
+    struct eosDouble eos_two_pt; // TODO should this be defined as a pointer that can be modified later on ?
 
     double *nbdat1, *edat1, *pdat1, *mubdat1, *muedat1, *hdat1, *yedat1, *cs2dat1;
     double *nbdat2, *edat2, *pdat2, *mubdat2, *muedat2, *hdat2, *yedat2, *cs2dat2;
@@ -663,6 +663,7 @@ struct eosDouble XLALSimNeutronStarDoubleTabData(double *nbdat, double *edat, do
 
     ndat1 = id_pt + 1;
     ndat2 = ndat - ndat1;
+
 
     nbdat1  = LALMalloc(ndat1 * sizeof(*nbdat));
     edat1   = LALMalloc(ndat1 * sizeof(*edat));
@@ -708,6 +709,9 @@ struct eosDouble XLALSimNeutronStarDoubleTabData(double *nbdat, double *edat, do
 
     eos_two_pt.eos_low = XLALSimNeutronStarEOSFromTabData(nbdat1, edat1, pdat1, mubdat1, muedat1, hdat1, yedat1, cs2dat1, ndat1);
     eos_two_pt.eos_up  = XLALSimNeutronStarEOSFromTabData(nbdat2, edat2, pdat2, mubdat2, muedat2, hdat2, yedat2, cs2dat2, ndat2);
+    eos_two_pt.hpt = hdat[id_pt];
+    eos_two_pt.delta_eps = edat[id_pt+1] - edat[id_pt];
+    eos_two_pt.ppt = pdat[id_pt];
 
     LALFree(nbdat1);
     LALFree(edat1);
