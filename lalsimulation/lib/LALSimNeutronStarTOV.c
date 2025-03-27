@@ -389,6 +389,8 @@ static int tov_pt_ode(double h, const double *y, double *dy, void *params)
 }
 
 
+
+//CUTER-dev
 /**
  * @brief Solve the stellar structure equations to obtain macroscopic
  * neutron star parameters.
@@ -414,7 +416,7 @@ static int tov_pt_ode(double h, const double *y, double *dy, void *params)
  */
 int XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(double *radius, double *mass,
     double *baryon_mass, double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    LALSimNeutronStarEOS * eos1, LALSimNeutronStarEOS * eos2, double *pt_var, double epsrel)
+    LALSimNeutronStarEOS * eos1, LALSimNeutronStarEOS * eos2, double *pt_var, double epsrel) //TODO create object that holds multiple eoss.
 {
     /* Phase transition EoS */
     struct eosDouble eosPT;
@@ -789,8 +791,6 @@ struct tov_virial_pt_ode_vars {
 };
 
 #define TOV_VIRIAL_PT_ODE_VARS_DIM (sizeof(struct tov_virial_pt_ode_vars)/sizeof(double))
-
-//CUTER-dev
 
 /* Casts an array of doubles to a structure with named parameter. */
 static struct tov_virial_pt_ode_vars *tov_virial_pt_ode_vars_cast(const double *y)

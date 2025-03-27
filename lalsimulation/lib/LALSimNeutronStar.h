@@ -78,6 +78,14 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
 
+//CUTER-dev
+int XLALSimNeutronStarFindIDPhaseTransition(int ndat, double *edat, double *pdat);
+//CUTER-dev
+struct eosDouble XLALSimNeutronStarDoubleTabData(double *nbdat, double *edat, double *pdat, // TODO change the typical naming with LAL
+                                     double *mubdat, double *muedat, double *hdat,
+                                     double *yedat, double *cs2dat, size_t ndat,
+                                     size_t id_pt);
+
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
