@@ -159,6 +159,7 @@ lint:pre-commit:
     - pip install pre-commit
     # run pre-commit
     - |
+      echo "env: CI_COMMIT_AUTHOR=${CI_COMMIT_AUTHOR}"
       pre-commit run -a && status=0 || status=$?
       if ! git diff --quiet; then
         echo "------------------------------------------------------------------------"
