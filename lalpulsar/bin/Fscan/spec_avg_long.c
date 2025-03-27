@@ -55,6 +55,9 @@ int select_mean_std_from_vect( REAL8 *mean, REAL8 *std, const REAL8Vector *means
 
 int main( int argc, char **argv )
 {
+  lalUserVarHelpBrief = "Arithmetic and noise-weighted averge spectrum and persistency from SFTs for Fscan";
+  lalUserVarHelpDescription = "Provide SFTs to this program for computing arithmetic and noise-weighted average spectra and  persistency of frequency bins above background, optionally track frequency bins above threshold or specific frequency bins, saved as ASCII data files for use by Fscan";
+
   FILE *SPECOUT = NULL, *WTOUT = NULL, *LINEOUT = NULL;
   int fopenerr = 0;
 
@@ -146,9 +149,9 @@ int main( int argc, char **argv )
   // unless --allow_skipping is true
   if ( errnum != 0 ) {
     if ( allow_skipping ) {
-      LogPrintf( LOG_CRITICAL, "No SFTs were found, exiting without error due to --allow_skipping=true\n" );
+      LogPrintf( LOG_CRITICAL, "No SFTs were found, exiting with code %d due to --allow_skipping=true\n", XLAL_EUSR0 );
       XLALDestroyUserVars();
-      exit( 0 );
+      exit( XLAL_EUSR0 );
     } else {
       XLAL_ERROR_MAIN( errnum );
     }

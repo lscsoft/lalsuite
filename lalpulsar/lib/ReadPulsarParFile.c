@@ -968,7 +968,7 @@ typedef struct tagParConversion {
 } ParConversion;
 
 
-#define NUM_PARS 130 /* number of allowed parameters */
+#define NUM_PARS 132 /* number of allowed parameters */
 
 /** Initialise conversion structure with most allowed TEMPO2 parameter names and conversion functions
  * (convert all read in parameters to SI units where necessary). See http://arxiv.org/abs/astro-ph/0603381 and
@@ -996,10 +996,10 @@ ParConversion pc[NUM_PARS] = {
   { .name = "ELAT", .convfunc = ParConvDegsToRads, .converrfunc = ParConvDegsToRads, .ptype = PULSARTYPE_REAL8_t }, /* ecliptic latitude (converted from degs to rads) */
   { .name = "PMELONG", .convfunc = ParConvMasPerYrToRadPerSec, .converrfunc = ParConvMasPerYrToRadPerSec, .ptype = PULSARTYPE_REAL8_t }, /* proper motion in ecliptic longitude (converted to radians/s) */
   { .name = "PMELAT", .convfunc = ParConvMasPerYrToRadPerSec, .converrfunc = ParConvMasPerYrToRadPerSec, .ptype = PULSARTYPE_REAL8_t }, /* proper motion in ecliptic latitude (converted to radians/s) */
-  { .name = "BETA", .convfunc = ParConvDegsToRads, .converrfunc = ParConvDegsToRads, .ptype = PULSARTYPE_REAL8_t }, /* galactic latitude (converted from degs to rads) */
-  { .name = "LAMBDA", .convfunc = ParConvDegsToRads, .converrfunc = ParConvDegsToRads, .ptype = PULSARTYPE_REAL8_t }, /* galactic longitude (converted from degs to rads) */
-  { .name = "PMBETA", .convfunc = ParConvMasPerYrToRadPerSec, .converrfunc = ParConvMasPerYrToRadPerSec, .ptype = PULSARTYPE_REAL8_t }, /* proper motion in galactic latitude (converted to radians/s) */
-  { .name = "PMLAMBDA", .convfunc = ParConvMasPerYrToRadPerSec, .converrfunc = ParConvMasPerYrToRadPerSec, .ptype = PULSARTYPE_REAL8_t }, /* proper motion in galactic longitude (converted to radians/s) */
+  { .name = "BETA", .convfunc = ParConvDegsToRads, .converrfunc = ParConvDegsToRads, .ptype = PULSARTYPE_REAL8_t }, /* an alias for ELONG also giving ecliptic latitude (converted from degs to rads) */
+  { .name = "LAMBDA", .convfunc = ParConvDegsToRads, .converrfunc = ParConvDegsToRads, .ptype = PULSARTYPE_REAL8_t }, /* an alias for ELAT also giving ecliptic longitude (converted from degs to rads) */
+  { .name = "PMBETA", .convfunc = ParConvMasPerYrToRadPerSec, .converrfunc = ParConvMasPerYrToRadPerSec, .ptype = PULSARTYPE_REAL8_t }, /* proper motion in ecliptic latitude (converted to radians/s) */
+  { .name = "PMLAMBDA", .convfunc = ParConvMasPerYrToRadPerSec, .converrfunc = ParConvMasPerYrToRadPerSec, .ptype = PULSARTYPE_REAL8_t }, /* proper motion in ecliptic longitude (converted to radians/s) */
 
   /* epoch parameters */
   { .name = "PEPOCH", .convfunc = ParConvMJDToGPS, .converrfunc = ParConvDaysToSecs, .ptype = PULSARTYPE_REAL8_t }, /* period epoch (saved as GPS time) */
@@ -1082,6 +1082,8 @@ ParConversion pc[NUM_PARS] = {
   { .name = "NTOA", .convfunc = ParConvToInt, .converrfunc = NULL, .ptype = PULSARTYPE_UINT4_t }, /* number of TOAs in observation */
   { .name = "TRES", .convfunc = ParConvMicrosecToSec, .converrfunc = NULL, .ptype = PULSARTYPE_REAL8_t }, /* timing residual (convert microseconds to seconds) */
   { .name = "CLK", .convfunc = ParConvToString, .converrfunc = NULL, .ptype = PULSARTYPE_string_t }, /* The observatory clock */
+  { .name = "T2CMETHOD", .convfunc = ParConvToString, .converrfunc = NULL, .ptype = PULSARTYPE_string_t }, /* Method for transforming from terrestrial to celestial frame */
+  { .name = "TIMEEPH", .convfunc = ParConvToString, .converrfunc = NULL, .ptype = PULSARTYPE_string_t }, /* Which time ephemeris to use */
 
   /* GW parameters */
   { .name = "H0", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* gravitational wave amplitude */

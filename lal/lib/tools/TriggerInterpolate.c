@@ -40,18 +40,6 @@
  */
 
 
-static double complex crect(double real, double imag)
-{
-    return real + imag * I;
-}
-
-
-static double complex cpolar(double amp, double arg)
-{
-    return amp * crect(cos(arg), sin(arg));
-}
-
-
 /* Unwrap phase angles. All elements of arg must be between -M_PI and M_PI. */
 static void unwrap(double *arg, size_t n)
 {

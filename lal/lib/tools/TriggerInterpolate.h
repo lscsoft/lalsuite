@@ -23,8 +23,7 @@
 #ifndef _TRIGGERINTERPOLATE_H
 #define _TRIGGERINTERPOLATE_H
 
-/* SWIG bindings are not correct for these functions. */
-#ifndef SWIG
+#include <lal/LALAtomicDatatypes.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -94,8 +93,8 @@ extern "C" {
  */
 int XLALTriggerInterpolateCubicSplineAmpPhase(
     double *tmax,
-    double _Complex *ymax,
-    const double _Complex *y,
+    COMPLEX16 *ymax,
+    const COMPLEX16 *y,
     unsigned int window);
 
 
@@ -110,8 +109,8 @@ int XLALTriggerInterpolateCubicSplineAmpPhase(
  */
 int XLALTriggerInterpolateCubicSpline(
     double *tmax,
-    double _Complex *ymax,
-    const double _Complex *y,
+    COMPLEX16 *ymax,
+    const COMPLEX16 *y,
     unsigned int window);
 
 
@@ -125,8 +124,8 @@ int XLALTriggerInterpolateCubicSpline(
  */
 int XLALTriggerInterpolateLanczos(
     double *tmax,
-    double _Complex *ymax,
-    const double _Complex *y,
+    COMPLEX16 *ymax,
+    const COMPLEX16 *y,
     unsigned int window);
 
 
@@ -138,8 +137,8 @@ int XLALTriggerInterpolateLanczos(
  */
 int XLALTriggerInterpolateNearestNeighbor(
     double *tmax,
-    double _Complex *ymax,
-    const double _Complex *y,
+    COMPLEX16 *ymax,
+    const COMPLEX16 *y,
     unsigned int window);
 
 
@@ -155,8 +154,8 @@ int XLALTriggerInterpolateNearestNeighbor(
  */
 int XLALTriggerInterpolateQuadraticFit(
     double *tmax,
-    double _Complex *ymax,
-    const double _Complex *y,
+    COMPLEX16 *ymax,
+    const COMPLEX16 *y,
     unsigned int window);
 
 
@@ -168,7 +167,5 @@ int XLALTriggerInterpolateQuadraticFit(
 #elif defined(__cplusplus)
 } /* extern "C" */
 #endif
-
-#endif /* ifndef SWIG */
 
 #endif /* _TRIGGERINTERPOLATE_h */
