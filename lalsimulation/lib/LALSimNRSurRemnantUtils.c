@@ -77,6 +77,7 @@ void NRSurRemnant_LoadH5File(
         "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
         "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
         "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
+        "and on Zenodo at: https://zenodo.org/records/14999310.\n"
         "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
         "https://git.ligo.org/lscsoft/lalsuite-extra\n",
         NRSurRemnant_DATAFILE);

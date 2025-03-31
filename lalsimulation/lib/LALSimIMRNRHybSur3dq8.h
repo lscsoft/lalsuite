@@ -26,7 +26,8 @@
  * for aligned-spin BBH.
  *
  * The binary data file (NRHybSur3dq8_lal_v1.0.h5) is available at:
- * https://git.ligo.org/waveforms/software/lalsuite-waveform-data.
+ * https://git.ligo.org/waveforms/software/lalsuite-waveform-data
+ * and on Zenodo at: https://zenodo.org/records/14999310.
  * Get the lalsuite-waveform-data repo or put the data into a location in your
  * LAL_DATA_PATH.
  * The data is also available on CIT at /home/lalsimulation_data and via CVMFS
