@@ -9,15 +9,9 @@ from lalburst import snglcoinc
 from lalinspiral.thinca import InspiralCoincDef
 
 
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
-
-
-@lsctables.use_in
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-	pass
 
 
 def parse_command_line():
@@ -43,7 +37,7 @@ options, process_params, filenames = parse_command_line()
 
 
 for filename in filenames:
-	xmldoc = ligolw_utils.load_filename(filename, contenthandler = LIGOLWContentHandler, verbose = options.verbose)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
 
 	process = ligolw_process.register_to_xmldoc(xmldoc, "brute_force_coinc", process_params)
 

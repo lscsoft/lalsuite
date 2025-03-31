@@ -5,7 +5,7 @@
 import itertools
 from lal import pipeline
 import igwn_segments as segments
-from igwn_ligolw import ligolw, lsctables
+from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 import os
 import socket
@@ -561,7 +561,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     if not os.path.isfile(psdxml):
         print("ERROR: impossible to open the psd file %s. Exiting...\n"%psdxml)
         sys.exit(1)
-    xmlpsd =  lalseries.read_psd_xmldoc(ligolw_utils.load_filename(psdxml,contenthandler = lalseries.PSDContentHandler))
+    xmlpsd =  lalseries.read_psd_xmldoc(ligolw_utils.load_filename(psdxml))
     # Check the psd file contains all the IFOs we want to analize
     for ifo in ifos:
         if not ifo in xmlpsd:
@@ -1061,13 +1061,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         # Siminspiral Table
         if self.config.has_option('input','injection-file'):
             injTable = lsctables.SimInspiralTable.get_table(
-                              ligolw_utils.load_filename(self.config.get('input','injection-file'),
-                                                  contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler)) )
+                              ligolw_utils.load_filename(self.config.get('input','injection-file')))
             events=[Event(SimInspiral=inj) for inj in injTable]
         # SimBurst Table
         if self.config.has_option('input','burst-injection-file'):
             injfile=self.config.get('input','burst-injection-file')
-            injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile,contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
+            injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile))
             events=[Event(SimBurst=inj) for inj in injTable]
         # LVAlert CoincInspiral Table
         gid = None
@@ -1106,19 +1105,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     print("lalinference will estimate the psd itself.")
 
             # write down the objects to files
-            coinc_xml_obj = ligolw_utils.load_fileobj(
-                coinc_file_obj,
-                contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)
-            )[0]
+            coinc_xml_obj = ligolw_utils.load_fileobj(coinc_file_obj)[0]
             ligolw_utils.write_filename(
                 coinc_xml_obj, os.path.join(self.basepath, "coinc.xml")
             )
             if psd_file_obj is not None:
                 path_to_psd = os.path.join(self.basepath, "psd.xml.gz")
-                psd_xml_obj = ligolw_utils.load_fileobj(
-                    psd_file_obj,
-                    contenthandler = lalseries.PSDContentHandler
-                )[0]
+                psd_xml_obj = ligolw_utils.load_fileobj(psd_file_obj)[0]
                 psd_dict = lalseries.read_psd_xmldoc(psd_xml_obj)
                 ligolw_utils.write_filename(psd_xml_obj, path_to_psd)
                 ifos = sorted(

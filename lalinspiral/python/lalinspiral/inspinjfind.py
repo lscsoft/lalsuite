@@ -81,11 +81,6 @@ class SnglInspiral(lsctables.SnglInspiral):
 		return self.end == other
 
 
-@lsctables.use_in
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-	pass
-
-
 #
 # =============================================================================
 #

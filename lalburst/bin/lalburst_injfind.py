@@ -35,15 +35,11 @@ from optparse import OptionParser
 import sys
 
 
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
 from lalburst import git_version
 from lalburst import binjfind
-
-
-lsctables.use_in(ligolw.LIGOLWContentHandler)
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -131,7 +127,7 @@ for n, filename in enumerate(filenames):
 
 	if options.verbose:
 		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
-	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
 
 	#
 	# have we already procesed it?

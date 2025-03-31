@@ -55,8 +55,6 @@ class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
       if self.intable: ligolw.LIGOLWContentHandler.endElement(self,name)
       if self.intable and name==self.tableElementName: self.intable=False
 
-lsctables.use_in(LIGOLWContentHandlerExtractSimBurstTable)
-
 posterior_name_to_sim_burst_extractor = {
     'frequency' : lambda sb: sb.frequency,
     'duration' : lambda sb: sb.duration,

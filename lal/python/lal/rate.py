@@ -65,8 +65,6 @@ from scipy.signal import signaltools
 import igwn_segments as segments
 
 from igwn_ligolw import ligolw
-from igwn_ligolw import array as ligolw_array
-from igwn_ligolw import param as ligolw_param
 from igwn_ligolw import types as ligolw_types
 import lal
 from . import iterutils
@@ -358,7 +356,7 @@ class LoHiCountBins(Bins):
 		Bins instance.  Subclasses must define the .xml_bins_name
 		class attribute.
 		"""
-		return ligolw_param.Param.from_pyvalue(self.xml_bins_name_enc(self.xml_bins_name), "%s,%s,%s" % (ligolw_types.FormatFunc["real_8"](self.min), ligolw_types.FormatFunc["real_8"](self.max), ligolw_types.FormatFunc["int_8s"](self.n)))
+		return ligolw.Param.from_pyvalue(self.xml_bins_name_enc(self.xml_bins_name), "%s,%s,%s" % (ligolw_types.FormatFunc["real_8"](self.min), ligolw_types.FormatFunc["real_8"](self.max), ligolw_types.FormatFunc["int_8s"](self.n)))
 
 	@classmethod
 	def from_xml(cls, xml):
@@ -466,7 +464,7 @@ class IrregularBins(Bins):
 		Construct a LIGO Light Weight XML representation of the
 		Bins instance.
 		"""
-		return ligolw_param.Param.from_pyvalue(self.xml_bins_name_enc(self.xml_bins_name), ",".join(map(ligolw_types.FormatFunc["real_8"], self.boundaries)))
+		return ligolw.Param.from_pyvalue(self.xml_bins_name_enc(self.xml_bins_name), ",".join(map(ligolw_types.FormatFunc["real_8"], self.boundaries)))
 
 	@classmethod
 	def from_xml(cls, xml):
@@ -991,7 +989,7 @@ class Categories(Bins):
 		Construct a LIGO Light Weight XML representation of the
 		Bins instance.
 		"""
-		return ligolw_param.Param.build(self.xml_bins_name_enc(self.xml_bins_name), "yaml", self.containers)
+		return ligolw.Param.build(self.xml_bins_name_enc(self.xml_bins_name), "yaml", self.containers)
 
 	@classmethod
 	def from_xml(cls, xml):
@@ -1586,7 +1584,7 @@ class BinnedArray(object):
 		elem = ligolw.LIGO_LW()
 		elem.Name = "%s:pylal_rate_binnedarray" % name
 		self.bins.to_xml(elem)
-		elem.appendChild(ligolw_array.Array.build("array", self.array))
+		elem.appendChild(ligolw.Array.build("array", self.array))
 		return elem
 
 	@classmethod
@@ -1612,7 +1610,7 @@ class BinnedArray(object):
 		the BinnedArray object affect the XML document tree.
 		"""
 		elem = cls.get_xml_root(xml, name)
-		self = cls(NDBins.from_xml(elem), array = ligolw_array.get_array(elem, "array").array)
+		self = cls(NDBins.from_xml(elem), array = ligolw.Array.get_array(elem, "array").array)
 		# sanity check
 		if self.bins.shape != self.array.shape:
 			raise ValueError("'%s' binning shape does not match array shape:  %s != %s" % (name, self.bins.shape, self.array.shape))
@@ -2241,14 +2239,14 @@ class BinnedLnPDF(BinnedDensity):
 
 	def to_xml(self, *args, **kwargs):
 		elem = super(BinnedLnPDF, self).to_xml(*args, **kwargs)
-		elem.appendChild(ligolw_param.Param.from_pyvalue("norm", self.norm))
+		elem.appendChild(ligolw.Param.from_pyvalue("norm", self.norm))
 		return elem
 
 	@classmethod
 	def from_xml(cls, xml, name):
 		elem = cls.get_xml_root(xml, name)
 		self = super(BinnedLnPDF, cls).from_xml(elem, name)
-		self.norm = ligolw_param.Param.get_param(elem, "norm").value
+		self.norm = ligolw.Param.get_param(elem, "norm").value
 		return self
 
 

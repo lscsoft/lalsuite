@@ -7,14 +7,8 @@ import sys
 from lalinspiral.thinca import InspiralCoincDef
 
 
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
-
-
-@lsctables.use_in
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-	pass
 
 
 def parse_command_line():
@@ -68,7 +62,7 @@ class index(object):
 		print("\tmax Delta t = %g s" % float(max(end_times) - min(end_times)))
 
 
-indexes = [index(ligolw_utils.load_filename(filename, contenthandler = LIGOLWContentHandler, verbose = options.verbose)) for filename in filenames]
+indexes = [index(ligolw_utils.load_filename(filename, verbose = options.verbose)) for filename in filenames]
 
 if indexes[0].offsetvectors != indexes[1].offsetvectors:
 	raise ValueError("documents do not contain identical offset vectors, or their IDs are not equivalent")

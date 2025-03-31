@@ -31,13 +31,9 @@ from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import sys
 
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from lalburst import git_version
-
-
-lsctables.use_in(ligolw.LIGOLWContentHandler)
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -157,7 +153,7 @@ options, filenames = parse_command_line()
 
 
 for n, filename in enumerate(filenames):
-	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
 
 	if options.verbose:
 		print("plotting ...", file=sys.stderr)

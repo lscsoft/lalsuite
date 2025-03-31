@@ -30,7 +30,6 @@ from optparse import OptionParser
 import sys
 
 
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
@@ -38,9 +37,6 @@ from igwn_ligolw.utils import segments as ligolw_segments
 import lal
 from lalinspiral import thinca
 from igwn_segments import utils as segmentsUtils
-
-
-lsctables.use_in(ligolw.LIGOLWContentHandler)
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -160,7 +156,7 @@ for n, filename in enumerate(filenames, start = 1):
 
 	if options.verbose:
 		print("%d/%d:" % (n, len(filenames)), end=' ', file=sys.stderr)
-	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
 
 	#
 	# Have we already processed it?

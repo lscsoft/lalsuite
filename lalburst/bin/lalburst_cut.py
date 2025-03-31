@@ -132,11 +132,6 @@ def parse_command_line():
 #
 
 
-@lsctables.use_in
-class ContentHandler(ligolw.LIGOLWContentHandler):
-	pass
-
-
 #
 # =============================================================================
 #
@@ -413,7 +408,7 @@ keep_this_sngl_burst = make_keep_this_sngl_burst(options)
 
 
 if options.veto_file:
-	veto_segments = load_veto_segments(options.veto_file, verbose = options.verbose, contenthandler = ContentHandler)
+	veto_segments = load_veto_segments(options.veto_file, verbose = options.verbose)
 else:
 	veto_segments = segments.segmentlistdict()
 
@@ -424,7 +419,7 @@ else:
 
 
 for filename in filenames:
-	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ContentHandler)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
 	xmldoc = ligolw_bucut(xmldoc, keep_this_sngl_burst, veto_segments = veto_segments, del_non_coincs = options.coinc_only, del_skipped_injections = options.inj_made_only, program = options.program, comment = options.comment, verbose = options.verbose)
 	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)
 	xmldoc.unlink()

@@ -72,7 +72,6 @@ import lalinference.plot
 from lalinference import bayespputils as bppu
 from lalinference import git_version
 
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils
 
@@ -284,7 +283,7 @@ def cbcBayesPostProc(
     injection=None
     if injfile and eventnum is not None:
         print('Looking for event %i in %s\n'%(eventnum,injfile))
-        xmldoc = utils.load_filename(injfile,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
+        xmldoc = utils.load_filename(injfile)
         siminspiraltable=lsctables.SimInspiralTable.get_table(xmldoc)
         injection=siminspiraltable[eventnum]
 
@@ -343,7 +342,7 @@ def cbcBayesPostProc(
 
     if eventnum is None and injfile is not None:
         import itertools
-        injections = lsctables.SimInspiralTable.get_table(utils.load_filename(injfile, contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler)))
+        injections = lsctables.SimInspiralTable.get_table(utils.load_filename(injfile))
 
         if(len(injections)<1):
             try:
