@@ -201,7 +201,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     /* if epochs are different update "new" frequency to heterodyne epoch */
     if ( pepoch != pepochorig ) {
       REAL8 deltatpowu = deltatpow;
-      for ( j = i + 1; i < freqsu->length; j++ ) {
+      for ( j = i + 1; j < freqsu->length; j++ ) {
         frequpdate[i] += ( freqsu->data[j] * deltatpowu ) / gsl_sf_fact( j - i );
         deltatpowu *= deltat;
       }
