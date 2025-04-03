@@ -61,7 +61,7 @@ extern const char * const lalSimNeutronStarEOSNames[111];
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
 //CUTER-dev // TODO why can I not name this LAL blabla ??
-struct eosDouble{ // PHILDAVIS here make it a structure that can have more than 2 EoSs
+struct eosDouble{ // PHILDAVIS here make it a structure that can have more than 2 EoSs TODO should this be a pointer so we can change it anywhere ?
   LALSimNeutronStarEOS * eos_low;
   LALSimNeutronStarEOS * eos_up;
   double hpt;
@@ -78,12 +78,11 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
 
 //CUTER-dev
-int XLALSimNeutronStarFindIDPhaseTransition(int ndat, double *edat, double *pdat);
+int * XLALSimNeutronStarFindIDPhaseTransition(size_t ndat, double *edat, double *pdat);
 //CUTER-dev
 struct eosDouble XLALSimNeutronStarDoubleTabData(double *nbdat, double *edat, double *pdat, // TODO change the typical naming with LAL
                                      double *mubdat, double *muedat, double *hdat,
-                                     double *yedat, double *cs2dat, size_t ndat,
-                                     size_t id_pt);
+                                     double *yedat, double *cs2dat, size_t ndat);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);

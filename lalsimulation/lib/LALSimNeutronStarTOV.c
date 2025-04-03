@@ -1117,8 +1117,12 @@ int XLALSimNeutronStarPTODEIntegrate(
     struct eosDouble eosPT)
 {
     const double epsrel = 1e-6;
-    return XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(radius, mass, baryon_mass,
-    love_number_k2, love_number_k3, love_number_k4, central_pressure_si, eosPT, epsrel);
+    if (eosPT.hpt == 0.0){
+        return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eosPT.eos_low, epsrel);
+    }else{
+        return XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(radius, mass, baryon_mass,love_number_k2, love_number_k3, love_number_k4, central_pressure_si, eosPT, epsrel);
+    }
+
 }
 
 

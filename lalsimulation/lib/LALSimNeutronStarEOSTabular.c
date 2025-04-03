@@ -63,6 +63,14 @@ struct tagLALSimNeutronStarEOSDataTabular {
     gsl_interp_accel *log_cs2_of_log_h_acc;
 };
 
+
+// CUTER-dev
+struct TwoEOS{
+    LALSimNeutronStarEOS * eos1;
+    LALSimNeutronStarEOS * eos2;
+};
+
+
 static double eos_p_of_e_tabular(double e, LALSimNeutronStarEOS * eos)
 {
 	double log_e;
@@ -218,6 +226,99 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 //    dedh = gsl_interp_eval_deriv(eos->data.tabular->e_of_h_interp, eos->data.tabular->hdat, eos->data.tabular->edat, h, eos->data.tabular->e_of_h_acc);
 //      return sqrt(dpdh/dedh);
 //}
+
+
+/*
+ * This function creates two EOS objects from tabulated equation of state variables
+ * using a cutting index to seperate the two parts.
+ */
+static struct TwoEOS doubleEOSBeforeAfterIndex( double *nbdat, double *edat, double *pdat,
+                                                double *mubdat, double *muedat, double *hdat,
+                                                double *yedat, double *cs2dat,
+                                                size_t cut_index, size_t final_index){
+
+    struct TwoEOS doubleEquationOfState;
+
+
+    double *nbdat1, *edat1, *pdat1, *mubdat1, *muedat1, *hdat1, *yedat1, *cs2dat1;
+    double *nbdat2, *edat2, *pdat2, *mubdat2, *muedat2, *hdat2, *yedat2, *cs2dat2;
+    size_t ndat1, ndat2;
+
+    ndat1 = cut_index + 1;
+    ndat2 = final_index - cut_index;
+
+    // printf("jjjjjjj %d %d \n", ndat1, ndat2, final_index, cut_index);
+
+
+    nbdat1  = LALMalloc(ndat1 * sizeof(*nbdat));
+    edat1   = LALMalloc(ndat1 * sizeof(*edat));
+    pdat1   = LALMalloc(ndat1 * sizeof(*pdat));
+    mubdat1 = LALMalloc(ndat1 * sizeof(*mubdat));
+    muedat1 = LALMalloc(ndat1 * sizeof(*muedat));
+    hdat1   = LALMalloc(ndat1 * sizeof(*hdat));
+    yedat1  = LALMalloc(ndat1 * sizeof(*yedat));
+    cs2dat1 = LALMalloc(ndat1 * sizeof(*cs2dat));
+
+    nbdat2  = LALMalloc(ndat2 * sizeof(*nbdat));
+    edat2   = LALMalloc(ndat2 * sizeof(*edat));
+    pdat2   = LALMalloc(ndat2 * sizeof(*pdat));
+    mubdat2 = LALMalloc(ndat2 * sizeof(*mubdat));
+    muedat2 = LALMalloc(ndat2 * sizeof(*muedat));
+    hdat2   = LALMalloc(ndat2 * sizeof(*hdat));
+    yedat2  = LALMalloc(ndat2 * sizeof(*yedat));
+    cs2dat2 = LALMalloc(ndat2 * sizeof(*cs2dat));
+
+
+    // Append the EoS before the phase transition
+    for (size_t i = 0 ; i < ndat1 ; i++){
+        nbdat1[i]   = nbdat[i];
+        edat1[i]    = edat[i];
+        pdat1[i]    = pdat[i];
+        mubdat1[i]  = mubdat[i];
+        muedat1[i]  = muedat[i];
+        hdat1[i]    = hdat[i];
+        yedat1[i]   = yedat[i];
+        cs2dat1[i]  = cs2dat[i];
+    }
+    //Append the EoS after the phase transition
+    for (size_t i = 0 ; i < ndat2 ; i++){
+        nbdat2[i]   = nbdat[i+ndat1];
+        edat2[i]    = edat[i+ndat1];
+        pdat2[i]    = pdat[i+ndat1];
+        mubdat2[i]  = mubdat[i+ndat1];
+        muedat2[i]  = muedat[i+ndat1];
+        hdat2[i]    = hdat[i+ndat1];
+        yedat2[i]   = yedat[i+ndat1];
+        cs2dat2[i]  = cs2dat[i+ndat1];
+    }
+
+
+    doubleEquationOfState.eos1 = XLALSimNeutronStarEOSFromTabData(nbdat1, edat1, pdat1, mubdat1, muedat1, hdat1, yedat1, cs2dat1, ndat1);
+    doubleEquationOfState.eos2 = XLALSimNeutronStarEOSFromTabData(nbdat2, edat2, pdat2, mubdat2, muedat2, hdat2, yedat2, cs2dat2, ndat2);
+
+
+    LALFree(nbdat1);
+    LALFree(edat1);
+    LALFree(pdat1);
+    LALFree(mubdat1);
+    LALFree(muedat1);
+    LALFree(hdat1);
+    LALFree(yedat1);
+    LALFree(cs2dat1);
+
+    LALFree(nbdat2);
+    LALFree(edat2);
+    LALFree(pdat2);
+    LALFree(mubdat2);
+    LALFree(muedat2);
+    LALFree(hdat2);
+    LALFree(yedat2);
+    LALFree(cs2dat2);
+
+    return doubleEquationOfState;
+
+}
+
 
 static void eos_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
 {
@@ -593,46 +694,58 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
 
 // CUTER-dev
 
+
 /**
- * @brief Finds a phase transition from the EoS variables.
- * @details Reads 2 arrays (energy density and pressure) and checks if the
- * there is a Delta P = 0.0 which is the mark of a well constructed Maxwell
- * phase transition.
+ * @brief Finds phase transitions from tabulated equation of state.
+ * @details Reads 2 arrays (energy density and pressure) of size ndat, checks
+ * for a phase transition by the criterion Delta P = 0.0 and returns an
+ * integer table of size 0 if no phase transition was found, or of size N with
+ * the index number of the tabulated equation of state at each phase transition
+ * found (with N the number of phase transitions).
  * @param ndat size of the arrays for equation of state quantities
  * @param edat array of size ndat containing the energy density in J/m^3
  * @param pdat array of size ndat containing the pressure in Pa
- * @return An with the id number of the array at the phase transition.
+ * @return An integer array with the number of phase transition found as the first index,
+ * and the tabulated equation of state indices of the phase transitions.
  */
-int XLALSimNeutronStarFindIDPhaseTransition(int ndat, double *edat, double *pdat) // TODO should this be size_t ??
+int * XLALSimNeutronStarFindIDPhaseTransition(size_t ndat, double *edat, double *pdat) // TODO remove this as public function once
 {
-    double gradient;
-    int id_pt = -1;
-    for (int i = 1; i < ndat; i++){
-        gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
-        if (gradient == 0.0){
-            id_pt = i-1;
+    // TODO PHIL DAVIS can we find a way to not loop twice here ?
 
+    int number_phase_transition = 0;
+    int count_id = 0;
+    int *id_phase_transition;
+    double gradient = 100; // TODO find better way or better value
+
+    for (size_t i = 1; i < ndat; i++){
+        gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
+        if (gradient == 0.0) number_phase_transition += 1;
+    }
+
+    id_phase_transition = LALMalloc((number_phase_transition + 2) * sizeof(int));
+    id_phase_transition[0] = number_phase_transition;
+    id_phase_transition[number_phase_transition+1] = ndat-1;
+
+    if (number_phase_transition == 0){
+        printf("\tIn XLALSimNeutronStarFindIDPhaseTransition, no phase transition was found.\n");
+    } else {
+        count_id = 1;
+        gradient = 100;
+        for (size_t i = 1; i < ndat; i++){
+            gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
+            if (gradient == 0.0){
+                id_phase_transition[count_id] = i-1;
+                printf("\tIn XLALSimNeutronStarFindIDPhaseTransition, a phase transition was found for P = %.6e Pa\n", pdat[i-1]);
+                count_id += 1;
+            }
         }
     }
 
-    if (id_pt == -1) printf("No phase transition was found.\n");
-    else printf("\n A phase transition was found for P = %.6e Pa\n", pdat[id_pt]); // TODO check the units for output of terminal !!
-
-    return id_pt;
+    return id_phase_transition;
 }
 
 
 
-//CUTER-dev TODO PHIL DAVIS
-// // // PHILEOS eos_alloc_multiple(double *nbdat, double *edat, double *pdat,
-// // //    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol){
-// // //        //Find the phase transitionSSS
-// // //         // Divide the original EoS into N+1 parts (N is the number of phase transition)
-// // //     // Allocate N*eos objects with the different parts separated by the phase transition
-// // //     // Create the multi EoS object called PHILEOS
-// // // }
-
-//TODO can we find a way to loop over however many arrays there are ???
 
 /**
  * @brief Reads arrays for the different variables of the equation of state to construct a two part EoS.
@@ -651,85 +764,34 @@ int XLALSimNeutronStarFindIDPhaseTransition(int ndat, double *edat, double *pdat
  */
 struct eosDouble XLALSimNeutronStarDoubleTabData(double *nbdat, double *edat, double *pdat,
                                      double *mubdat, double *muedat, double *hdat,
-                                     double *yedat, double *cs2dat, size_t ndat,
-                                     size_t id_pt)
+                                     double *yedat, double *cs2dat, size_t ndat)
 {
     struct eosDouble eos_two_pt; // TODO should this be defined as a pointer that can be modified later on ?
 
-    double *nbdat1, *edat1, *pdat1, *mubdat1, *muedat1, *hdat1, *yedat1, *cs2dat1;
-    double *nbdat2, *edat2, *pdat2, *mubdat2, *muedat2, *hdat2, *yedat2, *cs2dat2;
-    size_t ndat1, ndat2;
 
+    int * indices_phase_transition = XLALSimNeutronStarFindIDPhaseTransition(ndat, edat, pdat);
+    int number_pt = indices_phase_transition[0];
+    int id_pt = indices_phase_transition[1];
+    int id_last = indices_phase_transition[number_pt+1];
 
-    ndat1 = id_pt + 1;
-    ndat2 = ndat - ndat1;
+    // TODO make a loop here over the number of PTs
 
-
-    nbdat1  = LALMalloc(ndat1 * sizeof(*nbdat));
-    edat1   = LALMalloc(ndat1 * sizeof(*edat));
-    pdat1   = LALMalloc(ndat1 * sizeof(*pdat));
-    mubdat1 = LALMalloc(ndat1 * sizeof(*mubdat));
-    muedat1 = LALMalloc(ndat1 * sizeof(*muedat));
-    hdat1   = LALMalloc(ndat1 * sizeof(*hdat));
-    yedat1  = LALMalloc(ndat1 * sizeof(*yedat));
-    cs2dat1 = LALMalloc(ndat1 * sizeof(*cs2dat));
-
-    nbdat2  = LALMalloc(ndat2 * sizeof(*nbdat));
-    edat2   = LALMalloc(ndat2 * sizeof(*edat));
-    pdat2   = LALMalloc(ndat2 * sizeof(*pdat));
-    mubdat2 = LALMalloc(ndat2 * sizeof(*mubdat));
-    muedat2 = LALMalloc(ndat2 * sizeof(*muedat));
-    hdat2   = LALMalloc(ndat2 * sizeof(*hdat));
-    yedat2  = LALMalloc(ndat2 * sizeof(*yedat));
-    cs2dat2 = LALMalloc(ndat2 * sizeof(*cs2dat));
-
-
-    // Append the EoS before the phase transition
-    for (size_t i = 0 ; i < ndat1 ; i++){
-        nbdat1[i]   = nbdat[i];
-        edat1[i]    = edat[i];
-        pdat1[i]    = pdat[i];
-        mubdat1[i]  = mubdat[i];
-        muedat1[i]  = muedat[i];
-        hdat1[i]    = hdat[i];
-        yedat1[i]   = yedat[i];
-        cs2dat1[i]  = cs2dat[i];
-    }
-    //Append the EoS after the phase transition
-    for (size_t i = 0 ; i < ndat2 ; i++){
-        nbdat2[i]   = nbdat[i+ndat1];
-        edat2[i]    = edat[i+ndat1];
-        pdat2[i]    = pdat[i+ndat1];
-        mubdat2[i]  = mubdat[i+ndat1];
-        muedat2[i]  = muedat[i+ndat1];
-        hdat2[i]    = hdat[i+ndat1];
-        yedat2[i]   = yedat[i+ndat1];
-        cs2dat2[i]  = cs2dat[i+ndat1];
+    if (number_pt == 0){
+        // struct TwoEOS XEOS = doubleEOSBeforeAfterIndex(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, id_pt, id_last) ;
+        eos_two_pt.eos_low = XLALSimNeutronStarEOSFromTabData(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat);
+        eos_two_pt.hpt = 0.0;
+        eos_two_pt.delta_eps = 0.0;
+        eos_two_pt.ppt = 1.0e100; // Makes sure that we don't have the ppt
+        eos_two_pt.pmax = pdat[ndat-1];
+    } else {
+        struct TwoEOS XEOS = doubleEOSBeforeAfterIndex(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, id_pt, id_last) ;
+        eos_two_pt.eos_low = XEOS.eos1;
+        eos_two_pt.eos_up  = XEOS.eos2;
+        eos_two_pt.hpt = hdat[id_pt];
+        eos_two_pt.delta_eps = edat[id_pt+1] - edat[id_pt];
+        eos_two_pt.ppt = pdat[id_pt];
     }
 
-    eos_two_pt.eos_low = XLALSimNeutronStarEOSFromTabData(nbdat1, edat1, pdat1, mubdat1, muedat1, hdat1, yedat1, cs2dat1, ndat1);
-    eos_two_pt.eos_up  = XLALSimNeutronStarEOSFromTabData(nbdat2, edat2, pdat2, mubdat2, muedat2, hdat2, yedat2, cs2dat2, ndat2);
-    eos_two_pt.hpt = hdat[id_pt];
-    eos_two_pt.delta_eps = edat[id_pt+1] - edat[id_pt];
-    eos_two_pt.ppt = pdat[id_pt];
-
-    LALFree(nbdat1);
-    LALFree(edat1);
-    LALFree(pdat1);
-    LALFree(mubdat1);
-    LALFree(muedat1);
-    LALFree(hdat1);
-    LALFree(yedat1);
-    LALFree(cs2dat1);
-
-    LALFree(nbdat2);
-    LALFree(edat2);
-    LALFree(pdat2);
-    LALFree(mubdat2);
-    LALFree(muedat2);
-    LALFree(hdat2);
-    LALFree(yedat2);
-    LALFree(cs2dat2);
 
     return eos_two_pt;
 
