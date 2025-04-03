@@ -1209,6 +1209,22 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
 }
 
+// //CUTER-dev
+// int XLALSimNeutronStarPTODEIntegrate(
+//     double *radius, double *mass, double *baryon_mass,
+//     double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
+//     struct multiplePartEOS eos)
+// {
+//     const double epsrel = 1e-6;
+//     if (eos.number_of_PT == 0){
+//         return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos.two_part_eos[0].eos1, epsrel); // TODO extend the old TOV solver to phase transitions
+//     }else{
+//         return XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(radius, mass, baryon_mass,love_number_k2, love_number_k3, love_number_k4, central_pressure_si, eos, epsrel);
+//     }
+//
+// }
+
+
 //CUTER-dev
 int XLALSimNeutronStarPTODEIntegrate(
     double *radius, double *mass, double *baryon_mass,
@@ -1217,12 +1233,14 @@ int XLALSimNeutronStarPTODEIntegrate(
 {
     const double epsrel = 1e-6;
     if (eos.number_of_PT == 0){
+        printf("are we here ??? \n");
         return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos.two_part_eos[0].eos1, epsrel); // TODO extend the old TOV solver to phase transitions
     }else{
         return XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(radius, mass, baryon_mass,love_number_k2, love_number_k3, love_number_k4, central_pressure_si, eos, epsrel);
     }
 
 }
+
 
 
 int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,

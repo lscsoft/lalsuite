@@ -756,8 +756,13 @@ struct multiplePartEOS XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *
     int number_pt = indices_phase_transition[0];
     size_t first_index = 0;
 
-
-    if (number_pt <= LAL_MAX_NUMBER_PT){
+    if (number_pt == 0){
+        eos.number_of_PT = 0;
+        eos.pmax = pdat[ndat-1];
+        eos.two_part_eos[0].eos1 = XLALSimNeutronStarEOSFromTabData(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat);
+        eos.pres_pt[0] = 0.0;
+        eos.d_eps[0] = 0.0;
+    } else if (number_pt <= LAL_MAX_NUMBER_PT){
         eos.number_of_PT = number_pt;
         eos.pmax = pdat[ndat-1];
         for (int i = 0; i < number_pt; i++){

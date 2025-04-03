@@ -65,16 +65,6 @@ extern const char * const lalSimNeutronStarEOSNames[111];
 /** Incomplete type for a neutron star family having a particular EOS. */
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
-// //CUTER-dev // TODO why can I not name this LAL blabla ??
-// struct eosDouble{ // PHILDAVIS should this be a pointer as EOS is ?
-//   LALSimNeutronStarEOS * eos_low;
-//   LALSimNeutronStarEOS * eos_up;
-//   double hpt;
-//   double ppt;
-//   double delta_eps;
-// };
-
-
 // CUTER-dev
 struct TwoEOS{
     LALSimNeutronStarEOS * eos1;
