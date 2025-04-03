@@ -50,6 +50,11 @@
 #define LAL_NUCLEAR_DENSITY_GEOM_SI ((LAL_NUCLEAR_DENSITY_SI) * (LAL_G_C2_SI))
 
 
+//CUTER-dev
+/** Maxmimum number of phase transitions treatable to create an EOS object */
+#define LAL_MAX_NUMBER_PT 10
+
+
 /* EOS ROUTINES */
 
 /** Incomplete type for the neutron star Equation of State (EOS). */
@@ -60,14 +65,32 @@ extern const char * const lalSimNeutronStarEOSNames[111];
 /** Incomplete type for a neutron star family having a particular EOS. */
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
-//CUTER-dev // TODO why can I not name this LAL blabla ??
-struct eosDouble{ // PHILDAVIS here make it a structure that can have more than 2 EoSs TODO should this be a pointer so we can change it anywhere ?
-  LALSimNeutronStarEOS * eos_low;
-  LALSimNeutronStarEOS * eos_up;
-  double hpt;
-  double ppt;
-  double delta_eps;
+// //CUTER-dev // TODO why can I not name this LAL blabla ??
+// struct eosDouble{ // PHILDAVIS should this be a pointer as EOS is ?
+//   LALSimNeutronStarEOS * eos_low;
+//   LALSimNeutronStarEOS * eos_up;
+//   double hpt;
+//   double ppt;
+//   double delta_eps;
+// };
+
+
+// CUTER-dev
+struct TwoEOS{
+    LALSimNeutronStarEOS * eos1;
+    LALSimNeutronStarEOS * eos2;
 };
+
+
+struct multiplePartEOS{
+    int number_of_PT;
+    double pmax;
+    struct TwoEOS two_part_eos[LAL_MAX_NUMBER_PT];
+    double pres_pt[LAL_MAX_NUMBER_PT];
+    double d_eps[LAL_MAX_NUMBER_PT];
+};
+
+
 
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
 char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
@@ -78,11 +101,9 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
 
 //CUTER-dev
-int * XLALSimNeutronStarFindIDPhaseTransition(size_t ndat, double *edat, double *pdat);
-//CUTER-dev
-struct eosDouble XLALSimNeutronStarDoubleTabData(double *nbdat, double *edat, double *pdat, // TODO change the typical naming with LAL
-                                     double *mubdat, double *muedat, double *hdat,
-                                     double *yedat, double *cs2dat, size_t ndat);
+struct multiplePartEOS XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
+                                                                    double *mubdat, double *muedat, double *hdat,
+                                                                    double *yedat, double *cs2dat, size_t ndat);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);
@@ -156,12 +177,12 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
 //CUTER-dev
 int XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(double *radius, double *mass,
     double *baryon_mass, double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    struct eosDouble eosPT, double epsrel);
-
+    struct multiplePartEOS eos, double epsrel);
+//CUTER-dev
 int XLALSimNeutronStarPTODEIntegrate(
     double *radius, double *mass, double *baryon_mass,
     double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    struct eosDouble eosPT);
+    struct multiplePartEOS eos);
 
 int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
@@ -179,13 +200,13 @@ int XLALSimNeutronStarVirialPTODEIntegrate(
     double *radius, double *mass, double *baryon_mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    struct eosDouble eosPT);
+    struct multiplePartEOS eos);
 
 int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(
     double *radius, double *mass, double *baryon_mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    struct eosDouble eosPT, double epsrel);
+    struct multiplePartEOS eos, double epsrel);
 
 /* MASS-RADIUS TYPE RELATIONSHIP ROUTINES */
 
