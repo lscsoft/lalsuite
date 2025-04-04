@@ -48,7 +48,6 @@ BuildRequires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: python3dist(astropy)
 BuildRequires: python3dist(h5py)
-BuildRequires: python3dist(lscsoft-glue) >= @MIN_GLUE_VERSION@
 BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 BuildRequires: python3dist(pytest)
 
@@ -125,7 +124,6 @@ Requires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: python3dist(astropy)
 Requires: python3dist(h5py)
-Requires: python3dist(lscsoft-glue) >= @MIN_GLUE_VERSION@
 Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 Recommends: python3dist(sympy)
 %description -n python3-%{name}

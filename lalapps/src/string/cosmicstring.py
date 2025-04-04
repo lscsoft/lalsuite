@@ -21,9 +21,9 @@ import sys
 
 
 import igwn_segments as segments
-from glue import pipeline
 from lal import iterutils
 from lal import LIGOTimeGPS
+from lal import pipeline
 from lal.utils import CacheEntry
 from lalburst import cafe
 from lalburst import power

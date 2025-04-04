@@ -3,7 +3,7 @@
 # (C) 2012 John Veitch, Vivien Raymond, Kiersten Ruisard, Kan Wang
 
 import itertools
-from glue import pipeline
+from lal import pipeline
 import igwn_segments as segments
 from igwn_ligolw import ligolw, lsctables
 from igwn_ligolw import utils as ligolw_utils
@@ -198,7 +198,7 @@ def create_events_from_coinc_and_psd(
 
     Parameters
     ----------
-    coinc_xml_obj: glue.ligolw.ligolw.Document
+    coinc_xml_obj: ligolw.ligolw.Document
         file object of coinc.xml
     psd_dict: dictionary of REAL8FrequencySeries
         PSDs of all the ifos

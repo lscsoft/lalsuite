@@ -2237,7 +2237,7 @@ class BurstPosterior(Posterior):
 
         @param commonResultsFormatData: A 2D array containing the posterior
             samples and related data. The samples chains form the columns.
-        @param SimBurstTableEntry: A glue.ligolw.lscstables.SimBurst row containing the injected values.
+        @param SimBurstTableEntry: A ligolw.lscstables.SimBurst row containing the injected values.
         @param SnglBurstList: A list of SnglBurst objects containing the triggers.
         @param injFref: reference frequency in injection
         @param name: optional name for this Posterior

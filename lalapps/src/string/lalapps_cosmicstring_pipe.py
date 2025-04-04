@@ -29,11 +29,11 @@ import tempfile
 from configparser import ConfigParser
 
 
-from glue import pipeline
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import segments as ligolw_segments
 from lal import LIGOTimeGPS
+from lal import pipeline
 from lal.utils import CacheEntry
 from lalburst import offsetvector
 from lalburst import power
