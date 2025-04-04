@@ -222,7 +222,7 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 
 
 /*
- * This function creates two EOS objects from tabulated equation of state variables
+ * This function creates two EOS structure from tabulated equation of state variables
  * using a cutting index to seperate the two parts.
  */
 //CUTER-dev
@@ -313,6 +313,9 @@ static struct TwoEOS doubleEOSBeforeAfterIndex( double *nbdat, double *edat, dou
 
 
 // CUTER-dev
+/* This function finds phase transition in a tabulated equation of state, and returns
+ * the indices at which the phase transition occurs
+ */
 static int * XLALSimNeutronStarFindIDPhaseTransition(size_t ndat, double *edat, double *pdat)
 {
     // TODO PHIL DAVIS can we find a way to not loop twice here ?
@@ -431,7 +434,7 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
     return hMinAcausal;
 }
 
-//CUTER-dev
+//CUTER-dev for documentation
 /**
  * This function create an EoS structure from tabulated equation of state variables.
  * The EoS structure contains a data structure (where all original tabulated data is stored),
@@ -731,6 +734,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
 }
 
 
+
+//CUTER-dev
 /**
  * @brief Reads arrays for the equation of state variables to construct a multiple parts EoS separated
  * by phase transitions.

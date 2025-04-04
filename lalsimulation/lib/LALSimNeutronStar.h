@@ -66,12 +66,18 @@ extern const char * const lalSimNeutronStarEOSNames[111];
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
 // CUTER-dev
+/* Structure containing two EOS structures */
 struct TwoEOS{
     LALSimNeutronStarEOS * eos1;
     LALSimNeutronStarEOS * eos2;
 };
 
-
+//CUTER-dev
+/* Structure containing an number of N = LAL_MAX_NUMBER_PT two part EOS structures
+ * and the highest pressure point of the low EOS (pres_pt), as well as the step
+ * in energy density (d_eps) between the highest point of the low EOS and the lowest
+ * point of the high EOS.
+ */
 struct multiplePartEOS{
     int number_of_PT;
     double pmax;
@@ -164,6 +170,11 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos, double epsrel);
 
+
+//CUTER-dev
+int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance( double *radius, double *mass, double *baryon_mass,
+                                                            double *love_number_k2, double *love_number_k3, double *love_number_k4,
+                                                            double central_pressure_si, LALSimNeutronStarEOS * eos, double epsrel);
 //CUTER-dev
 int XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(double *radius, double *mass,
     double *baryon_mass, double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
