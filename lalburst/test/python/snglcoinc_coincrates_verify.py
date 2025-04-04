@@ -118,5 +118,5 @@ class TestCoincRates(unittest.TestCase):
 
 
 suite = unittest.TestSuite()
-suite.addTest(unittest.makeSuite(TestCoincRates))
+suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestCoincRates))
 sys.exit(not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful())
