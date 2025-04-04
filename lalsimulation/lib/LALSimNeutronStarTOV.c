@@ -725,7 +725,7 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
  * @param[out] love_number_k3 The k_3 tidal love number of the star.
  * @param[out] love_number_k4 The k_4 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
- * @param eosPT EoS structure
+ * @param eos EoS structure
  * @param[in] epsrel The relative error for the TOV solver routine
  * @retval 0 Success.
  * @retval <0 Failure.
@@ -799,70 +799,50 @@ int XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(double *radius, double *mas
     double ec, hc; // central energy density and enthalpy
     double h, dh, h0, h1; // Enthalpy step and boundaries for intergation
 
-    if (pc <= pres_pt){
-        printf("Hc < hpt\n");
-        ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eosPT.eos_low);
-        hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eosPT.eos_low);
-        dh = -1e-12 * hc; //TODO 1e-6 ?
-        h0 = hc + dh;
-        h1 = 0.0 - dh;
-        tov_pt_initial_condition(ec, pc, dh, eosPT.eos_low, vars); // Set up boundary condition
+    ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eosPT.eos_up);
+    hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eosPT.eos_up);
+    dh = -1e-12 * hc;
+    h0 = hc + dh;
+    h1 = 0.0 - dh;
+    tov_pt_initial_condition(ec, pc, dh, eosPT.eos_up, vars);
 
-        h = h0;
-        printf("Initial condition set.\n");
-        while (h > h1) {
-            printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
-            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
-            if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
-        }
-        printf("Done with the loop if hc < hpt\n");
-
-    }else{
-        printf("Hc > hpt\n");
-        ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eosPT.eos_up);
-        hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eosPT.eos_up);
-        dh = -1e-12 * hc;
-        h0 = hc + dh;
-        h1 = 0.0 - dh;
-        tov_pt_initial_condition(ec, pc, dh, eosPT.eos_up, vars);
-
-        // High density integration of the star
-        params.flag_up = 1;
-        h = h0;
-        while (h > hpt) {
-            printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
-            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
-            if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator \n");
-        }
-        // Upper PT point
-        h=hpt;
-        printf("Exact PT point (upper) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+    // High density integration of the star
+    params.flag_up = 1;
+    h = h0;
+    while (h > hpt) {
+        printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
         s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
-        if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
-        printf("Values of b before correction %.6e\n", vars->b);
-        /* Phase transition correction of the tidal love number.
-        * Implements Eq.(41) of Pereira et al. 2020 ApJ 895 28
-        * Note: Eq.(14) of Postnikov et al. 2010 Phys. Rev. D 82, 024016
-        * takes an approximation for the denominator on the correction terms
-        */
-        double r3 = (vars->r)*(vars->r)*(vars->r);
-        double rho_bar = (vars->m + 4.0 * LAL_PI * r3 * pres_pt)/ (4.0 / 3.0 * LAL_PI * r3 ) ;
-        vars->b += - vars->H / vars->r * dpt_eps * 3.0 / rho_bar ;
-        printf("Values of b after correction %.6e\n", vars->b);
-        // Lower PT point
-        h=hpt;
-        params.flag_up = 0;
-        s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
-        if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
-        printf("Exact PT point (lower) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
-
-        // Low density integration of the star
-        while (h > h1) {
-            printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
-            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
-            if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
-        }
+        if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator \n");
     }
+    // Upper PT point
+    h=hpt;
+    printf("Exact PT point (upper) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+    s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+    if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
+    printf("Values of b before correction %.6e\n", vars->b);
+    /* Phase transition correction of the tidal love number.
+    * Implements Eq.(41) of Pereira et al. 2020 ApJ 895 28
+    * Note: Eq.(14) of Postnikov et al. 2010 Phys. Rev. D 82, 024016
+    * takes an approximation for the denominator on the correction terms
+    */
+    double r3 = (vars->r)*(vars->r)*(vars->r);
+    double rho_bar = (vars->m + 4.0 * LAL_PI * r3 * pres_pt)/ (4.0 / 3.0 * LAL_PI * r3 ) ;
+    vars->b += - vars->H / vars->r * dpt_eps * 3.0 / rho_bar ;
+    printf("Values of b after correction %.6e\n", vars->b);
+    // Lower PT point
+    h=hpt;
+    params.flag_up = 0;
+    s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+    if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
+    printf("Exact PT point (lower) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+
+    // Low density integration of the star
+    while (h > h1) {
+        printf("Star integration (hc before PT) h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+        s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+        if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR,"Error encountered in GSL's ODE integrator\n");
+    }
+
     printf("Compute the compactness and the y for Lambda ...\n");
     /* compute tidal Love numbers and compactness at the surface of the star */
     double comp = vars->m / vars->r;      /* compactness */
@@ -1054,7 +1034,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
  * @param[out] love_number_k3 The k_3 tidal love number of the star.
  * @param[out] love_number_k4 The k_4 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
- * @param eosPT EoS with phase transition object, contains 2 EoSs and phase transition properties
+ * @param eos EoS with phase transition object, contains 2 EoSs and phase transition properties
  * @param[in] epsrel The relative error in the TOV solver routine.
  * @retval 0 Success.
  * @retval <0 Failure.
@@ -1232,10 +1212,9 @@ int XLALSimNeutronStarPTODEIntegrate(
     struct multiplePartEOS eos)
 {
     const double epsrel = 1e-6;
-    if (eos.number_of_PT == 0){
-        printf("are we here ??? \n");
+    if (eos.number_of_PT == 0 || (central_pressure_si * LAL_G_C4_SI) <= eos.pres_pt[0]){ // if EOS has no phase transition, or has a phase transition but the central pressure of the star is below the phase transition pressure.
         return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos.two_part_eos[0].eos1, epsrel); // TODO extend the old TOV solver to phase transitions
-    }else{
+    } else{
         return XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(radius, mass, baryon_mass,love_number_k2, love_number_k3, love_number_k4, central_pressure_si, eos, epsrel);
     }
 
