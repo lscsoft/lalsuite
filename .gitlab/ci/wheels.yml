@@ -17,7 +17,11 @@
   artifacts:
     expire_in: 18h
     paths:
+      # built wheels
       - wheelhouse
+      # log files
+      - "lal*/**/config.log"
+      - "lal*/**/test-suite.log"
     when: always
 
 # do some simple sanity checks in a virtualenv
