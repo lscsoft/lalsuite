@@ -11,7 +11,7 @@
     - !reference [.ci-merge-build, rules]
 
 .long-test-job:
-  image: igwn/lalsuite-dev:el8-testing
+  image: quay.io/igwn/lalsuite-dev:el8-testing
   extends:
     - .rpmbuild:el8
     - .integration-tests
@@ -99,7 +99,7 @@ lalpulsar_longtests:
     when: on_failure
 
 top-level:
-  image: igwn/lalsuite-dev:el8-testing
+  image: quay.io/igwn/lalsuite-dev:el8-testing
   needs: []
   extends:
     - .make-distcheck

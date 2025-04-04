@@ -20,7 +20,7 @@
 platform:debian:bookworm:
   extends:
     - .platform-test
-  image: igwn/lalsuite-dev:bookworm
+  image: quay.io/igwn/lalsuite-dev:bookworm
 
 .platform-test:conda:
   extends:
@@ -42,7 +42,7 @@ platform:debian:bookworm:
     - !reference [.conda-lalsuite-dev]
 
 platform:conda:linux:
-  image: igwn/base:conda
+  image: quay.io/igwn/base:conda
   extends:
     - .platform-test:conda
 
