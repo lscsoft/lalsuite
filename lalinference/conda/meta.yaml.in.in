@@ -33,6 +33,12 @@
 {% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
+# we can build manuals when:
+# - not cross-compiling
+# - not Python 3.9 (no astropy available for numpy 2.x)
+{% set manpages = False %}
+{% set manpages = True %}  # [py!=39 and build_platform == target_platform]
+
 package:
   name: {{ name }}-split
   version: {{ version|replace('-', '.') }}
@@ -85,7 +91,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalinference/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Inference Library data files
       description: |
@@ -141,7 +146,6 @@ outputs:
       doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinference/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Inference Library shared object libraries
       description: |
@@ -153,8 +157,6 @@ outputs:
     script: build-python.sh
     build:
       error_overlinking: true
-      ignore_run_exports:
-        - python
       script_env:
         - CI_COMMIT_TAG
         - CI_PIPELINE_SOURCE
@@ -228,7 +230,6 @@ outputs:
       doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinference/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Inference Library
       description: |
@@ -239,7 +240,6 @@ outputs:
     script: build-bin.sh
     build:
       ignore_run_exports:
-        - python
         # extras to help the solver
         - icu *
       script_env:
@@ -257,7 +257,7 @@ outputs:
       build:
         - {{ compiler('c') }}
         - {{ stdlib("c") }}
-        - help2man >=1.37  # [build_platform == target_platform]
+        - help2man >=1.37  # [manpages]
         - llvm-openmp  # [osx and mpi != 'nompi']
         - make
         - pkg-config >=0.18.0
@@ -277,14 +277,14 @@ outputs:
         - python
         - {{ pin_subpackage('python-lalinference', exact=True) }}
         # run requirements needed for help2man (not when cross compiling)
-        - astropy >=1.1.1  # [build_platform == target_platform]
-        - h5py  # [build_platform == target_platform]
-        - igwn-ligolw  # [build_platform == target_platform]
-        - ligo-gracedb  # [build_platform == target_platform]
-        - matplotlib-base >=1.2.0  # [build_platform == target_platform]
-        - python-lal >={{ lal_version }}  # [build_platform == target_platform]
-        - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
-        - scipy >=0.9.0  # [build_platform == target_platform]
+        - astropy >=1.1.1  # [manpages]
+        - h5py  # [manpages]
+        - igwn-ligolw  # [manpages]
+        - ligo-gracedb  # [manpages]
+        - matplotlib-base >=1.2.0  # [manpages]
+        - python-lal >={{ lal_version }}  # [manpages]
+        - python-lalsimulation >={{ lalsimulation_version }}  # [manpages]
+        - scipy >=0.9.0  # [manpages]
         # extras to help the solver
         - icu *
       run:
@@ -353,7 +353,6 @@ outputs:
       doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinference/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Inference Library
       description: |
@@ -364,7 +363,6 @@ about:
   doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinference/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
-  license_family: GPL
   license_file: COPYING
   summary: LSC Algorithm Inference Library
   description: |
