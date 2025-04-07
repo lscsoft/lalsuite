@@ -97,7 +97,7 @@ variables:
   AUTORECONF: "autoreconf --verbose --warnings=error"
 
   # version of python to use for builds
-  LALSUITE_PYTHON_VERSION: "3.10"
+  LALSUITE_PYTHON_VERSION: "3.12"
 
   # gitlab runners have 4 cores per job
   CPU_COUNT: 4

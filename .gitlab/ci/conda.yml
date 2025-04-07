@@ -25,18 +25,15 @@
   - conda config --file ${CONDARC} --set always_yes yes
   - conda config --file ${CONDARC} --add channels conda-forge
   - conda config --file ${CONDARC} --set channel_priority strict
-  # see https://github.com/conda-forge/conda-forge-ci-setup-feedstock/pull/168
-  - conda config --show aggressive_update_packages >> ${CONDARC}
-  - conda config --file ${CONDARC} --remove aggressive_update_packages openssl
   # install build helpers
   - retry conda install
         --name base
         --satisfied-skip-solve
+        "conda>=25"
         "conda-build!=3.18.10,!=24.11.1"
         conda-forge-pinning
         "conda-smithy>=3.7.5"
         conda-libmamba-solver
-        "py-lief<0.15"
   # print info
   - conda activate base
   - conda info --all
@@ -95,6 +92,7 @@
     # regenerate the feedstock
     - retry conda smithy regenerate --no-check-uptodate
     - git ls-files
+    - conda smithy recipe-lint --conda-forge || true  # lint, but don't fail
     # configure CONDA_CONFIG
     - _CONDA_CONFIG_PYTHON_REGEX="(.*python)${LALSUITE_PYTHON_VERSION}(.*)"
     - |

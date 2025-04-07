@@ -42,6 +42,7 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - {{ stdlib("c") }}
     - help2man >=1.37
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
@@ -82,7 +83,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Simulation Library data files
       description: |
@@ -97,6 +97,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - llvm-openmp  # [osx]
       host:
         - gsl
@@ -137,7 +138,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Simulation Library
       description: |
@@ -147,13 +147,10 @@ outputs:
         applications that use the LAL Simulation library.
 
   - name: python-lalsimulation
-    build:
-      ignore_run_exports:
-        - liblalsimulation
-        - python
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - python
       host:
         - gsl
@@ -194,7 +191,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Simulation Library
       description: |
@@ -203,12 +199,10 @@ outputs:
         This package contains the python bindings.
 
   - name: lalsimulation
-    build:
-      ignore_run_exports:
-        - python
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
       host:
         - gsl
         - liblal >={{ lal_version }}
@@ -251,7 +245,6 @@ about:
   doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalsimulation/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
-  license_family: GPL
   license_file: COPYING
   summary: LSC Algorithm Simulation Library
   description: |

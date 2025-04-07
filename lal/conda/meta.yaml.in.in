@@ -6,7 +6,7 @@
 
 {% set name = "lal" %}
 
-# default FFT implementation
+# default FFT implementation to FFTW
 {% if fft_impl is not defined %}
 {% set fft_impl = "fftw" %}
 {% endif %}
@@ -22,12 +22,12 @@
 {% set version = base_version %}
 {% endif %}
 
+# dependency versions
+{% set swig_version = "@MIN_SWIG_VERSION@" %}
+
 # avoid circular imports that would break migrations
 {% set migrating = False %}
-{% set migrating = True %}  # [python_impl!='cpython' or py>=312]
-
-# dependencies
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set migrating = True %}  # [python_impl!='cpython' or py>=313]
 
 package:
   name: {{ name }}-split
@@ -50,6 +50,7 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - {{ stdlib("c") }}
     - pkg-config >=0.18.0
     - make
     - bc
@@ -65,12 +66,14 @@ outputs:
   - name: liblal
     script: install-lib.sh
     build:
+      error_overlinking: true
       run_exports:
         - {{ pin_subpackage("liblal", max_pin="x") }}
       string: {{ fft_impl }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - make  # [not win]
         - swig >={{ swig_version }}
       host:
@@ -79,11 +82,6 @@ outputs:
         - hdf5
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
         - zlib
-      run:
-        - fftw  # [fft_impl == "fftw"]
-        - gsl
-        - hdf5
-        - libzlib
       run_constrained:
         # make sure downstream packages are updated beyond the first
         # appearance of liblal
@@ -94,17 +92,16 @@ outputs:
         - pkg-config
       commands:
         # check library
-        - test -f ${PREFIX}/lib/liblal${SHLIB_EXT}  # [not win]
-        - test -f ${PREFIX}/lib/liblalsupport${SHLIB_EXT}  # [not win]
+        - test -f ${PREFIX}/lib/liblal${SHLIB_EXT}  # [unix]
+        - test -f ${PREFIX}/lib/liblalsupport${SHLIB_EXT}  # [unix]
         # check pkg-config
-        - pkg-config --print-errors --exact-version "{{ version }}" lal
-        - pkg-config --print-errors --exact-version "{{ version }}" lalsupport
+        - pkg-config --print-errors --exact-version "${PKG_VERSION}" lal
+        - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalsupport
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
-      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LVK Algorithm Library shared object libraries
       description: |
@@ -116,11 +113,20 @@ outputs:
     script: build-python.sh
     build:
       error_overlinking: true
+      force_use_keys:
+        # force this package to use the same keys as liblal so that
+        # we ensure a unique python-lal build string for each unique
+        # liblal build
+        - fftw  # [fft_impl == "fftw"]
+        - gsl
+        - hdf5
+        - mkl  # [fft_impl == "mkl"]
+        - zlib
       ignore_run_exports:
+        # needed by ./configure but not linked by python-lal
         - libzlib
-        - python
         # things we declare to help the solver, but don't actually need
-        - mkl
+        - mkl  # [fft_impl == "mkl"]
       script_env:
         - CI_COMMIT_TAG
         - CI_PIPELINE_SOURCE
@@ -130,6 +136,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - help2man >=1.37
         - make  # [unix]
         - pkg-config >=0.18.0
@@ -156,24 +163,18 @@ outputs:
     test:
       requires:
         - freezegun
-        {% if not migrating %}
-        - igwn-ligolw
-        {% endif %}
+        - igwn-ligolw  # [not migrating]
         - lscsoft-glue
         - pytest >=4.0.0a0
       source_files:
         - test/python
       commands:
-        - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python {% if migrating -%}
-              --ignore test/python/test_rate.py
-              -k 'not lal.rate and not lal.series'
-        {%- endif %}
+        - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python {% if migrating -%} --ignore test/python/test_rate.py -k 'not lal.rate and not lal.series' {%- endif %}
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
-      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LVK Algorithm Library Python bindings
       description: |
@@ -184,14 +185,23 @@ outputs:
     script: install-bin.sh
     build:
       error_overlinking: true
+      force_use_keys:
+        # force this package to use the same keys as liblal so that
+        # we ensure a unique lal build string for each unique liblal build
+        - fftw  # [fft_impl == "fftw"]
+        - gsl
+        - hdf5
+        - mkl  # [fft_impl == "mkl"]
+        - zlib
       ignore_run_exports:
-        - libzlib
-        - python
+        # things we declare to help the solver, but don't actually need
+        - mkl
       string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37  # [build_platform == target_platform]
+        - {{ stdlib("c") }}
+        - help2man >=1.37
         - make  # [unix]
         - sed
       host:
@@ -202,38 +212,43 @@ outputs:
         - {{ pin_subpackage('python-lal', exact=True) }}
         - zlib
         # extras to help the solver
-        - mkl {{ mkl }}  # [fft_impl == "mkl"]
+        - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
       run:
         - fftw  # [fft_impl == "fftw"]
+        - igwn-ligolw  # [not migrating]
         - {{ pin_subpackage('liblal', exact=True) }}
         - igwn-segments
         - numpy
         - python
         - {{ pin_subpackage('python-lal', exact=True) }}
+    test:
+      commands:
+        - lal_fftw_wisdom --help  # [fft_impl == "fftw"]
+        - lal_fftwf_wisdom --help  # [fft_impl == "fftw"]
+        - lal_path2cache <<< A-B-0-1.gwf
+        - lal_searchsum2cache --help  # [not migrating]
+        - lal_simd_detect
+        - lal_version --verbose
+        - test "$(lal_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"  # [unix]
+        - test "$(lal_tconvert Fri, 13 May 2005 06:13:07 +0000)" -eq 800000000  # [unix]
+        - test "$(lal_tconvert 1831518865)" == "Tue Jan 19 03:14:07 UTC 2038"
+        - test "$(lal_tconvert 1831518866)" == "Tue Jan 19 03:14:08 UTC 2038"
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LVK Algorithm Library runtime tools
       description: |
         The LVK Algorithm Library for gravitational wave data analysis.
         This package contains the runtime tools.
-    test:
-      commands:
-        - lal_version --verbose
-        - lal_simd_detect
-      imports:
-        - lal
 
 about:
   home: https://wiki.ligo.org/Computing/LALSuite
   doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
-  license_family: GPL
   license_file: COPYING
   summary: LVK Algorithm Library
   description: |

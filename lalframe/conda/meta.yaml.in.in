@@ -44,6 +44,8 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - {{ stdlib("c") }}
+    - help2man >=1.37
     - make
     - pkg-config
     - swig >={{ swig_version }}
@@ -62,6 +64,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - make  # [not win]
         - swig >={{ swig_version }}
       host:
@@ -88,7 +91,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Frame Library shared object libraries
       description: |
@@ -101,7 +103,6 @@ outputs:
     build:
       error_overlinking: true
       ignore_run_exports:
-        - python
         # extras to help the solver
         - icu *
       script_env:
@@ -112,7 +113,8 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37  # [build_platform == target_platform]
+        - {{ stdlib("c") }}
+        - help2man >=1.37
         - make
         - pkg-config
         - swig >={{ swig_version }}
@@ -149,7 +151,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Frame Library
       description: |
@@ -165,7 +166,8 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37  # [build_platform == target_platform]
+        - {{ stdlib("c") }}
+        - help2man >=1.37
         - make
       host:
         - liblal >={{ lal_version }}
@@ -196,7 +198,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Frame Library
       description: |
@@ -208,7 +209,6 @@ about:
   doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
-  license_family: GPL
   license_file: COPYING
   summary: LSC Algorithm Frame Library
   description: |

@@ -46,6 +46,8 @@ requirements:
   build:
     - bc  # [build_platform == target_platform]
     - {{ compiler('c') }}
+    - {{ stdlib("c") }}
+    - help2man >=1.37
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
     - make
@@ -81,7 +83,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Pulsar Library data files
       description: |
@@ -98,6 +99,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - libgomp  # [linux]
         - llvm-openmp  # [osx]
         - make
@@ -138,7 +140,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Pulsar Library shared object libraries
       description: |
@@ -150,9 +151,6 @@ outputs:
     script: build-python.sh
     build:
       error_overlinking: true
-      ignore_run_exports:
-        - cfitsio
-        - python
       script_env:
         - CI_COMMIT_TAG
         - CI_PIPELINE_SOURCE
@@ -164,7 +162,8 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37  # [build_platform == target_platform]
+        - {{ stdlib("c") }}
+        - help2man >=1.37
         - make
         - pkg-config
         - swig >={{ swig_version }}
@@ -182,8 +181,6 @@ outputs:
         - python-lalframe >={{ lalframe_version }}
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        # extras to assist the solver, but not actually used
-        - cfitsio
       run:
         - astropy
         - h5py
@@ -197,8 +194,6 @@ outputs:
         - sympy
     test:
       requires:
-        - mock  # [py<33]
-        - pathlib  # [py<34]
         - pytest >=4.0.0a0
         - solar_system_ephemerides
         - tqdm
@@ -226,7 +221,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Pulsar Library
       description: |
@@ -236,15 +230,14 @@ outputs:
   - name: lalpulsar
     script: install-bin.sh
     build:
-      ignore_run_exports:
-        - python
       # no python-lalinference on Python 3.9
       # (astropy (for python-lalsimulation) is incompatible with numpy 2)
       skip: true  # [py<310]
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37  # [build_platform == target_platform]
+        - {{ stdlib("c") }}
+        - help2man >=1.37
         - make
       host:
         - bc  # [build_platform == target_platform]
@@ -316,7 +309,6 @@ outputs:
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
-      license_family: GPL
       license_file: COPYING
       summary: LSC Algorithm Pulsar Library
       description: |
@@ -331,7 +323,6 @@ about:
   doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
-  license_family: GPL
   license_file: COPYING
   summary: LSC Algorithm Pulsar Library
   description: |
