@@ -2388,7 +2388,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
 	REAL8 damp21_max =  5;
 	REAL8 damp33_min = -3;
 	REAL8 damp33_max =  3;
-	
+
         if ((pptb=LALInferenceGetProcParamVal(commandLine,"--LIV_A_sign"))) {
           REAL8 LIV_A_sign;
           LIV_A_sign = atof(pptb->value);
@@ -2476,7 +2476,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
 	/* Sub-dominant mode amplitude corrections (PhenomXPHM) */
 	if (checkParamInList(ppt->value,"damp21")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "damp21", tmpVal, damp21_min, damp21_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"damp33")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "damp33", tmpVal, damp33_min, damp33_max, LALINFERENCE_PARAM_LINEAR);
-	
+
         if (checkParamInList(ppt->value,"lambda_eff")) {
           if (ppta==NULL) {
             XLALPrintError("A value for nonGR_alpha has to be passed with lambda_eff.\n");

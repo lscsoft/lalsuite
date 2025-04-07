@@ -1053,7 +1053,7 @@ int IMRPhenomXGetPhaseCoefficients(
 	REAL8 delta           = pWF->delta;
 
 	//LALDict *LALparams    = pWF->LALparams;
-	
+
 	/* Pre-initialize all phenomenological coefficients */
 	pPhase->a0 = 0.0;
 	pPhase->a1 = 0.0;

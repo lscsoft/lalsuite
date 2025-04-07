@@ -1834,7 +1834,7 @@ static int IMRPhenomXPHMTwistUp(
   /* Extract the testing GR parameters for subdominant mode amplitude variations*/
   REAL8 damp21 = XLALSimInspiralWaveformParamsLookupNonGRAmp21(pWF->LALparams);
   REAL8 damp33 = XLALSimInspiralWaveformParamsLookupNonGRAmp33(pWF->LALparams);
-  
+
   if(pPrec->MBandPrecVersion == 0) /* No multibanding for angles */
   {
     if(pPrec->IMRPhenomXPNRUseTunedAngles)
@@ -2005,10 +2005,10 @@ static int IMRPhenomXPHMTwistUp(
 
   COMPLEX16 hp_21_sum  = 0;
   COMPLEX16 hc_21_sum  = 0;
-  
+
   COMPLEX16 hp_33_sum  = 0;
   COMPLEX16 hc_33_sum  = 0;
-  
+
 
   /* Sum over l = 2 modes */
   if (l == 2 && mprime == 2){
