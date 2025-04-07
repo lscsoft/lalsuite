@@ -46,6 +46,7 @@ requirements:
   build:
     - bc  # [build_platform == target_platform]
     - {{ compiler('c') }}
+    - {{ stdlib("c") }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
     - make
@@ -98,6 +99,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - libgomp  # [linux]
         - llvm-openmp  # [osx]
         - make
@@ -164,6 +166,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - help2man >=1.37  # [build_platform == target_platform]
         - make
         - pkg-config
@@ -244,6 +247,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - help2man >=1.37  # [build_platform == target_platform]
         - make
       host:
