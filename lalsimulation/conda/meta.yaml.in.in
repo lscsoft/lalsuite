@@ -42,6 +42,7 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - {{ stdlib("c") }}
     - help2man >=1.37
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
@@ -97,6 +98,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - llvm-openmp  # [osx]
       host:
         - gsl
@@ -154,6 +156,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - python
       host:
         - gsl
@@ -209,6 +212,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
       host:
         - gsl
         - liblal >={{ lal_version }}
