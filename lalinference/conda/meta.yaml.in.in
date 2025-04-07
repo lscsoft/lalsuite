@@ -54,6 +54,7 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - {{ stdlib("c") }}
     - make
     - pkg-config
     - swig >={{ swig_version }}
@@ -101,6 +102,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - llvm-openmp  # [osx]
         - make
         - swig >={{ swig_version }}
@@ -164,6 +166,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - make
         - pkg-config
         - swig >={{ swig_version }}
@@ -253,6 +256,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - {{ stdlib("c") }}
         - help2man >=1.37  # [build_platform == target_platform]
         - llvm-openmp  # [osx and mpi != 'nompi']
         - make
