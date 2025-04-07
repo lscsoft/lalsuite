@@ -250,6 +250,9 @@ wheel:pypi:
         echo "Skipping rest of job as EXECUTE_DEPLOY_ACTIONS!=yes"
         exit 100
       fi
+    # check things
+    - python -m pip check wheelhouse.*
+    # upload
     - python -m twine upload wheelhouse/*
   needs:
     - wheel:cp39-cp39-manylinux_2_28_x86_64
