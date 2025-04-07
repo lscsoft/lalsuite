@@ -29,6 +29,7 @@
   - retry conda install
         --name base
         --satisfied-skip-solve
+        "conda>=25"
         "conda-build!=3.18.10,!=24.11.1"
         conda-forge-pinning
         "conda-smithy>=3.7.5"
