@@ -95,6 +95,7 @@
     # regenerate the feedstock
     - retry conda smithy regenerate --no-check-uptodate
     - git ls-files
+    - conda smithy recipe-lint --conda-forge || true  # lint, but don't fail
     # configure CONDA_CONFIG
     - _CONDA_CONFIG_PYTHON_REGEX="(.*python)${LALSUITE_PYTHON_VERSION}(.*)"
     - |
