@@ -74,7 +74,8 @@ static const int NRSUR_LMAX = 4;
 // The binary data for NRSur7dq2 (NRSur7dq2.h5) is available in lalsuite-extra or at
 // https://www.black-holes.org/surrogates
 // The binary data for NRSur7dq4 (NRSur7dq4_v1.0.h5) is available at:
-// https://git.ligo.org/waveforms/software/lalsuite-waveform-data.
+// https://git.ligo.org/waveforms/software/lalsuite-waveform-data
+// and on Zenodo at: https://zenodo.org/records/14999310.
 // Get the lalsuite-waveform-data repo or put the data into a location in your
 // LAL_DATA_PATH.
 // The NRSur7dq4 data is also available on CIT at /home/lalsimulation_data and and via CVMFS

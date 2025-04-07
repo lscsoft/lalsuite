@@ -43,16 +43,8 @@ from configparser import (ConfigParser, NoOptionError)
 
 import igwn_segments as segments
 from igwn_segments import utils as segmentsUtils
-# pipeline.py is required, but the version available in lalsuite is
-# currently broken and we can't add a dependency on gstlal because it would
-# create a cycle, so we make the import optional.  the program cannot run
-# to completion without it, but it can print a --help message and exit with
-# a success code, which is enough to make lalsuite's build scripts happy.
-try:
-	from gstlal import pipeline
-except ImportError:
-	pass
 from lal import LIGOTimeGPS
+from lal import pipeline
 from lal.utils import CacheEntry
 from lalburst import cafe
 from lalburst import timeslides

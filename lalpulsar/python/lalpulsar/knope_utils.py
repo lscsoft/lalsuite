@@ -14,7 +14,7 @@ __version__ = "$Revision$"
 
 import os
 import re
-from glue import pipeline
+from lal import pipeline
 import sys
 import ast
 import json

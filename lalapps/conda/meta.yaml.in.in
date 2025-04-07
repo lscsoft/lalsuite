@@ -125,7 +125,6 @@ test:
   imports:
     - lalapps
     - lalapps.cosmicstring
-    - lalapps.inspiral
   requires:
     - ldas-tools-framecpp
   commands:

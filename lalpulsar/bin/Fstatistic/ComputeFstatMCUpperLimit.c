@@ -80,7 +80,7 @@ int main( int argc, char *argv[] )
   CHAR *sft_pattern = NULL;
   CHAR *ephem_earth = NULL;
   CHAR *ephem_sun = NULL;
-  INT4 rng_med_win = 50;
+  INT4 rng_med_win = FstatOptionalArgsDefaults.runningMedianWindow;
   REAL8 max_rel_err = 1.0e-3;
   REAL8 h0_brake = 0.75;
   INT4 MC_trials_init = 1e6;

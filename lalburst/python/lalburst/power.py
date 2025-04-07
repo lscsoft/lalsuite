@@ -36,9 +36,9 @@ import time
 
 import igwn_segments as segments
 from igwn_segments import utils as segmentsUtils
-from glue import pipeline
 import lal
 from lal import iterutils
+from lal import pipeline
 from lal.utils import CacheEntry
 import lalburst
 from . import cafe

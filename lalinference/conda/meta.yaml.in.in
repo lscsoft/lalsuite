@@ -189,7 +189,6 @@ outputs:
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - igwn-ligolw >={{ python_ligo_lw_version }}
         - igwn-segments
-        - lscsoft-glue >=1.54.1
         - matplotlib-base >=1.2.0
         - numpy
         - python
@@ -278,7 +277,6 @@ outputs:
         - h5py  # [build_platform == target_platform]
         - igwn-ligolw  # [build_platform == target_platform]
         - ligo-gracedb  # [build_platform == target_platform]
-        - lscsoft-glue >=1.54.1  # [build_platform == target_platform]
         - matplotlib-base >=1.2.0  # [build_platform == target_platform]
         - python-lal >={{ lal_version }}  # [build_platform == target_platform]
         - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
@@ -295,7 +293,6 @@ outputs:
         - liblalmetaio >={{ lalmetaio_version }}
         - ligo-gracedb
         - llvm-openmp  # [osx and mpi != 'nompi']
-        - lscsoft-glue >=1.54.1
         - matplotlib-base >=1.2.0
         - {{ mpi }}  # [mpi != 'nompi']
         - python

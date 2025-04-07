@@ -148,7 +148,6 @@ outputs:
       run:
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - igwn-ligolw
-        - lscsoft-glue
         - numpy
         - python
         - python-lal >={{ lal_version }}

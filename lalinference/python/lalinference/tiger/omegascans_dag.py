@@ -28,7 +28,7 @@ usage="""  omegascans_dag.py config.ini [options]
 #
 ###############################################################################
 
-from glue import pipeline
+from lal import pipeline
 from optparse import OptionParser
 import uuid
 import os

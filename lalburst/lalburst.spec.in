@@ -40,7 +40,6 @@ BuildRequires: python3-lal >= @MIN_LAL_VERSION@
 BuildRequires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python3dist(igwn-ligolw) >= @MIN_PYTHON_LIGO_LW_VERSION@
-BuildRequires: python3dist(lscsoft-glue)
 BuildRequires: python3dist(matplotlib)
 BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 BuildRequires: python3dist(pillow)
@@ -109,7 +108,6 @@ Requires: python3-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python3dist(igwn-ligolw)
 Requires: python3dist(igwn-segments)
-Requires: python3dist(lscsoft-glue)
 Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 Requires: python3dist(scipy) >= @MIN_SCIPY_VERSION@
 Requires: python3dist(tqdm)

@@ -50,7 +50,6 @@ BuildRequires: python3dist(astropy) >= 1.1.1
 BuildRequires: python3dist(gwdatafind)
 BuildRequires: python3dist(healpy) >= 1.9.1
 BuildRequires: python3dist(h5py)
-BuildRequires: python3dist(lscsoft-glue) >= @MIN_GLUE_VERSION@
 BuildRequires: python3dist(matplotlib) >= 1.2.0
 BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 BuildRequires: python3dist(pytest)
@@ -138,7 +137,6 @@ Requires: python3dist(h5py)
 Requires: python3dist(igwn-ligolw) >= @MIN_PYTHON_LIGO_LW_VERSION@
 Requires: python3dist(igwn-segments)
 Requires: python3dist(ligo-gracedb)
-Requires: python3dist(lscsoft-glue) >= @MIN_GLUE_VERSION@
 Requires: python3dist(matplotlib) >= 1.2.0
 Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 Requires: python3dist(scipy) >= 0.8

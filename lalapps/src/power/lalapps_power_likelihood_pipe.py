@@ -42,8 +42,8 @@ from configparser import ConfigParser
 
 
 from igwn_segments import utils as segmentsUtils
-from glue import pipeline
 import lal
+from lal import pipeline
 from lal.utils import CacheEntry
 from lalburst import power
 

@@ -1105,7 +1105,8 @@ static int SurrogateCore(
  *
  * The binary data HDF5 file (SEOBNRv4T_surrogate_v2.0.0.hdf5)
  * is available at:
- * https://git.ligo.org/waveforms/software/lalsuite-waveform-data.
+ * https://git.ligo.org/waveforms/software/lalsuite-waveform-data
+ * and on Zenodo at: https://zenodo.org/records/14999310.
  * Get the lalsuite-waveform-data repo or put the data into a location in your
  * LAL_DATA_PATH.
  * The data is also available on CIT at /home/lalsimulation_data and and via CVMFS
@@ -1297,6 +1298,7 @@ UNUSED static void Surrogate_Init_LALDATA(void)
       "Unable to resolve data file '%s' in $LAL_DATA_PATH.\n"
       "Note: LALSuite versions >= 7.25 require data files that are publicly available at:\n"
       "https://git.ligo.org/waveforms/software/lalsuite-waveform-data\n"
+      "and on Zenodo at: https://zenodo.org/records/14999310.\n"
       "For earlier LALSuite versions, use the files in lalsuite-extra, available at:\n"
       "https://git.ligo.org/lscsoft/lalsuite-extra\n",
       datafile);

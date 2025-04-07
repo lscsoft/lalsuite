@@ -9,7 +9,7 @@ from optparse import OptionParser
 import sys
 import os
 import uuid
-from glue import pipeline
+from lal import pipeline
 from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
