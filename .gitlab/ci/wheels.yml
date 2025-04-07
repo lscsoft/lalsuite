@@ -164,10 +164,6 @@ wheel:cp311-cp311-manylinux_2_28_x86_64:
   extends:
     - .wheel:manylinux_2_28_x86_64
 wheel:cp312-cp312-manylinux_2_28_x86_64:
-  # allow to fail due to build error in ligo-segments:
-  #   https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/2418#note_1324099
-  # revert once !2397 is merged
-  allow_failure: true
   extends:
     - .wheel:manylinux_2_28_x86_64
   rules:  # reference build for this platform
