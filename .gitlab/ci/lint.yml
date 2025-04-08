@@ -155,7 +155,7 @@ lint:pre-commit:
     - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
   script:
     # install pre-commit
-    - !reference [.pip-venv]
+    - !reference [.python-venv]
     - pip install pre-commit
     # run pre-commit
     - |

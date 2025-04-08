@@ -260,8 +260,8 @@ default:
     declare -x | cut -c 12-
     echo "----- env -----"
 
-# set up Python virtual environment for pip install
-.pip-venv:
+# set up Python virtual environment for pip installing local packages, etc.
+.python-venv:
   - !reference [.retry]
   - |
     rm -rf .venv/

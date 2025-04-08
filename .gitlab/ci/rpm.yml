@@ -78,7 +78,7 @@
           ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
       # create a codeclimate report from the rpmlint report
     - unset PIP_NO_INDEX && rm -rf ~/.pydistutils.cfg
-    - !reference [.pip-venv]
+    - !reference [.python-venv]
     - pip install rpmlint-codeclimate
     - |
       rpmlint -f rpmlintrc --info "*${PACKAGE}*" ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm > rpmlint.out || true
