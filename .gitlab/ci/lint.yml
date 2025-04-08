@@ -46,7 +46,7 @@ flake8-code_quality:
   extends:
     - .build-job
     - .lint
-  image: igwn/lalsuite-dev:el8-testing
+  image: quay.io/igwn/lalsuite-dev:el8-testing
   variables:
     CONFIGURE_FLAGS: "--disable-lalapps --disable-doxygen --disable-swig"
   artifacts:
@@ -144,7 +144,7 @@ lint:api-last-release:
 lint:pre-commit:
   extends:
     .lint
-  image: igwn/lalsuite-dev:el8
+  image: quay.io/igwn/lalsuite-dev:el8
   variables:
     GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
     PYTHON: python3.11    # pre-commit hooks require Python >=3.10
@@ -183,7 +183,7 @@ lint:depends:
   extends:
     - .build-job
     - .lint
-  image: igwn/lalsuite-dev:el8
+  image: quay.io/igwn/lalsuite-dev:el8
   before_script:
     - python3 -m pip install --upgrade pip
     - python3 -m pip install
@@ -201,7 +201,7 @@ lint:gitignore:
   extends:
     - .build-job
     - .lint
-  image: igwn/lalsuite-dev:el8
+  image: quay.io/igwn/lalsuite-dev:el8
   script:
     # build in source directory, including tests
     - ./00boot

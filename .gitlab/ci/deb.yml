@@ -8,7 +8,7 @@
   extends:
     - .debian:deb
     - .build-from-tarball
-  image: igwn/base:bookworm
+  image: quay.io/igwn/base:bookworm
   variables:
     # tell debhelper to parallelise the build
     DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"

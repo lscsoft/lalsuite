@@ -114,7 +114,7 @@
 .rpmbuild:el8:
   extends:
     - .rpmbuild
-  image: igwn/base:el8-testing
+  image: quay.io/igwn/base:el8-testing
 
 # -- builds
 

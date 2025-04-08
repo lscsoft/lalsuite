@@ -43,7 +43,7 @@
 
 # template for jobs that use conda (in any context)
 .conda-job:
-  image: igwn/base:conda
+  image: quay.io/igwn/base:conda
   variables:
     # where to write conda packages
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda-bld"

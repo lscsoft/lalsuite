@@ -7,7 +7,7 @@
 # Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap
 coverage:
   stage: coverage
-  image: igwn/base:conda
+  image: quay.io/igwn/base:conda
   timeout: 2 hours
   needs: []
   variables:
