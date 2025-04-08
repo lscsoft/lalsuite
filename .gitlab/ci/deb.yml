@@ -54,7 +54,7 @@
          -us -uc -r
          --lintian-opts --color=always --allow-root
     # create a codeclimate report from the lintian report
-    - !reference [.pip-venv]
+    - !reference [.python-venv]
     - pip install "lintian-codeclimate>=0.1.1"
     - |
       lintian --allow-root --fail-on none --info --color never ../${PACKAGE}_*.changes > lintian.out
