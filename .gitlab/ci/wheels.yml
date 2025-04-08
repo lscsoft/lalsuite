@@ -77,7 +77,7 @@
           --enable-python
           --enable-swig-python
           --without-ephem
-          PYTHON=${PYTHON}
+          PYTHON="${VIRTUAL_ENV}/bin/python3"
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
@@ -116,7 +116,7 @@
           --enable-python
           --enable-swig-python
           --without-ephem
-          PYTHON=$(which python)
+          PYTHON="${VIRTUAL_ENV}/bin/python3"
           LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
