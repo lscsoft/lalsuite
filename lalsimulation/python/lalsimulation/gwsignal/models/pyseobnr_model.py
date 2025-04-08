@@ -75,6 +75,10 @@ class SEOBNRv5EHM(CompactBinaryCoalescenceGenerator):
             if val is not None:
                 parameters_extra[key] = val
 
+        # indicates we are running pyseobnr through GWSignal. Emits proper
+        # warnings on non-reviewed model calls.
+        parameters_extra["gwsignal_environment"] = True
+
         self.parameter_check(units_sys="Cosmo", **parameters)
         self.waveform_dict["distance"] = self.waveform_dict["distance"].to(Mpc)
         self.waveform_dict = self._strip_units(self.waveform_dict)
@@ -221,6 +225,10 @@ class SEOBNRv5HM(CompactBinaryCoalescenceGenerator):
             if val is not None:
                 parameters_extra[key] = val
 
+        # indicates we are running pyseobnr through GWSignal. Emits proper
+        # warnings on non-reviewed model calls.
+        parameters_extra["gwsignal_environment"] = True
+
         self.parameter_check(units_sys="Cosmo", **parameters)
         self.waveform_dict["distance"] = self.waveform_dict["distance"].to(Mpc)
         self.waveform_dict = self._strip_units(self.waveform_dict)
@@ -358,11 +366,18 @@ class SEOBNRv5PHM(CompactBinaryCoalescenceGenerator):
             "ddSO",
             "deltaT_sampling",
             "omega_prec_deviation",
+            "enable_antisymmetric_modes",
+            "antisymmetric_modes_hm",
+            "antisymmetric_modes",
         ]
         for key in optional_params:
             val = parameters.pop(key, None)
             if val is not None:
                 parameters_extra[key] = val
+
+        # indicates we are running pyseobnr through GWSignal. Emits proper
+        # warnings on non-reviewed model calls.
+        parameters_extra["gwsignal_environment"] = True
 
         self.parameter_check(units_sys="Cosmo", **parameters)
         self.waveform_dict["distance"] = self.waveform_dict["distance"].to(Mpc)
