@@ -1,5 +1,5 @@
 EXTRA_DIST = \
-	cfitsio441.yaml \
+	cfitsio462.yaml \
 	numpy2.yaml \
-	python312.yaml \
+	python313.yaml \
 	$(END_OF_LIST)
