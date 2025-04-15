@@ -55,10 +55,10 @@
          --lintian-opts --color=always --allow-root
     # create a codeclimate report from the lintian report
     - !reference [.python-venv]
-    - pip install "lintian-codeclimate>=0.1.1"
+    - retry python -m pip install "lintian-codeclimate>=0.1.1"
     - |
       lintian --allow-root --fail-on none --info --color never ../${PACKAGE}_*.changes > lintian.out
-      python3 -m lintian_codeclimate lintian.out -d . -o $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
+      python -m lintian_codeclimate lintian.out -d . -o $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
       sed -i \
         -e "s|debian\/control|debian/control.in|g" \
         -e "s|debian\/|$PACKAGE/debian/|g" \

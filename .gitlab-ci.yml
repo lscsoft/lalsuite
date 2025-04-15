@@ -180,13 +180,13 @@ default:
     rm -rf .venv/
     ${PYTHON:-python3} -m venv .venv/
     source .venv/bin/activate
-    for n in python3 pip; do
+    for n in python python3 pip; do
       if [ "X`type -p ${n}`" != "X${VIRTUAL_ENV}/bin/${n}" ]; then
          echo "ERROR: virtual environment in '${VIRTUAL_ENV}' is missing ${n}" >&2
          exit 1
       fi
     done
-    pip install --upgrade pip
+    retry python -m pip install --upgrade pip
 
 # -- base templates ----------------------------------
 

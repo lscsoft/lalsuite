@@ -156,7 +156,7 @@ lint:pre-commit:
     # install pre-commit
     - PYTHON="python3.11"    # pre-commit hooks require Python >=3.10
     - !reference [.python-venv]
-    - pip install pre-commit
+    - retry python -m pip install pre-commit
     # run pre-commit
     - |
       echo "env: CI_COMMIT_AUTHOR=${CI_COMMIT_AUTHOR}"
