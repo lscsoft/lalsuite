@@ -171,7 +171,7 @@ the [Git LFS][gitlfs] conversion. Please note:
 The generation of some compact binary coalescence waveform models requires 
 additional files which need to be downloaded either from Zenodo or from a 
 git repository. The LALSuite extra waveform files are publicly available 
-on Zenodo at : 
+on Zenodo at: 
 
 https://zenodo.org/records/14999310
 
