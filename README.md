@@ -184,8 +184,8 @@ or for earlier LALSuite versions, the files in lalsuite-extra are at:
 
 https://git.ligo.org/lscsoft/lalsuite-extra\n
 
-Instructions for installation and download of these files 
-can be found in each link above.
+Instructions for installation and download of these 
+files can be found in each link above.
 
 The environment variable `LAL_DATA_PATH` needs to be set according to the 
 path to the downloaded files. 
