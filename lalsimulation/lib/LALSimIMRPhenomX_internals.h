@@ -62,77 +62,77 @@ extern "C" {
 
 /* ********************** CACHED VARIABLES ********************* */
 /*
-	Cached, recurring coefficients that occur in IMRPhenomX.
-	Must be frequency independent.
+    Cached, recurring coefficients that occur in IMRPhenomX.
+    Must be frequency independent.
 */
 typedef struct tagIMRPhenomXWaveformStruct
 {
-	/* Debug flag */
-	INT4 debug;
+    /* Debug flag */
+    INT4 debug;
 
-	/* Model Version Parameters */
-	INT4  IMRPhenomXInspiralPhaseVersion;
-	INT4  IMRPhenomXIntermediatePhaseVersion;
-	INT4  IMRPhenomXRingdownPhaseVersion;
+    /* Model Version Parameters */
+    INT4  IMRPhenomXInspiralPhaseVersion;
+    INT4  IMRPhenomXIntermediatePhaseVersion;
+    INT4  IMRPhenomXRingdownPhaseVersion;
 
-	INT4  IMRPhenomXInspiralAmpVersion;
-	INT4  IMRPhenomXIntermediateAmpVersion;
-	INT4  IMRPhenomXRingdownAmpVersion;
+    INT4  IMRPhenomXInspiralAmpVersion;
+    INT4  IMRPhenomXIntermediateAmpVersion;
+    INT4  IMRPhenomXRingdownAmpVersion;
 
-	/* Implemented for PhenomPNR coprecessing model. When used, this value will be determined by the corresponding value in precStruct */
-	INT4  IMRPhenomXPNRUseTunedCoprec;
-	INT4  IMRPhenomXPNRUseTunedCoprec33;
+    /* Implemented for PhenomPNR coprecessing model. When used, this value will be determined by the corresponding value in precStruct */
+    INT4  IMRPhenomXPNRUseTunedCoprec;
+    INT4  IMRPhenomXPNRUseTunedCoprec33;
 
-	/* Toggle to return coprecessing model without any twisting up */
-	INT4 IMRPhenomXReturnCoPrec;
-	/* Toggle for only returning waveform (i.e. mode) phase */
-	INT4 PhenomXOnlyReturnPhase;
+    /* Toggle to return coprecessing model without any twisting up */
+    INT4 IMRPhenomXReturnCoPrec;
+    /* Toggle for only returning waveform (i.e. mode) phase */
+    INT4 PhenomXOnlyReturnPhase;
 
-	/* Parameters that define deviation of the tuned coprecessing mode PhenomXCP from PhenomX (500) */
-	REAL8 MU1;   // MR Amplitude
-	REAL8 MU2;   // MR Amplitude: modifies gamma2
-	REAL8 MU3;   // MR Amplitude: modifies gamma3
-	REAL8 MU4;   // MR Amplitude: would modify appearance of fRing in MR amplitude
-	REAL8 NU0;   // MR Phase
-	REAL8 NU4;   // MR Phase
-	REAL8 NU5;   // MR Phase
-	REAL8 NU6;   // MR Phase
-	REAL8 ZETA1; // INT Phase
-	REAL8 ZETA2; // INT Phase
-	REAL8 PNR_DEV_PARAMETER; // Is zero when no precession, and non-zero otherwise
-	REAL8 pnr_window;
-	INT4 APPLY_PNR_DEVIATIONS;
+    /* Parameters that define deviation of the tuned coprecessing mode PhenomXCP from PhenomX (500) */
+    REAL8 MU1;   // MR Amplitude
+    REAL8 MU2;   // MR Amplitude: modifies gamma2
+    REAL8 MU3;   // MR Amplitude: modifies gamma3
+    REAL8 MU4;   // MR Amplitude: would modify appearance of fRing in MR amplitude
+    REAL8 NU0;   // MR Phase
+    REAL8 NU4;   // MR Phase
+    REAL8 NU5;   // MR Phase
+    REAL8 NU6;   // MR Phase
+    REAL8 ZETA1; // INT Phase
+    REAL8 ZETA2; // INT Phase
+    REAL8 PNR_DEV_PARAMETER; // Is zero when no precession, and non-zero otherwise
+    REAL8 pnr_window;
+    INT4 APPLY_PNR_DEVIATIONS;
 
-	/* Mass Parameters */
-	REAL8 m1_SI; 		// Mass in SI units
-	REAL8 m2_SI;	 	// Mass in SI units
-	REAL8 Mtot_SI; 	// Total mass in SI units
-	REAL8 m1;		 		// Mass in solar masses
-	REAL8 m2;	   		// Mass in solar masses
-	REAL8 Mtot;  		// Total mass in solar masses
-	REAL8 Mc;				// Chirp mass in solar masses
-	REAL8 q;				// Mass ratio >= 1
-	REAL8 eta;			// Symmetric mass ratio
-	REAL8 delta;		// PN symmetry parameter: sqrt(1-4*eta)
+    /* Mass Parameters */
+    REAL8 m1_SI;        // Mass in SI units
+    REAL8 m2_SI;        // Mass in SI units
+    REAL8 Mtot_SI;  // Total mass in SI units
+    REAL8 m1;               // Mass in solar masses
+    REAL8 m2;           // Mass in solar masses
+    REAL8 Mtot;         // Total mass in solar masses
+    REAL8 Mc;               // Chirp mass in solar masses
+    REAL8 q;                // Mass ratio >= 1
+    REAL8 eta;          // Symmetric mass ratio
+    REAL8 delta;        // PN symmetry parameter: sqrt(1-4*eta)
 
-	/* Spin Parameters */
-	REAL8 chi1L;
-	REAL8 chi2L;
-	REAL8 chiEff;
-	REAL8 chiPNHat;
-	REAL8 STotR;
-	REAL8 dchi;
-	REAL8 dchi_half;
-	REAL8 SL;
-	REAL8 SigmaL;
-	REAL8 chiTot_perp;
-	REAL8 chi_p;
-	REAL8 theta_LS; // PNR Specific
-	REAL8 a1;       // PNR Specific
+    /* Spin Parameters */
+    REAL8 chi1L;
+    REAL8 chi2L;
+    REAL8 chiEff;
+    REAL8 chiPNHat;
+    REAL8 STotR;
+    REAL8 dchi;
+    REAL8 dchi_half;
+    REAL8 SL;
+    REAL8 SigmaL;
+    REAL8 chiTot_perp;
+    REAL8 chi_p;
+    REAL8 theta_LS; // PNR Specific
+    REAL8 a1;       // PNR Specific
 
-	REAL8 M;
-	REAL8 m1_2;
-	REAL8 m2_2;
+    REAL8 M;
+    REAL8 m1_2;
+    REAL8 m2_2;
 
     /* Matter parameters */
     REAL8 lambda1;
@@ -143,143 +143,143 @@ typedef struct tagIMRPhenomXWaveformStruct
     REAL8 fmerger;
 
 
-	/* Useful Powers (?) */
-	REAL8 eta2;
-	REAL8 eta3;
-	REAL8 eta4;
-	REAL8 chi1L2;
-	REAL8 chi1L3;
-	REAL8 chi2L2;
-	REAL8 chi2L3;
-	REAL8 chi1L2L; // chi1 * chi2;
+    /* Useful Powers (?) */
+    REAL8 eta2;
+    REAL8 eta3;
+    REAL8 eta4;
+    REAL8 chi1L2;
+    REAL8 chi1L3;
+    REAL8 chi2L2;
+    REAL8 chi2L3;
+    REAL8 chi1L2L; // chi1 * chi2;
 
-	/* Amplitude and Phase Normalisation */
-	REAL8 dphase0;
-	REAL8 amp0;
-	REAL8 ampNorm;
+    /* Amplitude and Phase Normalisation */
+    REAL8 dphase0;
+    REAL8 amp0;
+    REAL8 ampNorm;
 
-	/* Frequencies */
-	REAL8 fMECO;
-	REAL8 fISCO;
+    /* Frequencies */
+    REAL8 fMECO;
+    REAL8 fISCO;
 
-	/* Ringdown value of precession angle beta */
-	REAL8 betaRD;
-	REAL8 fRING22_prec;
-	/* Quantity needed to calculate effective RD frequencies (500) */
-	REAL8 fRINGEffShiftDividedByEmm;
-	/* Coprecessing frame ringdown frequencies for 22 Mode  (500) */
-	REAL8 fRINGCP;
+    /* Ringdown value of precession angle beta */
+    REAL8 betaRD;
+    REAL8 fRING22_prec;
+    /* Quantity needed to calculate effective RD frequencies (500) */
+    REAL8 fRINGEffShiftDividedByEmm;
+    /* Coprecessing frame ringdown frequencies for 22 Mode  (500) */
+    REAL8 fRINGCP;
 
-	/* Ringdown and Damping Frequencies for 22 Mode */
-	REAL8 fRING;
-	REAL8 fDAMP;
+    /* Ringdown and Damping Frequencies for 22 Mode */
+    REAL8 fRING;
+    REAL8 fDAMP;
 
-	/* Ringdown and Damping Frequencies for 21 Mode */
-	REAL8 fRING21;
-	REAL8 fDAMP21;
+    /* Ringdown and Damping Frequencies for 21 Mode */
+    REAL8 fRING21;
+    REAL8 fDAMP21;
 
-	/* Ringdown and Damping Frequencies for 33 Mode */
-	REAL8 fRING33;
-	REAL8 fDAMP33;
+    /* Ringdown and Damping Frequencies for 33 Mode */
+    REAL8 fRING33;
+    REAL8 fDAMP33;
 
-	/* Ringdown and Damping Frequencies for 32 Mode */
-	REAL8 fRING32;
-	REAL8 fDAMP32;
+    /* Ringdown and Damping Frequencies for 32 Mode */
+    REAL8 fRING32;
+    REAL8 fDAMP32;
 
-	/* Ringdown and Damping Frequencies for 44 Mode */
-	REAL8 fRING44;
-	REAL8 fDAMP44;
+    /* Ringdown and Damping Frequencies for 44 Mode */
+    REAL8 fRING44;
+    REAL8 fDAMP44;
 
-	REAL8 fMin;
-	REAL8 fMax;
+    REAL8 fMin;
+    REAL8 fMax;
     REAL8 MfMax;
-	REAL8 f_max_prime;
-	REAL8 deltaF;
+    REAL8 f_max_prime;
+    REAL8 deltaF;
     REAL8 deltaMF;
-	REAL8 fCut;
+    REAL8 fCut;
 
-	// Dimensionless frequency (Mf) defining the end of the waveform
-	REAL8 fCutDef;
+    // Dimensionless frequency (Mf) defining the end of the waveform
+    REAL8 fCutDef;
 
-	REAL8 fRef;
-	REAL8 MfRef;
-	REAL8 M_sec;
-	REAL8 phiRef_In;
-	REAL8 phi0;
-	REAL8 phifRef;
-	REAL8 piM;
-	REAL8 v_ref;
+    REAL8 fRef;
+    REAL8 MfRef;
+    REAL8 M_sec;
+    REAL8 phiRef_In;
+    REAL8 phi0;
+    REAL8 phifRef;
+    REAL8 piM;
+    REAL8 v_ref;
 
-	/* Final mass and spin */
-	REAL8 Erad;
-	REAL8 afinal;
-	REAL8 Mfinal;
+    /* Final mass and spin */
+    REAL8 Erad;
+    REAL8 afinal;
+    REAL8 Mfinal;
 
-	/* (500) Final mass and spin: It will at times be useful to use both separately. */
-	REAL8 afinal_prec;
-	REAL8 afinal_nonprec;
+    /* (500) Final mass and spin: It will at times be useful to use both separately. */
+    REAL8 afinal_prec;
+    REAL8 afinal_nonprec;
 
-	REAL8 distance;
-	REAL8 inclination;
-	REAL8 beta;
+    REAL8 distance;
+    REAL8 inclination;
+    REAL8 beta;
 
-	LALDict *LALparams;
+    LALDict *LALparams;
 
-	/* PhenomXO4 variables */
-	UINT4 PNR_SINGLE_SPIN;
+    /* PhenomXO4 variables */
+    UINT4 PNR_SINGLE_SPIN;
 
-	/* Frequency at which to force XAS/XHM phase and phase derivative value */
-	REAL8 f_inspiral_align;
-	REAL8 XAS_dphase_at_f_inspiral_align;
-	REAL8 XAS_phase_at_f_inspiral_align;
-	/* Strategy: valies e.g. XHM_dphase_at_f_inspiral_align are updated within
-	loop over ell and emm within IMRPhenomXPHM_hplushcross. Within same loop,
-	e.g. IMRPhenomXHMGenerateFDOneMode is called to generate a coprecessing
-	moment. At that time, the values of e.g. XHM_dphase_at_f_inspiral_align
-	defined in IMRPhenomXHM_PNR_SetPhaseAlignmentParams.*/
-	REAL8 XHM_dphase_at_f_inspiral_align;
-	REAL8 XHM_phase_at_f_inspiral_align;
+    /* Frequency at which to force XAS/XHM phase and phase derivative value */
+    REAL8 f_inspiral_align;
+    REAL8 XAS_dphase_at_f_inspiral_align;
+    REAL8 XAS_phase_at_f_inspiral_align;
+    /* Strategy: valies e.g. XHM_dphase_at_f_inspiral_align are updated within
+    loop over ell and emm within IMRPhenomXPHM_hplushcross. Within same loop,
+    e.g. IMRPhenomXHMGenerateFDOneMode is called to generate a coprecessing
+    moment. At that time, the values of e.g. XHM_dphase_at_f_inspiral_align
+    defined in IMRPhenomXHM_PNR_SetPhaseAlignmentParams.*/
+    REAL8 XHM_dphase_at_f_inspiral_align;
+    REAL8 XHM_phase_at_f_inspiral_align;
 
-	INT4 IMRPhenomXPNRForceXHMAlignment;
+    INT4 IMRPhenomXPNRForceXHMAlignment;
 
 } IMRPhenomXWaveformStruct;
 
 
 typedef struct tagIMRPhenomX_UsefulPowers
 {
-	REAL8 seven_sixths;
-	REAL8 one_sixth;
+    REAL8 seven_sixths;
+    REAL8 one_sixth;
     REAL8 ten_thirds;
-	REAL8 eight_thirds;
-	REAL8 seven_thirds;
-	REAL8 five_thirds;
-	REAL8 four_thirds;
-	REAL8 two_thirds;
-	REAL8 one_third;
-	REAL8 five;
-	REAL8 four;
-	REAL8 three;
-	REAL8 two;
-	REAL8 sqrt;
-	REAL8 itself;
-	REAL8 m_sqrt;
-	REAL8 m_one;
-	REAL8 m_two;
-	REAL8 m_three;
-	REAL8 m_four;
-	REAL8 m_five;
-	REAL8 m_six;
-	REAL8 m_one_third;
-	REAL8 m_two_thirds;
-	REAL8 m_four_thirds;
-	REAL8 m_five_thirds;
-	REAL8 m_seven_thirds;
-	REAL8 m_eight_thirds;
+    REAL8 eight_thirds;
+    REAL8 seven_thirds;
+    REAL8 five_thirds;
+    REAL8 four_thirds;
+    REAL8 two_thirds;
+    REAL8 one_third;
+    REAL8 five;
+    REAL8 four;
+    REAL8 three;
+    REAL8 two;
+    REAL8 sqrt;
+    REAL8 itself;
+    REAL8 m_sqrt;
+    REAL8 m_one;
+    REAL8 m_two;
+    REAL8 m_three;
+    REAL8 m_four;
+    REAL8 m_five;
+    REAL8 m_six;
+    REAL8 m_one_third;
+    REAL8 m_two_thirds;
+    REAL8 m_four_thirds;
+    REAL8 m_five_thirds;
+    REAL8 m_seven_thirds;
+    REAL8 m_eight_thirds;
     REAL8 m_ten_thirds;
-	REAL8 m_one_sixth;
-	REAL8 m_seven_sixths;
+    REAL8 m_one_sixth;
+    REAL8 m_seven_sixths;
 
-	REAL8 log;
+    REAL8 log;
 
 } IMRPhenomX_UsefulPowers;
 
@@ -290,130 +290,130 @@ extern IMRPhenomX_UsefulPowers powers_of_lalpi;
 
 typedef struct tagIMRPhenomXPhaseCoefficients
 {
-	/* PHASE */
-	/* Phase Transition Frequencies */
-	REAL8 fPhaseInsMin;
-	REAL8 fPhaseInsMax;
-	REAL8 fPhaseIntMin;
-	REAL8 fPhaseIntMax;
-	REAL8 fPhaseRDMin;
-	REAL8 fPhaseRDMax;
+    /* PHASE */
+    /* Phase Transition Frequencies */
+    REAL8 fPhaseInsMin;
+    REAL8 fPhaseInsMax;
+    REAL8 fPhaseIntMin;
+    REAL8 fPhaseIntMax;
+    REAL8 fPhaseRDMin;
+    REAL8 fPhaseRDMax;
 
-	REAL8 fPhaseMatchIN;
-	REAL8 fPhaseMatchIM;
+    REAL8 fPhaseMatchIN;
+    REAL8 fPhaseMatchIM;
 
-	REAL8 C1Int, C2Int;
-	REAL8 C1MRD, C2MRD;
+    REAL8 C1Int, C2Int;
+    REAL8 C1MRD, C2MRD;
 
-	/* These are the RD phenomenological coefficients 					*/
-	REAL8 c0, c1, c2, c3, c4, cL, cRD, cLGR;
+    /* These are the RD phenomenological coefficients                   */
+    REAL8 c0, c1, c2, c3, c4, cL, cRD, cLGR;
 
-	/* These are the intermediate phenomenological coefficients */
-	REAL8 b0, b1, b2, b3, b4;
+    /* These are the intermediate phenomenological coefficients */
+    REAL8 b0, b1, b2, b3, b4;
 
-	/* These are the inspiral phenomenological coefficients 		*/
-	REAL8 a0, a1, a2, a3, a4;
+    /* These are the inspiral phenomenological coefficients         */
+    REAL8 a0, a1, a2, a3, a4;
 
-	/* Coefficients enterting tidal phase */
+    /* Coefficients enterting tidal phase */
     REAL8 c2PN_tidal, c3PN_tidal, c3p5PN_tidal;
 
-	/* Pre-cached variables */
-	REAL8 c4ov3, cLovfda, nonGR_dcl;
+    /* Pre-cached variables */
+    REAL8 c4ov3, cLovfda, nonGR_dcl;
 
-	/* TaylorF2 PN Coefficients */
-	REAL8 phi_minus2, phi_minus1, phi0, phi1, phi2, phi3, phi4, phi5, phi6, phi7, phi8, phi9, phi10, phi11, phi12, phi13, phi5L, phi6L, phi8L, phi9L;
-	REAL8 phi_initial, phiNorm;
-	REAL8 dphi_minus2, dphi_minus1, dphi0, dphi1, dphi2, dphi3, dphi4, dphi5, dphi6, dphi7, dphi8, dphi9, dphi10, dphi11, dphi12, dphi13, dphi5L, dphi6L, dphi8L, dphi9L;
+    /* TaylorF2 PN Coefficients */
+    REAL8 phi_minus2, phi_minus1, phi0, phi1, phi2, phi3, phi4, phi5, phi6, phi7, phi8, phi9, phi10, phi11, phi12, phi13, phi5L, phi6L, phi8L, phi9L;
+    REAL8 phi_initial, phiNorm;
+    REAL8 dphi_minus2, dphi_minus1, dphi0, dphi1, dphi2, dphi3, dphi4, dphi5, dphi6, dphi7, dphi8, dphi9, dphi10, dphi11, dphi12, dphi13, dphi5L, dphi6L, dphi8L, dphi9L;
 
-	/* Pseudo-PN Coefficients */
-	REAL8 sigma0, sigma1, sigma2, sigma3, sigma4, sigma5;
+    /* Pseudo-PN Coefficients */
+    REAL8 sigma0, sigma1, sigma2, sigma3, sigma4, sigma5;
 
-	/* Flag to set how many collocation points the RD region uses 	*/
-	INT4  NCollocationPointsRD;
+    /* Flag to set how many collocation points the RD region uses   */
+    INT4  NCollocationPointsRD;
 
-	/* Flag to set how many collocation points the INT region uses 	*/
-	INT4  NCollocationPointsInt;
+    /* Flag to set how many collocation points the INT region uses  */
+    INT4  NCollocationPointsInt;
 
-	/* Integer to tell us how many pseudo PN terms are used 											*/
-	INT4	NPseudoPN;
-	INT4  NCollocationPointsPhaseIns;
+    /* Integer to tell us how many pseudo PN terms are used                                             */
+    INT4    NPseudoPN;
+    INT4  NCollocationPointsPhaseIns;
 
-	/* The canonical ringdown phase is constructed from 5 collocation points 			*/
-	REAL8 CollocationPointsPhaseRD[N_MAX_COLLOCATION_POINTS_PHASE_RD];
-	REAL8 CollocationValuesPhaseRD[N_MAX_COLLOCATION_POINTS_PHASE_RD];
-	REAL8 CoefficientsPhaseRD[N_MAX_COLLOCATION_POINTS_PHASE_RD];
+    /* The canonical ringdown phase is constructed from 5 collocation points            */
+    REAL8 CollocationPointsPhaseRD[N_MAX_COLLOCATION_POINTS_PHASE_RD];
+    REAL8 CollocationValuesPhaseRD[N_MAX_COLLOCATION_POINTS_PHASE_RD];
+    REAL8 CoefficientsPhaseRD[N_MAX_COLLOCATION_POINTS_PHASE_RD];
 
 
-	/* The canonical intermediate phase is constructed from 4/5 collocation points  */
-	REAL8 CollocationPointsPhaseInt[N_MAX_COLLOCATION_POINTS_PHASE_INT];
-	REAL8 CollocationValuesPhaseInt[N_MAX_COLLOCATION_POINTS_PHASE_INT];
-	REAL8 CoefficientsPhaseInt[N_MAX_COLLOCATION_POINTS_PHASE_INT];
+    /* The canonical intermediate phase is constructed from 4/5 collocation points  */
+    REAL8 CollocationPointsPhaseInt[N_MAX_COLLOCATION_POINTS_PHASE_INT];
+    REAL8 CollocationValuesPhaseInt[N_MAX_COLLOCATION_POINTS_PHASE_INT];
+    REAL8 CoefficientsPhaseInt[N_MAX_COLLOCATION_POINTS_PHASE_INT];
 
-	/*
-		 	For N pseudo-PN terms we need N+1 collocation points:
-		 	We have set N_MAX_COLLOCATION_POINTS_INS = 5 to allow
-		 	either 3 or 4 pseudo-PN coefficients to be used.
-	*/
-	REAL8 CollocationPointsPhaseIns[N_MAX_COLLOCATION_POINTS_PHASE_INS];
-	REAL8 CollocationValuesPhaseIns[N_MAX_COLLOCATION_POINTS_PHASE_INS];
-	REAL8 CoefficientsPhaseIns[N_MAX_COLLOCATION_POINTS_PHASE_INS];
+    /*
+            For N pseudo-PN terms we need N+1 collocation points:
+            We have set N_MAX_COLLOCATION_POINTS_INS = 5 to allow
+            either 3 or 4 pseudo-PN coefficients to be used.
+    */
+    REAL8 CollocationPointsPhaseIns[N_MAX_COLLOCATION_POINTS_PHASE_INS];
+    REAL8 CollocationValuesPhaseIns[N_MAX_COLLOCATION_POINTS_PHASE_INS];
+    REAL8 CoefficientsPhaseIns[N_MAX_COLLOCATION_POINTS_PHASE_INS];
 
 } IMRPhenomXPhaseCoefficients;
 
 typedef struct tagIMRPhenomXAmpCoefficients
 {
-	REAL8 fAmpInsMin;
-	REAL8 fAmpInsMax;
-	REAL8 fAmpIntMin;
-	REAL8 fAmpIntMax;
-	REAL8 fAmpRDMin;
-	REAL8 fAmpRDMax;
+    REAL8 fAmpInsMin;
+    REAL8 fAmpInsMax;
+    REAL8 fAmpIntMin;
+    REAL8 fAmpIntMax;
+    REAL8 fAmpRDMin;
+    REAL8 fAmpRDMax;
 
-	REAL8 fAmpMatchIN;
-	REAL8 fAmpMatchIM;
+    REAL8 fAmpMatchIN;
+    REAL8 fAmpMatchIM;
 
-	/* These are the RD phenomenological coefficients 					*/
-	REAL8 c0, c1, c2, c3, c4, cL;
+    /* These are the RD phenomenological coefficients                   */
+    REAL8 c0, c1, c2, c3, c4, cL;
 
-	/* These are the intermediate phenomenological coefficients */
-	REAL8 b0, b1, b2, b3, b4, b5;
+    /* These are the intermediate phenomenological coefficients */
+    REAL8 b0, b1, b2, b3, b4, b5;
 
-	/* These are the inspiral phenomenological coefficients 		*/
-	REAL8 a0, a1, a2, a3, a4, a5;
+    /* These are the inspiral phenomenological coefficients         */
+    REAL8 a0, a1, a2, a3, a4, a5;
 
-	REAL8 v1RD, sigmaRD;
+    REAL8 v1RD, sigmaRD;
 
-	REAL8 rho1, rho2, rho3;																	/* Inspiral pseudo-PN coefficients 							*/
-	REAL8 delta0, delta1, delta2, delta3, delta4, delta5;		/* Intermediate phenomenological coefficients 	*/
-	REAL8 gamma1, gamma2, gamma3;														/* Ringdown phenomenological coefficients 			*/
-	REAL8 gammaR, gammaD13, gammaD2;
+    REAL8 rho1, rho2, rho3;                                                                 /* Inspiral pseudo-PN coefficients                          */
+    REAL8 delta0, delta1, delta2, delta3, delta4, delta5;       /* Intermediate phenomenological coefficients   */
+    REAL8 gamma1, gamma2, gamma3;                                                       /* Ringdown phenomenological coefficients           */
+    REAL8 gammaR, gammaD13, gammaD2;
 
-	/* PN Amplitude Prefactors */
-	REAL8 pnInitial, pnOneThird, pnTwoThirds, pnThreeThirds, pnFourThirds, pnFiveThirds, pnSixThirds, pnSevenThirds, pnEightThirds, pnNineThirds;
+    /* PN Amplitude Prefactors */
+    REAL8 pnInitial, pnOneThird, pnTwoThirds, pnThreeThirds, pnFourThirds, pnFiveThirds, pnSixThirds, pnSevenThirds, pnEightThirds, pnNineThirds;
 
-	/* Flags to set the ringdown amplitude version			*/
-	INT4  NCollocationPointsRD;
-	INT4  IMRPhenomXRingdownAmpVersion;
+    /* Flags to set the ringdown amplitude version          */
+    INT4  NCollocationPointsRD;
+    INT4  IMRPhenomXRingdownAmpVersion;
 
-	/* Flags to set the intermediate amplitude version	*/
-	INT4  NCollocationPointsInt;
-	INT4  IMRPhenomXIntermediateAmpVersion;
+    /* Flags to set the intermediate amplitude version  */
+    INT4  NCollocationPointsInt;
+    INT4  IMRPhenomXIntermediateAmpVersion;
 
-	/* Flags to set the inspiral amplitude version 			*/
-	INT4  NPseudoPN;
-	INT4  IMRPhenomXInspiralAmpVersion;
+    /* Flags to set the inspiral amplitude version          */
+    INT4  NPseudoPN;
+    INT4  IMRPhenomXInspiralAmpVersion;
 
-	/* The ringdown is constructed from 5 collocation points 						*/
-	REAL8 CollocationPointsAmpRD[N_MAX_COLLOCATION_POINTS_AMP_RD];
-	REAL8 CollocationValuesAmpRD[N_MAX_COLLOCATION_POINTS_AMP_RD];
+    /* The ringdown is constructed from 5 collocation points                        */
+    REAL8 CollocationPointsAmpRD[N_MAX_COLLOCATION_POINTS_AMP_RD];
+    REAL8 CollocationValuesAmpRD[N_MAX_COLLOCATION_POINTS_AMP_RD];
 
-	REAL8 CollocationPointsAmpInt[N_MAX_COLLOCATION_POINTS_AMP_INT];
-	REAL8 CollocationValuesAmpInt[N_MAX_COLLOCATION_POINTS_AMP_INT];
+    REAL8 CollocationPointsAmpInt[N_MAX_COLLOCATION_POINTS_AMP_INT];
+    REAL8 CollocationValuesAmpInt[N_MAX_COLLOCATION_POINTS_AMP_INT];
 
-	/* For 3 pseudo-PN parameters we need 4 collocation points         	*/
-	/* For 4 pseudo-PN parameters we need 5 collocation points, etc... 	*/
-	REAL8 CollocationPointsAmpIns[N_MAX_COLLOCATION_POINTS_AMP_INS];
-	REAL8 CollocationValuesAmpIns[N_MAX_COLLOCATION_POINTS_AMP_INS];
+    /* For 3 pseudo-PN parameters we need 4 collocation points          */
+    /* For 4 pseudo-PN parameters we need 5 collocation points, etc...  */
+    REAL8 CollocationPointsAmpIns[N_MAX_COLLOCATION_POINTS_AMP_INS];
+    REAL8 CollocationValuesAmpIns[N_MAX_COLLOCATION_POINTS_AMP_INS];
 
 } IMRPhenomXAmpCoefficients;
 
@@ -425,19 +425,19 @@ int IMRPhenomX_Initialize_Powers_Light(IMRPhenomX_UsefulPowers *p, REAL8 number)
 
 int IMRPhenomXSetWaveformVariables(
 IMRPhenomXWaveformStruct *pWF,
-	const REAL8 m1_SI,
-	const REAL8 m2_SI,
-	const REAL8 chi1L_In,
-	const REAL8 chi2L_In,
-	const REAL8 deltaF,
-	const REAL8 fRef,
-	const REAL8 phiRef,
-	const REAL8 f_min,
-	const REAL8 f_max,
-	const REAL8 distance,
-	const REAL8 inclination,
-	LALDict *lalParams,
-	const UINT4 debug
+    const REAL8 m1_SI,
+    const REAL8 m2_SI,
+    const REAL8 chi1L_In,
+    const REAL8 chi2L_In,
+    const REAL8 deltaF,
+    const REAL8 fRef,
+    const REAL8 phiRef,
+    const REAL8 f_min,
+    const REAL8 f_max,
+    const REAL8 distance,
+    const REAL8 inclination,
+    LALDict *lalParams,
+    const UINT4 debug
 );
 
 double IMRPhenomX_Amplitude_22(double f, IMRPhenomX_UsefulPowers *powers_of_f, IMRPhenomXAmpCoefficients *pAmp, IMRPhenomXWaveformStruct *pWF);
@@ -467,4 +467,4 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 }
 #endif
 
-#endif	// of #ifndef _LALSIM_IMR_PHENOMX_INTERNALS_H
+#endif  // of #ifndef _LALSIM_IMR_PHENOMX_INTERNALS_H

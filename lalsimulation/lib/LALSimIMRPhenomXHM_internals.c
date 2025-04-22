@@ -2287,8 +2287,8 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
 
     /* (IMRPhenomXPNRUseTunedCoprec) Add PNR or input deviations (e.g. tuning for coprecessing frame model) to cL, c1 and c4 in the same manner as is done for the l=m=2 moment */
     if ( pWFHM->modeTag == 33){
-	    pPhase->c0 = pPhase->c0  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->NU0 );
-	    pPhase->cL = pPhase->cL  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->NU4 );
+      pPhase->c0 = pPhase->c0  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->NU0 );
+      pPhase->cL = pPhase->cL  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->NU4 );
       pPhase->c1 = pPhase->c1  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->ZETA2 );
       pPhase->c4 = pPhase->c4  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->ZETA1 );
     }

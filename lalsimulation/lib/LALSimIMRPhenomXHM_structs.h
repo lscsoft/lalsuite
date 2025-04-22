@@ -49,8 +49,8 @@ typedef double (*fitQNM_fring) (double finalDimlessSpin);
 typedef double (*fitQNM_fdamp) (double finalDimlessSpin);
 
 typedef struct tagQNMFits {
- 	fitQNM_fring fring_lm[N_HIGHERMODES_IMPLEMENTED];
- 	fitQNM_fdamp fdamp_lm[N_HIGHERMODES_IMPLEMENTED];
+    fitQNM_fring fring_lm[N_HIGHERMODES_IMPLEMENTED];
+    fitQNM_fdamp fdamp_lm[N_HIGHERMODES_IMPLEMENTED];
 } QNMFits;
 
 
@@ -107,7 +107,7 @@ typedef struct tagIMRPhenomXHMWaveformStruct
         REAL8 chi_s, chi_a;  // (chi1 +/- chi2)/2
 
         /* MECO, Ringdown and Damping Frequencies */
-		    REAL8 fMECOlm;  // = wf22->fMECO*m/2
+        REAL8 fMECOlm;  // = wf22->fMECO*m/2
         REAL8 fRING;
         REAL8 fDAMP;
 
@@ -234,8 +234,8 @@ typedef struct tagIMRPhenomXHMWaveformStruct
             // Order of the polynomial in the intermediate region. 5th->105, for the first EMR region is 1042
             INT4 InterAmpPolOrder;
 
-        		// Store the PN amplitude at the frequencies of the collocation points in the inspiral
-        		REAL8 PNAmplitudeInsp[N_MAX_COEFFICIENTS_AMPLITUDE_INS];
+            // Store the PN amplitude at the frequencies of the collocation points in the inspiral
+            REAL8 PNAmplitudeInsp[N_MAX_COEFFICIENTS_AMPLITUDE_INS];
 
             // For the pseudo part of Inspiral Amplitude ansatz. Used in LALSimIMRPhenomXHM_inspiral.c
             REAL8 fcutInsp_seven_thirds;
