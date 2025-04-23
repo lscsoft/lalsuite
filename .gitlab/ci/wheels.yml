@@ -31,7 +31,7 @@
   - rm -rf wheel/build/
   # install wheel
   - !reference [.python-venv]
-  - python -m pip install solar_system_ephemerides
+  - retry python -m pip install solar_system_ephemerides
   - python -m pip install wheelhouse/*
   # check metadata
   - python -m pip show lalsuite
@@ -65,7 +65,7 @@
     # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
     # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
     - !reference [.python-venv]
-    - python -m pip install
+    - retry python -m pip install
           'numpy>=2.0.0'
           setuptools
           wheel
@@ -102,7 +102,7 @@
     # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
     # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
     - !reference [.python-venv]
-    - python -m pip install
+    - retry python -m pip install
           delocate
           'numpy>=2.0.1'
           pip
@@ -254,7 +254,7 @@ wheel:pypi:
   script:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     - !reference [.python-venv]
-    - python -m pip install twine
+    - retry python -m pip install twine
     - |
       if [ "X${EXECUTE_DEPLOY_ACTIONS}" != "Xyes" ]; then
         echo "Skipping rest of job as EXECUTE_DEPLOY_ACTIONS!=yes"
@@ -263,7 +263,7 @@ wheel:pypi:
     # check things
     - python -m pip check wheelhouse.*
     # upload
-    - python -m twine upload wheelhouse/*
+    - retry python -m twine upload wheelhouse/*
   needs:
     - wheel:cp39-cp39-manylinux_2_28_x86_64
     - wheel:cp310-cp310-manylinux_2_28_x86_64
