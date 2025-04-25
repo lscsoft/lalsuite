@@ -83,8 +83,8 @@ int IMRPhenomX_Initialize_Powers(IMRPhenomX_UsefulPowers *p, REAL8 number)
 	p->eight_thirds   = p->seven_thirds * p->one_third;
 	p->m_eight_thirds = 1.0 / p->eight_thirds;
 
-    p->ten_thirds   = p->seven_thirds * number;
-    p->m_ten_thirds = 1.0 / p->ten_thirds;
+	p->ten_thirds   = p->seven_thirds * number;
+	p->m_ten_thirds = 1.0 / p->ten_thirds;
 
 	p->two            = number   * number;
 	p->three          = p->two   * number;
