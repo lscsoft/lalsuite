@@ -13,7 +13,7 @@
   extends:
     - .build-job
     - .build-from-tarball
-  image: igwn/lalsuite-dev:el8-testing
+  image: quay.io/igwn/lalsuite-dev:el8-testing
   variables:
     # default configure flags (can be overridden from dependents)
     CONFIGURE_FLAGS: "--enable-python --enable-swig-python"

@@ -78,11 +78,11 @@
           ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
       # create a codeclimate report from the rpmlint report
     - unset PIP_NO_INDEX && rm -rf ~/.pydistutils.cfg
-    - !reference [.pip-venv]
-    - pip install rpmlint-codeclimate
+    - !reference [.python-venv]
+    - retry python -m pip install rpmlint-codeclimate
     - |
       rpmlint -f rpmlintrc --info "*${PACKAGE}*" ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm > rpmlint.out || true
-      python3 -m rpmlint_codeclimate rpmlint.out -s ${PACKAGE}.spec -o ${CI_PROJECT_DIR}/rpmlint-gl-codeclimate-${PACKAGE}.json
+      python -m rpmlint_codeclimate rpmlint.out -s ${PACKAGE}.spec -o ${CI_PROJECT_DIR}/rpmlint-gl-codeclimate-${PACKAGE}.json
       sed -i \
         -e "s|${PACKAGE}.spec|${PACKAGE}/${PACKAGE}.spec.in|g" \
         $CI_PROJECT_DIR/rpmlint-gl-codeclimate-$PACKAGE.json
@@ -114,7 +114,7 @@
 .rpmbuild:el8:
   extends:
     - .rpmbuild
-  image: igwn/base:el8-testing
+  image: quay.io/igwn/base:el8-testing
 
 # -- builds
 

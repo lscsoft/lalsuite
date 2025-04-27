@@ -17,7 +17,11 @@
   artifacts:
     expire_in: 18h
     paths:
+      # built wheels
       - wheelhouse
+      # log files
+      - "lal*/**/config.log"
+      - "lal*/**/test-suite.log"
     when: always
 
 # do some simple sanity checks in a virtualenv
@@ -26,16 +30,16 @@
   # access it, e.g. try to find LAL data files there
   - rm -rf wheel/build/
   # install wheel
-  - !reference [.pip-venv]
-  - pip install solar_system_ephemerides
-  - pip install wheelhouse/*
+  - !reference [.python-venv]
+  - retry python -m pip install solar_system_ephemerides
+  - python -m pip install wheelhouse/*
   # check metadata
-  - pip show lalsuite
+  - python -m pip show lalsuite
   # Skip pip check for now. See https://github.com/scipy/scipy/issues/21436
   # - python -m pip check lalsuite
   # test loading Python modules and finding data files
   - |
-    env LAL_DEBUG_LEVEL=info python3 - <<EOF
+    env LAL_DEBUG_LEVEL=info python - <<EOF
     import lal
     import lalframe
     import lalmetaio
@@ -60,12 +64,12 @@
     - export PYTHON="/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')/bin/python"
     # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
     # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
-    - !reference [.pip-venv]
-    - pip install
+    - !reference [.python-venv]
+    - retry python -m pip install
           'numpy>=2.0.0'
           setuptools
           wheel
-    - pip list installed
+    - python -m pip list installed
     # Build wheel
     - ./00boot
     - SSE="solar_system_ephemerides/ephemerides"
@@ -77,7 +81,7 @@
           --enable-python
           --enable-swig-python
           --without-ephem
-          PYTHON=${PYTHON}
+          PYTHON="${VIRTUAL_ENV}/bin/python3"
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
@@ -97,14 +101,14 @@
     # Enter virtualenv so that we have a controlled version of Numpy.
     # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
     # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
-    - !reference [.pip-venv]
-    - pip install
+    - !reference [.python-venv]
+    - retry python -m pip install
           delocate
           'numpy>=2.0.1'
           pip
           setuptools
           wheel
-    - pip list installed
+    - python -m pip list installed
     # Build wheel
     - ./00boot
     - SSE="solar_system_ephemerides/ephemerides"
@@ -116,7 +120,7 @@
           --enable-python
           --enable-swig-python
           --without-ephem
-          PYTHON=$(which python)
+          PYTHON="${VIRTUAL_ENV}/bin/python3"
           LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
@@ -160,10 +164,9 @@ wheel:cp311-cp311-manylinux_2_28_x86_64:
   extends:
     - .wheel:manylinux_2_28_x86_64
 wheel:cp312-cp312-manylinux_2_28_x86_64:
-  # allow to fail due to build error in ligo-segments:
-  #   https://git.ligo.org/lscsoft/lalsuite/-/merge_requests/2418#note_1324099
-  # revert once !2397 is merged
-  allow_failure: true
+  extends:
+    - .wheel:manylinux_2_28_x86_64
+wheel:cp313-cp313-manylinux_2_28_x86_64:
   extends:
     - .wheel:manylinux_2_28_x86_64
   rules:  # reference build for this platform
@@ -181,6 +184,9 @@ wheel:cp311-cp311-manylinux_2_28_aarch64:
   extends:
     - .wheel:manylinux_2_28_aarch64
 wheel:cp312-cp312-manylinux_2_28_aarch64:
+  extends:
+    - .wheel:manylinux_2_28_aarch64
+wheel:cp313-cp313-manylinux_2_28_aarch64:
   extends:
     - .wheel:manylinux_2_28_aarch64
   rules:  # reference build for this platform
@@ -205,6 +211,10 @@ wheel:cp312-cp312-macos-x86_64:
   extends:
      - .wheel:macos
      - .wheel:macos:x86_64
+wheel:cp313-cp313-macos-x86_64:
+  extends:
+     - .wheel:macos
+     - .wheel:macos:x86_64
   rules:  # reference build for this platform
     - !reference [.ci-wheels, rules]
     - !reference [.ci-merge-build, rules]
@@ -226,6 +236,10 @@ wheel:cp312-cp312-macos-arm64:
   extends:
      - .wheel:macos
      - .wheel:macos:arm64
+wheel:cp313-cp313-macos-arm64:
+  extends:
+     - .wheel:macos
+     - .wheel:macos:arm64
   rules:  # reference build for this platform
     - !reference [.ci-wheels, rules]
     - !reference [.ci-merge-build, rules]
@@ -236,34 +250,41 @@ wheel:cp312-cp312-macos-arm64:
 wheel:pypi:
   extends:
     - .deploy
-  image: python
+  image: quay.io/lib/python
   script:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
-    - !reference [.pip-venv]
-    - pip install twine
+    - !reference [.python-venv]
+    - retry python -m pip install twine
     - |
       if [ "X${EXECUTE_DEPLOY_ACTIONS}" != "Xyes" ]; then
         echo "Skipping rest of job as EXECUTE_DEPLOY_ACTIONS!=yes"
         exit 100
       fi
-    - twine upload wheelhouse/*
+    # check things
+    - python -m pip check wheelhouse.*
+    # upload
+    - retry python -m twine upload wheelhouse/*
   needs:
     - wheel:cp39-cp39-manylinux_2_28_x86_64
     - wheel:cp310-cp310-manylinux_2_28_x86_64
     - wheel:cp311-cp311-manylinux_2_28_x86_64
     - wheel:cp312-cp312-manylinux_2_28_x86_64
+    - wheel:cp313-cp313-manylinux_2_28_x86_64
     - wheel:cp39-cp39-manylinux_2_28_aarch64
     - wheel:cp310-cp310-manylinux_2_28_aarch64
     - wheel:cp311-cp311-manylinux_2_28_aarch64
     - wheel:cp312-cp312-manylinux_2_28_aarch64
+    - wheel:cp313-cp313-manylinux_2_28_aarch64
     - wheel:cp39-cp39-macos-x86_64
     - wheel:cp310-cp310-macos-x86_64
     - wheel:cp311-cp311-macos-x86_64
     - wheel:cp312-cp312-macos-x86_64
+    - wheel:cp313-cp313-macos-x86_64
     - wheel:cp39-cp39-macos-arm64
     - wheel:cp310-cp310-macos-arm64
     - wheel:cp311-cp311-macos-arm64
     - wheel:cp312-cp312-macos-arm64
+    - wheel:cp313-cp313-macos-arm64
   rules:
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
