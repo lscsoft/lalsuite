@@ -52,6 +52,25 @@ repository. It can then be cloned using:
 
      $ git clone git@git.ligo.org:lscsoft/lalsuite.git
 
+### LALSuite extra waveform files
+
+The generation of some compact binary coalescence waveform models requires
+additional files which need to be downloaded either from Zenodo or from a
+git repository. The LALSuite extra waveform files are publicly available
+on [Zenodo][zenodolal].
+
+Alternatively, for LALSuite versions >= 7.25 the data files
+are also available at the git repository [lalsuite-waveform-data][newlalextra].
+
+or for earlier LALSuite versions, the files in lalsuite-extra can be
+found in the git repository [lalsuite-extra][oldlalextra]:
+
+Instructions for the installation and download of these
+files can be found in each link above.
+
+The environment variable `LAL_DATA_PATH` needs to be set according to the
+path to the downloaded files.
+
 ## Building from Source
 
 The recommended way to build LALSuite from source is in a `conda` environment.
@@ -167,29 +186,6 @@ the [Git LFS][gitlfs] conversion. Please note:
    link the internal GitLab web interface produces for those old commits
    will therefore be spurious.
 
-## LALSuite extra waveform files
-The generation of some compact binary coalescence waveform models requires
-additional files which need to be downloaded either from Zenodo or from a
-git repository. The LALSuite extra waveform files are publicly available
-on Zenodo at:
-
-https://zenodo.org/records/14999310
-
-Alternatively, for LALSuite versions >= 7.25 the data files
-are also available at:
-
-https://git.ligo.org/waveforms/software/lalsuite-waveform-data
-
-or for earlier LALSuite versions, the files in lalsuite-extra are at:
-
-https://git.ligo.org/lscsoft/lalsuite-extra\n
-
-Instructions for the installation and download of these
-files can be found in each link above.
-
-The environment variable `LAL_DATA_PATH` needs to be set according to the
-path to the downloaded files.
-
 ## For More Information
 
 Please visit the [LALSuite project page][project].
@@ -207,3 +203,6 @@ Please visit the [LALSuite project page][project].
 [project]:      https://wiki.ligo.org/Computing/LALSuite
 [pypi]:         https://pypi.org/project/lalsuite/
 [swiglal]:      https://lscsoft.docs.ligo.org/lalsuite/lalsuite/swiglal_tutorial.html
+[zenodolal]:    https://zenodo.org/records/14999310
+[newlalextra]:  https://git.ligo.org/waveforms/software/lalsuite-waveform-data
+[oldlalextra]:  https://git.ligo.org/lscsoft/lalsuite-extra
