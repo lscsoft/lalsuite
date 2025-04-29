@@ -72,6 +72,10 @@ struct TwoEOS{
     LALSimNeutronStarEOS * eos2;
 };
 
+struct CutEoS{
+    LALSimNeutronStarEOS * eos;
+};
+
 //CUTER-dev
 /* Structure containing an number of N = LAL_MAX_NUMBER_PT two part EOS structures
  * and the highest pressure point of the low EOS (pres_pt), as well as the step
@@ -86,7 +90,17 @@ struct multiplePartEOS{
     double d_eps[LAL_MAX_NUMBER_PT];
 };
 
-
+// CUTER-dev
+// TODO PHIL DAVIS
+struct phaseTransitionEoS{
+    int number_of_PT;
+    double pmax;
+    double point_range[LAL_MAX_NUMBER_PT];
+    double pres_pt[LAL_MAX_NUMBER_PT];
+    double h_pt[LAL_MAX_NUMBER_PT];
+    double d_eps[LAL_MAX_NUMBER_PT];
+    LALSimNeutronStarEOS *eosMulti [LAL_MAX_NUMBER_PT];
+};
 
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
 char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
@@ -101,11 +115,15 @@ struct multiplePartEOS XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat);
 
+struct phaseTransitionEoS XLALSimNeutronStarEOSFromTabDataPhaseTransitionBis( double *nbdat, double *edat, double *pdat,
+                                                                    double *mubdat, double *muedat, double *hdat,
+                                                                    double *yedat, double *cs2dat, size_t ndat);
+
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
     logp1_si, double gamma1, double gamma2, double gamma3);
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double 
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double
     gamma[], int size);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterSpectralDecomposition(
     double SDgamma0, double SDgamma1, double SDgamma2, double SDgamma3);
@@ -166,19 +184,6 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos);
 
-int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
-    double *love_number_k2, double central_pressure_si,
-    LALSimNeutronStarEOS * eos, double epsrel);
-
-
-//CUTER-dev
-int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance( double *radius, double *mass, double *baryon_mass,
-                                                            double *love_number_k2, double *love_number_k3, double *love_number_k4,
-                                                            double central_pressure_si, LALSimNeutronStarEOS * eos, double epsrel);
-//CUTER-dev
-int XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(double *radius, double *mass,
-    double *baryon_mass, double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
-    struct multiplePartEOS eos, double epsrel);
 //CUTER-dev
 int XLALSimNeutronStarPTODEIntegrate(
     double *radius, double *mass, double *baryon_mass,
@@ -190,12 +195,6 @@ int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos);
 
-int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *mass,
-    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
-    double *love_number_k2, double central_pressure_si,
-    LALSimNeutronStarEOS * eos, double epsrel);
-
-
 //CUTER-dev
 int XLALSimNeutronStarVirialPTODEIntegrate(
     double *radius, double *mass, double *baryon_mass,
@@ -203,6 +202,30 @@ int XLALSimNeutronStarVirialPTODEIntegrate(
     double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
     struct multiplePartEOS eos);
 
+
+int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
+    double *love_number_k2, double central_pressure_si,
+    LALSimNeutronStarEOS * eos, double epsrel);
+
+//CUTER-dev
+int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance( double *radius, double *mass, double *baryon_mass,
+                                                            double *love_number_k2, double *love_number_k3, double *love_number_k4,
+                                                            double central_pressure_si, LALSimNeutronStarEOS * eos, double epsrel);
+//CUTER-dev
+int XLALSimNeutronStarTOVPTODEIntegrateWithTolerance(double *radius, double *mass,
+    double *baryon_mass, double *love_number_k2, double *love_number_k3, double *love_number_k4, double central_pressure_si,
+    struct multiplePartEOS eos, double epsrel);
+
+// // CUTER-dev
+// // TODO PHIL DAVIS
+// int XLALSimNeutronStarTOVPTODEIntegrateWithToleranceBis(struct phaseTransitionEoS eos);
+
+int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *mass,
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
+    double *love_number_k2, double central_pressure_si,
+    LALSimNeutronStarEOS * eos, double epsrel);
+
+//CUTER-dev
 int XLALSimNeutronStarVirialPTODEIntegrateWithTolerance(
     double *radius, double *mass, double *baryon_mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
