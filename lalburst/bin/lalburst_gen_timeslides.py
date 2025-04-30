@@ -170,7 +170,7 @@ if options.verbose:
 if options.verbose:
 	print("Identifying and removing duplicates ...", file=sys.stderr)
 
-map(time_slides.pop, ligolw_time_slide.time_slides_vacuum(time_slides, verbose = options.verbose).keys())
+map(time_slides.pop, timeslides.vacuum(time_slides, verbose = options.verbose).keys())
 
 if options.verbose:
 	print("%d time slides remain." % len(time_slides), file=sys.stderr)
