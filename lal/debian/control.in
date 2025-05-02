@@ -97,7 +97,7 @@ Depends:
  python3-igwn-segments,
  python3-scipy,
 Recommends:
- python3-igwn-ligolw (>= @MIN_PYTHON_LIGO_LW_VERSION@),
+ python3-igwn-ligolw (>= @MIN_PYTHON_IGWN_LIGOLW_VERSION@),
 Description: Python 3 bindings for LAL
  The LVK Algorithm Library for gravitational wave analysis.
  This package contains Python 3 bindings for the LAL library.
