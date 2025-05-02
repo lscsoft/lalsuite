@@ -30,7 +30,7 @@
 {% set lalinspiral_version = "@MIN_LALINSPIRAL_VERSION@a0" %}
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
-{% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
+{% set python_ligo_lw_version = "@MIN_PYTHON_IGWN_LIGOLW_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 # we can build manuals when:
