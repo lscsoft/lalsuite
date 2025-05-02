@@ -68,5 +68,4 @@ noinst_HEADERS = \
 	$(END_OF_LIST)
 
 EXTRA_DIST = \
-	MakeTemplateBank.c \
 	$(END_OF_LIST)
