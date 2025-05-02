@@ -13,7 +13,7 @@ Build-Depends:
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
  python3-all-dev,
- python3-igwn-ligolw (>= @MIN_PYTHON_LIGO_LW_VERSION@~),
+ python3-igwn-ligolw (>= @MIN_PYTHON_IGWN_LIGOLW_VERSION@~),
  python3-igwn-segments,
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-lal (>= @MIN_LAL_VERSION@~),
