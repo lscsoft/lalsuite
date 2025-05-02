@@ -495,7 +495,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
         eventnum=int(eventnum)
         from igwn_ligolw import ligolw, lsctables, utils
         injections = lsctables.SimInspiralTable.get_table(
-                utils.load_filename(injection_path, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
+                utils.load_filename(injection_path))
         if eventnum is not None:
             if(len(injections)<eventnum):
                 print("Error: You asked for event %d, but %s contains only %d injections" %(eventnum,injection_path,len(injections)))

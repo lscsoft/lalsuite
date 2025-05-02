@@ -36,8 +36,6 @@ import sys
 
 
 from igwn_ligolw import ligolw
-from igwn_ligolw import array as ligolw_array
-from igwn_ligolw import param as ligolw_param
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
@@ -225,7 +223,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 	def to_xml(self, name):
 		xml = super(LnLRDensity, self).to_xml(name)
 		instruments = set(key.split("_", 1)[0] for key in self.densities if key.endswith("_snr2_chi2"))
-		xml.appendChild(ligolw_param.Param.from_pyvalue("instruments", lsctables.instrumentsproperty.set(instruments)))
+		xml.appendChild(ligolw.Param.from_pyvalue("instruments", lsctables.instrumentsproperty.set(instruments)))
 		for key, pdf in self.densities.items():
 			xml.appendChild(pdf.to_xml(key))
 		return xml
@@ -233,7 +231,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 	@classmethod
 	def from_xml(cls, xml, name):
 		xml = cls.get_xml_root(xml, name)
-		self = cls(lsctables.instrumentsproperty.get(ligolw_param.Param.get_param(xml, "instruments").value))
+		self = cls(lsctables.instrumentsproperty.get(ligolw.Param.get_param(xml, "instruments").value))
 		for key in self.densities:
 			self.densities[key] = rate.BinnedLnPDF.from_xml(xml, key)
 		return self
@@ -241,12 +239,6 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 
 class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 	ligo_lw_name_suffix = u"stringcusp_coincparamsdistributions"
-
-	@ligolw_array.use_in
-	@ligolw_param.use_in
-	@lsctables.use_in
-	class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-		pass
 
 	def __init__(self, instruments):
 		self.triangulators = triangulators(dict.fromkeys(instruments, 8e-5))
@@ -407,7 +399,7 @@ def load_likelihood_data(filenames, verbose = False):
 	for n, filename in enumerate(filenames, 1):
 		if verbose:
 			print("%d/%d:" % (n, len(filenames)), end=' ', file=sys.stderr)
-		xmldoc = ligolw_utils.load_filename(filename, verbose = verbose, contenthandler = StringCoincParamsDistributions.LIGOLWContentHandler)
+		xmldoc = ligolw_utils.load_filename(filename, verbose = verbose)
 		this_coinc_params = StringCoincParamsDistributions.from_xml(xmldoc, u"string_cusp_likelihood")
 		this_seglists = lsctables.SearchSummaryTable.get_table(xmldoc).get_out_segmentlistdict(lsctables.ProcessTable.get_table(xmldoc).get_ids_by_program(u"lalapps_string_meas_likelihood")).coalesce()
 		xmldoc.unlink()

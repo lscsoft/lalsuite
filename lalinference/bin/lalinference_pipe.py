@@ -10,7 +10,6 @@ import sys
 import os
 import uuid
 from lal import pipeline
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 
@@ -323,15 +322,15 @@ def setup_roq(cp):
             client = GraceDb(cp.get('analysis', 'service-url'))
         else:
             client = GraceDb()
-        coinc_xml_obj = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
+        coinc_xml_obj = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"))[0]
     elif cp.has_option('input', 'coinc-xml'):
-        coinc_xml_obj = ligolw_utils.load_fileobj(open(cp.get('input', 'coinc-xml'), "rb"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
+        coinc_xml_obj = ligolw_utils.load_fileobj(open(cp.get('input', 'coinc-xml'), "rb"))[0]
 
     # Get sim_inspiral from injection file
     if cp.has_option('input','injection-file'):
         print("Only 0-th event in the XML table will be considered while running with ROQ\n")
         row = lsctables.SimInspiralTable.get_table(
-                  ligolw_utils.load_filename(cp.get('input','injection-file'),contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
+                  ligolw_utils.load_filename(cp.get('input','injection-file'))
               )[0]
 
     roq_bounds = pipe_utils.Query_ROQ_Bounds_Type(path, roq_paths)

@@ -5246,10 +5246,9 @@ def effectiveSampleSize(samples, Nskip=1):
 def readCoincXML(xml_file, trignum):
     triggers=None
 
-    from igwn_ligolw import ligolw
     from igwn_ligolw import lsctables
     from igwn_ligolw import utils
-    coincXML = utils.load_filename(xml_file, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
+    coincXML = utils.load_filename(xml_file)
     coinc = lsctables.CoincTable.get_table(coincXML)
     coincMap = lsctables.CoincMapTable.get_table(coincXML)
     snglInsps = lsctables.SnglInspiralTable.get_table(coincXML)
@@ -6289,7 +6288,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
     if siminspiral is not None:
         skip=0
         try:
-            xmldoc = utils.load_filename(siminspiral,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
+            xmldoc = utils.load_filename(siminspiral)
             tbl = lsctables.SimInspiralTable.get_table(xmldoc)
             if event>0:
                 tbl=tbl[event]
@@ -6869,8 +6868,6 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
         def endElement(self,name):
             if self.intable: ligolw.LIGOLWContentHandler.endElement(self,name)
             if self.intable and name==self.tableElementName: self.intable=False
-
-    lsctables.use_in(LIGOLWContentHandlerExtractSimBurstTable)
 
     # time and freq data handling variables
     srate=4096.0

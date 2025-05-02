@@ -28,8 +28,6 @@ the DMT to store time- and frequency-series data in XML files,
 
 
 from igwn_ligolw import ligolw
-from igwn_ligolw import array as ligolw_array
-from igwn_ligolw import param as ligolw_param
 import lal
 import numpy as np
 
@@ -51,13 +49,13 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
     elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
-    elem.appendChild(ligolw_param.Param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
+    elem.appendChild(ligolw.Param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
     delta = getattr(series, delta_name)
     if np.iscomplexobj(series.data.data):
         data = np.vstack((np.arange(len(series.data.data)) * delta, series.data.data.real, series.data.data.imag))
     else:
         data = np.vstack((np.arange(len(series.data.data)) * delta, series.data.data))
-    a = ligolw_array.Array.build(series.name, data, dim_names=dim_names)
+    a = ligolw.Array.build(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
@@ -71,7 +69,7 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
     t, = elem.getElementsByTagName(ligolw.Time.tagName)
     a, = elem.getElementsByTagName(ligolw.Array.tagName)
     dims = a.getElementsByTagName(ligolw.Dim.tagName)
-    f0 = ligolw_param.get_param(elem, u"f0")
+    f0 = ligolw.Param.get_param(elem, u"f0")
 
     if t.Type != u"GPS":
         raise ValueError("epoch Type must be GPS")
@@ -211,7 +209,7 @@ def make_psd_xmldoc(psddict, xmldoc = None, root_name = u"psd"):
     for instrument, psd in psddict.items():
         fs = lw.appendChild(build_REAL8FrequencySeries(psd))
         if instrument is not None:
-            fs.appendChild(ligolw_param.Param.from_pyvalue(u"instrument", instrument))
+            fs.appendChild(ligolw.Param.from_pyvalue(u"instrument", instrument))
     return xmldoc
 
 
@@ -229,7 +227,7 @@ def read_psd_xmldoc(xmldoc, root_name = u"psd"):
     """
     if root_name is not None:
         xmldoc, = (elem for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == root_name)
-    result = dict((ligolw_param.Param.get_param(elem, u"instrument").value, parse_REAL8FrequencySeries(elem)) for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == u"REAL8FrequencySeries")
+    result = dict((ligolw.Param.get_param(elem, u"instrument").value, parse_REAL8FrequencySeries(elem)) for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == u"REAL8FrequencySeries")
     # interpret empty frequency series as None
     for instrument in result:
         if len(result[instrument].data.data) == 0:
@@ -237,8 +235,6 @@ def read_psd_xmldoc(xmldoc, root_name = u"psd"):
     return result
 
 
-@ligolw_array.use_in
-@ligolw_param.use_in
 class PSDContentHandler(ligolw.LIGOLWContentHandler):
     """A content handler suitable for reading PSD documents. Use like this:
 

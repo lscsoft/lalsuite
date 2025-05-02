@@ -126,8 +126,6 @@ class LIGOLWContentHandlerExtractSimInspiralTable(ligolw.LIGOLWContentHandler):
       if self.intable: ligolw.LIGOLWContentHandler.endElement(self,name)
       if self.intable and name==self.tableElementName: self.intable=False
 
-lsctables.use_in(LIGOLWContentHandlerExtractSimInspiralTable)
-
 class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
     def __init__(self,document):
       ligolw.LIGOLWContentHandler.__init__(self,document)
@@ -145,8 +143,6 @@ class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
     def endElement(self,name):
       if self.intable: ligolw.LIGOLWContentHandler.endElement(self,name)
       if self.intable and name==self.tableElementName: self.intable=False
-
-lsctables.use_in(LIGOLWContentHandlerExtractSimBurstTable)
 
 def pickle_to_file(obj,fname):
     """
@@ -336,10 +332,8 @@ def cbcBayesBurstPostProc(
         xmldoc = utils.load_filename(injfile,contenthandler=LIGOLWContentHandlerExtractSimBurstTable)
         got_burst_table=1
         try:
-            lsctables.use_in(LIGOLWContentHandlerExtractSimBurstTable)
             simtable=lsctables.SimBurstTable.get_table(xmldoc)
         except ValueError:
-            lsctables.use_in(LIGOLWContentHandlerExtractSimInspiralTable)
             simtable=lsctables.SimInspiralTable.get_table(xmldoc)
             got_inspiral_table=1
             got_burst_table=0
@@ -405,12 +399,11 @@ def cbcBayesBurstPostProc(
 
     if eventnum is None and injfile is not None:
         import itertools
-        from igwn_ligolw import ligolw
         from igwn_ligolw import lsctables
         from igwn_ligolw import utils
         if got_inspiral_table==1:
             injections = lsctables.SimInspiralTable.get_table(
-                            utils.load_filename(injfile,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
+                            utils.load_filename(injfile)
                             )
 
         if(len(injections)<1):
