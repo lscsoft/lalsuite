@@ -25,7 +25,7 @@
 #define REAL8_VALUE 1e100
 #define COMPLEX8_VALUE 3.0 + 4.0 * I
 #define COMPLEX16_VALUE 3e100 + 4e100 * I
-char BLOB_VALUE[5] = "\x68\x65\x6c\x6c\x6f";
+char BLOB_VALUE[5] = {'\x68', '\x65', '\x6c', '\x6c', '\x6f'};
 char String_VALUE[] = "world";
 
 static LALDict * create_dict(void)
