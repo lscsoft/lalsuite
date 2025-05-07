@@ -182,10 +182,6 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos, double epsrel);
 
-//CUTER-dev
-int XLALSimNeutronStarTOVPTODEIntegrateWithToleranceBis(double *radius, double *mass, double *baryon_mass,
-                                                     double *love_number_k2, double *love_number_k3, double *love_number_k4,
-                                                     double central_pressure_si, struct EOSMultiParts eos, double epsrel);
 
 int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
