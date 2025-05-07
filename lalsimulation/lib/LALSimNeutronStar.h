@@ -50,11 +50,6 @@
 #define LAL_NUCLEAR_DENSITY_GEOM_SI ((LAL_NUCLEAR_DENSITY_SI) * (LAL_G_C2_SI))
 
 
-//CUTER-dev
-/** Maxmimum number of phase transitions treatable to create an EOS object */
-#define LAL_MAX_NUMBER_PT 10
-#define LAL_MAX_NUMBER_EOS_PARTS 10
-
 
 /* EOS ROUTINES */
 
@@ -83,27 +78,6 @@ struct CutEoS{
  * in energy density (d_eps) between the highest point of the low EOS and the lowest
  * point of the high EOS.
  */
-// struct multiplePartEOS{
-//     int number_of_PT;
-//     double pmax;
-//     struct TwoEOS two_part_eos[LAL_MAX_NUMBER_PT];
-//     double pres_pt[LAL_MAX_NUMBER_PT];
-//     double d_eps[LAL_MAX_NUMBER_PT];
-// };
-
-// CUTER-dev
-// TODO PHIL DAVIS
-// struct phaseTransitionEoS{
-//     int number_of_PT;
-//     double pmax;
-//     double pres_pt[LAL_MAX_NUMBER_EOS_PARTS-1];
-//     double h_pt[LAL_MAX_NUMBER_EOS_PARTS-1];
-//     double d_eps[LAL_MAX_NUMBER_EOS_PARTS-1];
-//     LALSimNeutronStarEOS * eosMulti [LAL_MAX_NUMBER_EOS_PARTS];
-//     double hmin [LAL_MAX_NUMBER_PT];
-// };
-
-
 struct EOSMultiParts{
   int number_of_parts;
   double pmax;
@@ -113,8 +87,6 @@ struct EOSMultiParts{
 };
 
 
-
-
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
 char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
@@ -122,16 +94,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
-
-// //CUTER-dev
-// struct multiplePartEOS XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
-//                                                                     double *mubdat, double *muedat, double *hdat,
-//                                                                     double *yedat, double *cs2dat, size_t ndat);
-
-// struct phaseTransitionEoS XLALSimNeutronStarEOSFromTabDataPhaseTransitionBis( double *nbdat, double *edat, double *pdat,
-//                                                                     double *mubdat, double *muedat, double *hdat,
-//                                                                     double *yedat, double *cs2dat, size_t ndat);
-
 
 struct EOSMultiParts XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,

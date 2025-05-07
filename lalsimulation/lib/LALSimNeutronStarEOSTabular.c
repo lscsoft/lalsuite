@@ -718,7 +718,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
  * @param yedat array of size ndat containing the lepton fration [dimensionless]
  * @param cs2dat array of size ndat containing the sound speed squared normalized to the speed of light [dimensionless]
  * @param ndat size of the arrays for equation of state quantities
- * @return The neutron star double equation of state structure.
+ * @return The neutron star multipart equation of state structure.
  */
 struct EOSMultiParts XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
@@ -736,31 +736,19 @@ struct EOSMultiParts XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nb
     eos.pmax = pdat[ndat-1];
 
 
-    eos.eos_part = (LALSimNeutronStarEOS **) malloc(sizeof(LALSimNeutronStarEOS *) * (number_eos));
-    eos.hmin = (double *) malloc(sizeof(double) * (number_eos));
-    eos.hmax = (double *) malloc(sizeof(double) * (number_eos));
+    eos.eos_part = (LALSimNeutronStarEOS **) XLALMalloc(sizeof(LALSimNeutronStarEOS *) * (number_eos)); // TODO LAL Alloc
+    eos.hmin = (double *) XLALMalloc(sizeof(double) * (number_eos));
+    eos.hmax = (double *) XLALMalloc(sizeof(double) * (number_eos));
 
-    if (number_pt == 0){
-        eos.eos_part[0] = XLALSimNeutronStarEOSFromTabData(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat);
-        eos.hmin[0] = hdat[0];
-        eos.hmax[0] = hdat[ndat-1];
+    for (int i = 0; i <= number_pt; i++){
+        eos.hmin[i] = hdat[bottom_index];
 
-    } else if (number_pt <= LAL_MAX_NUMBER_PT){
-        for (int i = 0; i <= number_pt; i++){
-            eos.hmin[i] = hdat[bottom_index];
+        upper_index = indices_phase_transition[i+1];
+        eos.eos_part[i] = eos_cut(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
+        eos.hmax[i] = hdat[upper_index];
 
-            upper_index = indices_phase_transition[i+1];
-            eos.eos_part[i] = eos_cut(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
-            eos.hmax[i] = hdat[upper_index];
-
-            bottom_index = indices_phase_transition[i+1] + 1;
-        }
-    } else {
-        printf("\n WARNING too many phase transition have been found in the input EoS (>%d), cannot create EoS object\n", LAL_MAX_NUMBER_PT); // TODO create an error and an exit
-        eos.number_of_parts = -1; // FLAG OF ERROR
-        eos.pmax = -1;
+        bottom_index = indices_phase_transition[i+1] + 1;
     }
-
 
     return eos;
 

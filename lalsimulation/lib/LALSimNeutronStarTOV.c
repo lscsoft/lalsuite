@@ -499,7 +499,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
     /* Set up the iterative method to solve the ODE, and the dimension of the ODE set */
     gsl_odeiv_step *step = gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_EXT_ODE_VARS_DIM);
     /* Set up the precision of the numerical method with relative error epsrel */
-    gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);// TODO test the error absolute vs relative
+    gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel); // TODO test the error absolute vs relative
     /* Set up evolution function to solve ODE with the dimension of the ODE set */
     gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_EXT_ODE_VARS_DIM);
 
