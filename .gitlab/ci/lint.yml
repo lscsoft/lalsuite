@@ -69,14 +69,14 @@ lint:api-merge-diff:
     - git fetch --depth=1 ${CI_REPOSITORY_URL} ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
     - git checkout ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
     - ./00boot || exit 100
-    - ./configure --prefix=${PWD}/OLD <<< ${CONFIGURE_FLAGS} || exit 100
+    - xargs ./configure --prefix=${PWD}/OLD <<< ${CONFIGURE_FLAGS} || exit 100
     - make -j${CPU_COUNT} || exit 100
     - make install || exit 100
     - make distclean || exit 100
     # configure and build LALSuite after changes are merged
     - git checkout ${CI_COMMIT_SHA}
     - ./00boot
-    - ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
+    - xargs ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
     - make -j${CPU_COUNT}
     - make install
     # compare API of LALSuite libraries before and after changes are merged
@@ -114,7 +114,7 @@ lint:api-last-release:
           abi-compliance-checker
     # configure and build LALSuite at current commit
     - ./00boot
-    - ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
+    - xargs ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
     - make -j${CPU_COUNT}
     - make install
     # compare API of LALSuite libraries between last release and current commit
