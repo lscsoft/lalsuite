@@ -29,6 +29,6 @@ class test_docstrings(unittest.TestCase):
 
 
 suite = unittest.TestSuite()
-suite.addTest(unittest.makeSuite(test_docstrings))
+suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(test_docstrings))
 
 sys.exit(not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful())

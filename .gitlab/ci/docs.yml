@@ -5,7 +5,7 @@
 # ----------------------------------------------------------------------
 
 documentation:
-  image: igwn/lalsuite-dev:bookworm
+  image: quay.io/igwn/lalsuite-dev:bookworm
   stage: documentation
   needs: []
   script:

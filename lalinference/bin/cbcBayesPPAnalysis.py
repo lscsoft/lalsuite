@@ -24,7 +24,6 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils
 import matplotlib
@@ -254,7 +253,7 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    injs = lsctables.SimInspiralTable.get_table(utils.load_filename(options.injxml,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler)))
+    injs = lsctables.SimInspiralTable.get_table(utils.load_filename(options.injxml))
 
     if options.par == []:
         parameters = ['m1', 'm2', 'mc', 'eta', 'q',  'theta_jn', 'a1', 'a2', 'tilt1', 'tilt2', 'phi12', 'phi_jl', 'ra', 'dec', 'distance', 'time', 'phi_orb', 'psi']

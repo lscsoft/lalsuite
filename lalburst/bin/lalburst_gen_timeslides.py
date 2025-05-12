@@ -128,13 +128,9 @@ options, filenames = parse_command_line()
 #
 
 
-@lsctables.use_in
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-	pass
-
 time_slides = {}
 for filename in options.add_to:
-	time_slide_table = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = LIGOLWContentHandler))
+	time_slide_table = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose))
 	extra_time_slides = time_slide_table.as_dict().values()
 	if options.verbose:
 		print("Loaded %d time slides." % len(extra_time_slides), file=sys.stderr)
@@ -170,7 +166,7 @@ if options.verbose:
 if options.verbose:
 	print("Identifying and removing duplicates ...", file=sys.stderr)
 
-map(time_slides.pop, ligolw_time_slide.time_slides_vacuum(time_slides, verbose = options.verbose).keys())
+map(time_slides.pop, timeslides.vacuum(time_slides, verbose = options.verbose).keys())
 
 if options.verbose:
 	print("%d time slides remain." % len(time_slides), file=sys.stderr)

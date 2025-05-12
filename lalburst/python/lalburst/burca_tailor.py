@@ -36,8 +36,6 @@ from lal import rate
 
 from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
-from igwn_ligolw import array as ligolw_array
-from igwn_ligolw import param as ligolw_param
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
 from igwn_ligolw.utils import search_summary as ligolw_search_summary
@@ -111,7 +109,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		xml = super(LnLRDensity, self).to_xml(name)
 		instruments =  set(key.split("_", 2)[0] for key in self.densities if key.endswith("_dt"))
 		instruments |= set(key.split("_", 2)[1] for key in self.densities if key.endswith("_dt"))
-		xml.appendChild(ligolw_param.Param.from_pyvalue("instruments", lsctables.instrumentsproperty.set(instruments)))
+		xml.appendChild(ligolw.Param.from_pyvalue("instruments", lsctables.instrumentsproperty.set(instruments)))
 		for key, pdf in self.densities.items():
 			xml.appendChild(pdf.to_xml(key))
 		return xml
@@ -119,7 +117,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 	@classmethod
 	def from_xml(cls, xml, name):
 		xml = cls.get_xml_root(xml, name)
-		self = cls(lsctables.instrumentsproperty.get(ligolw_param.Param.get_param(xml, "instruments").value))
+		self = cls(lsctables.instrumentsproperty.get(ligolw.Param.get_param(xml, "instruments").value))
 		for key in self.densities:
 			self.densities[key] = rate.BinnedLnPDF.from_xml(xml, key)
 		return self
@@ -127,12 +125,6 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 
 class BurcaCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 	ligo_lw_name_suffix = "excesspower_coincparamsdistributions"
-
-	@ligolw_array.use_in
-	@ligolw_param.use_in
-	@lsctables.use_in
-	class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-		pass
 
 	def __init__(self, instruments):
 		self.numerator = LnLRDensity(instruments)
@@ -199,7 +191,7 @@ class BurcaCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		for n, filename in enumerate(filenames, 1):
 			if verbose:
 				print("%d/%d:" % (n, len(filenames)), end=' ', file=sys.stderr)
-			xmldoc = ligolw_utils.load_filename(filename, verbose = verbose, contenthandler = cls.contenthandler)
+			xmldoc = ligolw_utils.load_filename(filename, verbose = verbose)
 			if self is None:
 				self = cls.from_xml(xmldoc, name)
 				seglists = lsctables.SearchSummaryTable.get_table(xmldoc).get_out_segmentlistdict(set([self.process_id])).coalesce()

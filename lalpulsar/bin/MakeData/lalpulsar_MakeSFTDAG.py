@@ -339,7 +339,7 @@ parser.add_argument(
     "-k",
     "--filter-knee-freq",
     required=True,
-    type=int,
+    type=float,
     help="high pass filter knee frequency used on time domain \
           data before generating SFTs",
 )

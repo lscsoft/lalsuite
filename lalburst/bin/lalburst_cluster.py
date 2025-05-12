@@ -32,14 +32,9 @@ from optparse import OptionParser
 from lal.utils import CacheEntry
 
 
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from lalburst import git_version
 from lalburst import bucluster
-
-
-lsctables.use_in(ligolw.LIGOLWContentHandler)
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -117,7 +112,7 @@ for filename in filenames:
 	# Load document
 	#
 
-	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
 
 	# FIXME:  don't do this:  fix lalapps_power's output
 	if options.cluster_algorithm in ("excesspower",):

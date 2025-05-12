@@ -21,10 +21,6 @@ from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
 from igwn_ligolw.utils import time_slide as ligolw_time_slide
 
-@lsctables.use_in
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-	pass
-
 
 #
 # construct a synthetic burst trigger document
@@ -272,7 +268,7 @@ elif options.mode == "brute-force":
 	# brute-force algorithm to compute coincs, save to disk
 	#
 
-	xmldoc = ligolw_utils.load_filename(filename, contenthandler = LIGOLWContentHandler, verbose = options.verbose)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
 	do_brute_force_coinc(xmldoc, delta_t = options.delta_t, min_instruments = options.min_instruments)
 	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)
 
@@ -283,7 +279,7 @@ elif options.mode == "test":
 	# coincidence engine.  compare the two sets of coincs
 	#
 
-	xmldoc = ligolw_utils.load_filename(filename, contenthandler = LIGOLWContentHandler, verbose = options.verbose)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
 	do_snglcoinc(xmldoc, delta_t = options.delta_t, min_instruments = options.min_instruments)
 
 	# intialize the summary objects.  this checks for duplicate singles

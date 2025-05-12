@@ -27,7 +27,7 @@
 
 # job template for docker builds
 .docker:
-  image: docker:latest
+  image: quay.io/lib/docker:latest
   tags:
     - executor-docker
   variables:

@@ -105,7 +105,6 @@ def element_filter(name, attrs):
 	return lsctables.SearchSummaryTable.CheckProperties(name, attrs) or lsctables.ProcessTable.CheckProperties(name, attrs)
 
 
-@lsctables.use_in
 class ContentHandler(ligolw.PartialLIGOLWContentHandler):
 	def __init__(self, xmldoc):
 		ligolw.PartialLIGOLWContentHandler.__init__(self, xmldoc, element_filter)

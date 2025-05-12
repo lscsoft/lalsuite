@@ -89,11 +89,7 @@ for filename in cachenames:
 	cache.extend(cafe.load_cache(filename, options.verbose))
 
 
-@lsctables.use_in
-class LIGOLWContentHandler(lsctables.ligolw.LIGOLWContentHandler):
-	pass
-
-seglists, outputcaches = cafe.ligolw_cafe(cache, lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(options.time_slides, verbose = options.verbose, contenthandler = LIGOLWContentHandler)).as_dict().values(), options.verbose)
+seglists, outputcaches = cafe.ligolw_cafe(cache, lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(options.time_slides, verbose = options.verbose)).as_dict().values(), options.verbose)
 instruments = set(seglists.keys())
 
 

@@ -194,19 +194,24 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   /* initialise deltafs to zero */
   deltafs = XLALCalloc( nfreqs, sizeof( REAL8 ) );
   deltat = ( pepochorig - pepoch );
-  deltatpow = deltat;
+
   for ( i = 0; i < freqsu->length; i++ ) {
     frequpdate[i] = freqsu->data[i];
 
     /* if epochs are different update "new" frequency to heterodyne epoch */
     if ( pepoch != pepochorig ) {
-      REAL8 deltatpowu = deltatpow;
+      REAL8 deltatpowu = deltat;
       for ( j = i + 1; j < freqsu->length; j++ ) {
         frequpdate[i] += ( freqsu->data[j] * deltatpowu ) / gsl_sf_fact( j - i );
+
         deltatpowu *= deltat;
       }
-      deltatpow *= deltat;
     }
+  }
+
+  if ( pepoch != pepochorig ) {
+    // correct the epoch value
+    T0 = pepochorig;
   }
 
   /* get vector of frequencies and frequency differences */

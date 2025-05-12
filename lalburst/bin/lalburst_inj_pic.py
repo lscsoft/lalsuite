@@ -43,11 +43,6 @@ import lalsimulation
 from lalburst import git_version
 
 
-@lsctables.use_in
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-	pass
-
-
 class SimBurst(lalmetaio.SimBurst):
 	def __init__(self, **kwargs):
 		super(SimBurst, self).__init__()
@@ -133,7 +128,7 @@ options, filenames = parse_command_line()
 #
 
 
-xmldoc = ligolw_utils.load_filename(options.time_slide_xml, verbose = options.verbose, contenthandler = LIGOLWContentHandler)
+xmldoc = ligolw_utils.load_filename(options.time_slide_xml, verbose = options.verbose)
 
 
 #

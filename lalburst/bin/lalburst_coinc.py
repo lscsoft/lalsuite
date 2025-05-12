@@ -30,7 +30,6 @@ from optparse import OptionParser
 import sys
 
 
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
@@ -38,10 +37,6 @@ from lalburst import git_version
 from lalburst import burca
 from igwn_segments import utils as segmentsUtils
 
-
-@lsctables.use_in
-class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-	pass
 
 process_program_name = "lalburst_coinc"
 
@@ -164,7 +159,7 @@ for n, filename in enumerate(filenames):
 
 	if options.verbose:
 		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
-	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = LIGOLWContentHandler)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
 
 	#
 	# Have we already processed it?

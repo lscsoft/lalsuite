@@ -46,7 +46,7 @@ flake8-code_quality:
   extends:
     - .build-job
     - .lint
-  image: igwn/lalsuite-dev:el8-testing
+  image: quay.io/igwn/lalsuite-dev:el8-testing
   variables:
     CONFIGURE_FLAGS: "--disable-lalapps --disable-doxygen --disable-swig"
   artifacts:
@@ -144,10 +144,9 @@ lint:api-last-release:
 lint:pre-commit:
   extends:
     .lint
-  image: igwn/lalsuite-dev:el8
+  image: quay.io/igwn/lalsuite-dev:el8
   variables:
     GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
-    PYTHON: python3.11    # pre-commit hooks require Python >=3.10
   before_script:
     # this jobs needs the full Git history to update the authors
     - git fetch --unshallow --quiet
@@ -155,8 +154,10 @@ lint:pre-commit:
     - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
   script:
     # install pre-commit
-    - !reference [.pip-venv]
-    - pip install pre-commit
+    - PYTHON="python3.11"    # pre-commit hooks require Python >=3.10
+    - !reference [.python-venv]
+    - retry python -m pip install pre-commit
+    - retry pre-commit install-hooks
     # run pre-commit
     - |
       echo "env: CI_COMMIT_AUTHOR=${CI_COMMIT_AUTHOR}"
@@ -183,10 +184,10 @@ lint:depends:
   extends:
     - .build-job
     - .lint
-  image: igwn/lalsuite-dev:el8
+  image: quay.io/igwn/lalsuite-dev:el8
   before_script:
-    - python3 -m pip install --upgrade pip
-    - python3 -m pip install
+    - !reference [.python-venv]
+    - retry python -m pip install
           coloredlogs
           pyyaml
           python-debian
@@ -201,7 +202,7 @@ lint:gitignore:
   extends:
     - .build-job
     - .lint
-  image: igwn/lalsuite-dev:el8
+  image: quay.io/igwn/lalsuite-dev:el8
   script:
     # build in source directory, including tests
     - ./00boot
@@ -209,11 +210,10 @@ lint:gitignore:
     - make -j${CPU_COUNT} VERBOSE=1 all
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     # install pre-commit
-    - |
-      python3.11 -m venv .venv
-      source .venv/bin/activate
-      python3 -m pip install --upgrade pip
-      python3 -m pip install pre-commit
+    - PYTHON="python3.11"    # pre-commit hooks require Python >=3.10
+    - !reference [.python-venv]
+    - retry python -m pip install pre-commit
+    - retry pre-commit install-hooks
     # check for build files not in .gitignore
     - |
       status=0

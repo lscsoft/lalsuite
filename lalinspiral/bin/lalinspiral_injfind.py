@@ -148,7 +148,7 @@ for n, filename in enumerate(filenames, start = 1):
 
 	if options.verbose:
 		print("%d/%d:" % (n, len(filenames)), end=' ', file=sys.stderr)
-	xmldoc = ligolw_utils.load_filename(filename, contenthandler = inspinjfind.LIGOLWContentHandler, verbose = options.verbose)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
 
 	#
 	# process

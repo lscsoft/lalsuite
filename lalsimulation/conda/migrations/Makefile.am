@@ -1,4 +1,4 @@
 EXTRA_DIST = \
 	numpy2.yaml \
-	python312.yaml \
+	python313.yaml \
 	$(END_OF_LIST)

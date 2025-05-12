@@ -26,7 +26,7 @@ clang:
          - 19
          - 20
          - dev
-  image: igwn/lalsuite-dev-clang:$CLANG_VERSION
+  image: quay.io/igwn/lalsuite-dev-clang:$CLANG_VERSION
   variables:
     CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
     # Clang has weird bugs when compiling with CFLAGS=-O3
@@ -53,7 +53,7 @@ gcc:
           - 12
           - 13
           - 14
-  image: igwn/lalsuite-dev-gcc:$GCC_VERSION
+  image: quay.io/igwn/lalsuite-dev-gcc:$GCC_VERSION
   variables:
     CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
@@ -62,7 +62,7 @@ gcc:
 cuda:
   extends:
     - .compiler-test
-  image: igwn/lalsuite-dev-cuda:el8
+  image: quay.io/igwn/lalsuite-dev-cuda:el8
   script:
     - ./00boot
     # test ./configure works with non-system CUDA install path

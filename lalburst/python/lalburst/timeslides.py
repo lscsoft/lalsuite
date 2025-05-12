@@ -25,6 +25,7 @@
 
 
 import itertools
+from tqdm import tqdm
 
 
 from . import offsetvector
@@ -188,3 +189,48 @@ def Inspiral_Num_Slides_Iter(count, offsets):
 	offsets = offsets.items()
 	for n in range(-count, +count + 1):
 		yield offsetvector.offsetvector((instrument, offset * n) for instrument, offset in offsets)
+
+
+def vacuum(time_slides, verbose = False):
+	"""
+	Given a dictionary mapping time slide ID to offsetvector, for
+	example as returned by the .as_dict() method of the TimeSlideTable
+	class in ligolw.lsctables, construct and return a mapping
+	indicating time slide equivalences.  This can be used to delete
+	redundant time slides from a time slide table, and then also used
+	via the .applyKeyMapping() method of ligolw.table.Table instances
+	to update cross references (for example in the coinc_event table).
+
+	Example:
+
+	>>> slides = {0: offsetvector({"H1": 0, "H2": 0}), 1: offsetvector({"H1": 10, "H2": 10}), 2: offsetvector({"H1": 0, "H2": 10})}
+	>>> vacuum(slides)
+	{1: 0}
+
+	indicating that time slide ID 1 describes a time slide that is
+	equivalent to time slide ID 0.  The calling code could use this
+	information to delete time slide ID 1 from the time_slide table,
+	and replace references to that ID in other tables with references
+	to time slide ID 0.
+	"""
+	# convert offsets to deltas
+	time_slides = dict((time_slide_id, offsetvect.deltas) for time_slide_id, offsetvect in time_slides.items())
+	with tqdm(total = len(time_slides), disable = not verbose) as progressbar:
+		# old --> new mapping
+		mapping = {}
+		# while there are time slide offset dictionaries remaining
+		while time_slides:
+			# pick an ID/offset dictionary pair at random
+			id1, deltas1 = time_slides.popitem()
+			# for every other ID/offset dictionary pair in the
+			# time slides, if the relative offset dictionaries
+			# are equivalent record in the old --> new mapping
+			ids_to_delete = [id2 for id2, deltas2 in time_slides.items() if deltas2 == deltas1]
+			for id2 in ids_to_delete:
+				mapping[id2] = id1
+				time_slides.pop(id2)
+			# number of offset vectors removed from time_slides
+			# in this iteration
+			progressbar.update(1 + len(ids_to_delete))
+	# done
+	return mapping

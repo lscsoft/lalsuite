@@ -54,7 +54,7 @@ Requires: libframel >= @MIN_FRAMEL_VERSION@
 Requires: libmetaio >= @MIN_METAIO_VERSION@
 Requires: python3
 Requires: python3dist(h5py)
-Requires: python3dist(igwn-ligolw) >= @MIN_PYTHON_LIGO_LW_VERSION@
+Requires: python3dist(igwn-ligolw) >= @MIN_PYTHON_IGWN_LIGOLW_VERSION@
 Requires: python3dist(igwn-segments)
 Requires: python3dist(matplotlib)
 Requires: python3dist(numpy)

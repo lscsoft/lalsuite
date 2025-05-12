@@ -134,7 +134,7 @@ Requires: python3dist(astropy) >= 1.1.1
 Requires: python3dist(gwdatafind)
 Requires: python3dist(healpy) >= 1.9.1
 Requires: python3dist(h5py)
-Requires: python3dist(igwn-ligolw) >= @MIN_PYTHON_LIGO_LW_VERSION@
+Requires: python3dist(igwn-ligolw) >= @MIN_PYTHON_IGWN_LIGOLW_VERSION@
 Requires: python3dist(igwn-segments)
 Requires: python3dist(ligo-gracedb)
 Requires: python3dist(matplotlib) >= 1.2.0
