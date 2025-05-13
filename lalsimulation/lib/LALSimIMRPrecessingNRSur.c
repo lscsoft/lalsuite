@@ -462,7 +462,7 @@ static void PrecessingNRSur_LoadCoorbitalEllModes(
     mode_data->ell = i+2;
 
     LALH5File *sub;
-    int str_size = 30; // Enough for L with 15 digits...
+    int str_size = 33; // Enough for L with 15 digits...
     char *sub_name = XLALMalloc(str_size);
 
     // Real part of m=0 mode
