@@ -51,7 +51,7 @@ flake8-code_quality:
     - .lint
   image: quay.io/igwn/lalsuite-dev:el8-testing
   variables:
-    CONFIGURE_FLAGS: "--disable-lalapps --disable-doxygen --disable-swig"
+    CONFIGURE_FLAGS: "--disable-lalapps --disable-doxygen --disable-swig CFLAGS='-g -Og -fno-eliminate-unused-debug-types'"
   artifacts:
     paths:
       - api-reports
