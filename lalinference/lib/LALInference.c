@@ -532,7 +532,7 @@ int LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name)
 void LALInferenceClearVariables(LALInferenceVariables *vars)
 /* Free all variables inside the linked list, leaving only the head struct */
 {
-  LALInferenceVariableItem *this,*next;
+  LALInferenceVariableItem *this,*next=NULL;
   if(!vars) return;
   this=vars->head;
   if(this) next=this->next;
