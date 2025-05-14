@@ -47,9 +47,9 @@ coverage:
     # Run unit tests with Python scripts instrumented by coverage.py
     - make -j${CPU_COUNT} check
           CFLAGS="${CFLAGS}"
-          COVERAGE_RCFILE="$(pwd)/.coveragerc"
-          COVERAGE_FILE="$(pwd)/.coverage"
-          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\""
+          COVERAGE_RCFILE="${PWD}/.coveragerc"
+          COVERAGE_FILE="${PWD}/.coverage"
+          PY_LOG_FLAGS="-m coverage run --source \"${PWD}\""
           PYBIN_SCRIPT_PY_FLAGS="-m coverage run"
   after_script:
     - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh

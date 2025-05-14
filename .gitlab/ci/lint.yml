@@ -4,7 +4,8 @@
 # Run some quality checks on the source code.
 # ----------------------------------------------------------------------
 
-# job template for lint jobs
+# -- job template for lint jobs
+
 .lint:
   stage: lint
   needs: []
@@ -13,6 +14,8 @@
     - !reference [.ci-nightly-deploy, rules]
     - !reference [.ci-push-build, rules]
     - !reference [.ci-merge-build, rules]
+
+# -- imported lint jobs
 
 include:
   # https://git.ligo.org/explore/catalog/computing/gitlab/components/sast
@@ -40,7 +43,7 @@ flake8-code_quality:
   rules: !reference [.lint, rules]
   needs: []
 
-# custom Lint jobs
+# -- local lint jobs
 
 .lint:api:
   extends:
@@ -48,7 +51,7 @@ flake8-code_quality:
     - .lint
   image: quay.io/igwn/lalsuite-dev:el8-testing
   variables:
-    CONFIGURE_FLAGS: "--disable-lalapps --disable-doxygen --disable-swig"
+    CONFIGURE_FLAGS: "--disable-lalapps --disable-doxygen --disable-swig CFLAGS='-g -Og -fno-eliminate-unused-debug-types'"
   artifacts:
     paths:
       - api-reports
@@ -69,14 +72,14 @@ lint:api-merge-diff:
     - git fetch --depth=1 ${CI_REPOSITORY_URL} ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
     - git checkout ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
     - ./00boot || exit 100
-    - ./configure --prefix=${PWD}/OLD <<< ${CONFIGURE_FLAGS} || exit 100
+    - xargs ./configure --prefix=${PWD}/OLD <<< ${CONFIGURE_FLAGS} || exit 100
     - make -j${CPU_COUNT} || exit 100
     - make install || exit 100
     - make distclean || exit 100
     # configure and build LALSuite after changes are merged
     - git checkout ${CI_COMMIT_SHA}
     - ./00boot
-    - ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
+    - xargs ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
     - make -j${CPU_COUNT}
     - make install
     # compare API of LALSuite libraries before and after changes are merged
@@ -114,7 +117,7 @@ lint:api-last-release:
           abi-compliance-checker
     # configure and build LALSuite at current commit
     - ./00boot
-    - ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
+    - xargs ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
     - make -j${CPU_COUNT}
     - make install
     # compare API of LALSuite libraries between last release and current commit
