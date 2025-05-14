@@ -12,7 +12,7 @@ documentation:
     - !reference [.retry]
     - retry apt-get -y -q install pandoc
     - ./00boot
-    - ./configure --enable-doxygen --prefix=$(pwd)/_inst
+    - ./configure --enable-doxygen --prefix=${PWD}/_inst
     - make -j${CPU_COUNT} install-html
     - mv _inst/share/doc html
     - cd html
