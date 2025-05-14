@@ -131,8 +131,6 @@
 .wheel:macos:x86_64:
   tags:
     - macos_x86_64
-  # allow jobs to fail due to current runner instability
-  allow_failure: true
 
 .wheel:macos:arm64:
   tags:

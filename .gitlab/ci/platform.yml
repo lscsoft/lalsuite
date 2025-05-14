@@ -50,8 +50,6 @@ platform:conda:macos-x86_64:
   extends:
     - .platform-test:conda
     - .macos-x86_64
-  # allow jobs to fail due to current runner instability
-  allow_failure: true
 
 platform:conda:macos-arm64:
   extends:
