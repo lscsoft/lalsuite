@@ -15,24 +15,57 @@ API_NONE = 0
 API_MINOR = 1
 API_MAJOR = 2
 
-API_CHANGE_TEXT = ['none', 'minor', 'major']
+API_CHANGE_TEXT = ["none", "minor", "major"]
+
 
 def parse_command_line():
     """Parse command line"""
 
     # Create parser
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--old-lib-dir', required=True, help='Location of old LALSuite libraries')
-    parser.add_argument('--old-pub-header-dir', required=True, help='Location of old LALSuite public headers')
-    parser.add_argument('--old-debug-dir', default=None, help='Location of old LALSuite library debug symbols')
-    parser.add_argument('--old-sha', default=None, help='SHA of git commit from which old LALSuite libraries were built')
-    parser.add_argument('--new-lib-dir', required=True, help='Location of new LALSuite libraries')
-    parser.add_argument('--new-pub-header-dir', required=True, help='Location of new LALSuite public headers')
-    parser.add_argument('--new-debug-dir', default=None, help='Location of new LALSuite library debug symbols')
-    parser.add_argument('--new-sha', default=None, help='SHA of git commit from which new LALSuite libraries were built')
-    parser.add_argument('--output-dir', required=True, help='Output directory')
-    parser.add_argument('--table-title', default='API Changes', help='Title of table displaying API changes')
-    parser.add_argument('libraries', nargs='+', help='List of LALSuite libraries')
+    parser.add_argument(
+        "--old-lib-dir", required=True, help="Location of old LALSuite libraries"
+    )
+    parser.add_argument(
+        "--old-pub-header-dir",
+        required=True,
+        help="Location of old LALSuite public headers",
+    )
+    parser.add_argument(
+        "--old-debug-dir",
+        default=None,
+        help="Location of old LALSuite library debug symbols",
+    )
+    parser.add_argument(
+        "--old-sha",
+        default=None,
+        help="SHA of git commit from which old LALSuite libraries were built",
+    )
+    parser.add_argument(
+        "--new-lib-dir", required=True, help="Location of new LALSuite libraries"
+    )
+    parser.add_argument(
+        "--new-pub-header-dir",
+        required=True,
+        help="Location of new LALSuite public headers",
+    )
+    parser.add_argument(
+        "--new-debug-dir",
+        default=None,
+        help="Location of new LALSuite library debug symbols",
+    )
+    parser.add_argument(
+        "--new-sha",
+        default=None,
+        help="SHA of git commit from which new LALSuite libraries were built",
+    )
+    parser.add_argument("--output-dir", required=True, help="Output directory")
+    parser.add_argument(
+        "--table-title",
+        default="API Changes",
+        help="Title of table displaying API changes",
+    )
+    parser.add_argument("libraries", nargs="+", help="List of LALSuite libraries")
 
     # Parse command line
     args = parser.parse_args()
@@ -44,17 +77,21 @@ def check_tool_version(tool_name, min_version):
     """Check version of tools satisfied minimum requirements"""
 
     # Call tools with -dumpversion to return just the version number
-    proc = run([tool_name, '-dumpversion'], stdout=PIPE, stderr=DEVNULL, check=True)
+    proc = run([tool_name, "-dumpversion"], stdout=PIPE, stderr=DEVNULL, check=True)
 
     # Parse the version number into a 2-element tuple
-    stdout = proc.stdout.decode('utf-8')
-    version = tuple(int(v) for v in stdout.split('.'))
+    stdout = proc.stdout.decode("utf-8")
+    version = tuple(int(v) for v in stdout.split("."))
 
     # Compare version with the minimum required
     if version < min_version:
-        print('ERROR: {tool_name} version {version} is less than {min_version}'.format(
-            tool_name=tool_name, version='.'.join(version), min_version='.'.join(min_version)
-        ))
+        print(
+            "ERROR: {tool_name} version {version} is less than {min_version}".format(
+                tool_name=tool_name,
+                version=".".join(version),
+                min_version=".".join(min_version),
+            )
+        )
         sys.exit(1)
 
 
@@ -62,18 +99,18 @@ def find_library_and_version(lib_dir, lib_name, lib_sha):
     """Find library in a directory, and return its full version number"""
 
     # Find library filename with full version number
-    lib_glob = os.path.join(lib_dir, f'lib{lib_name}.so.*.*.*')
+    lib_glob = os.path.join(lib_dir, f"lib{lib_name}.so.*.*.*")
     lib_paths = glob(lib_glob)
     assert len(lib_paths) == 1, f'glob("{lib_glob}") returned {lib_paths}'
 
     # Extract library version number
     _, lib_filename = os.path.split(lib_paths[0])
-    _, so, lib_version = lib_filename.split('.', maxsplit=2)
-    assert so == 'so'
+    _, so, lib_version = lib_filename.split(".", maxsplit=2)
+    assert so == "so"
 
     # Add shortened SHA if given
     if lib_sha:
-        lib_version += '-' + lib_sha[:8]
+        lib_version += "-" + lib_sha[:8]
 
     return lib_paths[0], lib_version
 
@@ -83,26 +120,30 @@ def run_abi_dumper(lib_path, lib_version, pub_header_dir, lib_debug_dir, dump_fi
 
     # Build command line
     args = [
-        'abi-dumper',
-        '-output', dump_file,
-        '-vnum', lib_version,
-        '-public-headers', pub_header_dir
+        "abi-dumper",
+        "-output",
+        dump_file,
+        "-vnum",
+        lib_version,
+        "-public-headers",
+        pub_header_dir,
     ]
     if lib_debug_dir:
-        args.extend([
-            '-search-debuginfo', lib_debug_dir
-        ])
+        args.extend(["-search-debuginfo", lib_debug_dir])
     args.extend([lib_path])
 
     # Run command
-    print(f'Running {args}')
+    print(f"Running {args}")
     proc = run(args, stdout=PIPE, stderr=PIPE)
-    stdout = proc.stdout.decode('utf-8')
-    stderr = proc.stderr.decode('utf-8')
+    stdout = proc.stdout.decode("utf-8")
+    stderr = proc.stderr.decode("utf-8")
 
     # Check for errors
     if proc.returncode > 0:
-        print(f'ERROR: {args} failed\n=== stdout ===\n{stdout}\n=== stderr ===\n{stderr}\n--------------', file=sys.stderr)
+        print(
+            f"ERROR: {args} failed\n=== stdout ===\n{stdout}\n=== stderr ===\n{stderr}\n--------------",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 
@@ -111,48 +152,55 @@ def run_abi_compliance_checker(lib_name, old_dump_file, new_dump_file, output_di
 
     # Base command line
     base_args = [
-        'abi-compliance-checker',
-        '-library', lib_name,
-        '-old', old_dump_file,
-        '-new', new_dump_file,
-        '-source',
-        '-skip-internal-symbols', 'VCS_HEADER_LIBRARY_MISMATCH',
+        "abi-compliance-checker",
+        "-library",
+        lib_name,
+        "-old",
+        old_dump_file,
+        "-new",
+        new_dump_file,
+        "-source",
+        "-skip-internal-symbols",
+        "VCS_HEADER_LIBRARY_MISMATCH",
     ]
 
     # Create HTML report for human viewing, XML report for further parsing
-    xml_report_file = f'{lib_name}.xml'
+    xml_report_file = f"{lib_name}.xml"
     for report_args in (
-            ['-report-path', os.path.join(output_dir, f'{lib_name}.html')],
-            ['-xml', '-report-path', xml_report_file]
+        ["-report-path", os.path.join(output_dir, f"{lib_name}.html")],
+        ["-xml", "-report-path", xml_report_file],
     ):
 
         # Build command line
         args = base_args + report_args
 
         # Run command
-        print(f'Running {args}')
+        print(f"Running {args}")
         proc = run(args, stdout=PIPE, stderr=PIPE)
-        stdout = proc.stdout.decode('utf-8')
-        stderr = proc.stderr.decode('utf-8')
+        stdout = proc.stdout.decode("utf-8")
+        stderr = proc.stderr.decode("utf-8")
 
         # Check for errors
         # - abi-compliance-checker return 0(1) for (in)compatible libraries; not considered errors
         if proc.returncode > 1:
-            print(f'ERROR: {args} failed\n=== stdout ===\n{stdout}\n=== stderr ===\n{stderr}\n--------------', file=sys.stderr)
+            print(
+                f"ERROR: {args} failed\n=== stdout ===\n{stdout}\n=== stderr ===\n{stderr}\n--------------",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     # Parse XML report for verdict, and count number of problems
     xml_report = parse(xml_report_file)
-    xml_verdict = xml_report.find('test_results').find('verdict').text
+    xml_verdict = xml_report.find("test_results").find("verdict").text
     xml_problem_count = 0
-    for xml_problem in xml_report.find('problem_summary').iter():
-        xml_problem_text = re.sub(r'[^0-9]', '', xml_problem.text)
+    for xml_problem in xml_report.find("problem_summary").iter():
+        xml_problem_text = re.sub(r"[^0-9]", "", xml_problem.text)
         if len(xml_problem_text) > 0:
             xml_problem_count += int(xml_problem_text)
 
     # Determine API change
     api_change = API_NONE
-    if xml_verdict == 'incompatible':
+    if xml_verdict == "incompatible":
 
         # An incompatible verdict indicates major changes
         api_change = API_MAJOR
@@ -169,8 +217,8 @@ def main():
     """Main program"""
 
     # Check tool versions
-    check_tool_version('abi-dumper', (1, 2))
-    check_tool_version('abi-compliance-checker', (2, 3))
+    check_tool_version("abi-dumper", (1, 2))
+    check_tool_version("abi-compliance-checker", (2, 3))
 
     # Parse command line
     args = parse_command_line()
@@ -180,29 +228,47 @@ def main():
 
     # Compare library APIs
     tbl = []
-    yml = ''
+    yml = ""
     lalsuite_api_change = API_NONE
     for lib_name in args.libraries:
-        print(f'Comparing {lib_name} APIs')
+        print(f"Comparing {lib_name} APIs")
 
         # Find old and new libraries
-        old_lib, old_version = find_library_and_version(args.old_lib_dir, lib_name, args.old_sha)
-        new_lib, new_version = find_library_and_version(args.new_lib_dir, lib_name, args.new_sha)
+        old_lib, old_version = find_library_and_version(
+            args.old_lib_dir, lib_name, args.old_sha
+        )
+        new_lib, new_version = find_library_and_version(
+            args.new_lib_dir, lib_name, args.new_sha
+        )
 
         # Dump APIs
-        old_dump_file = f'{lib_name}-old.dump'
-        run_abi_dumper(old_lib, old_version, args.old_pub_header_dir, args.old_debug_dir, old_dump_file)
-        new_dump_file = f'{lib_name}-new.dump'
-        run_abi_dumper(new_lib, new_version, args.new_pub_header_dir, args.new_debug_dir, new_dump_file)
+        old_dump_file = f"{lib_name}-old.dump"
+        run_abi_dumper(
+            old_lib,
+            old_version,
+            args.old_pub_header_dir,
+            args.old_debug_dir,
+            old_dump_file,
+        )
+        new_dump_file = f"{lib_name}-new.dump"
+        run_abi_dumper(
+            new_lib,
+            new_version,
+            args.new_pub_header_dir,
+            args.new_debug_dir,
+            new_dump_file,
+        )
 
         # Compare APIs
-        api_change = run_abi_compliance_checker(lib_name, old_dump_file, new_dump_file, args.output_dir)
+        api_change = run_abi_compliance_checker(
+            lib_name, old_dump_file, new_dump_file, args.output_dir
+        )
 
         # Add to table of API changes
         tbl.append([lib_name, old_version, new_version, API_CHANGE_TEXT[api_change]])
 
         # Add to simple YAML file of API changes
-        yml += f'{lib_name}: {API_CHANGE_TEXT[api_change]}\n'
+        yml += f"{lib_name}: {API_CHANGE_TEXT[api_change]}\n"
 
         # Determine overall API change
         if api_change > lalsuite_api_change:
@@ -210,28 +276,28 @@ def main():
 
     # Output table of API changes
     col_widths = [13, 20, 20, 10]
-    row_fmt = ' | '.join(['{:<%d}' % col_width for col_width in col_widths])
-    header = row_fmt.format('Library', 'Old Version', 'New Version', 'API Change')
-    header_div = row_fmt.format(*['-' * col_width for col_width in col_widths])
+    row_fmt = " | ".join(["{:<%d}" % col_width for col_width in col_widths])
+    header = row_fmt.format("Library", "Old Version", "New Version", "API Change")
+    header_div = row_fmt.format(*["-" * col_width for col_width in col_widths])
     n_title_div = len(header_div) - len(args.table_title) - 2
-    title_div_left = '=' * (n_title_div // 2)
-    title_div_right = '=' * ((n_title_div + 1) // 2)
-    title = ' '.join([title_div_left, args.table_title, title_div_right])
+    title_div_left = "=" * (n_title_div // 2)
+    title_div_right = "=" * ((n_title_div + 1) // 2)
+    title = " ".join([title_div_left, args.table_title, title_div_right])
     print(title)
     print(header)
     print(header_div)
     for row in tbl:
         print(row_fmt.format(*row))
     print(header_div)
-    print(row_fmt.format('lalsuite', '-', '-', API_CHANGE_TEXT[lalsuite_api_change]))
+    print(row_fmt.format("lalsuite", "-", "-", API_CHANGE_TEXT[lalsuite_api_change]))
 
     # Output simple YAML file of API changes
-    yml += f'lalsuite: {API_CHANGE_TEXT[lalsuite_api_change]}\n'
-    with open(os.path.join(args.output_dir, 'api_changes.yml'), 'w') as yml_file:
+    yml += f"lalsuite: {API_CHANGE_TEXT[lalsuite_api_change]}\n"
+    with open(os.path.join(args.output_dir, "api_changes.yml"), "w") as yml_file:
         yml_file.write(yml)
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
