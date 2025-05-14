@@ -45,104 +45,88 @@ flake8-code_quality:
 
 # -- local lint jobs
 
-.lint:api:
+.lint-api-job:
   extends:
     - .build-job
     - .lint
   image: quay.io/igwn/lalsuite-dev:el8-testing
   variables:
-    CONFIGURE_FLAGS: "--disable-lalapps --disable-doxygen --disable-swig CFLAGS='-g -Og -fno-eliminate-unused-debug-types'"
+    CONFIGURE_FLAGS: >-
+      --disable-lalapps --disable-doxygen --disable-swig
+      --disable-framec --enable-framel
+      CFLAGS='-g -Og -fno-eliminate-unused-debug-types'
+    LALSUITE_LIBRARIES: >-
+      lal lalsupport
+      lalframe lalmetaio lalsimulation
+      lalburst lalinspiral lalinference lalpulsar
+
+.lint-api-init:
+  # install required packages
+  - retry yum -y install
+        abi-dumper
+        abi-compliance-checker
+
+.lint-api-build-lalsuite:
+  # configure, build, and install LALSuite
+  - ./00boot
+  - xargs ./configure --prefix=${PWD}/_inst <<< ${CONFIGURE_FLAGS}
+  - make -j${CPU_COUNT}
+  - make install
+
+lint:api-dump-master:
+  extends:
+    - .lint-api-job
+  script:
+    - !reference [.lint-api-init]
+    # build LALSuite
+    - !reference [.lint-api-build-lalsuite]
+    # dump API
+    - ./common/code-quality-scripts/check_library_api dump
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --output=api-dump-master/
+          ${LALSUITE_LIBRARIES}
+    # create tarball of API dumps
+    - tar -jchvf api-dump-master.tar.bz2 api-dump-master/
   artifacts:
     paths:
-      - api-reports
-  allow_failure:
-    exit_codes: 100   # failed to build LALSuite before changes
-
-lint:api-merge-diff:
-  extends:
-    - .lint:api
-  script:
-    # install required packages
-    - retry yum -y install
-          abi-dumper
-          abi-compliance-checker
-    # configure and build LALSuite before changes are merged
-    # - allow job to fail if target branch cannot be fetched or built (i.e. due to an unrelated failure)
-    - test "x${CI_MERGE_REQUEST_DIFF_BASE_SHA}" != x
-    - git fetch --depth=1 ${CI_REPOSITORY_URL} ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
-    - git checkout ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
-    - ./00boot || exit 100
-    - xargs ./configure --prefix=${PWD}/OLD <<< ${CONFIGURE_FLAGS} || exit 100
-    - make -j${CPU_COUNT} || exit 100
-    - make install || exit 100
-    - make distclean || exit 100
-    # configure and build LALSuite after changes are merged
-    - git checkout ${CI_COMMIT_SHA}
-    - ./00boot
-    - xargs ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
-    - make -j${CPU_COUNT}
-    - make install
-    # compare API of LALSuite libraries before and after changes are merged
-    - export PYTHONUNBUFFERED=yes
-    - ./common/code-quality-scripts/compare_library_api
-          --old-lib-dir=./OLD/lib
-          --old-pub-header-dir=./OLD/include/lal
-          --old-sha=${CI_MERGE_REQUEST_DIFF_BASE_SHA}
-          --new-lib-dir=./NEW/lib
-          --new-pub-header-dir=./NEW/include/lal
-          --new-sha=${CI_COMMIT_SHA}
-          --output-dir=./api-reports
-          --table-title="API Changes From Merge Request"
-          lal lalsupport
-          lalframe
-          lalmetaio
-          lalsimulation
-          lalburst
-          lalinspiral
-          lalinference
-          lalpulsar
+      - api-dump-master.tar.bz2
+      # for debugging
+      - config.log
   rules:
-    # run for merge requests only
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-
-lint:api-last-release:
-  extends:
-    - .lint:api
-  script:
-    # install required packages
-    - retry yum -y install
-          lalsuite-devel
-          lalsuite-debug
-          abi-dumper
-          abi-compliance-checker
-    # configure and build LALSuite at current commit
-    - ./00boot
-    - xargs ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
-    - make -j${CPU_COUNT}
-    - make install
-    # compare API of LALSuite libraries between last release and current commit
-    - export PYTHONUNBUFFERED=yes
-    - ./common/code-quality-scripts/compare_library_api
-          --old-lib-dir=/usr/lib64
-          --old-pub-header-dir=/usr/include/lal
-          --old-debug-dir=/usr/lib/debug
-          --new-lib-dir=./NEW/lib
-          --new-pub-header-dir=./NEW/include/lal
-          --new-sha=${CI_COMMIT_SHA}
-          --output-dir=./api-reports
-          --table-title="API Changes Since Last Release"
-          lal lalsupport
-          lalframe
-          lalmetaio
-          lalsimulation
-          lalburst
-          lalinspiral
-          lalinference
-          lalpulsar
-  rules:
+    # dump API of the main branch at lscsoft/lalsuite
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    # for debugging
     - !reference [.ci-lint, rules]
-    # run on release branches
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /release/'
+
+lint:api-dump-release:
+  extends:
+    - .lint-api-job
+  script:
+    - !reference [.lint-api-init]
+    # build LALSuite
+    - !reference [.lint-api-build-lalsuite]
+    # dump API
+    - ./common/code-quality-scripts/check_library_api dump
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --output=api-dump-release/
+          ${LALSUITE_LIBRARIES}
+    # create tarball of API dumps
+    - tar -jchvf api-dump-release.tar.bz2 api-dump-release/
+  artifacts:
+    paths:
+      - api-dump-release.tar.bz2
+      # for debugging
+      - config.log
+  rules:
+    # dump API of LALSuite releases
+    - !reference [.ci-lalsuite-tag-build, rules]
+    # for debugging
+    - !reference [.ci-lint, rules]
 
 lint:pre-commit:
   extends:
