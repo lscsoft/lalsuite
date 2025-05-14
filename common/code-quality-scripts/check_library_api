@@ -101,12 +101,16 @@ def find_library_and_version(lib_dir, lib_name, lib_sha):
     # Find library filename with full version number
     lib_glob = os.path.join(lib_dir, f"lib{lib_name}.so.*.*.*")
     lib_paths = glob(lib_glob)
-    assert len(lib_paths) == 1, f'glob("{lib_glob}") returned {lib_paths}'
+    if len(lib_paths) != 1:
+        print(f"ERROR: glob('{lib_glob}') returned '{lib_paths}'")
+        sys.exit(1)
 
     # Extract library version number
     _, lib_filename = os.path.split(lib_paths[0])
     _, so, lib_version = lib_filename.split(".", maxsplit=2)
-    assert so == "so"
+    if so != "so":
+        msg = f"first extension of file '{lib_filename}' is not 'so'"
+        raise ValueError(msg)
 
     # Add shortened SHA if given
     if lib_sha:
