@@ -146,7 +146,7 @@ lint:api-last-release:
 
 lint:pre-commit:
   extends:
-    .lint
+    - .lint
   image: quay.io/igwn/lalsuite-dev:el8
   variables:
     GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
