@@ -161,8 +161,6 @@
         --quiet
   - conda list --name lalsuite-dev
   - conda activate lalsuite-dev
-  # set path to M4 for now, see https://github.com/conda-forge/autoconf-feedstock/issues/41
-  - export M4=$(which m4)
 
 # -- builds
 
