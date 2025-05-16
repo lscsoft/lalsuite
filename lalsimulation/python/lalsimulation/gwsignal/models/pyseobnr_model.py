@@ -110,7 +110,7 @@ class SEOBNRv5EHM(CompactBinaryCoalescenceGenerator):
 
         gen_wf = self._generate_waveform_class(**parameters)
         if self.waveform_dict.get("condition"):
-            hp, hc = gen_wf.generate_td_polarizations_conditioned_2()
+            hp, hc = gen_wf.generate_td_polarizations_conditioned_1()
         else:
             hp, hc = gen_wf.generate_td_polarizations()
         epoch = hp.epoch.gpsSeconds + hp.epoch.gpsNanoSeconds / 1e9
