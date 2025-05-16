@@ -66,6 +66,12 @@ flake8-code_quality:
   - retry yum -y install
         abi-dumper
         abi-compliance-checker
+  # install required Python packages
+  - PYTHON="python3.11"    # python-gitlab >=5.6.0 requires Python >=3.9
+  - !reference [.python-venv]
+  - retry python -m pip install
+        natsort
+        "python-gitlab>=5.6.0"
 
 .lint-api-build-lalsuite:
   # configure, build, and install LALSuite
@@ -128,6 +134,71 @@ lint:api-dump-release:
     - !reference [.ci-lalsuite-tag-build, rules]
     # for debugging
     - !reference [.ci-lint, rules]
+
+lint:api-cmp-merge-diff:
+  extends:
+    - .lint-api-job
+  script:
+    - !reference [.lint-api-init]
+    # download API dump of the main branch at lscsoft/lalsuite
+    - retry ./common/code-quality-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite ${CI_DEFAULT_BRANCH}
+    - tar xvf api-dump-master.tar.bz2
+    # build LALSuite
+    - !reference [.lint-api-build-lalsuite]
+    # dump API
+    - ./common/code-quality-scripts/check_library_api dump
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --output=api-dump-head/
+          ${LALSUITE_LIBRARIES}
+    # compare APIs
+    - ./common/code-quality-scripts/check_library_api compare
+          --old-dump-dir=api-dump-master/
+          --new-dump-dir=api-dump-head/
+          --table-title="API Changes From Merge Request"
+          --output-dir=api-report/
+  artifacts:
+    paths:
+      - api-report/
+  rules:
+    # run for merge requests only
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    # for debugging
+    - !reference [.ci-lint, rules]
+
+lint:api-cmp-last-release:
+  extends:
+    - .lint-api-job
+  script:
+    - !reference [.lint-api-init]
+    # download API dump of the main branch at lscsoft/lalsuite
+    - retry ./common/code-quality-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite release
+    - tar xvf api-dump-release.tar.bz2
+    # build LALSuite
+    - !reference [.lint-api-build-lalsuite]
+    # dump API
+    - ./common/code-quality-scripts/check_library_api dump
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --output=api-dump-head/
+          ${LALSUITE_LIBRARIES}
+    # compare APIs
+    - ./common/code-quality-scripts/check_library_api compare
+          --old-dump-dir=api-dump-release/
+          --new-dump-dir=api-dump-head/
+          --table-title="API Changes From Merge Request"
+          --output-dir=api-report/
+  artifacts:
+    paths:
+      - api-report/
+  rules:
+    - !reference [.ci-lint, rules]
+    # run on release branches
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /release/'
 
 lint:pre-commit:
   extends:
