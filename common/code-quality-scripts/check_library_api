@@ -38,7 +38,7 @@ def parse_command_line():
         "--include-path",
         type=Path,
         nargs="+",
-        default=None,
+        default=list(),
         help="Include path for compiling LALSuite headers",
     )
     parser_dump.add_argument(
