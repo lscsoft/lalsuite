@@ -4,6 +4,7 @@
 """Compare API of old/new LALSuite libraries"""
 
 import sys
+import json
 import re
 import argparse
 from tempfile import TemporaryDirectory
@@ -310,9 +311,8 @@ def compare(args, tmp_dir):
     dump_files.update(Path(p.name) for p in args.old_dump_dir.glob("*.dump"))
     dump_files.update(Path(p.name) for p in args.new_dump_dir.glob("*.dump"))
 
+    api_changes = {"lalsuite": API_NONE}
     tbl = []
-    yml = ""
-    lalsuite_api_change = API_NONE
     for dump_file in dump_files:
         lib_name = dump_file.stem
         old_dump_file = args.old_dump_dir / dump_file
@@ -321,7 +321,11 @@ def compare(args, tmp_dir):
         if old_dump_file.is_file() and new_dump_file.is_file():
 
             # Compare APIs
-            old_version, new_version, api_change = run_abi_compliance_checker(
+            (
+                old_version,
+                new_version,
+                api_changes[lib_name],
+            ) = run_abi_compliance_checker(
                 lib_name,
                 args.old_dump_dir / dump_file,
                 args.new_dump_dir / dump_file,
@@ -340,7 +344,7 @@ def compare(args, tmp_dir):
                 tmp_dir,
             )
             new_version = "-"
-            api_change = API_MAJOR
+            api_changes[lib_name] = API_MAJOR
 
         elif not old_dump_file.is_file() and new_dump_file.is_file():
 
@@ -353,17 +357,16 @@ def compare(args, tmp_dir):
                 tmp_dir,
             )
             old_version = "-"
-            api_change = API_MAJOR
+            api_changes[lib_name] = API_MAJOR
 
         # Add to table of API changes
-        tbl.append([lib_name, old_version, new_version, API_CHANGE_TEXT[api_change]])
-
-        # Add to simple YAML file of API changes
-        yml += f"{lib_name}: {API_CHANGE_TEXT[api_change]}\n"
+        tbl.append(
+            [lib_name, old_version, new_version, API_CHANGE_TEXT[api_changes[lib_name]]]
+        )
 
         # Determine overall API change
-        if api_change > lalsuite_api_change:
-            lalsuite_api_change = api_change
+        if api_changes[lib_name] > api_changes["lalsuite"]:
+            api_changes["lalsuite"] = api_changes[lib_name]
 
     # Output table of API changes
     col_widths = [13, 20, 20, 10]
@@ -385,14 +388,13 @@ def compare(args, tmp_dir):
             "lalsuite",
             old_lalsuite_version,
             new_lalsuite_version,
-            API_CHANGE_TEXT[lalsuite_api_change],
+            API_CHANGE_TEXT[api_changes["lalsuite"]],
         )
     )
 
-    # Output simple YAML file of API changes
-    yml += f"lalsuite: {API_CHANGE_TEXT[lalsuite_api_change]}\n"
-    with (args.output_dir / "api_changes.yml").open("w") as yml_file:
-        yml_file.write(yml)
+    # Output JSON file with API changes
+    api_changes_txt = {k: API_CHANGE_TEXT[v] for k, v in api_changes.items()}
+    json.dump(api_changes_txt, (args.output_dir / "api_changes.json").open("w"))
 
     return 0
 
