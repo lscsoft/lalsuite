@@ -51,6 +51,7 @@ flake8-code_quality:
     - .lint
   image: quay.io/igwn/lalsuite-dev:el8-testing
   variables:
+    PYTHONUNBUFFERED: "yes"
     CONFIGURE_FLAGS: >-
       --disable-lalapps --disable-doxygen --disable-swig
       --disable-framec --enable-framel
