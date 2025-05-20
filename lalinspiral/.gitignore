@@ -57,7 +57,6 @@ python/lalinspiral/__init__.py
 python/lalinspiral/_lalinspiral*
 python/lalinspiral/_thinca.so
 python/lalinspiral/git_version.py
-python/lalinspiral/lalinspiral.py
 swig/.swigdeps
 swig/swiglal_*
 swig/swiglalinspiral.i*

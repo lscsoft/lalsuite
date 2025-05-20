@@ -52,7 +52,6 @@ octave/
 python/lalframe/__init__.py
 python/lalframe/_lalframe*
 python/lalframe/git_version.py
-python/lalframe/lalframe.py
 swig/.swigdeps
 swig/swiglal_*
 swig/swiglalframe.i*
