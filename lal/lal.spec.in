@@ -39,6 +39,7 @@ BuildRequires: swig >= @MIN_SWIG_VERSION@
 BuildRequires: python3
 BuildRequires: python3-devel
 BuildRequires: python3dist(freezegun)
+BuildRequires: python3dist(igwn-ligolw)
 BuildRequires: python3dist(igwn-segments)
 BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 BuildRequires: python3dist(pytest)
@@ -88,6 +89,7 @@ as well as the documentation for the library.
 Summary: Python %{python3_version} bindings for LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python3
+Requires: python3dist(igwn-ligolw)
 Requires: python3dist(igwn-segments)
 Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 Requires: python3dist(python-dateutil)
