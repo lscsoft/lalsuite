@@ -64,7 +64,6 @@ octave/
 python/lal/__init__.py
 python/lal/_lal*
 python/lal/git_version.py
-python/lal/lal.py
 swig/.swigdeps
 swig/swiglal.i*
 swig/swiglal_*

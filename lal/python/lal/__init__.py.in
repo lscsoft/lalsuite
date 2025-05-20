@@ -1,5 +1,5 @@
 # Import SWIG wrappings, if available
-@SWIG_BUILD_PYTHON_TRUE@from .lal import *
+@SWIG_BUILD_PYTHON_TRUE@from ._lal_swig import *
 
 # Redirect standard output/error when running under IPython
 @SWIG_BUILD_PYTHON_TRUE@from contextlib import contextmanager
@@ -10,12 +10,12 @@
 @SWIG_BUILD_PYTHON_TRUE@    def no_swig_redirect_standard_output_error():
 @SWIG_BUILD_PYTHON_TRUE@        yield
 @SWIG_BUILD_PYTHON_TRUE@else:
-@SWIG_BUILD_PYTHON_TRUE@    lal.swig_redirect_standard_output_error(True)
+@SWIG_BUILD_PYTHON_TRUE@    swig_redirect_standard_output_error(True)
 @SWIG_BUILD_PYTHON_TRUE@    @contextmanager
 @SWIG_BUILD_PYTHON_TRUE@    def no_swig_redirect_standard_output_error():
-@SWIG_BUILD_PYTHON_TRUE@        state = lal.swig_redirect_standard_output_error(False)
+@SWIG_BUILD_PYTHON_TRUE@        state = swig_redirect_standard_output_error(False)
 @SWIG_BUILD_PYTHON_TRUE@        yield
-@SWIG_BUILD_PYTHON_TRUE@        lal.swig_redirect_standard_output_error(state)
+@SWIG_BUILD_PYTHON_TRUE@        swig_redirect_standard_output_error(state)
 @SWIG_BUILD_PYTHON_TRUE@    import warnings
 @SWIG_BUILD_PYTHON_TRUE@    warnings.warn("""Wswiglal-redir-stdio:
 @SWIG_BUILD_PYTHON_TRUE@
