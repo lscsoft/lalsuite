@@ -26,6 +26,7 @@ def parse_command_line():
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", help="subcommand help")
     parser_dump = subparsers.add_parser("dump", help="dump help")
+    parser_dump.set_defaults(subcommand=dump)
     parser_dump.add_argument(
         "--lib-dir", type=Path, required=True, help="Location of LALSuite libraries"
     )
@@ -58,6 +59,7 @@ def parse_command_line():
     )
     parser_dump.add_argument("libraries", nargs="+", help="List of LALSuite libraries")
     parser_compare = subparsers.add_parser("compare", help="compare help")
+    parser_compare.set_defaults(subcommand=compare)
     parser_compare.add_argument(
         "--old-dump-dir",
         type=Path,
@@ -413,9 +415,8 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Execute command
-    commands = {"dump": dump, "compare": compare}
     with TemporaryDirectory() as tmp_dir:
-        return commands[args.command](args, Path(tmp_dir))
+        return args.subcommand(args, Path(tmp_dir))
 
 
 if __name__ == "__main__":
