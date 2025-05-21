@@ -61,7 +61,7 @@ from scipy import integrate
 import random
 import socket
 from itertools import combinations
-from .lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
+from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
 import re
 
 try:
@@ -6238,13 +6238,13 @@ def confidence_interval_uncertainty(cl, cl_bounds, posteriors):
 def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V1']):
     #import sim inspiral table content handler
     from igwn_ligolw import lsctables,ligolw
-    from lalsimulation.lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
-    from lalsimulation.lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
-    from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT
-    from lal.lal import ComputeDetAMResponse, GreenwichMeanSiderealTime
-    from lal.lal import LIGOTimeGPS
-    from lal.lal import MSUN_SI as LAL_MSUN_SI
-    from lal.lal import PC_SI as LAL_PC_SI
+    from lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
+    from lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
+    from lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT
+    from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime
+    from lal import LIGOTimeGPS
+    from lal import MSUN_SI as LAL_MSUN_SI
+    from lal import PC_SI as LAL_PC_SI
     import lalsimulation as lalsim
     from math import cos,sin,sqrt
     from igwn_ligolw import utils
@@ -6828,10 +6828,10 @@ def plot_calibration_pos(pos, level=.9, outpath=None):
 
 
 def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1','V1']):
-    from lalinference.lalinference import SimBurstChooseFDWaveform,SimBurstChooseTDWaveform
-    from lalinference.lalinference import SimBurstImplementedFDApproximants,SimBurstImplementedTDApproximants
-    from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CreateReverseREAL8FFTPlan
-    from lal.lal import LIGOTimeGPS
+    from lalinference import SimBurstChooseFDWaveform,SimBurstChooseTDWaveform
+    from lalinference import SimBurstImplementedFDApproximants,SimBurstImplementedTDApproximants
+    from lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CreateReverseREAL8FFTPlan
+    from lal import LIGOTimeGPS
     import lalinference as lalinf
     from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS
 
