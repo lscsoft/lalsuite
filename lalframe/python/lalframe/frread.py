@@ -30,7 +30,8 @@ including:
 import os
 import re
 
-from lal import (utils as lalutils, lal)
+import lal
+from lal import utils as lalutils
 
 try:
     from glue import lal as gcache
@@ -39,7 +40,8 @@ except ImportError:
 else:
     _HAS_GLUE = True
 
-from . import (lalframe, git_version)
+import lalframe
+from . import git_version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
 __date__ = git_version.date
