@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+# Author: Karl Wette, 2025
+
+"""Get artifacts containing API dumps of LALSuite libraries"""
+
+import sys
+import argparse
+import gitlab
+from pathlib import Path
+from natsort import natsorted
+
+
+def parse_command_line():
+    """Parse command line"""
+
+    # Create parser
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "server",
+        type=str,
+        help="GitLab server",
+    )
+    parser.add_argument(
+        "repo",
+        type=str,
+        help="GitLab repository",
+    )
+    parser.add_argument(
+        "artifact",
+        type=str,
+        choices=["master", "release"],
+        help="Artifacts to get",
+    )
+
+    # Parse command line
+    args = parser.parse_args()
+
+    return args
+
+
+def fetch_server(server):
+    """Fetch GitLab"""
+    server = gitlab.Gitlab(server)
+    return server
+
+
+def main():
+    """Main program"""
+
+    # Parse command line
+    args = parse_command_line()
+
+    # Interface to GitLab repository
+    server = fetch_server(args.server)
+    repo = server.projects.get(args.repo)
+
+    # Get artifact details
+    artifact_path = Path(f"api-dump-{args.artifact}.tar.bz2")
+    job_name = f"lint:api-dump-{args.artifact}"
+    if args.artifact == "release":
+        tags = repo.tags.list(iterator=True)
+        lalsuite_tags = [t.name for t in tags if t.name.startswith("lalsuite-v")]
+        ref_name = natsorted(lalsuite_tags)[-1]
+    else:
+        ref_name = "master"
+
+    # Download artifact
+    print(f"Downloading artifact: ref={ref_name}, path={artifact_path}, job={job_name}")
+    try:
+        with artifact_path.open("wb") as f:
+            repo.artifacts.raw(
+                ref_name, artifact_path, job_name, streamed=True, action=f.write
+            )
+    except Exception as e:
+        artifact_path.unlink()
+        raise e
+
+
+if __name__ == "__main__":
+    sys.exit(main())
