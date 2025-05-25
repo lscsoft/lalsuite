@@ -19,6 +19,7 @@
 /Makefile.in
 /_build/
 /_inst/
+/api-*/
 /doxygen/*.log
 /doxygen/Makefile
 /doxygen/Makefile.in
