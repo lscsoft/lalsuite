@@ -129,7 +129,6 @@ test/support/test.h5
 test/tdfilter/BandPassTest
 test/tdfilter/IIRFilterTest
 test/tools/ComputeTransferTest
-test/tools/DetectorSiteTest
 test/tools/DetResponseTest
 test/tools/DetectorSiteTest
 test/tools/FrequencySeriesTest
