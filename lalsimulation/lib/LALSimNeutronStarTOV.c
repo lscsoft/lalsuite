@@ -545,7 +545,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
             printf("\t\t %d Star integration h= %.16e \t M = %.6e \n", j,  h, vars->m  / LAL_MRSUN_SI);
         }
 
-        if (pc >= pmin && j != 0){
+        if (pc >= pmin && j != 0){ // TODO check that this workswith a non PT EOS
             printf("hmin =%6e \nValues of b before correction %.6e\n", hmin[j], vars->b);
 //
             /* Phase transition correction for the tidal love number
