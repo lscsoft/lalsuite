@@ -457,7 +457,7 @@ XLALComputeSegmentDataQ( const MultiPSDVector *multiPSDVect,   /**< input PSD ma
     /* compute duty-cycle eps_X = nX * Tsft / Tseg for this IFO */
     REAL8 duty_X = numSFTsInSeg * Tsft / Tseg;
     /* sanity check: eps in [0, 1]*/
-    if ( ( duty_X < 0 ) && ( duty_X > 1 ) ) {
+    if ( ( duty_X < 0 ) || ( duty_X > 1 ) ) {
       XLALPrintError( "%s: something is WRONG: duty-cyle = %g not within [0,1]!\n", __func__, duty_X );
       XLAL_ERROR_NULL( XLAL_EFAILED );
     }
