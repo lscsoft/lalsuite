@@ -69,9 +69,7 @@ flake8-code_quality:
   # install required Python packages
   - PYTHON="python3.11"    # python-gitlab >=5.6.0 requires Python >=3.9
   - !reference [.python-venv]
-  - retry python -m pip install
-        natsort
-        "python-gitlab>=5.6.0"
+  - retry python -m pip install -r common/requirements-scripts.txt
 
 .lint-api-build-lalsuite:
   # configure, build, and install LALSuite
@@ -246,11 +244,7 @@ lint:depends:
   image: quay.io/igwn/lalsuite-dev:el8
   before_script:
     - !reference [.python-venv]
-    - retry python -m pip install
-          coloredlogs
-          pyyaml
-          python-debian
-          python-rpm-spec
+    - retry python -m pip install -r common/requirements-scripts.txt
   script:
     - ./common/code-quality-scripts/check_library_dependencies
   rules:
