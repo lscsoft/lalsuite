@@ -9,6 +9,11 @@
 .lint:
   stage: lint
   needs: []
+  image: quay.io/igwn/lalsuite-dev:el8-testing
+  variables:
+    # minimum Python requirement for scripts installed in venv
+    # - pre-commit hooks require Python >=3.10
+    PYTHON_VENV: "python3.11"
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-nightly-deploy, rules]
@@ -49,7 +54,6 @@ flake8-code_quality:
   extends:
     - .build-job
     - .lint
-  image: quay.io/igwn/lalsuite-dev:el8-testing
   variables:
     PYTHONUNBUFFERED: "yes"
     CONFIGURE_FLAGS: >-
@@ -67,7 +71,6 @@ flake8-code_quality:
         abi-dumper
         abi-compliance-checker
   # install required Python packages
-  - PYTHON="python3.11"    # python-gitlab >=5.6.0 requires Python >=3.9
   - !reference [.python-venv]
   - retry python -m pip install -r common/requirements-scripts.txt
 
@@ -201,7 +204,6 @@ lint:api-cmp-last-release:
 lint:pre-commit:
   extends:
     - .lint
-  image: quay.io/igwn/lalsuite-dev:el8
   variables:
     GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
   before_script:
@@ -211,7 +213,6 @@ lint:pre-commit:
     - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
   script:
     # install pre-commit
-    - PYTHON="python3.11"    # pre-commit hooks require Python >=3.10
     - !reference [.python-venv]
     - retry python -m pip install pre-commit
     - retry pre-commit install-hooks
@@ -241,7 +242,6 @@ lint:depends:
   extends:
     - .build-job
     - .lint
-  image: quay.io/igwn/lalsuite-dev:el8
   before_script:
     - !reference [.python-venv]
     - retry python -m pip install -r common/requirements-scripts.txt
@@ -255,7 +255,6 @@ lint:gitignore:
   extends:
     - .build-job
     - .lint
-  image: quay.io/igwn/lalsuite-dev:el8
   script:
     # build in source directory, including tests
     - ./00boot
@@ -263,7 +262,6 @@ lint:gitignore:
     - make -j${CPU_COUNT} VERBOSE=1 all
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     # install pre-commit
-    - PYTHON="python3.11"    # pre-commit hooks require Python >=3.10
     - !reference [.python-venv]
     - retry python -m pip install pre-commit
     - retry pre-commit install-hooks
