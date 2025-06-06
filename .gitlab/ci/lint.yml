@@ -145,7 +145,7 @@ lint:depends:
   variables:
     PYTHONUNBUFFERED: "yes"
     CONFIGURE_FLAGS: >-
-      --disable-lalapps --disable-doxygen --disable-swig
+      --disable-doxygen --disable-swig
       --disable-framec --enable-framel
       CFLAGS='-g -Og -fno-eliminate-unused-debug-types'
     LALSUITE_LIBRARIES: >-
