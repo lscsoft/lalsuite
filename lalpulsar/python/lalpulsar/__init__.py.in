@@ -1,5 +1,5 @@
 # Import SWIG wrappings, if available
-@SWIG_BUILD_PYTHON_TRUE@from .lalpulsar import *
+@SWIG_BUILD_PYTHON_TRUE@from ._lalpulsar_swig import *
 
 __version__ = "@PACKAGE_VERSION@"
 

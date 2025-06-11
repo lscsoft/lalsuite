@@ -91,7 +91,6 @@ python/lalinference/__init__.py
 python/lalinference/_bayespputils.so
 python/lalinference/_lalinference*
 python/lalinference/git_version.py
-python/lalinference/lalinference.py
 swig/.swigdeps
 swig/swiglal_*
 swig/swiglalinference.i*
