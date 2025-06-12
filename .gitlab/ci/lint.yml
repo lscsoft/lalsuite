@@ -29,12 +29,6 @@ include:
       stage: lint
       run_advanced_sast: true
 
-  # https://git.ligo.org/explore/catalog/computing/gitlab/components/python
-  - component: $CI_SERVER_FQDN/computing/gitlab/components/python/code-quality@1
-    inputs:
-      stage: lint
-      requirements: "flake8-executable"
-
 # update component jobs with our rules
 
 gitlab-advanced-sast:
@@ -46,10 +40,6 @@ gitlab-advanced-sast:
 
 semgrep-sast:
   rules: !reference [.ci-merge-build, rules]
-  needs: []
-
-flake8-code_quality:
-  rules: !reference [.lint, rules]
   needs: []
 
 # -- local lint jobs
@@ -236,11 +226,27 @@ lint:pre-commit:
         echo "See CONTRIBUTING.md for further information."
         echo "------------------------------------------------------------------------"
       fi
+      echo "-------------------- generating code quality report --------------------"
+      pre-commit run -a --hook-stage manual
       ./common/code-quality-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
+      python <<EOF
+      import sys
+      import glob
+      import json
+      concat_code_qual = []
+      for fn in glob.glob("code-quality-*.json"):
+        with open(fn, "rt") as f:
+          code_qual = json.load(f)
+        for cq in code_qual:
+          cq["severity"] = "blocker"
+          concat_code_qual.append(cq)
+      with open("concatenated-code-quality.json", "wt") as f:
+        json.dump(concat_code_qual, f)
+      EOF
       exit ${status}
   artifacts:
     reports:
-      codequality: code-quality-pre-commit.json
+      codequality: concatenated-code-quality.json
 
 lint:depends:
   extends:
