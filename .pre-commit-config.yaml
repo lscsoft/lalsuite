@@ -4,32 +4,55 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        stages: [pre-commit]
 
       - id: end-of-file-fixer
+        stages: [pre-commit]
 
       - id: check-yaml
         files: ^\.pre-commit-config.yaml$
+        stages: [pre-commit]
 
       - id: check-yaml
         args: [--unsafe]
         files: ^\.gitlab.*\.yml$
+        stages: [pre-commit]
 
       - id: file-contents-sorter
         args: [--unique]
         files: \.gitattributes$
+        stages: [pre-commit]
 
       - id: check-executables-have-shebangs
+        stages: [pre-commit]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.13
+    hooks:
+      - id: ruff-check
+        args: [--exit-non-zero-on-fix, --fix, --show-fixes]
+        stages: [pre-commit]
+
+      # run by CI only, to get code quality report
+      - id: ruff-check
+        args: [--exit-zero, --output-file, code-quality-ruff.json, --output-format, gitlab]
+        stages: [manual]
 
   - repo: https://git.ligo.org/lscsoft/lalsuite-code-quality.git
     rev: v0.6
     hooks:
       - id: remove-executable-bits
         exclude: 00boot$|common/|conda/|debian/|gnuscripts/
+        stages: [pre-commit]
 
       - id: fix-makefile-indents
+        stages: [pre-commit]
 
       - id: fix-gitignore-entries
+        stages: [pre-commit]
 
       - id: fix-mailmap-authors
+        stages: [pre-commit]
 
       - id: make-code-pretty
+        stages: [pre-commit]
