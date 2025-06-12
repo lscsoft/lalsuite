@@ -1425,7 +1425,7 @@ XLALSimIMREOBGetNRSpinPeakOmegaV5 (INT4 modeL, INT4 modeM, REAL8 UNUSED eta, REA
 {
   REAL8 chi = a, chi2=chi*chi, chi3=chi2*chi, chi4=chi2*chi2;
   REAL8 eta2 = eta*eta, eta3 = eta2*eta, eta4 = eta2*eta2;
-  REAL8 res;
+  REAL8 res = 0;
   switch (modeL) {
       case 2:
           switch (modeM) {
