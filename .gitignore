@@ -11,6 +11,7 @@
 .pytest_cache
 .vscode
 /.cache/
+/.condarc
 /.config/
 /.venv/
 /AUTHORS
@@ -31,6 +32,7 @@
 /doxygen/make_autogen_dox
 /doxygen/out/
 /doxygen/test_doxygen.*
+/envs/
 /lalsuite-*/
 /lalsuiterc
 /wheel/*.whl
