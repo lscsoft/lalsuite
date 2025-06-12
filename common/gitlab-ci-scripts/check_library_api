@@ -12,6 +12,7 @@ from tempfile import TemporaryDirectory
 from pathlib import Path
 from subprocess import run, PIPE, DEVNULL
 from xml.etree.ElementTree import parse
+from py_api_dumper import APIDump, APIDiff
 
 # configure logging
 LOGGER = logging.getLogger(__name__.rsplit(".", 1)[-1])
@@ -46,6 +47,9 @@ def parse_command_line():
     parser_dump = subparsers.add_parser("dump", help="dump help")
     parser_dump.set_defaults(subcommand=dump)
     parser_dump.add_argument(
+        "--bin-dir", type=Path, required=True, help="Location of LALSuite binaries"
+    )
+    parser_dump.add_argument(
         "--lib-dir", type=Path, required=True, help="Location of LALSuite libraries"
     )
     parser_dump.add_argument(
@@ -69,8 +73,13 @@ def parse_command_line():
     )
     parser_dump.add_argument(
         "--sha",
-        default=None,
+        required=True,
         help="SHA of git commit from which LALSuite libraries were built",
+    )
+    parser_dump.add_argument(
+        "--add-sha-to-version",
+        help="Add shortened SHA of git commit to LALSuite library versions",
+        action="store_true",
     )
     parser_dump.add_argument(
         "--output-dir", type=Path, required=True, help="Output directory"
@@ -127,15 +136,15 @@ def check_tool_version(tool_name, min_version):
         sys.exit(1)
 
 
-def get_lalsuite_version(output_dir, sha):
-    """Get LALSuite version number"""
+def get_configure_version(configure_dir, output_dir, sha):
+    """Get version number from configure.ac"""
 
     # Build command line
     cmdline = ["autoconf", "--trace", "AC_INIT:$1:$2"]
 
     # Run command
     LOGGER.debug(f"Running {cmdline}")
-    proc = run(cmdline, stdout=PIPE, stderr=PIPE)
+    proc = run(cmdline, cwd=configure_dir, stdout=PIPE, stderr=PIPE)
     stdout = proc.stdout.decode("utf-8")
     stderr = proc.stderr.decode("utf-8")
 
@@ -150,7 +159,10 @@ def get_lalsuite_version(output_dir, sha):
     # Get version number
     stdout = stdout.strip()
     name, version = stdout.split(":")
-    if name != "LALSuite":
+    expected_name = configure_dir.name
+    if expected_name == "":
+        expected_name = "lalsuite"
+    if name.lower() != expected_name:
         LOGGER.critical(f"unexpected output '{stdout}'")
         sys.exit(1)
 
@@ -159,8 +171,8 @@ def get_lalsuite_version(output_dir, sha):
         version += "-" + sha[:8]
 
     # Write version to file
-    with (output_dir / "lalsuite.version").open("w") as version_file:
-        version_file.write(version)
+    version_file = output_dir / "{}.version".format(name.lower())
+    version_file.write_text(version + "\n")
 
 
 def find_library_and_version(lib_dir, lib_name, lib_sha):
@@ -299,23 +311,60 @@ def run_abi_compliance_checker(
 def dump(args, tmp_dir):
     """Dump APIs"""
 
-    get_lalsuite_version(args.output_dir, args.sha)
+    # Dump LALSuite git commit SHA
+    LOGGER.info("-- dumping lalsuite - git commit sha")
+    sha_file = args.output_dir / "lalsuite.sha"
+    sha_file.write_text(args.sha + "\n")
 
-    for lib_name in args.libraries:
+    # Only add git commit SHA to library versions if requested
+    version_sha = args.sha if args.add_sha_to_version else None
 
-        # Find library
-        lib, version = find_library_and_version(args.lib_dir, lib_name, args.sha)
+    # Dump LALSuite version
+    LOGGER.info("-- dumping lalsuite - version")
+    get_configure_version(Path("."), args.output_dir, version_sha)
 
-        # Dump API
-        dump_file = args.output_dir / f"{lib_name}.dump"
-        run_abi_dumper(
-            lib,
-            version,
-            args.pub_header_dir,
-            args.include_path,
-            args.debug_dir,
-            dump_file,
-        )
+    for library in args.libraries:
+
+        # Dump library version
+        LOGGER.info(f"-- dumping {library} - version")
+        get_configure_version(Path(".") / library, args.output_dir, version_sha)
+
+        # Dump C library APIs
+        if library == "lal":
+            lib_names = ("lal", "lalsupport")
+        elif library == "lalapps":
+            lib_names = ()
+        else:
+            lib_names = (library,)
+        for lib_name in lib_names:
+            LOGGER.info(f"-- dumping {library} - lib{lib_name}")
+
+            # Find library
+            lib, version = find_library_and_version(args.lib_dir, lib_name, version_sha)
+
+            # Dump API
+            dump_file = args.output_dir / f"{library}-lib{lib_name}.dump"
+            run_abi_dumper(
+                lib,
+                version,
+                args.pub_header_dir,
+                args.include_path,
+                args.debug_dir,
+                dump_file,
+            )
+
+        # Dump Python library APIs
+        LOGGER.info(f"-- dumping {library} - python")
+        dump_file = args.output_dir / f"{library}-python.dump"
+        api_dump = APIDump.from_modules(library)
+        api_dump.save_to_file(dump_file)
+
+        # Dump list of binaries
+        LOGGER.info(f"-- dumping {library} - bin")
+        dump_file = args.output_dir / f"{library}-bin.dump"
+        with dump_file.open("wt") as df:
+            for f in sorted(Path(args.bin_dir).glob(f"{library}_*")):
+                print(f.name, file=df)
 
     return 0
 
@@ -323,98 +372,204 @@ def dump(args, tmp_dir):
 def compare(args, tmp_dir):
     """Compare APIs"""
 
-    old_lalsuite_version = (args.old_dump_dir / "lalsuite.version").read_text().strip()
-    new_lalsuite_version = (args.new_dump_dir / "lalsuite.version").read_text().strip()
+    # Get versions
+    versions = {"old": {}, "new": {}}
+    for vers, ddir in (
+        (versions["old"], args.old_dump_dir),
+        (versions["new"], args.new_dump_dir),
+    ):
+        for vfile in ddir.glob("*.version"):
+            vers[vfile.stem] = vfile.read_text().strip()
 
     # Find API dump files
     dump_files = set()
     dump_files.update(Path(p.name) for p in args.old_dump_dir.glob("*.dump"))
     dump_files.update(Path(p.name) for p in args.new_dump_dir.glob("*.dump"))
 
-    api_changes = {"lalsuite": API_NONE}
-    tbl = []
-    for dump_file in dump_files:
-        lib_name = dump_file.stem
+    # Build table of API changes
+    api_ch = {}
+    for dump_file in sorted(dump_files):
+
+        # Determine library name and type of dump file
+        library, dump_type = dump_file.stem.split("-", maxsplit=1)
+        LOGGER.info(f"-- comparing {library} - {dump_type}")
+
+        # Location of dump files
         old_dump_file = args.old_dump_dir / dump_file
         new_dump_file = args.new_dump_dir / dump_file
 
-        if old_dump_file.is_file() and new_dump_file.is_file():
+        # Make output directory for library reports
+        report_dir = args.output_dir / library
+        report_dir.mkdir(parents=True, exist_ok=True)
 
-            # Compare APIs
-            (
-                old_version,
-                new_version,
-                api_changes[lib_name],
-            ) = run_abi_compliance_checker(
-                lib_name,
+        # Set up data structures
+        if not library in api_ch:
+            api_ch[library] = {}
+        dump_api_ch = api_ch[library][dump_type] = {"changes": API_NONE}
+
+        # Compare C library APIs
+        if dump_type.startswith("lib"):
+
+            # - Need to already run abi-compliance-checker to get versions
+            # - If old dump file is missing, use new dump file (and vice versa)
+            #   so abi-compliance-checker always has to files to compare
+            of = old_dump_file if old_dump_file.is_file() else new_dump_file
+            nf = new_dump_file if new_dump_file.is_file() else old_dump_file
+
+            # Run abi-compliance-checker to compare APIs
+            (ov, nv, dump_api_ch["changes"]) = run_abi_compliance_checker(
+                "lib" + dump_type,
                 args.old_dump_dir / dump_file,
                 args.new_dump_dir / dump_file,
-                args.output_dir,
+                report_dir,
                 tmp_dir,
             )
 
-        elif old_dump_file.is_file() and not new_dump_file.is_file():
+            # Get old and new library versions
+            dump_api_ch["old_version"] = ov if old_dump_file.is_file() else "-"
+            dump_api_ch["new_version"] = nv if new_dump_file.is_file() else "-"
 
-            # Run abi-compliance-checker just to get version number
-            old_version, _, _ = run_abi_compliance_checker(
-                lib_name,
-                args.old_dump_dir / dump_file,
-                args.old_dump_dir / dump_file,
-                None,
-                tmp_dir,
-            )
-            new_version = "-"
-            api_changes[lib_name] = API_MAJOR
+        # Compare Python library APIs
+        elif dump_type == "python":
+            dump_api_ch["old_version"] = "-"
+            dump_api_ch["new_version"] = "-"
 
-        elif not old_dump_file.is_file() and new_dump_file.is_file():
+            # Load API dumps
+            if old_dump_file.is_file():
+                py_api_dump_old = APIDump.load_from_file(old_dump_file)
+                dump_api_ch["old_version"] = py_api_dump_old.modules[library]["version"]
+                if new_dump_file.is_file():
+                    py_api_dump_new = APIDump.load_from_file(new_dump_file)
+                    dump_api_ch["new_version"] = py_api_dump_new.modules[library][
+                        "version"
+                    ]
 
-            # Run abi-compliance-checker just to get version number
-            _, new_version, _ = run_abi_compliance_checker(
-                lib_name,
-                args.new_dump_dir / dump_file,
-                args.new_dump_dir / dump_file,
-                None,
-                tmp_dir,
-            )
-            old_version = "-"
-            api_changes[lib_name] = API_MAJOR
+                    # Compare APIs
+                    py_api_diff = APIDiff(py_api_dump_old, py_api_dump_new)
+                    if len(py_api_diff.added) > 0:
+                        dump_api_ch["changes"] = API_MINOR
+                    if len(py_api_diff.removed) > 0:
+                        dump_api_ch["changes"] = API_MAJOR
 
-        # Add to table of API changes
-        tbl.append(
-            [lib_name, old_version, new_version, API_CHANGE_TEXT[api_changes[lib_name]]]
-        )
+                    # Output report
+                    py_api_report = report_dir / "python.diff"
+                    py_api_diff.print_as_text(py_api_report.open("wt"))
 
-        # Determine overall API change
-        if api_changes[lib_name] > api_changes["lalsuite"]:
-            api_changes["lalsuite"] = api_changes[lib_name]
+        # Compare list of binaries
+        elif dump_type == "bin":
+            dump_api_ch["old_version"] = versions["old"].get(library, "-")
+            dump_api_ch["new_version"] = versions["new"].get(library, "-")
+
+            # Load file lists
+            if old_dump_file.is_file():
+                old_bins = set(old_dump_file.read_text().splitlines())
+            else:
+                old_bins = set()
+            if new_dump_file.is_file():
+                new_bins = set(new_dump_file.read_text().splitlines())
+            else:
+                new_bins = set()
+
+            # Compare file lists
+            added_bins = new_bins - old_bins
+            removed_bins = old_bins - new_bins
+            if len(added_bins) > 0:
+                dump_api_ch["changes"] = API_MINOR
+            if len(removed_bins) > 0:
+                dump_api_ch["changes"] = API_MAJOR
+
+            # Output report
+            bin_report = report_dir / "bin.diff"
+            with bin_report.open("wt") as f:
+                print(
+                    "--- {}/bin {}".format(library, dump_api_ch["old_version"]), file=f
+                )
+                print(
+                    "+++ {}/bin {}".format(library, dump_api_ch["new_version"]), file=f
+                )
+                for n in removed_bins:
+                    print("-" + n, file=f)
+                for n in added_bins:
+                    print("+" + n, file=f)
+
+        else:
+            LOGGER.critical(f"unexpected dump file type {dump_type}")
+            sys.exit(1)
+
+        # Missing dump files trigger a major API change
+        if not all(f.is_file() for f in (old_dump_file, new_dump_file)):
+            dump_api_ch["changes"] = API_MAJOR
+
+    # Determine API changes at library level
+    # - library API change is maximum of API changes in any library component
+    for library in api_ch:
+        library_api_changes = max(dt["changes"] for dt in api_ch[library].values())
+        api_ch[library]["~OVERALL"] = {
+            "old_version": versions["old"].get(library, "-"),
+            "new_version": versions["new"].get(library, "-"),
+            "changes": library_api_changes,
+        }
+
+    # Determine API changes at LALSuite level
+    # - LALSuite API is maximum of API changes in any library
+    lalsuite_api_changes = max(
+        api_ch[library]["~OVERALL"]["changes"] for library in api_ch
+    )
+    api_ch["~lalsuite"] = {
+        "~OVERALL": {
+            "old_version": versions["old"]["lalsuite"],
+            "new_version": versions["new"]["lalsuite"],
+            "changes": lalsuite_api_changes,
+        }
+    }
 
     # Output table of API changes
-    col_widths = [13, 20, 20, 10]
+    col_widths = [13, 16, 20, 20, 10]
     row_fmt = " | ".join(["{:<%d}" % col_width for col_width in col_widths])
-    header = row_fmt.format("Library", "Old Version", "New Version", "API Change")
+    header = row_fmt.format(
+        "Library", "Component", "Old Version", "New Version", "API Change"
+    )
     header_div = row_fmt.format(*["-" * col_width for col_width in col_widths])
-    n_title_div = len(header_div) - len(args.table_title) - 2
-    title_div_left = "=" * (n_title_div // 2)
-    title_div_right = "=" * ((n_title_div + 1) // 2)
-    title = " ".join([title_div_left, args.table_title, title_div_right])
+    title = f" {args.table_title} ".center(len(header_div), "=")
     print(title)
     print(header)
     print(header_div)
-    for row in tbl:
-        print(row_fmt.format(*row))
-    print(header_div)
-    print(
-        row_fmt.format(
-            "lalsuite",
-            old_lalsuite_version,
-            new_lalsuite_version,
-            API_CHANGE_TEXT[api_changes["lalsuite"]],
-        )
-    )
+    for library in sorted(api_ch):
+        for dump_type in sorted(api_ch[library]):
+            dump_api = api_ch[library][dump_type]
+            row = [
+                s.replace("~", "")
+                for s in [
+                    library,
+                    dump_type,
+                    dump_api["old_version"],
+                    dump_api["new_version"],
+                    API_CHANGE_TEXT[dump_api["changes"]],
+                ]
+            ]
+            print(row_fmt.format(*row))
+        print(header_div)
 
     # Output JSON file with API changes
-    api_changes_txt = {k: API_CHANGE_TEXT[v] for k, v in api_changes.items()}
-    json.dump(api_changes_txt, (args.output_dir / "api_changes.json").open("w"))
+    api_ch_json = {}
+    for library in sorted(api_ch):
+        key1 = library.replace("~", "").lower()
+        api_ch_json[key1] = {}
+        for dump_type in sorted(api_ch[library]):
+            key2 = dump_type.replace("~", "").lower()
+            val = API_CHANGE_TEXT[api_ch[library][dump_type]["changes"]]
+            api_ch_json[key1][key2] = val
+    api_ch_json_file = args.output_dir / "api_changes.json"
+    with api_ch_json_file.open("w") as f:
+        json.dump(api_ch_json, f)
+        f.write("\n")
+
+    # Output text files with overall API changes
+    for api_ch_txt_filename, api_ch_txt_contents in (
+        ("api_changes_overall.txt", api_ch_json["lalsuite"]["overall"]),
+        ("api_changes_overall_label.txt", "api::" + api_ch_json["lalsuite"]["overall"]),
+    ):
+        (args.output_dir / api_ch_txt_filename).write_text(api_ch_txt_contents + "\n")
 
     return 0
 
