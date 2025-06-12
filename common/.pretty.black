@@ -1,1 +1,2 @@
+# keep this version in sync with LALSUITE_DEFAULT_MIN_PYTHON_VERSION in gnuscripts/lalsuite_build.m4
 --target-version=py36
