@@ -42,7 +42,111 @@ semgrep-sast:
   rules: !reference [.ci-merge-build, rules]
   needs: []
 
-# -- local lint jobs
+# -- local lint jobs -- general
+
+lint:pre-commit:
+  extends:
+    - .lint
+  variables:
+    GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
+  before_script:
+    # this jobs needs the full Git history to update the authors
+    - git fetch --unshallow --quiet
+    # check that the first commit in LALSuite exists
+    - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
+  script:
+    # install pre-commit
+    - !reference [.python-venv]
+    - retry python -m pip install pre-commit
+    - retry pre-commit install-hooks
+    # run pre-commit
+    - |
+      echo "env: CI_COMMIT_AUTHOR=${CI_COMMIT_AUTHOR}"
+      pre-commit run -a && status=0 || status=$?
+      if ! git diff --quiet; then
+        echo "------------------------------------------------------------------------"
+        echo "The pre-commit hooks have made the following fixes to your code:"
+        echo "------------------------------------------------------------------------"
+        git diff
+        echo "------------------------------------------------------------------------"
+        echo "To reproduce these fixes locally, install pre-commit, then run:"
+        echo "$ pre-commit install"
+        echo "$ pre-commit run -a"
+        echo "See CONTRIBUTING.md for further information."
+        echo "------------------------------------------------------------------------"
+      fi
+      echo "-------------------- generating code quality report --------------------"
+      pre-commit run -a --hook-stage manual
+      ./common/code-quality-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
+      python <<EOF
+      import sys
+      import glob
+      import json
+      concat_code_qual = []
+      for fn in glob.glob("code-quality-*.json"):
+        with open(fn, "rt") as f:
+          code_qual = json.load(f)
+        for cq in code_qual:
+          cq["severity"] = "blocker"
+          concat_code_qual.append(cq)
+      with open("concatenated-code-quality.json", "wt") as f:
+        json.dump(concat_code_qual, f)
+      EOF
+      exit ${status}
+  artifacts:
+    reports:
+      codequality: concatenated-code-quality.json
+
+lint:gitignore:
+  extends:
+    - .build-job
+    - .lint
+  script:
+    # build in source directory, including tests
+    - ./00boot
+    - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-python --enable-swig-python
+    - make -j${CPU_COUNT} VERBOSE=1 all
+    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
+    # install pre-commit
+    - !reference [.python-venv]
+    - retry python -m pip install pre-commit
+    - retry pre-commit install-hooks
+    # check for build files not in .gitignore
+    - |
+      status=0
+      git status --short | sed -n 's|^?? ||p' >> .gitignore
+      pre-commit run -a fix-gitignore-entries
+      if ! git diff --quiet; then
+        echo "------------------------------------------------------------------------"
+        echo "The following entries are missing from the .gitignore files:"
+        echo "------------------------------------------------------------------------"
+        git diff
+        echo "------------------------------------------------------------------------"
+        status=1
+      fi
+      ./common/code-quality-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
+      exit ${status}
+  artifacts:
+    reports:
+      codequality: code-quality-gitignore.json
+  rules:
+    - !reference [.ci-lint, rules]
+    - !reference [.ci-merge-build, rules]
+
+lint:depends:
+  extends:
+    - .build-job
+    - .lint
+  before_script:
+    - !reference [.python-venv]
+    - retry python -m pip install -r common/requirements-scripts.txt
+  script:
+    - ./common/code-quality-scripts/check_library_dependencies
+  rules:
+    - !reference [.ci-lint, rules]
+    - !reference [.ci-merge-build, rules]
+
+# -- local lint jobs -- api
 
 .lint-api-job:
   extends:
@@ -194,105 +298,3 @@ lint:api-cmp-last-release:
     - !reference [.ci-lint, rules]
     # run on release branches
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /release/'
-
-lint:pre-commit:
-  extends:
-    - .lint
-  variables:
-    GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
-  before_script:
-    # this jobs needs the full Git history to update the authors
-    - git fetch --unshallow --quiet
-    # check that the first commit in LALSuite exists
-    - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
-  script:
-    # install pre-commit
-    - !reference [.python-venv]
-    - retry python -m pip install pre-commit
-    - retry pre-commit install-hooks
-    # run pre-commit
-    - |
-      echo "env: CI_COMMIT_AUTHOR=${CI_COMMIT_AUTHOR}"
-      pre-commit run -a && status=0 || status=$?
-      if ! git diff --quiet; then
-        echo "------------------------------------------------------------------------"
-        echo "The pre-commit hooks have made the following fixes to your code:"
-        echo "------------------------------------------------------------------------"
-        git diff
-        echo "------------------------------------------------------------------------"
-        echo "To reproduce these fixes locally, install pre-commit, then run:"
-        echo "$ pre-commit install"
-        echo "$ pre-commit run -a"
-        echo "See CONTRIBUTING.md for further information."
-        echo "------------------------------------------------------------------------"
-      fi
-      echo "-------------------- generating code quality report --------------------"
-      pre-commit run -a --hook-stage manual
-      ./common/code-quality-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
-      python <<EOF
-      import sys
-      import glob
-      import json
-      concat_code_qual = []
-      for fn in glob.glob("code-quality-*.json"):
-        with open(fn, "rt") as f:
-          code_qual = json.load(f)
-        for cq in code_qual:
-          cq["severity"] = "blocker"
-          concat_code_qual.append(cq)
-      with open("concatenated-code-quality.json", "wt") as f:
-        json.dump(concat_code_qual, f)
-      EOF
-      exit ${status}
-  artifacts:
-    reports:
-      codequality: concatenated-code-quality.json
-
-lint:depends:
-  extends:
-    - .build-job
-    - .lint
-  before_script:
-    - !reference [.python-venv]
-    - retry python -m pip install -r common/requirements-scripts.txt
-  script:
-    - ./common/code-quality-scripts/check_library_dependencies
-  rules:
-    - !reference [.ci-lint, rules]
-    - !reference [.ci-merge-build, rules]
-
-lint:gitignore:
-  extends:
-    - .build-job
-    - .lint
-  script:
-    # build in source directory, including tests
-    - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-python --enable-swig-python
-    - make -j${CPU_COUNT} VERBOSE=1 all
-    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
-    # install pre-commit
-    - !reference [.python-venv]
-    - retry python -m pip install pre-commit
-    - retry pre-commit install-hooks
-    # check for build files not in .gitignore
-    - |
-      status=0
-      git status --short | sed -n 's|^?? ||p' >> .gitignore
-      pre-commit run -a fix-gitignore-entries
-      if ! git diff --quiet; then
-        echo "------------------------------------------------------------------------"
-        echo "The following entries are missing from the .gitignore files:"
-        echo "------------------------------------------------------------------------"
-        git diff
-        echo "------------------------------------------------------------------------"
-        status=1
-      fi
-      ./common/code-quality-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
-      exit ${status}
-  artifacts:
-    reports:
-      codequality: code-quality-gitignore.json
-  rules:
-    - !reference [.ci-lint, rules]
-    - !reference [.ci-merge-build, rules]
