@@ -5,9 +5,26 @@
 
 import sys
 import argparse
+import logging
 import gitlab
 from pathlib import Path
 from natsort import natsorted
+
+# configure logging
+LOGGER = logging.getLogger(__name__.rsplit(".", 1)[-1])
+try:
+    from coloredlogs import ColoredFormatter as _Formatter
+except ImportError:
+    _Formatter = logging.Formatter
+if not LOGGER.hasHandlers():
+    _LOG_HANDLER = logging.StreamHandler()
+    _LOG_HANDLER.setFormatter(
+        _Formatter(
+            fmt="[%(asctime)s] %(levelname)+8s: %(message)s",
+        )
+    )
+    LOGGER.addHandler(_LOG_HANDLER)
+LOGGER.setLevel(logging.DEBUG)
 
 
 def parse_command_line():
@@ -65,7 +82,9 @@ def main():
         ref_name = "master"
 
     # Download artifact
-    print(f"Downloading artifact: ref={ref_name}, path={artifact_path}, job={job_name}")
+    LOGGER.info(
+        f"downloading artifact: ref={ref_name}, path={artifact_path}, job={job_name}"
+    )
     try:
         with artifact_path.open("wb") as f:
             repo.artifacts.raw(
