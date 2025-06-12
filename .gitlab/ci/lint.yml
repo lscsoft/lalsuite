@@ -8,12 +8,21 @@
 
 .lint:
   stage: lint
+  extends:
+    - .build-job
   needs: []
-  image: quay.io/igwn/lalsuite-dev:el8-testing
+  image: quay.io/igwn/base:conda
   variables:
-    # minimum Python requirement for scripts installed in venv
-    # - pre-commit hooks require Python >=3.10
-    PYTHON_VENV: "python3.11"
+    ENVIRONMENT_FILE: "./conda-dev-env.yml"
+  before_script:
+    - !reference [.build-init]
+    # configure conda
+    - !reference [.conda-init]
+    # activate conda LALSuite development environment
+    - !reference [.conda-lalsuite-dev]
+    # install requirements for code quality scripts
+    - !reference [.python-venv]
+    - retry python -m pip install -r common/requirements-scripts.txt
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-nightly-deploy, rules]
@@ -49,15 +58,15 @@ lint:pre-commit:
     - .lint
   variables:
     GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
-  before_script:
+  script:
     # this jobs needs the full Git history to update the authors
+    - retry conda install --quiet git-lfs
+    - git lfs install
     - git fetch --unshallow --quiet
     # check that the first commit in LALSuite exists
     - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
-  script:
     # install pre-commit
-    - !reference [.python-venv]
-    - retry python -m pip install pre-commit
+    - retry conda install --quiet pre-commit
     - retry pre-commit install-hooks
     # run pre-commit
     - |
@@ -85,17 +94,17 @@ lint:pre-commit:
 
 lint:gitignore:
   extends:
-    - .build-job
     - .lint
   script:
+    # install texlive-core for bibtex, needed for Doxygen documentation
+    - retry conda install --quiet texlive-core
     # build in source directory, including tests
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-python --enable-swig-python
     - make -j${CPU_COUNT} VERBOSE=1 all
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     # install pre-commit
-    - !reference [.python-venv]
-    - retry python -m pip install pre-commit
+    - retry conda install --quiet pre-commit
     - retry pre-commit install-hooks
     # check for build files not in .gitignore
     - |
@@ -122,9 +131,6 @@ lint:depends:
   extends:
     - .build-job
     - .lint
-  before_script:
-    - !reference [.python-venv]
-    - retry python -m pip install -r common/requirements-scripts.txt
   script:
     - ./common/code-quality-scripts/check_library_dependencies
   rules:
@@ -135,7 +141,6 @@ lint:depends:
 
 .lint-api-job:
   extends:
-    - .build-job
     - .lint
   variables:
     PYTHONUNBUFFERED: "yes"
@@ -147,15 +152,12 @@ lint:depends:
       lal lalsupport
       lalframe lalmetaio lalsimulation
       lalburst lalinspiral lalinference lalpulsar
-
-.lint-api-init:
-  # install required packages
-  - retry yum -y install
-        abi-dumper
-        abi-compliance-checker
-  # install required Python packages
-  - !reference [.python-venv]
-  - retry python -m pip install -r common/requirements-scripts.txt
+  before_script:
+    - !reference [.lint, before_script]
+    # install required packages for API jobs
+    - retry conda install --quiet
+          abi-dumper
+          abi-compliance-checker
 
 .lint-api-build-lalsuite:
   # configure, build, and install LALSuite
@@ -168,7 +170,6 @@ lint:api-dump-master:
   extends:
     - .lint-api-job
   script:
-    - !reference [.lint-api-init]
     # build LALSuite
     - !reference [.lint-api-build-lalsuite]
     # dump API
@@ -196,7 +197,6 @@ lint:api-dump-release:
   extends:
     - .lint-api-job
   script:
-    - !reference [.lint-api-init]
     # build LALSuite
     - !reference [.lint-api-build-lalsuite]
     # dump API
@@ -223,7 +223,6 @@ lint:api-cmp-merge-diff:
   extends:
     - .lint-api-job
   script:
-    - !reference [.lint-api-init]
     # download API dump of the main branch at lscsoft/lalsuite
     - retry ./common/code-quality-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite ${CI_DEFAULT_BRANCH}
     - tar xvf api-dump-master.tar.bz2
@@ -256,7 +255,6 @@ lint:api-cmp-last-release:
   extends:
     - .lint-api-job
   script:
-    - !reference [.lint-api-init]
     # download API dump of the main branch at lscsoft/lalsuite
     - retry ./common/code-quality-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite release
     - tar xvf api-dump-release.tar.bz2
