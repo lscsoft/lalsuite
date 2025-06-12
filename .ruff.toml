@@ -1,0 +1,38 @@
+# ideally should match LALSUITE_DEFAULT_MIN_PYTHON_VERSION but ruff only supports py37+
+target-version = "py37"
+
+[lint]
+select = [
+    # pycodestyle errors
+    "E9",
+    # executable issues
+    "EXE",
+    # pyflakes
+    "F401",
+    # pycodestyle warnings
+    "W2",
+    "W605",
+]
+exclude = [
+    "*.ipynb",
+    "*/doxygen/filter_py.py",
+    ".git/",
+    "__pycache__",
+]
+
+[lint.per-file-ignores]
+"__init__.py" = [
+    "F401",  # unused-import
+]
+"lalburst/*" = [
+    "F401",  # unused-import
+]
+"lalinspiral/*" = [
+    "F401",  # unused-import
+]
+"lalinference/*" = [
+    "F401",  # unused-import
+]
+"lalsimulation/*" = [
+    "F401",  # unused-import
+]
