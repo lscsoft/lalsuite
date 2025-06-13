@@ -46,7 +46,7 @@ while (<DIFF>) {
 
     print "{";
     {
-      print "\"description\": \"${description}.\", ";
+      print "\"description\": \"${description}\", ";
       print "\"check_name\": \"${check_name}\", ";
       print "\"fingerprint\": \"git-diff-to-code-quality-report-${check_name}-${file}-${begin}\", ";
       print "\"severity\": \"blocker\", ";
