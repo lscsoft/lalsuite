@@ -104,6 +104,7 @@ Depends:
  ${shlibs:Depends},
  gwdatafind,
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
+ python3,
  python3-lalpulsar (= ${binary:Version}),
  lalpulsar-data,
 Description: LVK Algorithm Library Pulsar

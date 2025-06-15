@@ -109,6 +109,7 @@ Depends:
  ${shlibs:Depends},
  liblal@LIBMAJOR@ (= ${binary:Version}),
  liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
+ python3,
  python3-lal (= ${binary:Version}),
 Description: LVK Algorithm Library - runtime tools
  The LVK Algorithm Library for gravitational wave analysis.
