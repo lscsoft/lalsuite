@@ -1,7 +1,7 @@
 import doctest
 
 try:
-	from igwn_ligolw import ligolw
+	from igwn_ligolw import ligolw   # noqa: F401
 except ImportError as exc:
 	import warnings
 	import sys
