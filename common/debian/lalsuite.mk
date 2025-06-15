@@ -40,3 +40,8 @@ override_dh_shlibdeps:
 	&& find debian -name '*.la' -delete \
 	&& dh_numpy3 \
 	;
+
+override_dh_lintian:
+	# apply debian/lintian-overrides to all binary packages
+	perl -ne 'print "cp -f debian/lintian-overrides debian/$$1.lintian-overrides\n" if /^Package:\s*(\S+)/' debian/control | bash
+	dh_lintian
