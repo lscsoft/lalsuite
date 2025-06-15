@@ -97,6 +97,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  liblalinspiral@LIBMAJOR@ (= ${binary:Version}),
+ python3,
  python3-igwn-segments,
  python3-lalinspiral (= ${binary:Version}),
 Description: LVK Algorithm Library Inspiral
