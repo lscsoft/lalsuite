@@ -23,7 +23,6 @@
 import argparse
 import os
 import sys
-import time
 import shutil
 from contextlib import contextmanager
 from concurrent.futures import ProcessPoolExecutor, as_completed
