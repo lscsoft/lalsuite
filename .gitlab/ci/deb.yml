@@ -54,6 +54,10 @@
          -us -uc -r
          --lintian-opts --color=always --allow-root
     # create a codeclimate report from the lintian report
+    - |
+      echo "---- *lintian-overrides"
+      find debian/ -name '*lintian-overrides' | sort | xargs grep -H .
+      echo "---- *lintian-overrides"
     - !reference [.python-venv]
     - retry python -m pip install "lintian-codeclimate>=0.1.1"
     - |
