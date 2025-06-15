@@ -10,4 +10,6 @@ EXTRA_DIST = \
 	lalframe.install \
 	rules \
 	lalsuite.mk \
-	source/format
+	source/format \
+	lintian-overrides \
+	$(END_OF_LIST)
