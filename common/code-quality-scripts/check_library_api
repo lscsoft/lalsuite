@@ -42,6 +42,7 @@ def parse_command_line():
     # Create parser
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", help="subcommand help")
+    subparsers.required = True
     parser_dump = subparsers.add_parser("dump", help="dump help")
     parser_dump.set_defaults(subcommand=dump)
     parser_dump.add_argument(
