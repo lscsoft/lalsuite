@@ -3,6 +3,18 @@ import sys
 import argparse
 from lalinference.wrapper import LALInferenceCBCWrapper
 import os.path
+
+if __name__=='__main__':
+    parser = argparse.ArgumentParser(description='Nested sampling for CBC analysis')
+    parser.add_argument('--nlive',type=int,default=1000)
+    parser.add_argument('--nthreads',type=int,default=1)
+    parser.add_argument('--verbose',action='store_true',default=False)
+    parser.add_argument('--outfile',required=True)
+    parser.add_argument('--plot',default=False,const=True,nargs='?')
+    parser.add_argument('--maxmcmc',default=5000,type=int)
+    parser.add_argument('--poolsize',default=500,type=int)
+    opts, args = parser.parse_known_args(sys.argv)
+
 try:
     import cpnest.model
 except ImportError as exc:
@@ -34,15 +46,6 @@ class LIModel(cpnest.model.Model):
         return logp
 
 if __name__=='__main__':
-    parser = argparse.ArgumentParser(description='Nested sampling for CBC analysis')
-    parser.add_argument('--nlive',type=int,default=1000)
-    parser.add_argument('--nthreads',type=int,default=1)
-    parser.add_argument('--verbose',action='store_true',default=False)
-    parser.add_argument('--outfile',required=True)
-    parser.add_argument('--plot',default=False,const=True,nargs='?')
-    parser.add_argument('--maxmcmc',default=5000,type=int)
-    parser.add_argument('--poolsize',default=500,type=int)
-    opts, args = parser.parse_known_args(sys.argv)
     print(args)
     LIstate = LIModel(sys.argv)
     nest=cpnest.CPNest(LIstate, nlive=opts.nlive, nthreads=opts.nthreads, verbose=opts.verbose, maxmcmc=opts.maxmcmc, poolsize=opts.poolsize)
