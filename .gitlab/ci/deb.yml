@@ -98,6 +98,7 @@
     - !reference [.ci-nightly-deploy, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-docker, rules]
+    - when: never
 
 # -- builds
 
