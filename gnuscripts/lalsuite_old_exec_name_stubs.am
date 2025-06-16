@@ -18,12 +18,12 @@ $(old_exec_name_stubs): Makefile
 	echo "echo \"WARNING: '$@' has been renamed to '$${newname}'\" >&2" >> $@; \
 	echo "echo \"WARNING: please update your scripts\" >&2" >> $@; \
 	echo "echo >&2" >> $@; \
+	echo "case \"\$$1\" in -h|--help) exit 1;; esac" >> $@; \
 	echo "if test ! -x \"\$${newexec}\"; then" >> $@; \
 	echo "  echo \"ERROR: '\$${newexec}' is not installed\" >&2" >> $@; \
 	echo "  echo >&2" >> $@; \
 	echo "  exit 127" >> $@; \
 	echo "fi" >> $@; \
-	echo "case \"\$$1\" in -h|--help) exit 1;; esac" >> $@; \
 	echo "echo \"WARNING: now running '\$${newexec}' ...\" >&2" >> $@; \
 	echo "echo >&2" >> $@; \
 	echo "exec \"\$${newexec}\" \"\$$@\"" >> $@; \
