@@ -62,7 +62,7 @@ lint:pre-commit:
     # run pre-commit
     - |
       echo "env: CI_COMMIT_AUTHOR=${CI_COMMIT_AUTHOR}"
-      pre-commit run -a && status=0 || status=$?
+      pre-commit run -a || true
       if ! git diff --quiet; then
         echo "------------------------------------------------------------------------"
         echo "The pre-commit hooks have made the following fixes to your code:"
@@ -75,27 +75,13 @@ lint:pre-commit:
         echo "See CONTRIBUTING.md for further information."
         echo "------------------------------------------------------------------------"
       fi
-      echo "-------------------- generating code quality report --------------------"
-      pre-commit run -a --hook-stage manual
-      ./common/code-quality-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
-      python <<EOF
-      import sys
-      import glob
-      import json
-      concat_code_qual = []
-      for fn in glob.glob("code-quality-*.json"):
-        with open(fn, "rt") as f:
-          code_qual = json.load(f)
-        for cq in code_qual:
-          cq["severity"] = "blocker"
-          concat_code_qual.append(cq)
-      with open("concatenated-code-quality.json", "wt") as f:
-        json.dump(concat_code_qual, f)
-      EOF
-      exit ${status}
+    # generate code quality report
+    - pre-commit run -a --hook-stage manual
+    - ./common/code-quality-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
+    - !reference [.concatenate-code-quality]
   artifacts:
     reports:
-      codequality: concatenated-code-quality.json
+      codequality: code-quality.json
 
 lint:gitignore:
   extends:
@@ -113,22 +99,21 @@ lint:gitignore:
     - retry pre-commit install-hooks
     # check for build files not in .gitignore
     - |
-      status=0
       git status --short | sed -n 's|^?? ||p' >> .gitignore
-      pre-commit run -a fix-gitignore-entries
+      pre-commit run -a fix-gitignore-entries || true
       if ! git diff --quiet; then
         echo "------------------------------------------------------------------------"
         echo "The following entries are missing from the .gitignore files:"
         echo "------------------------------------------------------------------------"
         git diff
         echo "------------------------------------------------------------------------"
-        status=1
       fi
-      ./common/code-quality-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
-      exit ${status}
+    # generate code quality report
+    - ./common/code-quality-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
+    - !reference [.concatenate-code-quality]
   artifacts:
     reports:
-      codequality: code-quality-gitignore.json
+      codequality: code-quality.json
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
