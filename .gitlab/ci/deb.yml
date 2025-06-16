@@ -58,12 +58,11 @@
     - retry python -m pip install "lintian-codeclimate>=0.1.1"
     - |
       lintian --allow-root --fail-on none --info --color never ../${PACKAGE}_*.changes > lintian.out
-      python -m lintian_codeclimate lintian.out -d . -o $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
+      python -m lintian_codeclimate lintian.out -d . -o ${CI_PROJECT_DIR}/code-quality-lintian.json
       sed -i \
         -e "s|debian\/control|debian/control.in|g" \
         -e "s|debian\/|$PACKAGE/debian/|g" \
-        $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
-      echo "lintian codeclimate report written to lintian-gl-codeclimate-${PACKAGE}.json"
+        ${CI_PROJECT_DIR}/code-quality-lintian.json
     # print package info
     - set +x
     - cd ${CI_PROJECT_DIR}
@@ -72,6 +71,7 @@
           dpkg --info "${debf}";
           dpkg --contents "${debf}";
       done
+    - !reference [.concatenate-code-quality]
   artifacts:
     expire_in: 18h
     paths:
@@ -89,7 +89,7 @@
       # the orig tarball
       - "${CI_JOB_NAME%%:*}*.orig.*"
     reports:
-      codequality: "lintian-gl-codeclimate-*.json"
+      codequality: code-quality.json
       junit: "${CI_JOB_NAME%%:*}-*/**/*junit*.xml"
     when: always
   rules:
