@@ -265,6 +265,9 @@ AM_CPPFLAGS="-I\$(top_srcdir)/src ${AM_CPPFLAGS}"
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
+# do not install user environment scripts into /etc
+AM_CONDITIONAL([SYSCONFDIR_IS_ETC],[test "x${sysconfdir}" = "x/etc"])
+
 # output
 AC_OUTPUT
 AC_MSG_NOTICE([
