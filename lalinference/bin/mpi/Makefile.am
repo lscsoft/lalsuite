@@ -1,4 +1,5 @@
 MOSTLYCLEANFILES =
+man1_MANS =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
@@ -26,7 +27,5 @@ noinst_HEADERS = \
 	LALInferenceKombineSampler.h \
 	LALInferenceMCMCSampler.h \
 	$(END_OF_LIST)
-
-man1_MANS = $(help2man_MANS)
 
 endif
