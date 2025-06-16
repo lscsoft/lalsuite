@@ -1,0 +1,5 @@
+# this likely occurs because jquery.js is minimised
+# JavaScript (no whitespace), and from the lintian docs:
+# "Please note, that very-long-line-length-in-source-file
+# tagged files are likely tagged source-is-missing."
+source-is-missing [python/lalinference/imrtgr/jquery.js]

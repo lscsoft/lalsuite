@@ -11,5 +11,6 @@ EXTRA_DIST = \
 	rules \
 	lalsuite.mk \
 	source/format \
+	source/lintian-overrides \
 	lintian-overrides \
 	$(END_OF_LIST)
