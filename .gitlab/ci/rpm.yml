@@ -73,6 +73,8 @@
       addFilter('explicit-lib-dependency (.*)?ciecplib')
       # ignore any warning from -debugsource packages
       addFilter('-debugsource')
+      # ignore stuff added to version number during build
+      addFilter('incoherent-version-in-changelog')
       EOF
     - rpmlint
           -f rpmlintrc
