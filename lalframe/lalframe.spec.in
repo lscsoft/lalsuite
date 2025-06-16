@@ -1,5 +1,4 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
-%define _sysconfdir %{_prefix}/etc
 %define release 1
 %define configure_opts %{nil}
 
@@ -108,7 +107,7 @@ This package provides the Octave bindings for LALFrame.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-%configure %{configure_opts} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
+%configure %{configure_opts} --sysconfdir=%{_sysconfdir} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
 %check
@@ -162,7 +161,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{_bindir}/*
 %{_mandir}/man1/*
-%{_sysconfdir}/*
 
 # -- changelog --------------
 
