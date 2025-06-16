@@ -1,6 +1,7 @@
 BUILT_SOURCES =
 # BUILT_SOURCES = bayestar_cosmology.h
 MOSTLYCLEANFILES =
+man1_MANS =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
