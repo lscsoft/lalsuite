@@ -193,6 +193,48 @@ default:
     done
     retry python -m pip install --upgrade pip
 
+# concatenate code quality reports
+# - concatenate all reports matching `code-quality-*.json` into a single report
+# - mark non-ignored entries as "blocker", requiring them to be addressed
+# - returns non-zero exit code if there are any non-ignored entries
+.concatenate-code-quality:
+  - |
+    python <<EOF
+    import json
+    import os
+    import re
+    import sys
+    from pathlib import Path
+    ignore_severity_regex = r'.*'
+    concat_code_qual = []
+    exit_code = 0
+    wd = Path(os.environ["CI_PROJECT_DIR"])
+    for fn in wd.glob("code-quality-*.json"):
+      severities = {}
+      with fn.open("rt") as f:
+        code_qual = json.load(f)
+      for cq in code_qual:
+        if re.fullmatch(ignore_severity_regex, cq["severity"]) is None:
+          cq["severity"] = "blocker"
+          exit_code = 1
+        concat_code_qual.append(cq)
+        sv = severities.get(cq["severity"], 0)
+        severities[cq["severity"]] = sv + 1
+      print(f"Found code quality report: {fn}", end="")
+      if severities:
+        for severity, count in sorted(severities.items()):
+          if re.fullmatch(ignore_severity_regex, severity) is None:
+            severity = severity.upper()
+          print(f", {severity}={count}", end="")
+      n = len(code_qual)
+      print(f", total={n} entries")
+    concat_fn = wd / "code-quality.json"
+    with concat_fn.open("wt") as f:
+      json.dump(concat_code_qual, f)
+    print(f"Concatenated code quality report: {concat_fn}")
+    sys.exit(exit_code)
+    EOF
+
 # -- base templates ----------------------------------
 
 # basic before_script template for a compiling job
