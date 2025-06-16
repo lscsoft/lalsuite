@@ -41,8 +41,6 @@ include:
   # see https://computing.docs.ligo.org/gitlab-ci-templates/
   - project: computing/gitlab-ci-templates
     file:
-      # helpers for codequality jobs
-      - codequality.yml
       # helpers for debian builds
       - debian.yml
       # helpers for RHEL builds
