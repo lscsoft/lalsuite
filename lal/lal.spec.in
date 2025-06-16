@@ -64,6 +64,7 @@ Summary: LVK Algorithm Library -- library package
 Requires: less
 Conflicts: lal <= 7.1.0-1
 Obsoletes: python-pylal < 0.13.2-1
+Provides: python-pylal = 0.13.2-1
 %description -n lib%{name}
 The LVK Algorithm Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
