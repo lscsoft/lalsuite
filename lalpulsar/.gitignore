@@ -5,6 +5,7 @@
 *.o
 *.pc
 *.pyc
+*.pyman
 *.pyo
 .deps
 .libs
