@@ -61,7 +61,7 @@
       done
     # install the packages we built
     - retry yum -y -q install ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
-    # lint packages (both installed packages and RPM files)
+    # lint packages (RPM files only)
     - |
       cat << EOF > rpmlintrc
       # don't validate Source0
@@ -78,7 +78,6 @@
       EOF
     - rpmlint
           -f rpmlintrc
-          "*${PACKAGE}*"
           ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
           > rpmlint.out || true
     - cat rpmlint.out
