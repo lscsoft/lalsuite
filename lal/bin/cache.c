@@ -24,6 +24,10 @@
 
 int main( int argc, char *argv[] )
 {
+	if ( argc > 1 && ( !strcmp(argv[1],"-h") || !strcmp(argv[1],"--help") ) ) {
+		printf("usage: %s <filenames>\n", argv[0]);
+		return 0;
+	}
 	LALFILE *outfile = NULL;
 	LALCache *cache;
 	int arg = 1;
