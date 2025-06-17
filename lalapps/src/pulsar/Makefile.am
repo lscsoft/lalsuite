@@ -1,5 +1,7 @@
 MOSTLYCLEANFILES =
 dist_bin_SCRIPTS =
+man1_MANS =
+include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_old_exec_name_stubs.am
 
 old_exec_name_stubs = \
