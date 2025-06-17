@@ -25,7 +25,11 @@ endif
 
 pkgdata_DATA = power_pipe.ini
 
+# .1 man pages will be used automatically by lalsuite_help2man.am instead of the
+# generated ones, so these files do not need to be explicitly added to man1_MANS
+
 EXTRA_DIST += \
+	lalapps_power.1 \
 	H1_L1_dt125_df128.png \
 	Z_histogram.png \
 	clustering_example.png \

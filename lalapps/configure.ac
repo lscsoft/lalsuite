@@ -13,7 +13,6 @@ AC_CONFIG_FILES([\
   debian/control \
   doxygen/Makefile \
   lalapps.spec \
-  man/Makefile \
   src/Makefile \
   src/findchirp/Makefile \
   src/frametools/Makefile \
