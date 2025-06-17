@@ -214,7 +214,7 @@ static INT4 Read_Data_Mode(const char dir[], const INT4 mode[2], EOBNRHMROMdata 
 
 /********************* Functions to initialize and cleanup data structures ********************/
 static void EOBNRHMROMdata_Init(EOBNRHMROMdata **data) {
-  if(!data) exit(1);
+  if(!data) abort();
   /* Create storage for structures */
   if(!*data) *data=XLALMalloc(sizeof(EOBNRHMROMdata));
   else
@@ -231,7 +231,7 @@ static void EOBNRHMROMdata_Init(EOBNRHMROMdata **data) {
   (*data)->shiftphase = gsl_vector_alloc(nbwf);
 }
 static void EOBNRHMROMdata_interp_Init(EOBNRHMROMdata_interp **data_interp) {
-  if(!data_interp) exit(1);
+  if(!data_interp) abort();
   /* Create storage for structures */
   if(!*data_interp) *data_interp=XLALMalloc(sizeof(EOBNRHMROMdata_interp));
   else
@@ -244,7 +244,7 @@ static void EOBNRHMROMdata_interp_Init(EOBNRHMROMdata_interp **data_interp) {
   (*data_interp)->shiftphase_interp = NULL;
 }
 static void EOBNRHMROMdata_coeff_Init(EOBNRHMROMdata_coeff **data_coeff) {
-  if(!data_coeff) exit(1);
+  if(!data_coeff) abort();
   /* Create storage for structures */
   if(!*data_coeff) *data_coeff=XLALMalloc(sizeof(EOBNRHMROMdata_coeff));
   else

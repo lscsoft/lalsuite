@@ -817,7 +817,7 @@ INT4 XLALSimCheckRDattachment(
             //XLAL_PRINT_INFO("%.16e %.16e\n", timeVec->data[j], y[j]);
         //}
         //fclose(out1);
-        //exit(0);
+        //abort();
         XLAL_ERROR(XLAL_EFAILED);
 
 

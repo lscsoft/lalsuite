@@ -84,7 +84,7 @@ static void  fill_IFO_Amp_vars_from_IFOname(REAL8 * stddev,REAL8* fbin, char* if
     }
     else{
         fprintf(stderr,"Unknown IFO in fill_IFO_vars_from_IFOname! Valid codes are H1, L1, V1. Aborting\n");
-        exit(-1);
+        abort();
         }
 }
 
@@ -132,7 +132,7 @@ void  fill_IFO_Pha_vars_from_IFOname(REAL8 * stddev,REAL8* fbin, char* ifoname){
     }
     else{
         fprintf(stderr,"Unknown IFO in fill_IFO_Pha_vars_from_IFOname! Valid codes are H1, L1, V1. Aborting\n");
-        exit(-1);
+        abort();
         }
     }
 
@@ -150,7 +150,7 @@ static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char
     *out=*ifos=NULL;
     *N=0;
     char tmp[128];
-    if(!this) {fprintf(stderr,"No command line arguments given!\n"); exit(1);}
+    if(!this) {fprintf(stderr,"No command line arguments given!\n"); abort();}
     /* Construct a list of IFOs */
     for(this=commandLine;this;this=this->next)
     {
@@ -390,7 +390,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
     /* Set calibration seed for random errors */
     if(!LALInferenceGetProcParamVal(commandLine,"--dataseed")){
       fprintf(stdout,"--dataseed is required when running with --AddCalibrationErrors\n");
-      exit(1);
+      abort();
     }
     int dataseed=atoi(LALInferenceGetProcParamVal(commandLine,"--dataseed")->value);
     RandomParams *datarandparam=XLALCreateRandomParams(dataseed);
@@ -452,13 +452,13 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
 	INT4 rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&plateau ,plateau_option, &Nifo);
 	if (!rlceops){
 	  fprintf(stderr,"Must provide a --IFO-constant_calamp option for each IFO if --ConstantCE is given\n");
-	  exit(1);
+	  abort();
 	}
 	fprintf(stdout,"Applying constant amplitude calibration errors. \n");
 	rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&pplateau ,pplateau_option, &Nifo);
 	if (!rlceops){
 	  fprintf(stderr,"Must provide a --IFO-constant_calpha option for each IFO if --ConstantCE is given\n");
-	  exit(1);
+	  abort();
 	}
 	fprintf(stdout,"Applying constant phase calibration errors. \n");
         for(i=0;i<num_ifos;i++){
@@ -482,17 +482,17 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
       INT4 rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&plateau ,plateau_option, &Nifo);
       if (!rlceops){
 	fprintf(stderr,"Must provide a --IFO-calamp_plateau option for each IFO if --RandomLinearCE is given\n");
-	exit(1);
+	abort();
       }
       rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&knee ,knee_option, &Nifo);
       if (!rlceops){
 	fprintf(stderr,"Must provide a --IFO-calamp_knee option for each IFO if --RandomLinearCE is given\n");
-	exit(1);
+	abort();
       }
       rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&slope ,slope_option, &Nifo);
       if (!rlceops){
 	fprintf(stderr,"Must provide a --IFO-calamp_slope option for each IFO if --RandomLinearCE is given\n");
-	exit(1);
+	abort();
       }
 
       fprintf(stdout,"Applying quasi constant amplitude calibration errors. \n");
@@ -531,17 +531,17 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
       rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&pplateau ,pplateau_option, &Nifo);
       if (!rlceops){
 	fprintf(stderr,"Must provide a --IFO-calpha_plateau option for each IFO if --RandomLinearCE is given\n");
-	exit(1);
+	abort();
       }
       rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&pknee ,pknee_option, &Nifo);
       if (!rlceops){
 	fprintf(stderr,"Must provide a --IFO-calpha_knee option for each IFO if --RandomLinearCE is given\n");
-	exit(1);
+	abort();
       }
       rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&pslope ,pslope_option, &Nifo);
       if (!rlceops){
 	fprintf(stderr,"Must provide a --IFO-calpha_slope option for each IFO if --RandomLinearCE is given\n");
-	exit(1);
+	abort();
       }
 
       fprintf(stdout,"Applying quasi constant phase calibration errors. \n");
@@ -577,7 +577,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
     }
     else{
       fprintf(stderr, "Must provide a calibration error flag together with --AddCalibrationErrors\n");
-      exit(1);
+      abort();
     }
     /* Now apply CE to various quantities */
     tmpdata=IFOdata;
@@ -602,7 +602,7 @@ void PrintCEtoFile(REAL8* Acoeffs,REAL8* Pcoeffs,LALInferenceIFOData* IFOdata, P
     UINT4 f_high_idx=floor(IFOdata->fHigh/df);
     if (df*f_low_idx<freq_min || df*f_high_idx >freq_max) {
         fprintf(stderr,"The min and max frequency in LALInspiralCalibrationErrors.c are inside the range [flow,fmin] of the integral overlap. Exiting...\n");
-        exit(1);
+        abort();
     }
 
     ProcessParamsTable *ppt_order=NULL;

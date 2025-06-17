@@ -103,7 +103,7 @@ struct fvec *interpFromFile(char *filename, REAL8 squareinput){
 	interpfile = fopen(filename,"r");
 	if (interpfile==NULL){
 		printf("Unable to open file %s\n",filename);
-		exit(1);
+		abort();
 	}
 	while(2==fscanf(interpfile," %lf %lf ", &f, &x )){
 		interp[i].f=f;
@@ -127,7 +127,7 @@ struct fvec *interpFromFile(char *filename, REAL8 squareinput){
     if(fileLength-1 <1)
     {
             XLALPrintError("Error: read no records from %s\n",filename);
-            exit(1);
+            abort();
     }
     return interp;
 }
@@ -155,11 +155,11 @@ void MetaNoiseFunc(LALStatus *status, REAL8 *psd, REAL8 f, struct fvec *interp, 
 void MetaNoiseFunc(LALStatus *status, REAL8 *psd, REAL8 f, struct fvec *interp, NoiseFunc *noisefunc){
 	if(interp==NULL&&noisefunc==NULL){
 		printf("ERROR: Trying to calculate PSD with NULL inputs\n");
-		exit(1);
+		abort();
 	}
 	if(interp!=NULL && noisefunc!=NULL){
 		printf("ERROR: You have specified both an interpolation vector and a function to calculate the PSD\n");
-		exit(1);
+		abort();
 	}
 	if(noisefunc!=NULL){
 		noisefunc(status,psd,f);
@@ -194,7 +194,7 @@ static LALCache *GlobFramesPWD(char *ifo)
         if ( ! frGlobCache->length )
         {
             fprintf( stderr, "error: no frame file files found\n");
-            exit( 1 );
+            abort();
         }
         CHAR ifoRegExPattern[6];
         LALCache *frInCache=NULL;
@@ -210,7 +210,7 @@ static LALCache *GlobFramesPWD(char *ifo)
         if ( ! frGlobCache->length )
         {
             fprintf( stderr, "error: no frame file files found after sieving\n");
-            exit( 1 );
+            abort();
         }
         else
         {
@@ -238,7 +238,7 @@ static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS 
 			if(stream) break;
 			sleep(delay);
 	}
-	if(stream==NULL) {fprintf(stderr,"readTseries ERROR: Unable to open stream from frame cache file\n"); exit(-1);}
+	if(stream==NULL) {fprintf(stderr,"readTseries ERROR: Unable to open stream from frame cache file\n"); abort();}
 
 	for (tries=0,delay=5;tries<max_tries;tries++,delay*=2) {
 			out = XLALFrStreamInputREAL8TimeSeries( stream, channel, &start, length , 0 );
@@ -263,7 +263,7 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
     *caches=*ifos=*channels=*flows=*fhighs=*timeslides=*asds=*psds=NULL;
     *N=0;
     char tmp[128];
-    if(!this) {fprintf(stderr,"No command line arguments given!\n"); exit(1);}
+    if(!this) {fprintf(stderr,"No command line arguments given!\n"); abort();}
     /* Construct a list of IFOs */
     for(this=commandLine;this;this=this->next)
     {
@@ -291,7 +291,7 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
         if(!globFrames){
             sprintf(tmp,"--%s-cache",(*ifos)[i]);
             this=LALInferenceGetProcParamVal(commandLine,tmp);
-            if(!this){fprintf(stderr,"ERROR: Must specify a cache file for %s with --%s-cache\n",(*ifos)[i],(*ifos)[i]); exit(1);}
+            if(!this){fprintf(stderr,"ERROR: Must specify a cache file for %s with --%s-cache\n",(*ifos)[i],(*ifos)[i]); abort();}
             (*caches)[i]=XLALStringDuplicate(this->value);
         }
 
@@ -343,7 +343,7 @@ static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char
     *out=*ifos=NULL;
     *N=0;
     char tmp[128];
-    if(!this) {fprintf(stderr,"No command line arguments given!\n"); exit(1);}
+    if(!this) {fprintf(stderr,"No command line arguments given!\n"); abort();}
     /* Construct a list of IFOs */
     for(this=commandLine;this;this=this->next)
     {
@@ -395,7 +395,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
     injTable = XLALSimInspiralTableFromLIGOLw(procparam->value);
     if(!injTable){
       fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
-      exit(1);
+      abort();
     }
     procparam=LALInferenceGetProcParamVal(commandLine,"--event");
     if(procparam) {
@@ -411,7 +411,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
       }
       if(!injTable){
         fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value);
-        exit(1);
+        abort();
       }
     }
   }
@@ -424,7 +424,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
     if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
     else {
       fprintf(stderr,"+++ Error: No trigger time specifed and no injection given \n");
-      exit(1);
+      abort();
     }
   }
 
@@ -449,7 +449,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
       out = fopen(filename, "w");
       if(!out){
         fprintf(stderr,"Unable to open the path %s for writing time data with injection files\n",filename);
-        exit(1);
+        abort();
       }
       for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
         REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) +
@@ -472,7 +472,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
       out = fopen(filename, "w");
       if(!out){
         fprintf(stderr,"Unable to open the path %s for writing freq data with injection files\n",filename);
-        exit(1);
+        abort();
       }
       for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
         REAL8 f = IFOdata[i].freqData->deltaF * j;
@@ -637,8 +637,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         }
 
         if((ppt=LALInferenceGetProcParamVal(commandLine,"--timeslide"))) LALInferenceParseCharacterOptionString(ppt->value,&timeslides,&Ntimeslides);
-        if(Nifo!=Ncache) {fprintf(stderr,"ERROR: Must specify equal number of IFOs and Cache files\n"); exit(1);}
-        if(Nchannel!=0 && Nchannel!=Nifo) {fprintf(stderr,"ERROR: Please specify a channel for all caches, or omit to use the defaults\n"); exit(1);}
+        if(Nifo!=Ncache) {fprintf(stderr,"ERROR: Must specify equal number of IFOs and Cache files\n"); abort();}
+        if(Nchannel!=0 && Nchannel!=Nifo) {fprintf(stderr,"ERROR: Please specify a channel for all caches, or omit to use the defaults\n"); abort();}
     }
     else
     {
@@ -762,7 +762,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             }
             continue;
         }
-        fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO A1 K1 I1 E1 E2 E3 HM1 HM2 EM1 EM2\n",IFOnames[i]); exit(-1);
+        fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO A1 K1 I1 E1 E2 E3 HM1 HM2 EM1 EM2\n",IFOnames[i]); abort();
     }
 
     /* Set up FFT structures and window */
@@ -782,7 +782,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         }
         if ((REAL8)2.0*padding*SampleRate/(REAL8)seglen <0.0 ||(REAL8)2.0*padding*SampleRate/(REAL8)seglen >1 ){
             fprintf(stderr,"Padding is negative or 2*padding is bigger than the whole segment. Consider reducing it using --padding or increase --seglen. Exiting\n");
-            exit(1);
+            abort();
         }
         IFOdata[i].padding=padding;
         IFOdata[i].window=XLALCreateTukeyREAL8Window(seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen);
@@ -828,7 +828,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             if (!LALInferenceGetProcParamVal(commandLine,"--dataseed")){
                 fprintf(stderr,"Error: You need to specify a dataseed when generating data with --dataseed <number>.\n\
                         (--dataseed 0 uses a non-reproducible number from the system clock, and no parallel run is then possible.)\n" );
-                exit(-1);
+                abort();
             }
             /* Offset the seed in a way that depends uniquely on the IFO name */
             int ifo_salt=0;
@@ -852,7 +852,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             if(!strcmp(caches[i],"LALSimAdLIGO")) {XLALSimNoisePSDaLIGODesignSensitivityT1800044(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow) ;LALSimPsd=1;}
             if(!strcmp(caches[i],"LALSimAdVirgo")) {XLALSimNoisePSD(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow,XLALSimNoisePSDAdvVirgo) ;LALSimPsd=1;}
             if(interpFlag) {PSD=NULL; scalefactor=1.0;}
-            if(PSD==NULL && !(interpFlag|| LALSimPsd)) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",caches[i]); exit(-1);}
+            if(PSD==NULL && !(interpFlag|| LALSimPsd)) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",caches[i]); abort();}
 
             if(LALSimPsd==0){
                 for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
@@ -895,7 +895,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 cache  = XLALCacheImport( caches[i] );
                 int err;
                 err = *XLALGetErrnoPtr();
-                if(cache==NULL) {fprintf(stderr,"ERROR: Unable to import cache file \"%s\",\n       XLALError: \"%s\".\n",caches[i], XLALErrorString(err)); exit(-1);}
+                if(cache==NULL) {fprintf(stderr,"ERROR: Unable to import cache file \"%s\",\n       XLALError: \"%s\".\n",caches[i], XLALErrorString(err)); abort();}
             }
             else
             {
@@ -903,8 +903,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 cache= GlobFramesPWD(IFOnames[i]);
 
             }
-            if(!cache) {fprintf(stderr,"ERROR: Cannot find any frame data!\n"); exit(1);}
-            if ((!((psds[i])==NULL)) && (!((asds[i])==NULL))) {fprintf(stderr,"ERROR: Cannot provide both ASD and PSD file from command line!\n"); exit(1);}
+            if(!cache) {fprintf(stderr,"ERROR: Cannot find any frame data!\n"); abort();}
+            if ((!((psds[i])==NULL)) && (!((asds[i])==NULL))) {fprintf(stderr,"ERROR: Cannot provide both ASD and PSD file from command line!\n"); abort();}
             if (!((asds)==NULL || (asds[i])==NULL)){
                 interp=NULL;
                 asdFlag=1;
@@ -952,7 +952,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 }
                 PSDtimeSeries=readTseries(cache,channels[i],GPSstart,PSDdatalength);
                 GPSstart=trueGPSstart;
-                if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); exit(1);}
+                if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); abort();}
                 XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
                 PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
                 if(!PSDtimeSeries) {
@@ -1201,7 +1201,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
           out = fopen(filename, "w");
           if(!out){
             fprintf(stderr,"Unable to open the path %s for writing PSD files\n",filename);
-            exit(1);
+            abort();
           }
           for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
               REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
@@ -1227,7 +1227,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             out = fopen(filename, "w");
             if(!out){
                 fprintf(stderr,"Unable to open the path %s for writing time data files\n",filename);
-                exit(1);
+                abort();
             }
             for (j = 0; j < IFOdata[i].timeData->data->length; j++) {
                 REAL8 t = XLALGPSGetREAL8(&(IFOdata[i].timeData->epoch)) +
@@ -1250,7 +1250,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             out = fopen(filename, "w");
             if(!out){
                 fprintf(stderr,"Unable to open the path %s for writing freq data files\n",filename);
-                exit(1);
+                abort();
             }
             for (j = 0; j < IFOdata[i].freqData->data->length; j++) {
                 REAL8 f = IFOdata[i].freqData->deltaF * j;
@@ -1270,7 +1270,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             out = fopen(filename, "w");
             if(!out){
               fprintf(stderr,"Unable to open the path %s for writing freq ASD files\n",filename);
-              exit(1);
+              abort();
             }
             for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
               REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
@@ -1430,7 +1430,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	injTable=XLALSimInspiralTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--inj")->value);
 	if(!injTable){
           fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--inj")->value);
-          exit(1);
+          abort();
         }
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
 	injEvent = injTable;
@@ -1542,7 +1542,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         }
         if(ppnParams.tc>bufferLength){
           fprintf(stderr, "ERROR: The waveform injected is %f seconds long and the buffer for FindChirpInjectSignal is %f seconds long. The end of the waveform will be cut ! (in %s, line %d)\n",ppnParams.tc , bufferLength, __FILE__, __LINE__);
-          exit(1);
+          abort();
         }
       }
 
@@ -1809,7 +1809,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 
       if(!hplus || !hcross) {
         fprintf(stderr,"Error: XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
-        exit(-1);
+        abort();
       }
       XLALResampleREAL8TimeSeries(hplus,thisData->timeData->deltaT);
       XLALResampleREAL8TimeSeries(hcross,thisData->timeData->deltaT);
@@ -1828,7 +1828,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         FILE* file=fopen(filename, "w");
         if(!file){
           fprintf(stderr,"Unable to open the path %s for writing injected TimeDomain h_plus and h_cross at geocenter\n",filename);
-          exit(1);
+          abort();
         }
 
         for(j=0; j<hplus->data->length; j++){
@@ -2216,7 +2216,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   errnum = *XLALGetErrnoPtr();
   if (errnum != XLAL_SUCCESS) {
     XLALPrintError(" ERROR in InjectFD(): error encountered when injecting waveform. errnum=%d\n",errnum);
-    exit(1);
+    abort();
   }
 
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--dump-geocenter-pols"))) {
@@ -2226,7 +2226,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     FILE* file=fopen(filename, "w");
     if(!file){
       fprintf(stderr,"Unable to open the path %s for writing injected FreqDomain h_plus and h_cross\n",filename);
-    exit(1);
+    abort();
     }
     UINT4 j;
     for(j=0; j<hptilde->data->length; j++){
@@ -2363,7 +2363,7 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , char SNRpath[] ){
   if(!snrout){
     fprintf(stderr,"Unable to open the path %s for writing SNR files\n",SNRpath);
     fprintf(stderr,"Error code %i: %s\n",errno,strerror(errno));
-    exit(errno);
+    abort();
   }
   thisData=IFOdata;
   while(thisData){
@@ -2562,7 +2562,7 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
 
     /* Save to file */
     outfile=fopen(fname,"w");
-    if(!outfile) {fprintf(stderr,"ERROR: Unable to open file %s for injection saving\n",fname); exit(1);}
+    if(!outfile) {fprintf(stderr,"ERROR: Unable to open file %s for injection saving\n",fname); abort();}
     LALInferenceSortVariablesByName(injparams);
     LALInferenceFprintParameterHeaders(outfile, injparams);
     fprintf(outfile,"\n");
@@ -2624,7 +2624,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	    injTable = XLALSimInspiralTableFromLIGOLw(procparam->value);
 	    if(!injTable){
 	      fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
-	      exit(1);
+	      abort();
 	    }
 	    procparam=LALInferenceGetProcParamVal(commandLine,"--event");
 	    if(procparam) {
@@ -2640,7 +2640,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	      }
 	      if(!injTable){
 		fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value);
-		exit(1);
+		abort();
 	      }
 	    }
 	  }
@@ -2653,7 +2653,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	    if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
 	    else {
 	      fprintf(stderr,">>> Error: No trigger time specifed and no injection given \n");
-	      exit(1);
+	      abort();
 	    }
 	  }
 
@@ -2666,7 +2666,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	        errsave = errno;
 		fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
 		fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
-		exit(errsave);
+		abort();
 	    }
 	    fscanf(tempfp, "%u", &time_steps);
 	    fscanf(tempfp, "%u", &n_basis_linear);
@@ -2695,7 +2695,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	        errsave = errno;
 		fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
 		fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
-		exit(errsave);
+		abort();
 	    } // check file exists
 	    fprintf(stderr, "read model->roq->frequencyNodesLinear");
 
@@ -2714,7 +2714,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	      errsave = errno;
 	      fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
 	      fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
-	      exit(errsave);
+	      abort();
 	    } // check file exists
 
 	    for(unsigned int quadsize = 0; quadsize < n_basis_quadratic; quadsize++){
@@ -2749,7 +2749,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
     injTable = XLALSimInspiralTableFromLIGOLw(procparam->value);
     if (!injTable) {
       fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
-      exit(1);
+      abort();
     }
     procparam=LALInferenceGetProcParamVal(commandLine,"--event");
     if (procparam) {
@@ -2768,7 +2768,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       }
       if (!injTable) {
 	fprintf(stderr, "Error, cannot find simulation id %s in injection file\n", procparam->value);
-	exit(1);
+	abort();
       }
     }
   }
@@ -2785,7 +2785,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       errsave = errno;
       fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
       fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
-      exit(errsave);
+      abort();
     }
     fscanf(tempfp, "%u", &time_steps);
     fscanf(tempfp, "%u", &n_basis_linear);
@@ -2810,7 +2810,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 	errsave = errno;
 	fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
 	fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
-	exit(errsave);
+	abort();
       }
       thisData->roq->weightsLinear = (double complex*)malloc(n_basis_linear*time_steps*(sizeof(double complex)));
 
@@ -2836,7 +2836,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 	errsave = errno;
 	fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
 	fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
-	exit(errsave);
+	abort();
       }
 
       for(unsigned int gg=0;gg < time_steps; gg++){
@@ -2872,7 +2872,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 	errsave = errno;
 	fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
 	fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
-	exit(errsave);
+	abort();
       }
       for(unsigned int ii=0; ii<n_basis_quadratic;ii++){
 	fread(&(thisData->roq->weightsQuadratic[ii]), sizeof(double), 1, thisData->roq->weightsFileQuadratic);
@@ -2908,7 +2908,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
         if(LALInferenceGetProcParamVal(commandLine,"--injXML"))
         {
             XLALPrintError("ERROR: --injXML option is deprecated. Use --inj and update your scripts\n");
-            exit(1);
+            abort();
         }
         if((procparam=LALInferenceGetProcParamVal(commandLine,"--inj"))){
             fprintf(stdout,"Checking if the xml table is an inspiral table... \n");
@@ -2930,7 +2930,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
                 }
                 if(!inspiralTable){
                 fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value);
-                exit(1);
+                abort();
                 }
                 }
                 else
@@ -2953,7 +2953,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
                 else if ((procparam=LALInferenceGetProcParamVal(commandLine,"--event-id")))
                 {
                     fprintf(stderr,"Error, SimBurst tables do not currently support event_id tags \n");
-                    exit(1);
+                    abort();
                 }
                 else
                     fprintf(stdout,"You did not provide an event number with the injtable. Using event 0 which may not be what you want!!!!!\n");
@@ -2965,7 +2965,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
         else if(!LALInferenceGetProcParamVal(commandLine,"--segment-start")){
             XLALPrintError("Error: No trigger time specifed and no injection given \n");
             //XLAL_ERROR_NULL(XLAL_EINVAL);
-            exit(1);
+            abort();
         }
 
     }
@@ -2996,14 +2996,14 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
     if (ppt){
 
         fprintf(stderr,"You cannot use both injfile (--inj) and MDCs (--inject_from_mdc) Exiting... \n");
-        exit(1);
+        abort();
 
     }
     ppt=LALInferenceGetProcParamVal(commandLine,"--binj");
     if (ppt){
 
         fprintf(stderr,"You cannot use both injfile (--binj) and MDCs (--inject_from_mdc) Exiting... \n");
-        exit(1);
+        abort();
 
     }
 
@@ -3018,7 +3018,7 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
     INT4 rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&mdc_caches ,mdc_caches_name, &Nmdc);
     if (!rlceops){
       fprintf(stderr,"Must provide a --IFO-injcache option for each IFO if --inject_from_mdc is given\n");
-      exit(1);
+      abort();
     }
 
     rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&mdc_channels ,mdc_channels_name, &Nchannel);
@@ -3109,7 +3109,7 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
     ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
     if(!ppt){
       fprintf(stderr,"Must specify --outfile <filename.dat>\n");
-      exit(1);
+      abort();
     }
     char *outfile=ppt->value;
     snprintf(SNRpath,sizeof(SNRpath),"%s_snr.txt",outfile);

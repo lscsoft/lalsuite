@@ -419,7 +419,7 @@ static struct spcal_envelope *initCalibrationEnvelope(char *filename)
 {
     FILE *fp=fopen(filename,"r");
     char tmpline[1024];
-    if(!fp) {fprintf(stderr,"Unable to open %s: Error %i %s\n",filename,errno,strerror(errno)); exit(1);}
+    if(!fp) {fprintf(stderr,"Unable to open %s: Error %i %s\n",filename,errno,strerror(errno)); abort();}
     int Nlines=0;
     REAL8 freq, *logfreq=NULL, *mag_med=NULL, mag_low, mag_hi, *mag_std=NULL, *phase_med=NULL, phase_low, phase_hi, *phase_std=NULL;
     for(Nlines=0;fgets(tmpline,1024,fp); )
@@ -436,7 +436,7 @@ static struct spcal_envelope *initCalibrationEnvelope(char *filename)
         if((7!=sscanf(tmpline,CAL_ENV_FORMAT, &freq, &(mag_med[Nlines]), &(phase_med[Nlines]), &mag_low, &phase_low, &mag_hi, &phase_hi)))
         {
             fprintf(stderr,"Malformed input line in file %s: %s\n",filename,tmpline);
-            exit(1);
+            abort();
         }
 		mag_med[Nlines]-=1.0; /* Subtract off 1 to get delta */
         logfreq[Nlines]=log(freq);
@@ -492,7 +492,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       ncal = atoi(ppt->value);
       if (ncal < 3) { /* Cannot do spline with fewer than 3 points! */
 	fprintf(stderr, "ERROR: given '--spcal-nodes %d', but cannot spline with fewer than 3\n", ncal);
-	exit(1);
+	abort();
       }
     }
 
@@ -520,7 +520,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
           || (VARNAME_MAX <= snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name))
           || (VARNAME_MAX <= snprintf(env_uncert_op, VARNAME_MAX, "--%s-spcal-envelope",ifo->name)) )
       {
-        fprintf(stderr,"variable name too long\n"); exit(1);
+        fprintf(stderr,"variable name too long\n"); abort();
       }
 
       if( (ppt=LALInferenceGetProcParamVal(runState->commandLine, env_uncert_op)))
@@ -537,7 +537,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
         }
         else{
             fprintf(stderr,"Error, missing %s or %s\n",amp_uncert_op, env_uncert_op);
-            exit(1);
+            abort();
         }
 
         if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, pha_uncert_op))) {
@@ -545,7 +545,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
         }
         else{
             fprintf(stderr,"Error, missing %s or %s\n",pha_uncert_op,env_uncert_op);
-            exit(1);
+            abort();
         }
       }
       REAL8 dLogF = (logFMax - logFMin)/(ncal-1);
@@ -556,7 +556,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
                   || (VARNAME_MAX <= snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp_%i", ifo->name,i))
                   || (VARNAME_MAX <= snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase_%i", ifo->name,i)) )
               {
-                  fprintf(stderr,"Variable name too long\n"); exit(1);
+                  fprintf(stderr,"Variable name too long\n"); abort();
               }
               REAL8 amp_std=ampUncertaintyPrior,amp_mean=0.0;
 			  REAL8 phase_std=phaseUncertaintyPrior,phase_mean=0.0;
@@ -684,17 +684,17 @@ void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALIn
   /* Error checking */
   if(min>max) {
     fprintf(stderr,"ERROR: Prior for %s has min(%lf) > max(%lf)\n",name,min,max);
-    exit(1);
+    abort();
   }
   if(startval<min || startval>max){
     fprintf(stderr,"ERROR: Initial value %lf for %s lies outwith prior (%lf,%lf)\n",startval,name,min,max);
-    exit(1);
+    abort();
   }
   /* Mass parameters checks*/
   if (!strcmp(name,"eta"))
     if (max>0.25){
       fprintf(stderr,"ERROR: maximum of eta cannot be larger than 0.25. Check --eta-max\n");
-      exit(1);
+      abort();
     }
   if (!strcmp(name,"q")){
     REAL8 qMin=min;
@@ -703,12 +703,12 @@ void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALIn
     if (qMin <= 0.0 || qMin > 1.0)
     {
         fprintf(stderr,"ERROR: qMin must be between 0 and 1, got value qMin=%f\n",qMin);
-		exit(1);
+		abort();
     }
     if (qMax > 1.0 || qMax <0.0 || qMax < qMin)
     {
       fprintf(stderr,"ERROR: qMax must be between 0 and 1, and qMax > qMin. Got value qMax=%f, qMin=%f\n",qMax,qMin);
-	  exit(1);
+	  abort();
     }
   }
   /*End of mass parameters check */
@@ -963,7 +963,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     injTable = XLALSimInspiralTableFromLIGOLw(ppt->value);
     if(!injTable){
       fprintf(stderr,"Unable to open injection file %s\n",ppt->value);
-      exit(1);
+      abort();
     }
     ppt=LALInferenceGetProcParamVal(commandLine,"--event");
     if(ppt){
@@ -1028,7 +1028,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     model->domain = LAL_SIM_DOMAIN_TIME;
   } else {
     fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
-    exit(1);
+    abort();
   }
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--fref");
@@ -1049,7 +1049,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
       fprintf( stderr, "invalid argument to --modeldomain:\n"
               "unknown domain specified: "
               "domain must be one of: time, frequency\n");
-      exit( 1 );
+      abort();
     }
   }
 
@@ -1948,7 +1948,7 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
       tmp=atof(ppt->value);
       if (tmp<0.0){
         fprintf(stderr,"ERROR: PSD length must be positive. Exiting...\n");
-        exit(1);
+        abort();
       }
   }
 
@@ -1957,14 +1957,14 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
   ppt=LALInferenceGetProcParamVal(commandLine,"--seglen");
   if (!ppt){
     XLALPrintError("Must provide segment length with --seglen. Exiting...");
-    exit(1);
+    abort();
   }
   else seglen=atof(ppt->value);
 
   tmp=atof(ppt->value);
   if (tmp<0.0){
     fprintf(stderr,"ERROR: seglen must be positive. Exiting...\n");
-    exit(1);
+    abort();
   }
   REAL8 timeSkipStart=0.;
   REAL8 timeSkipEnd=0.;
@@ -1975,7 +1975,7 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
   if(timeSkipStart+timeSkipEnd > seglen)
   {
     fprintf(stderr,"ERROR: --time-pad-start + --time-pad-end is greater than --seglen!");
-    exit(1);
+    abort();
   }
 
   /* Flags consistency */
@@ -1987,7 +1987,7 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
       itmp=atoi(ppt2->value);
       if (itmp>0 || itmp==-1)
         XLALPrintWarning("--spinO > 0 or -1 will be ignored due to --disable-spin. If you want to include spin terms in the template, remove --disable-spin\n");
-        exit(1);
+        abort();
       }
     if (!ppt2){
       XLALPrintWarning("--spinO defaulted to -1. This will be ignored due to --disable-spin. If you want to include spin terms in the template, remove --disable-spin\n");
@@ -1996,12 +1996,12 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
     ppt2=LALInferenceGetProcParamVal(commandLine,"--aligned-spin");
     if (ppt|| ppt2){
       fprintf(stderr,"--aligned-spin and --disable-spin are incompatible options. Exiting\n");
-      exit(1);
+      abort();
     }
     ppt=LALInferenceGetProcParamVal(commandLine,"--singleSpin");
     if(ppt){
       fprintf(stderr,"--singleSpin and --disable-spin are incompatible options. Exiting\n");
-      exit(1);
+      abort();
     }
   }
 
@@ -2012,7 +2012,7 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
     itmp=atoi(ppt->value);
     if (itmp<0){
       fprintf(stderr,"ERROR: nlive must be positive. Exiting...\n");
-      exit(1);
+      abort();
     }
     if (itmp<100){
       XLALPrintWarning("WARNING: Using %d live points. This is very little and may lead to unreliable results. Consider increasing.\n",itmp);
@@ -2027,7 +2027,7 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
     itmp=atoi(ppt->value);
     if (itmp<0){
       fprintf(stderr,"ERROR: nmcmc must be positive (or omitted). Exiting...\n");
-      exit(1);
+      abort();
     }
     if (itmp<100){
       XLALPrintWarning("WARNING: Using %d nmcmc. This is very little and may lead to unreliable results. Consider increasing.\n",itmp);
@@ -2038,17 +2038,17 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
      in an inconsistent way */
   if (LALInferenceGetProcParamVal(commandLine, "--margtime") && LALInferenceGetProcParamVal(commandLine, "--margphi")) {
     fprintf(stderr, "ERROR: trying to separately marginalise in time and phase.  Use '--margtimephi' instead");
-    exit(1);
+    abort();
   }
 
   if (LALInferenceGetProcParamVal(commandLine, "--margtimephi") && LALInferenceGetProcParamVal(commandLine, "--margtime")) {
     fprintf(stderr, "ERROR: cannot marginalise in time and phi and separately time.  Pick either '--margtimephi' OR '--margtime'");
-    exit(1);
+    abort();
   }
 
   if (LALInferenceGetProcParamVal(commandLine, "--margtimephi") && LALInferenceGetProcParamVal(commandLine, "--margphi")) {
     fprintf(stderr, "ERROR: cannot marginalise in time and phi and separately in phi.  Pick either '--margtimephi' OR '--margtime'");
-    exit(1);
+    abort();
   }
 
   /* Check for small sample rates when margtime-ing. */
@@ -2362,7 +2362,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
 
     if (check_grtest_params + check_ppe_params + check_qnmtest_params >= 2) {
         fprintf(stderr,"--grtest-parameters, --ppe-parameters and --qnmtest-parameters are not simultaneously supported. Please choose one. Aborting\n");
-        exit(-1);
+        abort();
     }
 
 
@@ -2545,7 +2545,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
             if (checkParamInList(ppt->value,betaPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, betaPPEparam, 0.0, betappe_min, betappe_max, LALINFERENCE_PARAM_LINEAR);
 
         } while((checkParamInList(ppt->value,aPPEparam))||(checkParamInList(ppt->value,alphaPPEparam))||(checkParamInList(ppt->value,bPPEparam))||(checkParamInList(ppt->value,betaPPEparam)));
-        if ((counters[0]!=counters[1])||(counters[2]!=counters[3])) {fprintf(stderr,"Unequal number of PPE parameters detected! Check your command line!\n"); exit(-1);}
+        if ((counters[0]!=counters[1])||(counters[2]!=counters[3])) {fprintf(stderr,"Unequal number of PPE parameters detected! Check your command line!\n"); abort();}
     }
     ppt=LALInferenceGetProcParamVal(commandLine,"--qnmtest-parameters");
     if (ppt)

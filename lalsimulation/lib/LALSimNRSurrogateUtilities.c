@@ -32,7 +32,7 @@ static void MultiModalWaveform_Init(
     int LMax,                  /**< (ell, m) modes with 2 <= ell <= LMax will be created. */
     int n_times                /**< Number of time samples per mode. */
 ) {
-    if (!wave) exit(1);
+    if (!wave) abort();
     if (LMax < 2) XLAL_ERROR_VOID(XLAL_FAILURE, "Got LMax=%d < 2!\n", LMax);
     if (*wave) MultiModalWaveform_Destroy(*wave);
     (*wave) = XLALCalloc(1, sizeof(MultiModalWaveform));
@@ -88,7 +88,7 @@ static void ComplexPowers_Init(
     int n_times         /**< The number of time samples.*/
 ) {
     // include powers from -2*LMax to 2*LMax inclusive
-    if (!cp) exit(1);
+    if (!cp) abort();
     if (*cp) ComplexPowers_Destroy(*cp);
     (*cp) = XLALCalloc(1, sizeof(ComplexPowers));
 
@@ -130,7 +130,7 @@ static void RealPowers_Init(
     int n_times         /**< The number of time samples.*/
 ) {
     // include powers from 0 to 2*LMax inclusive
-    if (!rp) exit(1);
+    if (!rp) abort();
     if (*rp) RealPowers_Destroy(*rp);
     (*rp) = XLALCalloc(1, sizeof(RealPowers));
 
@@ -166,7 +166,7 @@ static void WignerDMatrices_Init(
     int n_times,                /**< The number of time samples for each (ell, m, m') component.*/
     int LMax                    /**< The maximum ell to generate. */
 ) {
-    if (!matrices) exit(1);
+    if (!matrices) abort();
     if (LMax < 2) XLAL_ERROR_VOID(XLAL_FAILURE, "Got LMax=%d < 2!\n", LMax);
     if (*matrices) WignerDMatrices_Destroy(*matrices);
     (*matrices) = XLALCalloc(1, sizeof(WignerDMatrices));

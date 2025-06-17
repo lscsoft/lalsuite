@@ -146,7 +146,7 @@ static double inner_integral(double mc, void *params){
   }
   else{
     fprintf(stderr,"ERROR: q doesn't seem to be a valid param. Exiting\n");
-    exit(1);
+    abort();
     }
   // TODO: make it work with eta
   int status = gsl_integration_qags (&F, q_min, q_max,epsabs, epsrel, wsSize,
@@ -180,7 +180,7 @@ static double mass_outer_integral(LALInferenceVariables *priorArgs){
   }
   else{
     fprintf(stderr,"ERROR: chirpmass doesn't seem to be a valid param. Exiting\n");
-    exit(1);
+    abort();
     }
 
   /* Turn off the error handler - must check return values */

@@ -126,7 +126,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
   while(injTable){Ninj++;injTable=injTable->next;}
 	if(Ninj < event){
 	    fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--binj")->value);
-	    exit(1);
+	    abort();
   }
 	injTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value);
 	while(si<event) {si++; injTable = injTable->next;} /* Select event */
@@ -292,7 +292,7 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , char SNRpath[] ){
   if(!snrout){
     fprintf(stderr,"Unable to open the path %s for writing SNR files\n",SNRpath);
     fprintf(stderr,"Error code %i: %s\n",errno,strerror(errno));
-    exit(errno);
+    abort();
   }
   thisData=IFOdata;
   while(thisData){
@@ -353,7 +353,7 @@ void InjectBurstFD(LALInferenceIFOData *IFOdata, SimBurst *inj_table, ProcessPar
   errnum = *XLALGetErrnoPtr();
   if (errnum != XLAL_SUCCESS) {
     XLALPrintError(" ERROR in InjectFD(): error encountered when injecting waveform. errnum=%d\n",errnum);
-    exit(1);
+    abort();
   }
   LALInferenceIFOData *dataPtr;
   REAL8 Fplus, Fcross;

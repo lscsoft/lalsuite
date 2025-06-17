@@ -292,7 +292,7 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
   else
     {
       fprintf(stderr,"No mass parameters found!");
-      exit(0);
+      abort();
     }
   if(LALInferenceCheckVariable(model->params,"logdistance"))
   {
@@ -518,7 +518,7 @@ void LALInferenceTemplateSineGaussian(LALInferenceModel *model)
   unsigned long i;
   if (sigma <= 0.0) {
     fprintf(stderr, " ERROR in templateSineGaussian(): zero or negative \"sigma\" parameter (sigma=%e).\n", sigma);
-    exit(1);
+    abort();
   }
   if (f < 0.0)
     fprintf(stderr, " WARNING in templateSineGaussian(): negative \"frequency\" parameter (f=%e).\n", f);
@@ -565,7 +565,7 @@ void LALInferenceTemplateDampedSinusoid(LALInferenceModel *model)
   unsigned long i;
   if (tau <= 0.0) {
     fprintf(stderr, " ERROR in templateDampedSinusoid(): zero or negative \"tau\" parameter (tau=%e).\n", tau);
-    exit(1);
+    abort();
   }
   if (f < 0.0)
     fprintf(stderr, " WARNING in templateDampedSinusoid(): negative \"frequency\" parameter (f=%e).\n", f);
@@ -777,7 +777,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   else
     {
       fprintf(stderr,"No mass parameters found!");
-      exit(0);
+      abort();
     }
 
     if(!LALInferenceCheckVariable(model->params,"logdistance")) distance=LAL_PC_SI * 1e6; /* If distance not given, 1Mpc used */
@@ -1481,7 +1481,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     else
     {
         fprintf(stderr,"No mass parameters found!");
-        exit(0);
+        abort();
     }
 
     distance	= exp(LALInferenceGetREAL8Variable(model->params, "logdistance"))* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */

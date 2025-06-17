@@ -65,7 +65,7 @@ void LALListAppend(
   if ((current = malloc(sizeof(*current))) == NULL) {
     {
       printf("Error with malloc\n");
-      exit(0);
+      abort();
     }
   }
   current->id = id;
