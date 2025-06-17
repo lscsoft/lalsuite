@@ -86,7 +86,7 @@ void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
   {
     REPORTSTATUS(&status);
     fprintf(stderr,"Error in coordinate conversion.\n");
-    exit(1);
+    abort();
   }
 
   *ra=equat.longitude;
@@ -141,7 +141,7 @@ void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
   {
     REPORTSTATUS(&status);
     fprintf(stderr,"Error in coordinate conversion.\n");
-    exit(1);
+    abort();
   }
   REAL8 longitude=horiz.longitude;
   REAL8 latitude=horiz.latitude;

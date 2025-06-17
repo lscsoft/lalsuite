@@ -252,7 +252,7 @@ double log_radial_integral(double r1, double r2, double p, double b, int k,
 			break;
 		default:
 			fprintf(stderr,"%s unable to handle GSL error: %s\n",__func__,gsl_strerror(ret));
-			exit(1);
+			abort();
 			break;
         }
     }

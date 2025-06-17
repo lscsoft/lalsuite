@@ -547,7 +547,7 @@ static void SplineData_Init(
   const double *chi2vec   // B-spline knots in chi2
 )
 {
-  if(!splinedata) exit(1);
+  if(!splinedata) abort();
   if(*splinedata) SplineData_Destroy(*splinedata);
 
   (*splinedata)=XLALCalloc(1,sizeof(SplineData));
@@ -801,7 +801,7 @@ UNUSED static int SEOBNRROMdataDS_Init_submodel(
   UNUSED bool use_hm
 ) {
   int ret = XLAL_FAILURE;
-  if(!submodel) exit(1);
+  if(!submodel) abort();
   /* Create storage for submodel structures */
   if (!*submodel)
     *submodel = XLALCalloc(1,sizeof(SEOBNRROMdataDS_submodel));
@@ -905,7 +905,7 @@ UNUSED static int SEOBNRROMdataDS_Init_submodel(
 
 /* Create structure for internal use to store coefficients for orbital phase and real/imaginary part of co-orbital modes */
 static void SEOBNRROMdataDS_coeff_Init(SEOBNRROMdataDS_coeff **romdatacoeff, int nk_cmode, int nk_phase) {
-  if(!romdatacoeff) exit(1);
+  if(!romdatacoeff) abort();
   /* Create storage for structures */
   if(!*romdatacoeff)
     *romdatacoeff=XLALCalloc(1,sizeof(SEOBNRROMdataDS_coeff));
