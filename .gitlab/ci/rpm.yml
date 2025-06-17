@@ -75,6 +75,8 @@
       addFilter('-debugsource')
       # ignore stuff added to version number during build
       addFilter('incoherent-version-in-changelog')
+      # only liblal is allowed to call exit()
+      addFilter(r'^liblal\..*?: W: shared-lib-calls-exit')
       EOF
     - rpmlint
           -f rpmlintrc
