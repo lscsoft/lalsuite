@@ -209,7 +209,7 @@ static int XLALSpinAlignedHcapDerivative(
   H =  XLALSimIMRSpinEOBHamiltonian( eta, &rVec, &pVec, s1Vec, s2Vec, sKerr, sStar, params.params->tortoise, params.params->seobCoeffs );
 
   //printf( "csi = %.16e, ham = %.16e ( tortoise = %d)\n", csi, H, params.params->tortoise );
-  //exit(1);
+  //abort();
   //if ( values[0] > 1.3 && values[0] < 3.9 ) printf( "r = %e\n", values[0] );
   //if ( values[0] > 1.3 && values[0] < 3.9 ) printf( "Hamiltonian = %e\n", H );
   H = H * (mass1 + mass2);

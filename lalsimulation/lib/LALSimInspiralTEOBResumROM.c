@@ -232,7 +232,7 @@ static int TEOBResumROMdataDS_Init_submodel(
 ) {
   int ret = XLAL_FAILURE;
 
-  if(!submodel) exit(1);
+  if(!submodel) abort();
   /* Create storage for submodel structures */
   if (!*submodel)
     *submodel = XLALCalloc(1,sizeof(TEOBResumROMdataDS_submodel));

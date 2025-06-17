@@ -434,7 +434,7 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, co
   if((VARNAME_MAX <= snprintf(new->name, VARNAME_MAX, "%s", name)))
   {
       fprintf(stderr,"Variable name %s too long. Maximum length %i\n",name,VARNAME_MAX);
-      exit(1);
+      abort();
   }
   new->type = type;
   new->vary = vary;
@@ -1048,7 +1048,7 @@ REAL8 *LALInferenceParseDelimitedAscii(FILE *input, INT4 nCols, INT4 *wantedCols
             if (nread != 1) {
                 fprintf(stderr, "Cannot read sample from file (in %s, line %d)\n",
                 __FILE__, __LINE__);
-                exit(1);
+                abort();
             }
 
             if (wantedCols[col]) {
@@ -1115,7 +1115,7 @@ void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
 
     if (str == NULL) {
         fprintf(stderr, "Couldn't find column headers in PTMCMC file.\n");
-        exit(1);
+        abort();
     } else {
         XLALFree(str);
     }
@@ -1168,7 +1168,7 @@ void LALInferenceBurninPTMCMC(FILE *filestream, INT4 logl_idx, INT4 nPar) {
 
     if (str == NULL) {
         fprintf(stderr, "Error burning in PTMCMC file.\n");
-        exit(1);
+        abort();
     } else {
         XLALFree(str);
     }
@@ -1192,7 +1192,7 @@ void LALInferenceBurninStream(FILE *filestream, INT4 burnin) {
     if (str == NULL) {
         if (burnin > 0) {
             fprintf(stderr, "Error burning in file.\n");
-            exit(1);
+            abort();
         }
     } else {
         XLALFree(str);
@@ -1767,7 +1767,7 @@ ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,c
 
   if (this==NULL) {
     fprintf(stderr, " Warning:  ProcessParamsTable is a NULL pointer\n");
-    exit(1);
+    abort();
   }
 
   while (this!=NULL) {
