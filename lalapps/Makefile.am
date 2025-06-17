@@ -14,7 +14,6 @@ SUBDIRS = \
 	conda \
 	debian \
 	src \
-	man \
 	doxygen \
 	$(END_OF_LIST)
 
