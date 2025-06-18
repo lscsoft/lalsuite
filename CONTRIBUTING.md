@@ -372,7 +372,7 @@ expressions given in the table below.
 | `[ci compiler]`            | `/[-_]ci[-_]compiler/`    | Test different compilers (e.g. `clang`, `icc`, `gcc`)        |
 | `[ci conda]`               | `/[-_]ci[-_]conda/`       | Build Conda packages                                         |
 | `[ci coverage]`            | `/[-_]ci[-_]coverage/`    | Report test suite coverage                                   |
-| `[ci debian]`              | `/[-_]ci[-_]debian/`      | Build Debian packages                                        |
+| `[ci deb]`                 | `/[-_]ci[-_]deb/`         | Build Debian packages                                        |
 | `[ci docker]`              | `/[-_]ci[-_]docker/`      | Build Docker containers                                      |
 | `[ci docs]`                | `/[-_]ci[-_]docs/`        | Build the documentation                                      |
 | `[ci full]`                | n/a                       | Run all jobs in the merge pipeline                           |
@@ -381,7 +381,7 @@ expressions given in the table below.
 | `[ci nightly]`             | n/a                       | Run all jobs in the nightly deployment pipeline              |
 | `[ci pkg]`                 | `/[-_]ci[-_]pkg/`         | Perform a basic package-level build from tarballs            |
 | `[ci platform]`            | `/[-_]ci[-_]platform/`    | Test different platforms (MacOS, various Linux distros)      |
-| `[ci rhel]`                | `/[-_]ci[-_]rhel/`        | Build RPM packages                                           |
+| `[ci rpm]`                 | `/[-_]ci[-_]rpm/`         | Build RPM packages                                           |
 | `[ci tags]`                | n/a                       | Run all pipeline jobs for release tags (`lalsuite-v*`)       |
 | `[ci wheels]`              | `/[-_]ci[-_]wheels/`      | Build Python wheel packages                                  |
 
