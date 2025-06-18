@@ -94,9 +94,9 @@ workflow:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci coverage\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]coverage/'
       when: on_success
 
-.ci-debian:
+.ci-deb:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci debian\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]debian/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci deb\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]deb/'
       when: on_success
 
 .ci-docs:
@@ -129,9 +129,9 @@ workflow:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci pkg\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]pkg/'
       when: on_success
 
-.ci-rhel:
+.ci-rpm:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci rhel\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]rhel/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci rpm\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]rpm/'
       when: on_success
 
 .ci-wheels:
