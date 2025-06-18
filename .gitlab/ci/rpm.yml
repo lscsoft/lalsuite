@@ -63,21 +63,10 @@
     - retry yum -y -q install ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
     # lint packages (RPM files only)
     - |
-      cat << EOF > rpmlintrc
-      # don't validate Source0
-      setOption("NetworkEnabled", False)
-      # don't know how to fix this
-      addFilter('binary-or-shlib-defines-rpath')
-      # the regex rpmlint uses to identify 'lib' libraries is crap
-      addFilter('explicit-lib-dependency (.*)?matplotlib')
-      addFilter('explicit-lib-dependency (.*)?ciecplib')
-      # ignore any warning from -debugsource packages
-      addFilter('-debugsource')
-      # ignore stuff added to version number during build
-      addFilter('incoherent-version-in-changelog')
-      # only liblal is allowed to call exit()
-      addFilter(r'^liblal\..*?: W: shared-lib-calls-exit')
-      EOF
+      tar xfO ${TARBALL} $(tar tf ${TARBALL} | grep '/rpmlintrc$') > rpmlintrc
+      echo "----- rpmlintrc"
+      grep . rpmlintrc
+      echo "----- rpmlintrc"
     - rpmlint
           -f rpmlintrc
           ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm

@@ -8,6 +8,7 @@ ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST += \
 	lalapps.spec \
+	rpmlintrc \
 	$(DATA)
 
 SUBDIRS = \
