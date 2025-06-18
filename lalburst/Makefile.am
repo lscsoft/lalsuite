@@ -8,6 +8,7 @@ ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST += \
 	lalburst.spec \
+	rpmlintrc \
 	$(DATA)
 
 SUBDIRS = \
