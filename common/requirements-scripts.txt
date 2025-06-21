@@ -1,0 +1,6 @@
+coloredlogs
+natsort
+python-debian
+python-gitlab>=5.6.0
+python-rpm-spec
+pyyaml

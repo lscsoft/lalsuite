@@ -401,9 +401,9 @@ class HeterodynedCWSimulator(object):
             )
 
         if self.__units == "TCB":
-            self.__units_type = lalpulsar.lalpulsar.TIMECORRECTION_TCB
+            self.__units_type = lalpulsar.TIMECORRECTION_TCB
         else:
-            self.__units_type = lalpulsar.lalpulsar.TIMECORRECTION_TDB
+            self.__units_type = lalpulsar.TIMECORRECTION_TDB
 
     def model(
         self,

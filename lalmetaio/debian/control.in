@@ -15,7 +15,7 @@ Build-Depends:
  python3-pytest,
  rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-X-Python3-Version: >= 3.6
+X-Python3-Version: >= @LALSUITE_DEFAULT_MIN_PYTHON_VERSION@
 Standards-Version: 3.9.8
 
 Package: liblalmetaio@LIBMAJOR@

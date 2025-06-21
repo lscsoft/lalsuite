@@ -473,7 +473,7 @@ int XLALSimIMRSpinEOBWaveform(
      )
 
 {
-    int ret;
+    int ret = 0;
     REAL8Vector   *dynamicsHi = NULL;
     REAL8Vector  *AttachPars = NULL;
     /** This time series contains harmonics in precessing (P) frame, no RD, for the end of the signal (high samling part)*/

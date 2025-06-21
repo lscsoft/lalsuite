@@ -199,6 +199,7 @@ setup(
     ],
     install_requires=[
         'astropy',
+        'igwn-ligolw',
         'igwn-segments',
         'lscsoft-glue',
         'matplotlib',

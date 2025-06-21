@@ -554,7 +554,7 @@ LALPopulateNarrowEdge(LALStatus               *status,
   REAL4 dx0, dx1;
   REAL4 theta;
   INT4 next, iteration;
-  REAL4 x_int, y_int,xr_int, yr_int, c,s, dy,theta_min, theta_max, theta_int, a, b, t0, t3;
+  REAL4 x_int=0, y_int=0, xr_int, yr_int, c,s, dy,theta_min, theta_max, theta_int, a, b, t0, t3;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );

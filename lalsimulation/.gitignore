@@ -66,7 +66,6 @@ python/lalsimulation/_lalsimulation*
 python/lalsimulation/git_version.py
 python/lalsimulation/gwsignal/docs/build/
 python/lalsimulation/gwsignal/docs/source/api/
-python/lalsimulation/lalsimulation.py
 swig/.swigdeps
 swig/swiglal_*
 swig/swiglalsimulation.i*

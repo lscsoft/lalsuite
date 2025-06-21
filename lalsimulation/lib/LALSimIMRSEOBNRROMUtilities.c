@@ -684,11 +684,13 @@ UINT4 blend_functions(gsl_vector * freqs_out, gsl_vector * out_fun, gsl_vector *
     i++;
   }
   gsl_spline_free (spline);
+  gsl_interp_accel_free(acc);
 
   /* Build the contribution to out_fun from fun_in_2 in the range [freq_2, f_end] */
   /* where f_end is the ending frequency of the array freq_in_2 */
   /* for freq > freq_2, bld_2 = 1*/
   spline = gsl_spline_alloc (gsl_interp_cspline, freq_in_2->size);
+  acc = gsl_interp_accel_alloc ();
   gsl_spline_init (spline, freq_in_2->data, fun_in_2->data, freq_in_2->size);
   i = freqs_out->size-1;
   while(freqs_out->data[i]>freq_2){

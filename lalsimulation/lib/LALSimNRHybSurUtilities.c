@@ -263,7 +263,7 @@ static int NRHybSur_LoadSingleModeData(
         XLAL_ERROR(XLAL_EFAULT, "file should not be NULL");
     }
 
-    int ret;
+    int ret = 0;
     const UINT4 ell = gsl_matrix_long_get(mode_list, mode_idx, 0);
     const UINT4 m = gsl_matrix_long_get(mode_list, mode_idx, 1);
 
@@ -990,7 +990,7 @@ int NRHybSur_eval_mode_data_pieces(
     const NRHybSurData *NR_hybsur_data  /**< Loaded surrogate data. */
 ) {
 
-    int ret;
+    int ret = 0;
     const gsl_vector *domain = NR_hybsur_data->domain;
     (*this_mode_eval_dp)->ell = ell;
     (*this_mode_eval_dp)->m = m;

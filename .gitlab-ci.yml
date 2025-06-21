@@ -178,7 +178,7 @@ default:
   - !reference [.retry]
   - |
     rm -rf .venv/
-    ${PYTHON:-python3} -m venv .venv/
+    ${PYTHON_VENV:-${PYTHON:-python3}} -m venv .venv/
     source .venv/bin/activate
     for n in python python3 pip; do
       if [ "X`type -p ${n}`" != "X${VIRTUAL_ENV}/bin/${n}" ]; then

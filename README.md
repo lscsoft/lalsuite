@@ -52,6 +52,24 @@ repository. It can then be cloned using:
 
      $ git clone git@git.ligo.org:lscsoft/lalsuite.git
 
+### LALSuite Extra Waveform Files
+
+The generation of some compact binary coalescence waveform models requires
+additional files which need to be downloaded either from Zenodo or from a
+Git repository.
+
+The LALSuite extra waveform files are publicly available
+on [Zenodo][wfzenodo].
+
+Alternatively, for LALSuite versions >= 7.25 the data files
+are also available at the Git repository [lalsuite-waveform-data][wfnewgit],
+or for earlier LALSuite versions, the files in `lalsuite-extra` can be
+found in the Git repository [lalsuite-extra][wfoldgit].
+
+Instructions for the installation and download of these
+files can be found in each link above. The environment variable `LAL_DATA_PATH`
+needs to be set according to the path to the downloaded files.
+
 ## Building from Source
 
 The recommended way to build LALSuite from source is in a `conda` environment.
@@ -184,3 +202,6 @@ Please visit the [LALSuite project page][project].
 [project]:      https://wiki.ligo.org/Computing/LALSuite
 [pypi]:         https://pypi.org/project/lalsuite/
 [swiglal]:      https://lscsoft.docs.ligo.org/lalsuite/lalsuite/swiglal_tutorial.html
+[wfzenodo]:     https://zenodo.org/records/14999310
+[wfnewgit]:     https://git.ligo.org/waveforms/software/lalsuite-waveform-data
+[wfoldgit]:     https://git.ligo.org/lscsoft/lalsuite-extra

@@ -17,7 +17,7 @@ for i in 1 2 ; do
 	${BUILDDIR}/thinca_brute_force_coinc --verbose --delta-t 0.005 --min-instruments ${i} brute_min${i}.xml.gz
 
 	# print total event counts
-	for f in thinca_min${i}.xml.gz ${SRCDIR}/test_thinca_correct_min${i}.xml.gz ; do echo "coincs in ${f}:  $(ligolw_print -t coinc_event ${f} | wc -l)" ; done
+	for f in thinca_min${i}.xml.gz ${SRCDIR}/test_thinca_correct_min${i}.xml.gz ; do echo "coincs in ${f}:  $(igwn_ligolw_print -t coinc_event ${f} | wc -l)" ; done
 	for f in brute_min${i}.xml.gz ; do echo "coincs in ${f}:  $(ligolw_print -t coinc_event ${f} | wc -l)" ; done
 
 	# compare thinca and brute force outputs to correct result

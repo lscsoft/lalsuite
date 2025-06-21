@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[7.6.1.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[7.7.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALConfig.h])
 AC_CONFIG_SRCDIR([lib/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -19,9 +19,9 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[24])
-AC_SUBST([LIBREVISION],[1])
-AC_SUBST([LIBAGE],[4])
+AC_SUBST([LIBCURRENT],[25])
+AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBAGE],[5])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
   [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR],[${LIBCURRENT}])],
@@ -42,9 +42,9 @@ AS_CASE([${host_os}],
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[17])
+AC_SUBST([LIBCURRENT_SUPPORT],[18])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
-AC_SUBST([LIBAGE_SUPPORT],[3])
+AC_SUBST([LIBAGE_SUPPORT],[4])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
 AS_CASE([${host_os}],
   [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR_SUPPORT],[${LIBCURRENT_SUPPORT}])],
@@ -123,7 +123,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_PYTHON_IGWN_LIGOLW_VERSION="2.0.1"
+MIN_PYTHON_IGWN_LIGOLW_VERSION="2.1.0"
 AC_SUBST([MIN_PYTHON_IGWN_LIGOLW_VERSION])
 
 AC_CANONICAL_HOST
@@ -177,7 +177,7 @@ AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([3.6])
+LALSUITE_CHECK_PYTHON([])   # use default minimum Python version
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK

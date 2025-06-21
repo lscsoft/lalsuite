@@ -31,9 +31,11 @@ except ImportError:
     _Formatter = logging.Formatter
 if not LOGGER.hasHandlers():
     _LOG_HANDLER = logging.StreamHandler()
-    _LOG_HANDLER.setFormatter(_Formatter(
-        fmt="[%(asctime)s] %(levelname)+8s: %(message)s",
-    ))
+    _LOG_HANDLER.setFormatter(
+        _Formatter(
+            fmt="[%(asctime)s] %(levelname)+8s: %(message)s",
+        )
+    )
     LOGGER.addHandler(_LOG_HANDLER)
 LOGGER.setLevel(logging.DEBUG)
 
@@ -42,9 +44,9 @@ AUTOCONF_VAR_REGEX = re.compile("@[A-Z_]*@")
 
 # -- YAML parsing -----------
 
+
 def _yaml_ignore_unknown(*args):
-    """Return `None` for unknown tag
-    """
+    """Return `None` for unknown tag"""
     return None
 
 
@@ -65,24 +67,25 @@ def parse_conda_meta(path):
     """Parse conda meta.yaml.in.in, stripping out jinja templates
     and invalid characters.
     """
-    meta_data = ''
+    meta_data = ""
     jinja_bracket = 0
-    invalid_characters = '@'
-    with open(path, 'r') as f:
+    invalid_characters = "@"
+    with open(path, "r") as f:
         while True:
             c = f.read(1)
             if not c:
                 break
-            if c == '{':
+            if c == "{":
                 jinja_bracket += 1
             if not jinja_bracket and c not in invalid_characters:
                 meta_data += c
-            if c == '}':
+            if c == "}":
                 jinja_bracket -= 1
     return safe_load_ignore_unknown(meta_data)
 
 
 # -- utilities --------------
+
 
 def report_mismatch(type_, path, found, needed):
     missing = set(needed) - set(found)
@@ -121,11 +124,11 @@ def _parse_debian_relations(raw):
 
 # -- AutoConf helpers -------
 
+
 def boot():
-    """Generate `./configure` by running `./00boot`
-    """
+    """Generate `./configure` by running `./00boot`"""
     # autoconf --trace only works if autoreconf has been run
-    LOGGER.debug('calling ./00boot')
+    LOGGER.debug("calling ./00boot")
     check_call(
         ["./00boot"],
         cwd=os.path.curdir,
@@ -143,14 +146,14 @@ def get_direct_depends():
         depend as the values.
     """
     out = check_output(
-        ['autoconf', '--trace=lalsuite_config_subdir:$1,$2'],
+        ["autoconf", "--trace=lalsuite_config_subdir:$1,$2"],
         cwd=os.path.curdir,
         encoding="utf-8",
         stderr=DEVNULL,
     )
     depends = {}
     for line in filter(None, out.lower().splitlines()):
-        lib, deps = line.split(',')
+        lib, deps = line.split(",")
         depends[lib] = set(deps.split())
     return depends
 
@@ -174,26 +177,27 @@ def get_full_depends(direct):
 
 # -- Check functions --------
 
+
 def check_autoconf_depends(lib, depends):
     LOGGER.debug("checking autoconf")
     # trace use of macros LALSUITE_CHECK_LIB and LALSUITE_CHECK_OPT_LIB
     # in configure.ac
     found = set()
-    for macro in ('LALSUITE_CHECK_LIB', 'LALSUITE_CHECK_OPT_LIB'):
+    for macro in ("LALSUITE_CHECK_LIB", "LALSUITE_CHECK_OPT_LIB"):
         out = check_output(
-            ['autoconf', f'--trace={macro}:$1'],
+            ["autoconf", f"--trace={macro}:$1"],
             cwd=lib,
             encoding="utf-8",
         )
         for dep in out.lower().splitlines():
-            if dep not in ('', 'lalsupport'):
+            if dep not in ("", "lalsupport"):
                 found.add(dep)
     return report_mismatch("autoconf", f"{lib}/configure.ac", found, depends)
 
 
 def check_gitlab_depends(lib, depends):
     LOGGER.debug("checking gitlab-ci")
-    with open('.gitlab-ci.yml') as f:
+    with open(".gitlab-ci.yml") as f:
         gitlab_ci = safe_load_ignore_unknown(f)
     for include in gitlab_ci.get("include", []):
         if "local" in include:
@@ -201,22 +205,21 @@ def check_gitlab_depends(lib, depends):
                 gitlab_ci.update(safe_load_ignore_unknown(f))
     error = 0
 
-    for pkg in ('pkg', 'conda', 'deb', 'rpm-el8'):
+    for pkg in ("pkg", "conda", "deb", "rpm-el8"):
         found = set()
-        ci_job_name = f'{lib}:{pkg}'
-        for needs in gitlab_ci[ci_job_name]['needs']:
-            if needs is not None and needs.startswith('lal'):
-                dep = ':'.join(needs.split(':')[:2])
+        ci_job_name = f"{lib}:{pkg}"
+        for needs in gitlab_ci[ci_job_name]["needs"]:
+            if needs is not None and needs.startswith("lal"):
+                dep = ":".join(needs.split(":")[:2])
                 found.add(dep)
-        correct = set([f'{dep}:{pkg}' for dep in depends])
+        correct = set([f"{dep}:{pkg}" for dep in depends])
         error |= report_mismatch("gitlab CI", ci_job_name, found, correct)
 
     return error
 
 
 def check_conda_depends(lib, depends):
-    """Check conda dependencies
-    """
+    """Check conda dependencies"""
     LOGGER.debug("checking conda")
     error = 0
     meta_file = Path(lib) / "conda" / "meta.yaml.in.in"
@@ -227,15 +230,15 @@ def check_conda_depends(lib, depends):
     # - 'liblal*' and dependencies appear in 'host' section
     # - 'python-lal*' dependencies appear in 'run' section
     sections = {
-        'lib{}': ('host',),
-        'python-{}': ('run',),
+        "lib{}": ("host",),
+        "python-{}": ("run",),
     }
     requirements = [
-        ('requirements', ('lib{}', 'python-{}'), meta['requirements']),
+        ("requirements", ("lib{}", "python-{}"), meta["requirements"]),
     ]
     for conda_meta_path, templates, requirement in requirements:
         for template in templates:
-            template_regex = re.compile(template.format(r'lal[^-]*'))
+            template_regex = re.compile(template.format(r"lal[^-]*"))
             for section in sections[template]:
                 if section in requirement:
                     deps = set()
@@ -261,7 +264,7 @@ def check_debian_depends(lib, direct):
 
     # parse debian/control.in
     control_file = Path(lib) / "debian" / "control.in"
-    with open(control_file, 'r') as f:
+    with open(control_file, "r") as f:
         control = list(Deb822.iter_paragraphs(f))
 
     # check dependencies
@@ -273,30 +276,30 @@ def check_debian_depends(lib, direct):
     # - 'Package' named 'lal*-octave' requires 'lal*-octave' packages
     for paragraph in control:
         # parse information we need
-        if 'Source' in paragraph:
-            depends_str = paragraph['Build-Depends']
-            templates = ('lib{}-dev', 'python3-{}')
+        if "Source" in paragraph:
+            depends_str = paragraph["Build-Depends"]
+            templates = ("lib{}-dev", "python3-{}")
             control_path = f"{paragraph['Source']}:Build-Depends"
         else:
             control_path = f"{paragraph['Package']}:Depends"
-            depends_str = paragraph['Depends']
-            if paragraph['Package'] == f'lib{lib}-dev':
-                templates = ('lib{}-dev',)
-            elif paragraph['Package'] == f'python3-{lib}':
-                templates = ('python3-{}',)
-            elif paragraph['Package'] == f'{lib}-octave':
-                templates = ('{}-octave',)
+            depends_str = paragraph["Depends"]
+            if paragraph["Package"] == f"lib{lib}-dev":
+                templates = ("lib{}-dev",)
+            elif paragraph["Package"] == f"python3-{lib}":
+                templates = ("python3-{}",)
+            elif paragraph["Package"] == f"{lib}-octave":
+                templates = ("{}-octave",)
             else:
                 continue
 
         depends = _parse_debian_relations(depends_str)
         for template in templates:
-            template_regex = re.compile(template.format(r'lal[^-]*'))
+            template_regex = re.compile(template.format(r"lal[^-]*"))
             deps = set()
             for debdeplist in depends:
                 for debdep in debdeplist:
-                    if template_regex.fullmatch(debdep['name']):
-                        deps.add(debdep['name'])
+                    if template_regex.fullmatch(debdep["name"]):
+                        deps.add(debdep["name"])
             correct_deps = {template.format(dep) for dep in direct}
             error |= report_mismatch(
                 "deb",
@@ -312,9 +315,9 @@ def check_spec_depends(lib, direct):
     error = 0
 
     # parse rpm .spec file
-    spec_file = Path(lib, f'{lib}.spec.in')
+    spec_file = Path(lib, f"{lib}.spec.in")
     spec = Spec.from_file(spec_file)
-    spec.macros['python3_pkgversion'] = '3'
+    spec.macros["python3_pkgversion"] = "3"
 
     # -- check dependencies
 
@@ -322,11 +325,9 @@ def check_spec_depends(lib, direct):
     name = replace_macros(
         spec.name,
         spec,
-    ).replace('@PACKAGE@', lib)
+    ).replace("@PACKAGE@", lib)
     requires_list = [
-        (f"{name}:BuildRequires",
-         ('lib{}-devel', 'python3-{}'),
-         spec.build_requires),
+        (f"{name}:BuildRequires", ("lib{}-devel", "python3-{}"), spec.build_requires),
     ]
 
     # - check 'Requires' in sub-packages
@@ -339,32 +340,32 @@ def check_spec_depends(lib, direct):
         name = replace_macros(
             package.name,
             spec,
-        ).replace('@PACKAGE@', lib)
-        if name == f'lib{lib}-devel':
+        ).replace("@PACKAGE@", lib)
+        if name == f"lib{lib}-devel":
             requires_list.append(
-                (f"{name}:Requires", ('lib{}-devel',), package.requires),
+                (f"{name}:Requires", ("lib{}-devel",), package.requires),
             )
-        if name == f'lib{lib}':
+        if name == f"lib{lib}":
             requires_list.append(
-                (f"{name}:Requires", ('lib{}',), package.requires),
+                (f"{name}:Requires", ("lib{}",), package.requires),
             )
-        if name == f'python3-{lib}':
+        if name == f"python3-{lib}":
             requires_list.append(
-                (f"{name}:Requires", ('python3-{}',), package.requires),
+                (f"{name}:Requires", ("python3-{}",), package.requires),
             )
-        if name == f'{lib}-octave':
+        if name == f"{lib}-octave":
             requires_list.append(
-                (f"{name}:Requires", ('{}-octave',), package.requires),
+                (f"{name}:Requires", ("{}-octave",), package.requires),
             )
     for spec_path, templates, requires in requires_list:
         for template in templates:
-            template_regex = re.compile(template.format(r'lal[^-]*'))
+            template_regex = re.compile(template.format(r"lal[^-]*"))
             deps = set()
             for req in requires:
                 req_name = replace_macros(
                     req.name,
                     spec,
-                ).replace('@PACKAGE@', lib)
+                ).replace("@PACKAGE@", lib)
                 if template_regex.fullmatch(req_name):
                     deps.add(req_name)
             correct_deps = {template.format(dep) for dep in direct}
@@ -378,11 +379,10 @@ def check_spec_depends(lib, direct):
 
 
 def check_pkgconfig_depends(lib, depends):
-    """Check pkg-config `Requires.private`.
-    """
+    """Check pkg-config `Requires.private`."""
     LOGGER.debug("checking pkg-config")
     error = 0
-    depends = [f'{dep} >= @{dep.upper()}_VERSION@' for dep in depends]
+    depends = [f"{dep} >= @{dep.upper()}_VERSION@" for dep in depends]
 
     # parse pkg-config .pc.in file
     # (storing only the _last_ occurrence of Requires.private)
@@ -407,6 +407,7 @@ def check_pkgconfig_depends(lib, depends):
 
 
 # -- run ----------------------------------------
+
 
 def check_lib_dependencies(lib, direct, full):
     """Check that a LALSuite library's dependencies are complete.
@@ -442,14 +443,13 @@ def check_lib_dependencies(lib, direct, full):
     error |= check_conda_depends(lib, direct)
     error |= check_debian_depends(lib, direct)
     error |= check_spec_depends(lib, direct)
-    if lib != 'lalapps':
+    if lib != "lalapps":
         error |= check_pkgconfig_depends(lib, direct)
     return error
 
 
 def main():
-    """Run the thing
-    """
+    """Run the thing"""
     if not Path("./configure").is_file():
         boot()
 

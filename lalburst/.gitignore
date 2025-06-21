@@ -65,7 +65,6 @@ octave/
 python/lalburst/__init__.py
 python/lalburst/_lalburst*
 python/lalburst/git_version.py
-python/lalburst/lalburst.py
 swig/.swigdeps
 swig/swiglal_*
 swig/swiglalburst.i*

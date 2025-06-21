@@ -240,7 +240,7 @@ if SWIG_BUILD_PYTHON
 swig_python_flags = -python $(SWIG_PYTHON_FLAGS) -outdir swiglal_python/ $(swig_flags)
 
 pkgpyexec_LTLIBRARIES = swiglal_python.la
-nodist_pkgpyexec_PYTHON = swiglal_python/$(PACKAGE).py
+nodist_pkgpyexec_PYTHON = swiglal_python/_$(PACKAGE)_swig.py
 nodist_swiglal_python_la_SOURCES = swiglal_@PACKAGE@_python.c
 swiglal_python_la_SOURCES = SWIGTest.c
 swiglal_python_la_CPPFLAGS = $(swig_cppflags) $(SWIG_PYTHON_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
@@ -258,6 +258,7 @@ $(nodist_swiglal_python_la_SOURCES): $(swig_iface) $(swig_config_header)
 	$(AM_V_GEN)$(MKDIR_P) swiglal_python/ && \
 	if $(SWIG) $(swig_python_flags) -o $@ $<; then \
 		$(swig_deps_if)mv -f $(SWIG_DEPDIR)/swiglal_python.deps.tmp $(SWIG_DEPDIR)/swiglal_python.deps; \
+		( cd swiglal_python/ && mv -f $(PACKAGE).py _$(PACKAGE)_swig.py ); \
 	else \
 		$(swig_deps_if)rm -f $(SWIG_DEPDIR)/swiglal_python.deps.tmp; \
 		exit 1; \
@@ -269,18 +270,18 @@ all-local: swig-python-all-local
 swig-python-all-local: $(pkgpyexec_LTLIBRARIES)
 	$(AM_V_at)$(MKDIR_P) $(top_builddir)/python/$(PACKAGE) && \
 	cd $(top_builddir)/python/$(PACKAGE) && \
-	rm -f _$(PACKAGE)$(SWIG_SOEXT) $(PACKAGE).py && \
+	rm -f _$(PACKAGE)$(SWIG_SOEXT) _$(PACKAGE)_swig.py && \
 	$(LN_S) $(abs_top_builddir)/swig/$(SWIG_LTLIBDIR)/swiglal_python$(SWIG_SOEXT) _$(PACKAGE)$(SWIG_SOEXT) && \
 	if test -r $(abs_top_srcdir)/swig/$(nodist_pkgpyexec_PYTHON); then \
-		$(LN_S) $(abs_top_srcdir)/swig/$(nodist_pkgpyexec_PYTHON) $(PACKAGE).py; \
+		$(LN_S) $(abs_top_srcdir)/swig/$(nodist_pkgpyexec_PYTHON) _$(PACKAGE)_swig.py; \
 	else \
-		$(LN_S) $(abs_top_builddir)/swig/$(nodist_pkgpyexec_PYTHON) $(PACKAGE).py; \
+		$(LN_S) $(abs_top_builddir)/swig/$(nodist_pkgpyexec_PYTHON) _$(PACKAGE)_swig.py; \
 	fi
 
 clean-local: swig-python-clean-local
 swig-python-clean-local:
 	-cd $(top_builddir)/python/$(PACKAGE) && \
-	rm -f _$(PACKAGE)$(SWIG_SOEXT) $(PACKAGE).py $(PACKAGE).pyc $(PACKAGE).pyo
+	rm -f _$(PACKAGE)$(SWIG_SOEXT) _$(PACKAGE)_swig.py _$(PACKAGE)_swig.pyc _$(PACKAGE)_swig.pyo
 
 install-exec-hook: swig-python-install-hook
 swig-python-install-hook:

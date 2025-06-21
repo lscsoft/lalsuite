@@ -20,7 +20,7 @@
 import numpy
 import re
 
-from .. import lal
+import lal
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 

@@ -44,7 +44,7 @@ Attributes = ligolw.sax.xmlreader.AttributesImpl
 #
 
 
-def _build_series(series, dim_names, comment, delta_name, delta_unit):
+def _build_series(series, dim_names, comment, delta_name, delta_unit, encoding="Text"):
     elem = ligolw.LIGO_LW(Attributes({u"Name": str(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
@@ -55,7 +55,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
         data = np.vstack((np.arange(len(series.data.data)) * delta, series.data.data.real, series.data.data.imag))
     else:
         data = np.vstack((np.arange(len(series.data.data)) * delta, series.data.data))
-    a = ligolw.Array.build(series.name, data, dim_names=dim_names)
+    a = ligolw.Array.build(series.name, data, dim_names=dim_names, encoding=encoding)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
@@ -109,72 +109,72 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
     return series
 
 
-def build_REAL4FrequencySeries(series, comment=None):
+def build_REAL4FrequencySeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.REAL4FrequencySeries)
-    return _build_series(series, (u"Frequency,Real", u"Frequency"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real", u"Frequency"), comment, 'deltaF', 's^-1', encoding=encoding)
 
 
 def parse_REAL4FrequencySeries(elem):
     return _parse_series(elem, lal.CreateREAL4FrequencySeries, "s^-1")
 
 
-def build_REAL8FrequencySeries(series, comment=None):
+def build_REAL8FrequencySeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.REAL8FrequencySeries)
-    return _build_series(series, (u"Frequency,Real", u"Frequency"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real", u"Frequency"), comment, 'deltaF', 's^-1', encoding=encoding)
 
 
 def parse_REAL8FrequencySeries(elem):
     return _parse_series(elem, lal.CreateREAL8FrequencySeries, "s^-1")
 
 
-def build_COMPLEX8FrequencySeries(series, comment=None):
+def build_COMPLEX8FrequencySeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.COMPLEX8FrequencySeries)
-    return _build_series(series, (u"Frequency,Real,Imaginary", u"Frequency"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real,Imaginary", u"Frequency"), comment, 'deltaF', 's^-1', encoding=encoding)
 
 
 def parse_COMPLEX8FrequencySeries(elem):
     return _parse_series(elem, lal.CreateCOMPLEX8FrequencySeries, "s^-1")
 
 
-def build_COMPLEX16FrequencySeries(series, comment=None):
+def build_COMPLEX16FrequencySeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.COMPLEX16FrequencySeries)
-    return _build_series(series, (u"Frequency,Real,Imaginary", u"Frequency"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real,Imaginary", u"Frequency"), comment, 'deltaF', 's^-1', encoding=encoding)
 
 
 def parse_COMPLEX16FrequencySeries(elem):
     return _parse_series(elem, lal.CreateCOMPLEX16FrequencySeries, "s^-1")
 
 
-def build_REAL4TimeSeries(series, comment=None):
+def build_REAL4TimeSeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.REAL4TimeSeries)
-    return _build_series(series, (u"Time,Real", u"Time"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real", u"Time"), comment, 'deltaT', 's', encoding=encoding)
 
 
 def parse_REAL4TimeSeries(elem):
     return _parse_series(elem, lal.CreateREAL4TimeSeries, "s")
 
 
-def build_REAL8TimeSeries(series, comment=None):
+def build_REAL8TimeSeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.REAL8TimeSeries)
-    return _build_series(series, (u"Time,Real", u"Time"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real", u"Time"), comment, 'deltaT', 's', encoding=encoding)
 
 
 def parse_REAL8TimeSeries(elem):
     return _parse_series(elem, lal.CreateREAL8TimeSeries, "s")
 
 
-def build_COMPLEX8TimeSeries(series, comment=None):
+def build_COMPLEX8TimeSeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.COMPLEX8TimeSeries)
-    return _build_series(series, (u"Time,Real,Imaginary", u"Time"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real,Imaginary", u"Time"), comment, 'deltaT', 's', encoding=encoding)
 
 
 def parse_COMPLEX8TimeSeries(elem):
     return _parse_series(elem, lal.CreateCOMPLEX8TimeSeries, "s")
 
 
-def build_COMPLEX16TimeSeries(series, comment=None):
+def build_COMPLEX16TimeSeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.COMPLEX16TimeSeries)
-    return _build_series(series, (u"Time,Real,Imaginary", u"Time"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real,Imaginary", u"Time"), comment, 'deltaT', 's', encoding=encoding)
 
 
 def parse_COMPLEX16TimeSeries(elem):
@@ -190,7 +190,7 @@ def parse_COMPLEX16TimeSeries(elem):
 #
 
 
-def make_psd_xmldoc(psddict, xmldoc = None, root_name = u"psd"):
+def make_psd_xmldoc(psddict, xmldoc = None, root_name = u"psd", encoding="Text"):
     """
     Construct an XML document tree representation of a dictionary of
     frequency series objects containing PSDs.  See also read_psd_xmldoc()
@@ -207,7 +207,7 @@ def make_psd_xmldoc(psddict, xmldoc = None, root_name = u"psd"):
         xmldoc = ligolw.Document()
     lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({u"Name": root_name})))
     for instrument, psd in psddict.items():
-        fs = lw.appendChild(build_REAL8FrequencySeries(psd))
+        fs = lw.appendChild(build_REAL8FrequencySeries(psd, encoding=encoding))
         if instrument is not None:
             fs.appendChild(ligolw.Param.from_pyvalue(u"instrument", instrument))
     return xmldoc

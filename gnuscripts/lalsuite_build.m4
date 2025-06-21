@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 185
+# serial 186
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -482,13 +482,26 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   # end $0
 ])
 
+AC_DEFUN([_LALSUITE_SET_DEFAULT_MIN_PYTHON_VERSION],[
+  # $0: default minimum Python version
+  # - keep this version in sync with --target-version in common/.pretty.black
+  AC_SUBST([LALSUITE_DEFAULT_MIN_PYTHON_VERSION],[3.6])
+  # end $0
+])
+
 AC_DEFUN([LALSUITE_REQUIRE_PYTHON],[
-  # $0: require Python version $1 or later
-  AS_IF([test "x${lalsuite_require_pyvers}" = x],[
-    lalsuite_require_pyvers="$1"
+  # $0: require Python version
+  AC_REQUIRE([_LALSUITE_SET_DEFAULT_MIN_PYTHON_VERSION])
+  m4_if($1,[],[
+    arg1="${LALSUITE_DEFAULT_MIN_PYTHON_VERSION}"
   ],[
-    LALSUITE_VERSION_COMPARE([$1],[>],[${lalsuite_require_pyvers}],[
-      lalsuite_require_pyvers="$1"
+    arg1="$1"
+  ])
+  AS_IF([test "x${lalsuite_require_pyvers}" = x],[
+    lalsuite_require_pyvers="${arg1}"
+  ],[
+    LALSUITE_VERSION_COMPARE([${arg1}],[>],[${lalsuite_require_pyvers}],[
+      lalsuite_require_pyvers="${arg1}"
     ])
   ])
   # end $0
@@ -496,6 +509,12 @@ AC_DEFUN([LALSUITE_REQUIRE_PYTHON],[
 
 AC_DEFUN([LALSUITE_CHECK_PYTHON],[
   # $0: check for Python
+  AC_REQUIRE([_LALSUITE_SET_DEFAULT_MIN_PYTHON_VERSION])
+  m4_if($1,[],[
+    arg1="${LALSUITE_DEFAULT_MIN_PYTHON_VERSION}"
+  ],[
+    arg1="$1"
+  ])
   AC_ARG_ENABLE(
     [python],
     AS_HELP_STRING(
@@ -511,8 +530,8 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
       python=
     ]
   )
-  lalsuite_minimum_pyvers="$1"
-  lalsuite_pyvers="$1"
+  lalsuite_minimum_pyvers="${arg1}"
+  lalsuite_pyvers="${arg1}"
   AS_IF([test "x${lalsuite_require_pyvers}" != x],[
     LALSUITE_VERSION_COMPARE([${lalsuite_require_pyvers}],[>],[${lalsuite_pyvers}],[
       lalsuite_pyvers="${lalsuite_require_pyvers}"
@@ -1204,7 +1223,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
     AC_CONFIG_FILES([doxygen/make_autogen_dox],[chmod +x doxygen/make_autogen_dox])
 
     # Python is required to run some scripts
-    LALSUITE_REQUIRE_PYTHON([3.6])
+    LALSUITE_REQUIRE_PYTHON([])   # use default minimum Python version
 
     # Perl and BibTeX are required to build the references
     AC_PATH_PROG([PERL],[perl],[],[])

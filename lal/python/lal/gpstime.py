@@ -44,7 +44,7 @@ from numbers import Number
 
 from dateutil.parser import parse as str_to_utc
 
-from .lal import (
+from . import (
     LIGOTimeGPS,
     GPSTimeNow as _gps_time_now,
     GPSToUTC as _gps_to_utc,
