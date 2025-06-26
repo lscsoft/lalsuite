@@ -36,11 +36,17 @@ def modes_to_k(modes: list[tuple[int, int]]) -> list[int]:
     """
     return [int(x[0] * (x[0] - 1) / 2 + x[1] - 2) for x in modes]
 
-
-TEOB_DALI_MODES = [(2,2),(2,1),(3,3),(4,4)]
+# co-precessing modes allowed, assumes m>0
+TEOB_DALI_MODES_CP = [(2,2),(2,1),(3,3),(4,4)]
 
 # reversed dictionary to back-reference the modes
-TEOB_DALI_MODES_FROM_K = {modes_to_k([mode])[0]: mode for mode in TEOB_DALI_MODES}
+# extended for precession
+TEOB_DALI_MODES_FROM_K = {}
+for mode in TEOB_DALI_MODES_CP:
+    ell, emm = mode
+    TEOB_DALI_MODES_FROM_K[str(modes_to_k([mode])[0])]     = mode
+    TEOB_DALI_MODES_FROM_K['-'+str(modes_to_k([mode])[0])] = (ell, -emm)
+    TEOB_DALI_MODES_FROM_K[f'{ell}0']                      = (ell, 0)
 
 class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
@@ -55,7 +61,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
         super().__init__()
 
-        self.available_modes = TEOB_DALI_MODES
+        self.available_modes = TEOB_DALI_MODES_CP
         self._update_domains()
 
     @property
@@ -96,8 +102,8 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
         if 'ModeArray' in fixed_pars:
             for mode in fixed_pars['ModeArray']: 
-                if tuple(mode) not in TEOB_DALI_MODES:
-                    raise ValueError(f'Available modes are {TEOB_DALI_MODES}')
+                if tuple(mode) not in TEOB_DALI_MODES_CP:
+                    raise ValueError(f'Available modes are {TEOB_DALI_MODES_CP}')
             self.available_modes = fixed_pars['ModeArray']
 
         parameters["use_mode_lm"] = self._available_modes_teob_convention
@@ -106,7 +112,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
         hlm_reindexed = self._to_gwpy_series(
             {
-                TEOB_DALI_MODES_FROM_K[int(ind)]:
+                TEOB_DALI_MODES_FROM_K[ind]:
                 mode_wf[0]
                 * np.exp(-1j * mode_wf[1])
                 for ind, mode_wf in htlm.items()
@@ -152,9 +158,10 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
         for ellm, mode in modes_dict.items():
             l, m = ellm
             gwpy_dict[ellm] = TimeSeries(mode, times=times, name=f"h_{l}_{m}")
-            gwpy_dict[(l, -m)] = TimeSeries(
-                (-1) ** l * np.conj(mode), times=times, name=f"h_{l}_-{m}"
-            )
+            if (l, -m) not in modes_dict.keys() and m != 0:
+                gwpy_dict[(l, -m)] = TimeSeries(
+                    (-1) ** l * np.conj(mode), times=times, name=f"h_{l}_-{m}"
+                )
         return gwpy_dict
 
     def _strip_units(self, waveform_dict):
