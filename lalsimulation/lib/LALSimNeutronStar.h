@@ -61,22 +61,11 @@ extern const char * const lalSimNeutronStarEOSNames[111];
 /** Incomplete type for a neutron star family having a particular EOS. */
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
-// CUTER-dev
-/* Structure containing two EOS structures */
-struct TwoEOS{
-    LALSimNeutronStarEOS * eos1;
-    LALSimNeutronStarEOS * eos2;
-};
-
-struct CutEoS{
-    LALSimNeutronStarEOS * eos;
-};
 
 //CUTER-dev
-/* Structure containing an number of N = LAL_MAX_NUMBER_PT two part EOS structures
- * and the highest pressure point of the low EOS (pres_pt), as well as the step
- * in energy density (d_eps) between the highest point of the low EOS and the lowest
- * point of the high EOS.
+/* Structure containing a number (number_of_parts) of EOS Structures (eos_part)
+ * the minimum (hmin) and maximum (hmax) enthalpy for the global EoS and the
+ * maximum pressure (pmax) of the global EoS. .
  */
 struct EOSMultiParts{
   int number_of_parts;

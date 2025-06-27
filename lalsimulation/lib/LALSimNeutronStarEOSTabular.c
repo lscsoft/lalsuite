@@ -736,7 +736,7 @@ struct EOSMultiParts XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nb
     eos.pmax = pdat[ndat-1];
 
 
-    eos.eos_part = (LALSimNeutronStarEOS **) XLALMalloc(sizeof(LALSimNeutronStarEOS *) * (number_eos)); // TODO LAL Alloc
+    eos.eos_part = (LALSimNeutronStarEOS **) XLALMalloc(sizeof(LALSimNeutronStarEOS *) * (number_eos));
     eos.hmin = (double *) XLALMalloc(sizeof(double) * (number_eos));
     eos.hmax = (double *) XLALMalloc(sizeof(double) * (number_eos));
 
