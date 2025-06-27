@@ -562,6 +562,15 @@ static int tov_ext_initial_condition(double eps, double p, double dh, LALSimNeut
     return 0;
 }
 
+//CUTER-dev
+static double constant_zero_for_kl(double r, double m, double A, double e, double p, double dedp, int l){
+    double C0 =
+    A * (-(l) * (l + 1) / (r * r) + 4.0 * LAL_PI * (e + p) * dedp +
+        4.0 * LAL_PI * (5.0 * e + 9.0 * p)) - pow(2.0 * (m +
+            4.0 * LAL_PI * r * r * r * p) / (r * (r - 2.0 * m)), 2.0);
+
+    return C0;
+}
 
 //CUTER-dev
 /* ODE integrand for TOV and Love number equations with pseudo-enthalpy independent variable,
@@ -587,27 +596,14 @@ static int tov_ext_ode(double h, const double *y, double *dy, void *params)
     double e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos);
     double rho = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(h, eos);
     double dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(p, eos);
-//     printf("jjjjjjjjjjj %g %g %g %g\n", p, e, rho, dedp);
     /* Eq. (18) of Damour & Nagar PRD 80 084035 (2009). */
     double A = 1.0 / (1.0 - 2.0 * m / r);
     /* Eq. (28) of Damour & Nagar PRD 80 084035 (2009). */
     double C1 = 2.0 / r + A * (2.0 * m / (r * r) + 4.0 * LAL_PI * r * (p - e));
     /* Eq. (29) of Damour & Nagar PRD 80 084035 (2009). */
-    double l = 2;
-    double C0_k2 =
-        A * (-(l) * (l + 1) / (r * r) + 4.0 * LAL_PI * (e + p) * dedp +
-        4.0 * LAL_PI * (5.0 * e + 9.0 * p)) - pow(2.0 * (m +
-            4.0 * LAL_PI * r * r * r * p) / (r * (r - 2.0 * m)), 2.0);
-    double ll = 3;
-    double C0_k3 =
-        A * (-(ll) * (ll + 1) / (r * r) + 4.0 * LAL_PI * (e + p) * dedp +
-        4.0 * LAL_PI * (5.0 * e + 9.0 * p)) - pow(2.0 * (m +
-            4.0 * LAL_PI * r * r * r * p) / (r * (r - 2.0 * m)), 2.0);
-    double lll = 4;
-    double C0_k4 =
-        A * (-(lll) * (lll + 1) / (r * r) + 4.0 * LAL_PI * (e + p) * dedp +
-        4.0 * LAL_PI * (5.0 * e + 9.0 * p)) - pow(2.0 * (m +
-            4.0 * LAL_PI * r * r * r * p) / (r * (r - 2.0 * m)), 2.0);
+    double C0_k2 = constant_zero_for_kl(r, m, A, e, p, dedp, 2);
+    double C0_k3 = constant_zero_for_kl(r, m, A, e, p, dedp, 3);
+    double C0_k4 = constant_zero_for_kl(r, m, A, e, p, dedp, 4);
     double dr = -r * (r - 2.0 * m) / (m + 4.0 * LAL_PI * r * r * r * p);
     double dm = 4.0 * LAL_PI * r * r * e * dr;
     double dmb = 4.0 * LAL_PI * r * r * rho * sqrt(A) * dr;
