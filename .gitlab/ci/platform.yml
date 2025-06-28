@@ -11,8 +11,6 @@
 
 .platform-test:
   stage: platform tests
-  extends:
-    - .make-distcheck
   rules:
     - !reference [.ci-platform, rules]
     - !reference [.ci-merge-build, rules]
@@ -20,11 +18,13 @@
 platform:debian:bookworm:
   extends:
     - .platform-test
+    - .make-distcheck-deb
   image: quay.io/igwn/lalsuite-dev:bookworm
 
 .platform-test:conda:
   extends:
     - .platform-test
+    - .make-distcheck
   variables:
     CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
     ENVIRONMENT_FILE: "./conda-dev-env.yml"
