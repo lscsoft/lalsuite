@@ -102,7 +102,7 @@ top-level:
   image: quay.io/igwn/lalsuite-dev:el8-testing
   needs: []
   extends:
-    - .make-distcheck
+    - .make-distcheck-rpm
     - .integration-tests
   rules:
     - !reference [.ci-integration, rules]
@@ -119,14 +119,5 @@ top-level:pulsar:
       --disable-all-lal --enable-lalpulsar
   needs: []
   extends:
-    - .make-distcheck
+    - .make-distcheck-deb
     - .integration-tests
-  before_script:
-    - !reference [.build-init]
-    # install build dependencies
-    - retry apt-get -y -q update
-    - pkgs=$(cat lal/debian/control.in lalpulsar/debian/control.in
-      | sed -n '/^Build-Depends:/{:top;n;s/^ \([^, ]*\).*/\1/p;t top}'
-      | sed '/lal/d;s/cfitsio3/cfitsio/'
-      | sort | uniq)
-    - retry apt-get -y -q install ${pkgs} liboctave-dev
