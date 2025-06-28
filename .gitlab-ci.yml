@@ -135,6 +135,13 @@ variables:
   # tell Debian-based installers to run non-interactively
   DEBIAN_FRONTEND: noninteractive
 
+  # canonical list of LALSuite packages
+  LALSUITE_PACKAGES: >-
+    lal
+    lalframe lalmetaio lalsimulation
+    lalburst lalinspiral lalinference lalpulsar
+    lalapps
+
 # default parameters for jobs
 default:
   # retry running jobs on abnormal failures

@@ -104,24 +104,8 @@ upgrade:conda:linux:
     #   the environment directory, so need to manually delete
     - retry --cleanup-cmd "rm -rf ${CONDA_ENVS_PATH}/upgrade-test"
           conda create -n upgrade-test
-          python=${LALSUITE_PYTHON_VERSION}
-          lal
-          lalframe
-          lalmetaio
-          lalsimulation
-          lalburst
-          lalinspiral
-          lalinference
-          lalpulsar
-          lalapps
+              python=${LALSUITE_PYTHON_VERSION}
+              ${LALSUITE_PACKAGES}
     # install new packages
     - retry conda update -n upgrade-test --use-local
-          lal
-          lalframe
-          lalmetaio
-          lalsimulation
-          lalburst
-          lalinspiral
-          lalinference
-          lalpulsar
-          lalapps
+          ${LALSUITE_PACKAGES}
