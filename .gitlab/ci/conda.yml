@@ -26,9 +26,7 @@
   - conda config --file ${CONDARC} --add channels conda-forge
   - conda config --file ${CONDARC} --set channel_priority strict
   # install build helpers
-  - retry conda install
-        --name base
-        --satisfied-skip-solve
+  - retry conda install --quiet --name base --satisfied-skip-solve
         "conda>=25"
         "conda-build!=3.18.10,!=24.11.1"
         conda-forge-pinning
