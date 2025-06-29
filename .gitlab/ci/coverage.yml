@@ -19,7 +19,7 @@ coverage:
     # activate conda LALSuite development environment
     - !reference [.conda-lalsuite-dev]
     # install coverage packages
-    - retry conda install -n lalsuite-dev
+    - retry conda install --quiet --name lalsuite-dev
           coverage
           "gcovr!=5.1"
           pycobertura
