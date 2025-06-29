@@ -211,6 +211,8 @@ default:
     GIT_STRATEGY: clone
     # Clang has weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
+    # stop Clang generating profile files
+    LLVM_PROFILE_FILE: "/dev/null"
 
 # tag for macOS x86_64 architecture jobs
 .macos-x86_64:
