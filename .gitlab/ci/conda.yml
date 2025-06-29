@@ -154,10 +154,15 @@
 
 # activate conda LALSuite development environment
 .conda-lalsuite-dev:
+  # install the dev environment for the default python version
+  - sed "s/-  *python .*$/- python ==${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE} > ${ENVIRONMENT_FILE}-dev-python.yml
+  # create dev environment
   - retry conda env create
-        --file ${ENVIRONMENT_FILE}
+        --file ${ENVIRONMENT_FILE}-dev-python.yml
         --quiet
+  - rm -f ${ENVIRONMENT_FILE}-dev-python.yml
   - conda list --name lalsuite-dev
+  # activate dev environment
   - conda activate lalsuite-dev
 
 # -- builds
