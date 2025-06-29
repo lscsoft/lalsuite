@@ -32,8 +32,6 @@ platform:debian:bookworm:
     - !reference [.build-init]
     # configure conda
     - !reference [.conda-init]
-    # install the dev environment for the default python version
-    - sed -i.tmp "s/-  *python .*$/- python ==${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
     # activate conda LALSuite development environment
     - !reference [.conda-lalsuite-dev]
 
