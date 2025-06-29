@@ -1263,7 +1263,7 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
                                   LALInferenceVariables *proposedParams) {
     REAL8 tmp = 0.0;
     INT4 analytic_test, i;
-    REAL8 logBackwardJump;
+    REAL8 logBackwardJump = 0.0;
     REAL8 logPropRatio;
     LALInferenceVariableItem *ptr;
 
