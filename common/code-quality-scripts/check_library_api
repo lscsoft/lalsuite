@@ -9,7 +9,7 @@ import re
 import argparse
 from tempfile import TemporaryDirectory
 from pathlib import Path
-from subprocess import run, PIPE, DEVNULL, CalledProcessError
+from subprocess import run, PIPE, DEVNULL
 from xml.etree.ElementTree import parse
 
 API_NONE = 0
