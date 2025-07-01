@@ -44,7 +44,7 @@ tarballs:
   script:
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY}
-    - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalinference lalpulsar lalapps; do
+    - for subdir in ${LALSUITE_PACKAGES}; do
         pushd ${subdir};
         make dist;
         popd;

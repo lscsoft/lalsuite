@@ -135,6 +135,13 @@ variables:
   # tell Debian-based installers to run non-interactively
   DEBIAN_FRONTEND: noninteractive
 
+  # canonical list of LALSuite packages
+  LALSUITE_PACKAGES: >-
+    lal
+    lalframe lalmetaio lalsimulation
+    lalburst lalinspiral lalinference lalpulsar
+    lalapps
+
 # default parameters for jobs
 default:
   # retry running jobs on abnormal failures
@@ -252,6 +259,15 @@ default:
           CFLAGS="${CFLAGS}"
           LALSUITE_LIBTOOL_NO_SUPPRESS=1
           <<< ${CONFIGURE_FLAGS}
+    # install build dependencies, if requested
+    - |
+      if test "X$(declare -F install_build_deps)" != X; then
+        echo "Installing build dependencies ..."
+        install_build_deps
+      else
+        echo "Not installing build dependencies"
+      fi
+    # build
     - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
   artifacts:
     # upload some files to debug failures
@@ -263,3 +279,49 @@ default:
       - lal*/Makefile
       - lal*/**/test-suite.log
     when: on_failure
+
+# install deb dependencies for top-level builds
+.make-distcheck-deb:
+  extends:
+    - .make-distcheck
+  before_script:
+    - !reference [.make-distcheck, before_script]
+    - |
+      install_build_deps() {
+        retry apt-get update -y -q
+        local subdir
+        for subdir in ${LALSUITE_PACKAGES}; do
+          if test -f ${subdir}/config.log; then
+            pushd ${subdir}
+            awk '
+              /^Build-Depends:/ { bd=1; print; next }
+              bd==1 && ( / lal/ || / liblal/ || / python.*-lal/ ) { next }
+              /^[^ ]/ { bd=0 }
+              { print }
+            ' debian/control > debian/control.tmp
+            mv -f debian/control.tmp debian/control
+            retry apt-get build-dep -y -q .
+            popd
+          fi
+        done
+      }
+
+# install rpm dependencies for top-level builds
+.make-distcheck-rpm:
+  extends:
+    - .make-distcheck
+  before_script:
+    - !reference [.make-distcheck, before_script]
+    - |
+      install_build_deps() {
+        local specs
+        local subdir
+        for subdir in ${LALSUITE_PACKAGES}; do
+          if test -f ${subdir}/config.log; then
+            local spec="${subdir}/${subdir}.spec"
+            sed -i -e '/BuildRequires: *\(lal\|liblal\|python.*-lal\)/d' ${spec}
+            specs="${specs} ${spec}"
+          fi
+        done
+        retry yum-builddep -y -q ${specs}
+      }
