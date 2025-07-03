@@ -19,6 +19,7 @@ Build-Depends:
  pkg-config (>= 0.18.0),
  python3-all-dev,
  python3-astropy,
+ python3-gwdatafind,
  python3-h5py,
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
@@ -88,6 +89,7 @@ Depends:
  ${shlibs:Depends},
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
  python3-astropy,
+ python3-gwdatafind,
  python3-h5py,
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
@@ -102,7 +104,6 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
- gwdatafind,
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
  python3-lalpulsar (= ${binary:Version}),
  lalpulsar-data,

@@ -270,6 +270,7 @@ outputs:
         - fftw
         - gsl
         - gwdatafind
+        - gwpy
         - h5py
         - jplephem
         - lalinference >={{ lalinference_version }}

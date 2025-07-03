@@ -47,6 +47,7 @@ BuildRequires: python3-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: python3dist(astropy)
+BuildRequires: python3dist(gwdatafind)
 BuildRequires: python3dist(h5py)
 BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 BuildRequires: python3dist(pytest)
@@ -62,7 +63,6 @@ BuildRequires: lalinference-octave >= @MIN_LALINFERENCE_VERSION@
 
 # lalpulsar
 Summary: LVK Algorithm Pulsar Library - runtime tools
-Requires: gwdatafind
 Requires: lib%{name} = %{version}-%{release}
 Requires: python3-%{name} = %{version}-%{release}
 Requires: %{name}-data
@@ -123,6 +123,7 @@ Requires: python3-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: python3dist(astropy)
+Requires: python3dist(gwdatafind)
 Requires: python3dist(h5py)
 Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 Recommends: python3dist(sympy)
