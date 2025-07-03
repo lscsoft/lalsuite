@@ -215,6 +215,8 @@ setup(
             'scipy',
         ],
         'lalpulsar': [
+            'gwdatafind',
+            'gwpy',
             'solar_system_ephemerides',
         ],
         'test': [
