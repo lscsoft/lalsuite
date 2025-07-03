@@ -504,11 +504,11 @@ struct tov_ext_ode_vars {
     double m;   /* mass within r in geometric units, m */
     double mb;  /* baryon mass, m */
     double H_k2;   /* stellar perturbation in arbitrary units */
-    double b_k2;   /* derivative of metric pertubation in arbitrary units */
+    double b_k2;   /* derivative of metric perturbation in arbitrary units */
     double H_k3;   /* stellar perturbation in arbitrary units */
-    double b_k3;   /* derivative of metric pertubation in arbitrary units */
+    double b_k3;   /* derivative of metric perturbation in arbitrary units */
     double H_k4;   /* stellar perturbation in arbitrary units */
-    double b_k4;   /* derivative of metric pertubation in arbitrary units */
+    double b_k4;   /* derivative of metric perturbation in arbitrary units */
 };
 
 #define TOV_EXT_ODE_VARS_DIM (sizeof(struct tov_ext_ode_vars)/sizeof(double)) // Dimension of the ODE equation system
@@ -564,6 +564,7 @@ static int tov_ext_initial_condition(double eps, double p, double dh, LALSimNeut
 
 //CUTER-dev
 static double constant_zero_for_kl(double r, double m, double A, double e, double p, double dedp, int l){
+    /* Eq. (29) of Damour & Nagar PRD 80 084035 (2009). */
     double C0 =
     A * (-(l) * (l + 1) / (r * r) + 4.0 * LAL_PI * (e + p) * dedp +
         4.0 * LAL_PI * (5.0 * e + 9.0 * p)) - pow(2.0 * (m +
@@ -714,9 +715,8 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
             printf("\t\t %d Star integration h= %.16e \t M = %.6e \n", j,  h, vars->m  / LAL_MRSUN_SI);
         }
 
-        if (pc >= pmin && j != 0){ // TODO check that this workswith a non PT EOS
+        if (pc >= pmin && j != 0){
             printf("hmin =%6e \nValues of b before correction %.6e for k2\n", hmin[j], vars->b_k2);
-//
             /* Phase transition correction for the tidal love number
             * Implements Eq.(41) of Pereira et al. 2020 ApJ 895 28
             * Note: Eq.(14) of Postnikov et al. 2010 Phys. Rev. D 82, 024016
@@ -746,7 +746,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
 
     /*take one final Euler step to get to surface*/
     for (int w = 0 ; w < 1 ; ++w){
-        tov_ext_ode(h, y, dy, &eos.eos_part[0]); // TODO should just be the non PT function called ?
+        tov_ext_ode(h, y, dy, &eos.eos_part[0]);
         for (i = 0; i < TOV_EXT_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
             y[i] += dy[i] * (0.0 - h1);
     }
