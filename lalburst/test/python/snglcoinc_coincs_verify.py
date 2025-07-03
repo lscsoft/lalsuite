@@ -48,7 +48,7 @@ def make_input_test_document(
 		ligolw_time_slide.get_time_slide_id(xmldoc, offsetvector.offsetvector((instrument, random.uniform(-28. * n_offset_vectors, +28. * n_offset_vectors)) for instrument in segs), create_new = process)
 
 	# add a sngl_burst table
-	snglbursttable = xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.SnglBurstTable, ["event_id", "ifo", "peak_time", "peak_time_ns", "process:process_id"]))
+	snglbursttable = xmldoc.childNodes[-1].appendChild(lsctables.SnglBurstTable.new(["event_id", "ifo", "peak_time", "peak_time_ns", "process:process_id"]))
 	snglbursttable.sync_next_id()
 
 	# fill with random events
