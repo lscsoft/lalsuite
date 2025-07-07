@@ -287,17 +287,26 @@ static LALSimNeutronStarEOS * eos_cut( double *nbdat, double *edat, double *pdat
  */
 static int * XLALSimNeutronStarFindIDPhaseTransition(size_t ndat, double *edat, double *pdat)
 {
-    // TODO can we find a way to not loop twice here ?
+    // TODO Phil can we find a way to not loop twice here ?
 
     int number_phase_transition = 0;
     int count_id = 0;
     int *id_phase_transition;
-    double gradient = 100; // TODO find better way or better value
+    double gradient = 0.0;
+    double old_gradient = 0.0;
+    double delta_gradient = 0.0;
+    double pt_tolerance = 2.;
 
     for (size_t i = 1; i < ndat; i++){
         gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
-        if (gradient == 0.0) number_phase_transition += 1;
+        delta_gradient = (gradient - old_gradient)/gradient;
+        if (edat[i] > 1.e-12 && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {
+            number_phase_transition += 1;
+            printf("id = %ld, eps = %.6e \t P=%.6e\n", i-1, edat[i-1], pdat[i-1]);
+        }
+        old_gradient = gradient;
     }
+
 
     id_phase_transition = LALMalloc((number_phase_transition + 2) * sizeof(int));
     id_phase_transition[0] = number_phase_transition;
@@ -306,15 +315,20 @@ static int * XLALSimNeutronStarFindIDPhaseTransition(size_t ndat, double *edat, 
     if (number_phase_transition == 0){
         printf("\tIn XLALSimNeutronStarFindIDPhaseTransition, no phase transition was found.\n");
     } else {
+        printf("\tIn XLALSimNeutronStarFindIDPhaseTransition, %d phase transition was found.\n", number_phase_transition);
         count_id = 1;
-        gradient = 100;
+        gradient = 0.0;
+        old_gradient = 0.0;
+        delta_gradient = 0.0;
         for (size_t i = 1; i < ndat; i++){
             gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
-            if (gradient == 0.0){
+            delta_gradient = (gradient - old_gradient)/gradient;
+            if (edat[i] > 1.e-12 && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance )){
                 id_phase_transition[count_id] = i-1;
                 printf("\tIn XLALSimNeutronStarFindIDPhaseTransition: index = %ld \t P=%.6e\n", i-1, pdat[i-1]);
                 count_id += 1;
             }
+            old_gradient = gradient;
         }
     }
 
