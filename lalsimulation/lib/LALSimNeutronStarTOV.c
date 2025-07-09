@@ -677,7 +677,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
     /* Equation of state */
     int number_eos = eos.number_of_parts;
     double *hmin = eos.hmin;
-    double *hmax = eos.hmax;
+//     double *hmax = eos.hmax;
 //     printf("In essaiTOV:\n\tNumber of parts in the EoS: %d \n", number_eos);
 
     /* Central values */
@@ -700,23 +700,23 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
     for(int j = number_eos-1; j >= 0; j--) {
         params = eos.eos_part[j];
         double pmin = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmin[j], eos.eos_part[j]);
-        double pmax = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmax[j], eos.eos_part[j]);
+//         double pmax = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmax[j], eos.eos_part[j]);
 
 //         printf("\t\tPart %d\tPmax = %.2e\thmin = %.2e\n", j, params->pmax * FAC_NUC, hmin[j]);
 
 //         printf("\t\th_initial = %.2e \t h_min = %.2e\n", h, hmin[j]);
 
-        printf("Pc = %g pmax=%g \n", pc, pmax);
+//         printf("Pc = %g pmax=%g \n", pc, pmax);
         while (h > hmin[j]) {
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin[j], &dh, y);
             if (s != GSL_SUCCESS)
                 XLAL_ERROR(XLAL_EERR,
                     "Error encountered in GSL's ODE integrator\n");
-            printf("\t\t %d Star integration h= %.16e \t M = %.6e \n", j,  h, vars->m  / LAL_MRSUN_SI);
+//             printf("\t\t %d Star integration h= %.16e \t M = %.6e \n", j,  h, vars->m  / LAL_MRSUN_SI);
         }
 
         if (pc >= pmin && j != 0){
-            printf("hmin =%6e \nValues of b before correction %.6e for k2\n", hmin[j], vars->b_k2);
+//             printf("hmin =%6e \nValues of b before correction %.6e for k2\n", hmin[j], vars->b_k2);
             /* Phase transition correction for the tidal love number
             * Implements Eq.(41) of Pereira et al. 2020 ApJ 895 28
             * Note: Eq.(14) of Postnikov et al. 2010 Phys. Rev. D 82, 024016
@@ -731,8 +731,8 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
             vars->b_k2 += - vars->H_k2 / vars->r * dpt_eps * 3.0 / rho_bar ;
             vars->b_k3 += - vars->H_k3 / vars->r * dpt_eps * 3.0 / rho_bar ;
             vars->b_k4 += - vars->H_k4 / vars->r * dpt_eps * 3.0 / rho_bar ;
-            printf("Values of b after correction %.6e for k2\n", vars->b_k2);
-            printf("\t\t %d CORRECTION ON h= %.16e \t M = %.6e \n", j,h, vars->m/LAL_MRSUN_SI);
+//             printf("Values of b after correction %.6e for k2\n", vars->b_k2);
+//             printf("\t\t %d CORRECTION ON h= %.16e \t M = %.6e \n", j,h, vars->m/LAL_MRSUN_SI);
 
         }
 

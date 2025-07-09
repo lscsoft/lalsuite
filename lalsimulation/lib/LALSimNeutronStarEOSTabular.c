@@ -27,6 +27,8 @@
 
 #include <lal/LALSimReadData.h>
 #include <gsl/gsl_interp.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
 #include <lal/LALSimNeutronStar.h>
 
 /** @cond */
@@ -281,61 +283,6 @@ static LALSimNeutronStarEOS * eos_cut( double *nbdat, double *edat, double *pdat
 }
 
 
-// CUTER-dev
-/* This function finds phase transitions in a tabulated equation of state, and returns
- * the indices at which the phase transition occurs
- */
-static int * XLALSimNeutronStarFindIDPhaseTransition(size_t ndat, double *edat, double *pdat)
-{
-    // TODO Phil can we find a way to not loop twice here ?
-
-    int number_phase_transition = 0;
-    int count_id = 0;
-    int *id_phase_transition;
-    double gradient = 0.0;
-    double old_gradient = 0.0;
-    double delta_gradient = 0.0;
-    double pt_tolerance = 2.;
-
-    for (size_t i = 1; i < ndat; i++){
-        gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
-        delta_gradient = (gradient - old_gradient)/gradient;
-        if (edat[i] > 1.e-12 && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {
-            number_phase_transition += 1;
-            printf("id = %ld, eps = %.6e \t P=%.6e\n", i-1, edat[i-1], pdat[i-1]);
-        }
-        old_gradient = gradient;
-    }
-
-
-    id_phase_transition = LALMalloc((number_phase_transition + 2) * sizeof(int));
-    id_phase_transition[0] = number_phase_transition;
-    id_phase_transition[number_phase_transition+1] = ndat-1;
-
-    if (number_phase_transition == 0){
-        printf("\tIn XLALSimNeutronStarFindIDPhaseTransition, no phase transition was found.\n");
-    } else {
-        printf("\tIn XLALSimNeutronStarFindIDPhaseTransition, %d phase transition was found.\n", number_phase_transition);
-        count_id = 1;
-        gradient = 0.0;
-        old_gradient = 0.0;
-        delta_gradient = 0.0;
-        for (size_t i = 1; i < ndat; i++){
-            gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
-            delta_gradient = (gradient - old_gradient)/gradient;
-            if (edat[i] > 1.e-12 && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance )){
-                id_phase_transition[count_id] = i-1;
-                printf("\tIn XLALSimNeutronStarFindIDPhaseTransition: index = %ld \t P=%.6e\n", i-1, pdat[i-1]);
-                count_id += 1;
-            }
-            old_gradient = gradient;
-        }
-    }
-
-    return id_phase_transition;
-}
-
-
 static void eos_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
 {
     if (data) {
@@ -416,6 +363,111 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
      * Or, if EOS is always causal, hmax */
     return hMinAcausal;
 }
+
+
+
+
+//CUTER-dev
+
+
+// CUTER-dev
+/* This function reads the energy density and pressure of a tabulated EoS with
+ * one or more phase transitions, and corrects "dirty" phase transition which
+ * are defined with Delta P != 0 exactly but numerically zero.
+ */
+static void eos_correct_phase_transition(double *edat, double *pdat, double *hdat, int * id_pt){
+
+    double p_half = 0.0;
+    double new_eps_before = 0.0;
+    double new_eps_after = 0.0;
+    double dhdp[2];
+
+    for (int i = 1; i <= id_pt[0]; i++){
+        p_half = (pdat[id_pt[i]] + pdat[id_pt[i]+1])/2.;
+
+        // Linear extrapolation // TODO to be changed to a cubic spline, or a GSL extrapolation technique
+        new_eps_before = edat[id_pt[i]-1] + (p_half - pdat[id_pt[i]-1])/(pdat[id_pt[i]] - pdat[id_pt[i]-1]) * (edat[id_pt[i]] - edat[id_pt[i]-1]);
+        new_eps_after = edat[id_pt[i]+2] + (p_half - pdat[id_pt[i]+2])/(pdat[id_pt[i]+1] - pdat[id_pt[i]+2]) * (edat[id_pt[i]+1] - edat[id_pt[i]+2]);
+
+        edat[id_pt[i]] = new_eps_before;
+        edat[id_pt[i]+1] = new_eps_after;
+        pdat[id_pt[i]] = p_half;
+        pdat[id_pt[i]+1] = p_half;
+
+        dhdp[0] = 1/(edat[id_pt[i]-1] + pdat[id_pt[i]-1]);
+        dhdp[1] = 1/(edat[id_pt[i]] + pdat[id_pt[i]]);
+        hdat[id_pt[i]] = hdat[id_pt[i]-1] + (p_half-pdat[id_pt[i]-1])*(dhdp[1] + dhdp[0])/2.;
+        hdat[id_pt[i]+1] = hdat[id_pt[i]];
+
+    }
+    return;
+}
+
+// CUTER-dev
+/* This function finds phase transitions in a tabulated equation of state, and returns
+ * the indices at which the phase transition occurs
+ */
+static int * eos_find_correct_phase_transition(size_t ndat, double *edat, double *pdat, double *hdat)
+{
+    // TODO Phil can we find a way to not loop twice here ?
+
+    int number_phase_transition = 0;
+    int count_id = 0;
+    int *id_phase_transition;
+    int dirty_pt = 0;
+    double gradient = 0.0;
+    double old_gradient = 0.0;
+    double delta_gradient = 0.0;
+    double pt_tolerance = 2.;
+    double eps_min_pt = 1.e-12;
+
+    for (size_t i = 1; i < ndat; i++){
+        gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
+        delta_gradient = (gradient - old_gradient)/gradient;
+        if (edat[i] > eps_min_pt && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {
+            number_phase_transition += 1;
+            printf("id = %ld, eps = %.6e \t P=%.6e\n", i-1, edat[i-1], pdat[i-1]);
+        }
+        old_gradient = gradient;
+    }
+
+    id_phase_transition = LALMalloc((number_phase_transition + 2) * sizeof(int));
+    id_phase_transition[0] = number_phase_transition;
+    id_phase_transition[number_phase_transition+1] = ndat-1;
+    // TODO ask Micaela about the min value for the PT in eps
+    // TODO put a disclaimer about no points in the PT
+
+    if (number_phase_transition == 0){
+        printf("\tIn XLALSimNeutronStarFindIDPhaseTransition, no phase transition was found.\n");
+    } else {
+        printf("\tIn XLALSimNeutronStarFindIDPhaseTransition, %d phase transition was found.\n", number_phase_transition);
+        count_id = 1;
+        gradient = 0.0;
+        old_gradient = 0.0;
+        delta_gradient = 0.0;
+        for (size_t i = 1; i < ndat; i++){
+            gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
+            delta_gradient = (gradient - old_gradient)/gradient;
+            if (edat[i] >= eps_min_pt && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance )){
+                id_phase_transition[count_id] = i-1;
+                if (gradient == 0.0) dirty_pt = 0;
+                else dirty_pt = 1;
+//                 printf("\tIn XLALSimNeutronStarFindIDPhaseTransition: index = %ld P=%.6e eps = %.6e Dirty: %d \n", i-1, pdat[i-1], edat[i-1], dirty_pt);
+                count_id += 1;
+            }
+            old_gradient = gradient;
+        }
+    }
+
+//     for (size_t i = 1; i < ndat; i++) printf("%.6e %.6e %.6e\n", edat[i], pdat[i], hdat[i]);
+
+    // Correct dirty (Delta P not exactly zero) phase transition
+    if (dirty_pt == 1) eos_correct_phase_transition(edat, pdat, hdat, id_phase_transition);
+//     for (size_t i = 1; i < ndat; i++) printf("%.6e %.6e %.6e\n", edat[i], pdat[i], hdat[i]);
+
+    return id_phase_transition;
+}
+
 
 //CUTER-dev for documentation
 /**
@@ -671,7 +723,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) // TODO s
     }
 
 
-    eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
+    eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol); // TODO check that this goes through the phase transition check
 
     XLALFree(f_dat);
     LALFree(nbdat);
@@ -740,9 +792,8 @@ struct EOSMultiParts XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nb
 {
     struct EOSMultiParts eos;
 
-    int * indices_phase_transition = XLALSimNeutronStarFindIDPhaseTransition(ndat, edat, pdat);
-    size_t bottom_index = 0;
-    size_t upper_index = 0;
+    int * indices_phase_transition = eos_find_correct_phase_transition(ndat, edat, pdat, hdat);
+    size_t bottom_index = 0, upper_index = 0;
     int number_pt = indices_phase_transition[0] ;
     int number_eos = number_pt + 1 ;
 
