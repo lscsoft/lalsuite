@@ -250,7 +250,7 @@ int main( int argc, char **argv )
              "  information specific to narrow-band SFTs included in the description:\n"
              "    <outdir>/<obs>-<nSFT>_<det>_<timebase>SFT_NBF<firstbin>W<binwidth>[_<misc>]-<start>-<span>.sft\n"
              "  where\n"
-             "    <outdir> = output directory given by the '-o' option, default is '.'\n"
+             "    <outdir> = output directory given by the '-n' option, default is '.'\n"
              "    <nSFT> = number of SFTs in the file\n"
              "    <obs> = 1-character observatory prefix, e.g. 'H', 'L', 'V'\n"
              "    <det> = 2-character detector prefix, e.g. 'H1', 'L1', 'V1'\n"
