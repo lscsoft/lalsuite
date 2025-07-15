@@ -261,7 +261,7 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     h = h0;
     // printf("Initial value of h = %.6e\n", h);
     while (h > h1) {
-        // printf("Star integration h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
+//         printf("Star integration h= %.16e \t M = %.6e \n", h, vars->m  / LAL_MRSUN_SI);
         int s =
             gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
         if (s != GSL_SUCCESS)
@@ -480,7 +480,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
             XLAL_ERROR(XLAL_EERR,
                 "Error encountered in GSL's ODE integrator\n");
 
-//         printf("\t\t Star integration h= %.16e \t dh= %.16e \t M = %.6e \t I2 = %.6e\n", h, dh, vars->m  / LAL_MRSUN_SI, vars->I2);
+        printf("\t\t Star integration h= %.16e \t dh= %.16e \t M = %.6e \t I2 = %.6e\n", h, dh, vars->m  / LAL_MRSUN_SI, vars->I2);
     }
 
     /*take one final Euler step to get to surface*/
@@ -729,7 +729,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
                 XLAL_ERROR(XLAL_EERR,
                     "Error encountered in GSL's ODE integrator\n");
 //             printf("\t\t %d Star integration h= %.16e \t M = %.6e \n", j,  h, vars->m  / LAL_MRSUN_SI);
-            printf("\t\t %d Star integration h= %.16e \t dh= %.16e \t M = %.6e \n", j,  h, dh, vars->m  / LAL_MRSUN_SI);
+//             printf("\t\t %d Star integration h= %.16e \t dh= %.16e \t M = %.6e \n", j,  h, dh, vars->m  / LAL_MRSUN_SI);
         }
 
         if (pc >= pmin && j != 0){
@@ -894,6 +894,12 @@ static int virial_ode(double h, const double *y, double *dy, void *params)
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
  * @param[out] love_number_k3 The k_3 tidal love number of the star.
  * @param[out] love_number_k4 The k_4 tidal love number of the star.
+ * @param[out] int1 Virial parameter.
+ * @param[out] int2 Virial parameter.
+ * @param[out] int3 Virial parameter.
+ * @param[out] int4 Virial parameter.
+ * @param[out] int5 Virial parameter.
+ * @param[out] int6 Virial parameter.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
  * @param eos Pointer to the Equation of State structure with multiple parts.
  * @param[in] epsrel The relative error for the TOV solver routine
@@ -1088,7 +1094,7 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
 int XLALSimNeutronStarTOVODEExtendedGridIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
-             struct EOSMultiParts eos){
+             struct EOSMultiParts eos){ // TODO work on this function
 
     /* ode integration variables */
 //     const double epsabs = 0.0;
@@ -1160,7 +1166,7 @@ int XLALSimNeutronStarTOVODEExtendedGridIntegrateWithTolerance(double *radius, d
             if (s != GSL_SUCCESS)
                 XLAL_ERROR(XLAL_EERR,
                     "Error encountered in GSL's ODE integrator\n");
-            printf("\t\t %d %d Star integration h= %.16e \t dh= %.16e \t M = %.6e \n", count, j,  h, dh, vars->m  / LAL_MRSUN_SI);
+//             printf("\t\t %d %d Star integration h= %.16e \t dh= %.16e \t M = %.6e \n", count, j,  h, dh, vars->m  / LAL_MRSUN_SI);
 
             dh = -1.e-5;//dh_grid[count];
             h += dh; //h_grid[count];
