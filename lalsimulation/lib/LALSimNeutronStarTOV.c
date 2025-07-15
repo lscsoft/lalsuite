@@ -1087,11 +1087,10 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
  * @param[out] love_number_k4 The k_4 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
  * @param eos Pointer to the Equation of State structure with multiple parts.
- * @param[in] epsrel The relative error for the TOV solver routine
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int XLALSimNeutronStarTOVODEExtendedGridIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
+int XLALSimNeutronStarTOVODEExtendedGridIntegrate(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
              struct EOSMultiParts eos){ // TODO work on this function
