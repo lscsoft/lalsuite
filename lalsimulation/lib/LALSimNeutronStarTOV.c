@@ -480,7 +480,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
             XLAL_ERROR(XLAL_EERR,
                 "Error encountered in GSL's ODE integrator\n");
 
-        printf("\t\t Star integration h= %.16e \t dh= %.16e \t M = %.6e \t I2 = %.6e\n", h, dh, vars->m  / LAL_MRSUN_SI, vars->I2);
+//         printf("\t\t Star integration h= %.16e \t dh= %.16e \t M = %.6e \t I2 = %.6e\n", h, dh, vars->m  / LAL_MRSUN_SI, vars->I2);
     }
 
     /*take one final Euler step to get to surface*/
@@ -894,12 +894,12 @@ static int virial_ode(double h, const double *y, double *dy, void *params)
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
  * @param[out] love_number_k3 The k_3 tidal love number of the star.
  * @param[out] love_number_k4 The k_4 tidal love number of the star.
- * @param[out] int1 Virial parameter.
- * @param[out] int2 Virial parameter.
- * @param[out] int3 Virial parameter.
- * @param[out] int4 Virial parameter.
- * @param[out] int5 Virial parameter.
- * @param[out] int6 Virial parameter.
+ * @param[out] intI1 Virial parameter.
+ * @param[out] intI2 Virial parameter.
+ * @param[out] intI3 Virial parameter.
+ * @param[out] intJ1 Virial parameter.
+ * @param[out] intJ2 Virial parameter.
+ * @param[out] intJ3 Virial parameter.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
  * @param eos Pointer to the Equation of State structure with multiple parts.
  * @param[in] epsrel The relative error for the TOV solver routine
@@ -908,7 +908,7 @@ static int virial_ode(double h, const double *y, double *dy, void *params)
  */
 int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
-             double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
+             double *intI1, double *intI2, double *intI3, double *intJ1, double *intJ2, double *intJ3,
              double central_pressure_si,
              struct EOSMultiParts eos,
              double epsrel){
@@ -1042,13 +1042,13 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
 
     /* convert from geometric units to SI units */
 
-    *int3 = (1.0 - vars->m / vars->r) * pow((1.0 - 2.0 * vars->m / vars->r), (-0.5)) - 1.0;
-    *int6 = vars->r * (*int3);
+    *intI3 = (1.0 - vars->m / vars->r) * pow((1.0 - 2.0 * vars->m / vars->r), (-0.5)) - 1.0;
+    *intJ3 = vars->r * (*intI3);
 
-    *int1 = vars_vir->I1;
-    *int2 = vars_vir->I2;
-    *int4 = vars_vir->J1;
-    *int5 = vars_vir->J2;
+    *intI1 = vars_vir->I1;
+    *intI2 = vars_vir->I2;
+    *intJ1 = vars_vir->J1;
+    *intJ2 = vars_vir->J2;
 
 
     *radius = vars->r;

@@ -175,7 +175,7 @@ int XLALSimNeutronStarTOVODEExtendedGridIntegrateWithTolerance(double *radius, d
 //CUTER-dev
 int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
-             double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
+             double *intI1, double *intI2, double *intI3, double *intJ1, double *intJ2, double *intJ3,
              double central_pressure_si,
              struct EOSMultiParts eos,
              double epsrel);
