@@ -10,7 +10,7 @@ Build-Depends:
  help2man (>= 1.37),
  less,
  libfftw3-dev,
- libgsl0-dev (>= 1.9) | libgsl-dev,
+ libgsl-dev,
  libhdf5-dev,
  pkg-config (>= 0.18.0),
  python3-all-dev,
@@ -60,7 +60,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  libfftw3-dev,
- libgsl0-dev (>= 1.9) | libgsl-dev,
+ libgsl-dev,
  libhdf5-dev,
  zlib1g-dev,
 Description: Files and documentation needed for compiling programs that use LAL
