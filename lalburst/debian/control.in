@@ -8,7 +8,7 @@ Build-Depends:
  dh-python,
  help2man (>= 1.37),
  pkg-config (>= 0.18.0),
- libgsl-dev | libgsl0-dev (>= 1.9),
+ libgsl-dev,
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
@@ -51,7 +51,7 @@ Depends:
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
- libgsl-dev | libgsl0-dev (>= 1.9),
+ libgsl-dev,
  liblalburst@LIBMAJOR@ (= ${binary:Version}),
 Description: LVK Algorithm Library Burst Developers
  The LVK Algorithm Burst Library for gravitational wave data analysis.
