@@ -7,7 +7,7 @@ Build-Depends:
  debhelper (>= 9),
  dh-python,
  help2man (>= 1.37),
- libgsl-dev | libgsl0-dev (>= 1.9),
+ libgsl-dev,
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
@@ -45,7 +45,7 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
- libgsl-dev | libgsl0-dev (>= 1.9),
+ libgsl-dev,
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalburst-dev (>= @MIN_LALBURST_VERSION@~),
  liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
