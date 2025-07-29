@@ -197,11 +197,11 @@ if __name__ == "__main__":
     proc = igwn_ligolw.utils.process.register_to_xmldoc(doc, sys.argv[0], {})
 
     #create timeslide table and set offsets to 0
-    timeslide_table = lsctables.New(lsctables.TimeSlideTable)
+    timeslide_table = lsctables.TimeSlideTable.new()
     timeslide_id = timeslide_table.append_offsetvector(
         {'H1':0,'V1':0,'L1':0,'H2':0}, proc)
 
-    sim_table = lsctables.New(lsctables.SimBurstTable)
+    sim_table = lsctables.SimBurstTable.new()
     xmldoc.childNodes[0].appendChild(timeslide_table)
     xmldoc.childNodes[0].appendChild(sim_table)
 

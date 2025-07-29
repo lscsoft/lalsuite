@@ -282,7 +282,7 @@ if __name__ == "__main__":
     xmldoc = ligolw.Document()
     xmldoc.appendChild(ligolw.LIGO_LW())
     proc = igwn_ligolw.utils.process.register_to_xmldoc(doc, sys.argv[0], {})
-    sim_table = lsctables.New(lsctables.SimInspiralTable)
+    sim_table = lsctables.SimInspiralTable.new()
     xmldoc.childNodes[0].appendChild(sim_table)
 
     # Add empty rows to the sim_inspiral table
