@@ -419,7 +419,7 @@ static int * eos_find_correct_phase_transition(size_t ndat, double *edat, double
     double old_gradient = 0.0;
     double delta_gradient = 0.0;
     double pt_tolerance = 2.;
-    double eps_min_pt = 1.e-12;
+    double eps_min_pt = 1.5e14 * 1e3 * LAL_G_C2_SI;
 
     for (size_t i = 1; i < ndat; i++){
         gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
