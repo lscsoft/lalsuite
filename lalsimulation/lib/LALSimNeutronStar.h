@@ -68,9 +68,10 @@ typedef struct tagFamMultiParts FamMultiParts;
  * maximum pressure (pmax) of the global EoS. .
  */
 struct EOSMultiParts{
-//   char name[LALNameLength]; TODO fix this and maybe move the structure to ...EOS.c
   int number_of_parts;
   double pmax;
+  double *hmin;
+  double *hmax;
   LALSimNeutronStarEOS ** eos_part;
 };
 
@@ -80,12 +81,10 @@ char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
-//CUTER-dev
-struct EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname);
-
+struct EOSMultiParts *XLALSimNeutronStarEOSFromFilePT(const char *fname);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
-//CUTER-dev
+
 struct EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat);
@@ -111,7 +110,6 @@ int XLALSimNeutronStarEOS3PDViableFamilyCheck(double p0, double log10p1_si, doub
 double XLALSimNeutronStarEOSMaxPressure(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS *
     eos);
-double XLALSimNeutronStarEOSMinEnthalpy(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMaxPseudoEnthalpy(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(LALSimNeutronStarEOS *
     eos);
@@ -182,7 +180,7 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double *intI1, double *intI2, double *intI3, double *intJ1, double *intJ2, double *intJ3,
              double central_pressure_si,
-             struct EOSMultiParts *eos,
+             struct EOSMultiParts eos,
              double epsrel);
 
 /* MASS-RADIUS TYPE RELATIONSHIP ROUTINES */
