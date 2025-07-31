@@ -945,6 +945,103 @@ struct EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *n
 
 }
 
+// TODO: Generalize... This assumes a PT
+struct EOSMultiParts *XLALSimNeutronStarEOSFromFilePT(const char *fname)
+{
+    struct EOSMultiParts *eos;
+    double *f_dat;
+    size_t ncol;
+    size_t ndat;
+    LALFILE *fp;
+
+    double *nbdat;
+    double *edat;
+    double *pdat;
+    double *mubdat;
+    double *muedat;
+    double *hdat;
+    double *yedat;
+    double *cs2dat;
+
+    fp = XLALSimReadDataFileOpen(fname);
+    if (!fp)
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+
+    ndat = XLALSimReadDataFileNCol(&f_dat, &ncol, fp);
+    XLALFileClose(fp);
+
+    if (ndat == (size_t) (-1))
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+
+    nbdat = LALMalloc(ndat * sizeof(*nbdat));
+    edat = LALMalloc(ndat * sizeof(*edat));
+    pdat = LALMalloc(ndat * sizeof(*pdat));
+    mubdat = LALMalloc(ndat * sizeof(*mubdat));
+    muedat = LALMalloc(ndat * sizeof(*muedat));
+    hdat = LALMalloc(ndat * sizeof(*hdat));
+    yedat = LALMalloc(ndat * sizeof(*yedat));
+    cs2dat = LALMalloc(ndat * sizeof(*cs2dat));
+
+    double speed_of_light = 299792458.0;
+    double elemc = 1.602176634e-19;
+    double mev_to_gcm = 1.e9*elemc/speed_of_light/speed_of_light*1.e39;
+    double mev_si = elemc*1.e6;
+    double p_factor_nu_to_cgs = mev_si*1.e46;
+
+    // FIXME: This is specific for 4 columns with certain units...
+    if (ncol > 2)
+    {
+        for (size_t i = 0 ; i < ndat ; i++) {
+            nbdat[i] = f_dat[i * ncol + 1];
+            edat[i] = f_dat[i * ncol + 2] * mev_to_gcm * 1e3 * LAL_G_C2_SI; /* transform from CGS to SI and then to Geometrized units */
+            pdat[i] = f_dat[i * ncol + 3] * p_factor_nu_to_cgs * 1e-1 * LAL_G_C4_SI; /* transform from CGS to SI and then to Geometrized units */
+            mubdat[i] = 0.0;
+            muedat[i] = 0.0;
+            hdat[i] = 0.0;
+            yedat[i] = 0.0;
+            cs2dat[i] = 0.0;
+        }
+	double dh_over_dp[ndat];
+        double deltap;
+        hdat[0] = 1.0e-10;
+        dh_over_dp[0] = 1/(edat[0] + pdat[0]);
+        for (size_t i = 1; i < ndat; i++){
+            deltap = pdat[i] - pdat[i-1];
+            dh_over_dp[i] = 1/(edat[i] + pdat[i]);
+            hdat[i] = hdat[i-1] + deltap*(dh_over_dp[i] + dh_over_dp[i-1])/2;
+        }
+
+    }
+    else if (ncol == 2)
+    {
+	//FIXME
+	fprintf(stderr, "error: eos files (currently) must have at least 4 columns, ncol >= 2\n");
+        exit(1);
+    }
+    else if (ncol < 2)
+    {
+        fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
+        exit(1);
+    }
+
+    eos = XLALSimNeutronStarEOSFromTabDataPhaseTransition(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat);
+
+    XLALFree(f_dat);
+    LALFree(nbdat);
+    LALFree(edat);
+    LALFree(pdat);
+    LALFree(mubdat);
+    LALFree(muedat);
+    LALFree(hdat);
+    LALFree(yedat);
+    LALFree(cs2dat);
+
+    // TODO: Add eos->name
+    //snprintf(eos->name, sizeof(eos->name), "%s", fname);
+    return eos;
+}
+
+
 
 /**
  * @brief Creates an equation of state structure from tabulated equation

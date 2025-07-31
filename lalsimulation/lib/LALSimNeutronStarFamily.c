@@ -50,6 +50,13 @@ struct tagLALSimNeutronStarFamily {
     gsl_interp_accel *k_of_m_acc;
 };
 
+struct tagFamMultiParts{
+  int number_of_branches;
+  double pmin;
+  double pmax;
+  LALSimNeutronStarFamily ** fam_branch;
+};
+
 /* gsl function for use in finding the maximum neutron star mass */
 static double fminimizer_gslfunction(double x, void * params);
 static double fminimizer_gslfunction(double x, void * params)
@@ -189,6 +196,173 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
 
     return fam;
 }
+
+
+
+FamMultiParts * XLALCreateSimNeutronStarFamilyPT(struct EOSMultiParts * eos){
+
+    FamMultiParts *fam;
+    fam = LALMalloc(sizeof(*fam));
+
+    double logpmin = 75.5; // pmin = 6.16e32
+    int nbranch_max = 4; //FIXME: Is 4 enough? Too many?
+    int ndat = 100;
+    int nbranch = 1;
+
+    fam->pmin = exp(logpmin);
+    fam->pmax = eos->pmax;
+
+    //FIXME: Is 4 enough? Too many?
+    fam->fam_branch = (LALSimNeutronStarFamily **) LALMalloc(sizeof(LALSimNeutronStarFamily *) * nbranch_max);
+    fam->number_of_branches = nbranch;
+
+    double pmax_pascal, pmax_geo, logpmax, dlogp;
+    //double pmax_nuc, pmax_cgs;
+    pmax_geo = fam->pmax;
+    pmax_pascal = pmax_geo / LAL_G_C4_SI; // in Pascal
+    //pmax_cgs = pmax_pascal * 10; // in CGS units
+    //pmax_nuc = pmax_cgs / 1.6022e33; // in nuclear units
+    logpmax = log(pmax_pascal);
+
+    int turnover = 0;
+    int cont = 0; // If not incremented, branch loop will stop after one iteration
+    int b = 0;
+    int j = 0;
+
+    for (b = 0; b < nbranch; b++){
+
+	LALSimNeutronStarFamily * fam_branch_i = LALMalloc(sizeof(LALSimNeutronStarFamily));
+
+        fam_branch_i->pdat = LALMalloc(ndat * sizeof(*fam_branch_i->pdat));
+        fam_branch_i->mdat = LALMalloc(ndat * sizeof(*fam_branch_i->mdat));
+        fam_branch_i->rdat = LALMalloc(ndat * sizeof(*fam_branch_i->rdat));
+        fam_branch_i->kdat = LALMalloc(ndat * sizeof(*fam_branch_i->kdat));
+	fam_branch_i->ndat = ndat;
+
+	double *mb = LALMalloc(ndat * sizeof(double));
+	double *k3 = LALMalloc(ndat * sizeof(double));
+	double *k4 = LALMalloc(ndat * sizeof(double));
+
+        if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->kdat)
+            XLAL_ERROR_NULL(XLAL_ENOMEM);
+
+	dlogp = (logpmax - logpmin) / ndat; // in Pascal
+
+        for (j = 0; j < ndat; ++j) {
+
+            fam_branch_i->pdat[j] = exp(logpmin + j * dlogp); // pressure in Pascal
+
+	    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
+	        &fam_branch_i->rdat[j], &fam_branch_i->mdat[j],
+		&mb[j], &fam_branch_i->kdat[j], &k3[j], &k4[j],
+		fam_branch_i->pdat[j], eos, 1e-6);
+
+	    // End of stable branch; Coming down from max mass
+	    if (j > 0 && turnover == 0 && fam_branch_i->mdat[j] <= fam_branch_i->mdat[j-1])
+		turnover = j-1;
+
+	    // End of unstable branch; Rising from min mass of unstable branch
+            if (j > 0 && turnover > 0 && fam_branch_i->mdat[j] >= fam_branch_i->mdat[j-1]){
+                cont = 1;
+		logpmin = log(fam_branch_i->pdat[j-1]);
+                ndat -= j-1;
+	        break;
+	    }
+	}
+
+	if (turnover > 1){
+
+	    // Reset length
+            fam_branch_i->ndat = turnover;
+
+	    // Reset size of arrays
+            fam_branch_i->pdat = LALRealloc(fam_branch_i->pdat, turnover * sizeof(*fam_branch_i->pdat));
+            fam_branch_i->mdat = LALRealloc(fam_branch_i->mdat, turnover * sizeof(*fam_branch_i->mdat));
+            fam_branch_i->rdat = LALRealloc(fam_branch_i->rdat, turnover * sizeof(*fam_branch_i->rdat));
+            fam_branch_i->kdat = LALRealloc(fam_branch_i->kdat, turnover * sizeof(*fam_branch_i->kdat));
+
+	    // Set up p(m), r(m), and k(m) interpolators
+            fam_branch_i->p_of_m_acc = gsl_interp_accel_alloc();
+            fam_branch_i->r_of_m_acc = gsl_interp_accel_alloc();
+            fam_branch_i->k_of_m_acc = gsl_interp_accel_alloc();
+
+            fam_branch_i->p_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
+            fam_branch_i->r_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
+            fam_branch_i->k_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
+
+            gsl_interp_init(fam_branch_i->p_of_m_interp, fam_branch_i->mdat, fam_branch_i->pdat, turnover);
+            gsl_interp_init(fam_branch_i->r_of_m_interp, fam_branch_i->mdat, fam_branch_i->rdat, turnover);
+            gsl_interp_init(fam_branch_i->k_of_m_interp, fam_branch_i->mdat, fam_branch_i->kdat, turnover);
+
+            if (cont==1){
+                turnover = 0; // Reset turnover location
+                nbranch += 1; // Increment the number of branches to allow loop to continue
+                cont = 0; // Reset continue variable
+            }
+
+	} else {
+
+            // Set up p(m), r(m), and k(m) interpolators
+            fam_branch_i->p_of_m_acc = gsl_interp_accel_alloc();
+            fam_branch_i->r_of_m_acc = gsl_interp_accel_alloc();
+            fam_branch_i->k_of_m_acc = gsl_interp_accel_alloc();
+
+            fam_branch_i->p_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+            fam_branch_i->r_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+            fam_branch_i->k_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+
+            gsl_interp_init(fam_branch_i->p_of_m_interp, fam_branch_i->mdat, fam_branch_i->pdat, ndat);
+            gsl_interp_init(fam_branch_i->r_of_m_interp, fam_branch_i->mdat, fam_branch_i->rdat, ndat);
+            gsl_interp_init(fam_branch_i->k_of_m_interp, fam_branch_i->mdat, fam_branch_i->kdat, ndat);
+
+	}
+
+        fam->fam_branch[b] = fam_branch_i;
+
+	// Exit if too many branches
+	if (nbranch > nbranch_max){
+	    nbranch = nbranch_max;
+	    break;
+	}
+    }
+
+    // FIXME: Reset number of branches
+    //if (nbranch < nbranch_max)
+    //    fam->fam_branch = (LALSimNeutronStarFamily **) LALRealloc(sizeof(LALSimNeutronStarFamily *) * nbranch);
+    fam->number_of_branches = nbranch;
+
+    return fam;
+}
+
+
+int XLALSimNeutronStarFamNumberOfBranches(FamMultiParts *fam)
+{
+    return fam->number_of_branches;
+}
+
+double XLALSimNeutronStarFamBranchMinMass(int branch, FamMultiParts *fam)
+{
+    LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+
+    return b->mdat[0];
+}
+
+double XLALSimNeutronStarFamBranchMaxMass(int branch, FamMultiParts *fam)
+{
+    LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+
+    return b->mdat[b->ndat - 1];
+}
+
+double XLALSimNeutronStarFamBranchRadius(double m, int branch, FamMultiParts * fam)
+{
+    LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    double r;
+    r = gsl_interp_eval(b->r_of_m_interp, b->mdat, b->rdat, m,
+        b->r_of_m_acc);
+    return r;
+}
+
 
 /**
  * @brief Returns the minimum mass of a neutron star family.
