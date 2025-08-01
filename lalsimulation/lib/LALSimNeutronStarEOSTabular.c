@@ -786,31 +786,33 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
  * @param ndat size of the arrays for equation of state quantities
  * @return The neutron star multipart equation of state structure.
  */
-struct EOSMultiParts XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
+struct EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat)
 {
-    struct EOSMultiParts eos;
+    struct EOSMultiParts *eos;
+
+    eos = LALCalloc(1, sizeof(*eos));
 
     int * indices_phase_transition = eos_find_correct_phase_transition(ndat, edat, pdat, hdat);
     size_t bottom_index = 0, upper_index = 0;
     int number_pt = indices_phase_transition[0] ;
     int number_eos = number_pt + 1 ;
 
-    eos.number_of_parts = number_eos;
-    eos.pmax = pdat[ndat-1];
+    eos->number_of_parts = number_eos;
+    eos->pmax = pdat[ndat-1];
 
 
-    eos.eos_part = (LALSimNeutronStarEOS **) XLALMalloc(sizeof(LALSimNeutronStarEOS *) * (number_eos));
-    eos.hmin = (double *) XLALMalloc(sizeof(double) * (number_eos));
-    eos.hmax = (double *) XLALMalloc(sizeof(double) * (number_eos));
+    eos->eos_part = (LALSimNeutronStarEOS **) XLALMalloc(sizeof(LALSimNeutronStarEOS *) * (number_eos));
+    eos->hmin = (double *) XLALMalloc(sizeof(double) * (number_eos));
+    eos->hmax = (double *) XLALMalloc(sizeof(double) * (number_eos));
 
     for (int i = 0; i <= number_pt; i++){
-        eos.hmin[i] = hdat[bottom_index];
+        eos->hmin[i] = hdat[bottom_index];
 
         upper_index = indices_phase_transition[i+1];
-        eos.eos_part[i] = eos_cut(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
-        eos.hmax[i] = hdat[upper_index];
+        eos->eos_part[i] = eos_cut(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
+        eos->hmax[i] = hdat[upper_index];
 
         bottom_index = indices_phase_transition[i+1] + 1;
     }
