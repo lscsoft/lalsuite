@@ -116,7 +116,7 @@ top-level:pulsar:
     CONFIGURE_FLAGS: |
       --disable-doxygen
       --enable-python --enable-swig-python --enable-swig-octave
-      --disable-all-lal --enable-lalpulsar
+      --disable-all-lal --enable-lalframe --enable-lalpulsar
   needs: []
   extends:
     - .make-distcheck-deb
