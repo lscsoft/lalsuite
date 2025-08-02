@@ -211,3 +211,51 @@ if [ "X$files" != "Xnarrowband3c/H-1_H1_${Tsft}SFT_${misc}_NBF0050Hz1711W0001Hz3
     echo "ERROR: extra SFTs generated in narrowband3c/: ${files}"
     exit 1
 fi
+
+## check splitting SFTs with different channel names
+
+# generate broadband SFTs from 2 different channels
+mkdir -p broadband4/
+start2=$(echo "$start + $Tsft" | bc)
+start3=$(echo "$start + 2 * $Tsft" | bc)
+cmdline="lalpulsar_Makefakedata_v5 --outPubObsRun 4 --outPubRevision 1 --IFOs H1 --outFrChannels H1:C00 --sqrtSX 1e-24 --startTime ${start} --duration ${Tsft} --Tsft ${Tsft} --fmin 100 --Band 5 --outSFTdir broadband4/"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+cmdline="lalpulsar_Makefakedata_v5 --outPubObsRun 4 --outPubRevision 1 --IFOs H1 --outFrChannels H1:C01 --sqrtSX 1e-24 --startTime ${start2} --duration ${Tsft} --Tsft ${Tsft} --fmin 100 --Band 5 --outSFTdir broadband4/"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+cmdline="lalpulsar_Makefakedata_v5 --outPubObsRun 4 --outPubRevision 1 --IFOs H1 --outFrChannels H1:C00 --sqrtSX 1e-24 --startTime ${start3} --duration ${Tsft} --Tsft ${Tsft} --fmin 100 --Band 5 --outSFTdir broadband4/"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+mkdir -p narrowband4/
+cmdline="lalpulsar_splitSFTs --output-directory narrowband4/ --start-frequency 102 --frequency-bandwidth 1.0 --end-frequency 103 -- broadband4/*.sft"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+
+# narrowband SFT ${sft00} contains broadband SFTs from H1:C00 channel, i.e. 1st and 3rd SFT generated above
+sft00num=2
+sft00start=${start}
+sft00span=$(echo "3 * ${Tsft}" | bc)
+sft00="narrowband4/H-${sft00num}_H1_${Tsft}SFT_O4SIM+R1+CC00+WRECT_NBF0102Hz0W0001Hz0-${sft00start}-${sft00span}.sft"
+
+# narrowband SFT ${sft01} contains broadband SFTs from H1:C01 channel, i.e. 2nd SFT generated above
+sft01num=1
+sft01start=${start2}
+sft01span=${Tsft}
+sft01="narrowband4/H-${sft01num}_H1_${Tsft}SFT_O4SIM+R1+CC01+WRECT_NBF0102Hz0W0001Hz0-${sft01start}-${sft01span}.sft"
+
+# check narrowband SFTs exist
+for sft in ${sft00} ${sft01}; do
+    if ! test -f $sft; then
+        echo "ERROR: could not find file '$sft'"
+        exit 1
+    fi
+done

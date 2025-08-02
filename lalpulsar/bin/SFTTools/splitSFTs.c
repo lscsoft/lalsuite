@@ -68,7 +68,8 @@
 #define CMT_FULL 2
 
 // Compare two quantities, and return a sort order value if they are unequal
-#define COMPARE_BY( x, y ) do { if ( (x) < (y) ) return -1; if ( (x) > (y) ) return +1; } while(0)
+#define COMPARE_BY_NUM( x, y ) do { if ( (x) < (y) ) return -1; if ( (x) > (y) ) return +1; } while(0)
+#define COMPARE_BY_STR( x, y ) do { int c = strcmp( (x), (y) ); if ( c != 0 ) return c; } while(0)
 
 typedef struct {
   int resource_units;  /**< number of resource units available for consumption */
@@ -136,6 +137,13 @@ static UINT8 hash_SFTFilenameSpec( const void *x )
   UINT4 hval = 0;
   XLALPearsonHash( &hval, sizeof( hval ), &rec->detector,       sizeof( rec->detector ) );
   XLALPearsonHash( &hval, sizeof( hval ), &rec->SFTtimebase,    sizeof( rec->SFTtimebase ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->window_type,    sizeof( rec->window_type ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->window_param,   sizeof( rec->window_param ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->privMisc,       sizeof( rec->privMisc ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->pubObsRun,      sizeof( rec->pubObsRun ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->pubObsKind,     sizeof( rec->pubObsKind ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->pubRevision,    sizeof( rec->pubRevision ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->pubChannel,     sizeof( rec->pubChannel ) );
   XLALPearsonHash( &hval, sizeof( hval ), &rec->nbFirstBinFreq, sizeof( rec->nbFirstBinFreq ) );
   XLALPearsonHash( &hval, sizeof( hval ), &rec->nbFirstBinRem,  sizeof( rec->nbFirstBinRem ) );
   XLALPearsonHash( &hval, sizeof( hval ), &rec->nbBinWidthFreq, sizeof( rec->nbBinWidthFreq ) );
@@ -148,13 +156,19 @@ static int compare_SFTFilenameSpec( const void *x, const void *y )
 {
   const SFTFilenameSpec *recx = ( const SFTFilenameSpec * ) x;
   const SFTFilenameSpec *recy = ( const SFTFilenameSpec * ) y;
-  COMPARE_BY( recx->detector[0],    recy->detector[0] );
-  COMPARE_BY( recx->detector[1],    recy->detector[1] );
-  COMPARE_BY( recx->SFTtimebase,    recy->SFTtimebase );
-  COMPARE_BY( recx->nbFirstBinFreq, recy->nbFirstBinFreq );
-  COMPARE_BY( recx->nbFirstBinRem,  recy->nbFirstBinRem );
-  COMPARE_BY( recx->nbBinWidthFreq, recy->nbBinWidthFreq );
-  COMPARE_BY( recx->nbBinWidthRem,  recy->nbBinWidthRem );
+  COMPARE_BY_STR( recx->detector,       recy->detector );
+  COMPARE_BY_NUM( recx->SFTtimebase,    recy->SFTtimebase );
+  COMPARE_BY_STR( recx->window_type,    recy->window_type );
+  COMPARE_BY_NUM( recx->window_param,   recy->window_param );
+  COMPARE_BY_STR( recx->privMisc,       recy->privMisc );
+  COMPARE_BY_NUM( recx->pubObsRun,      recy->pubObsRun );
+  COMPARE_BY_STR( recx->pubObsKind,     recy->pubObsKind );
+  COMPARE_BY_NUM( recx->pubRevision,    recy->pubRevision );
+  COMPARE_BY_STR( recx->pubChannel,     recy->pubChannel );
+  COMPARE_BY_NUM( recx->nbFirstBinFreq, recy->nbFirstBinFreq );
+  COMPARE_BY_NUM( recx->nbFirstBinRem,  recy->nbFirstBinRem );
+  COMPARE_BY_NUM( recx->nbBinWidthFreq, recy->nbBinWidthFreq );
+  COMPARE_BY_NUM( recx->nbBinWidthRem,  recy->nbBinWidthRem );
   return 0;
 }
 
@@ -446,8 +460,9 @@ int main( int argc, char **argv )
       *rec = nbSFTspec;
 
       /* add SFT record */
-      XLALPrintInfo( "Existing SFT: det=%c%c timebase=%u firstbin=(%u,%u) binwidth=(%u,%u) filename=%s\n",
-                     rec->detector[0], rec->detector[1], rec->SFTtimebase,
+      XLALPrintInfo( "Existing SFT: det=%s timebase=%u window=(%s,%g) priv=(%s) pub=(%i,%s,%i,%s) firstbin=(%u,%u) binwidth=(%u,%u) filename=%s\n",
+                     rec->detector, rec->SFTtimebase, rec->window_type, rec->window_param,
+                     rec->privMisc, rec->pubObsRun, rec->pubObsKind, rec->pubRevision, rec->pubChannel,
                      rec->nbFirstBinFreq, rec->nbFirstBinRem, rec->nbBinWidthFreq, rec->nbBinWidthRem,
                      globbuf.gl_pathv[i] );
       XLAL_CHECK_MAIN( XLALHashTblAdd( nbsfts, rec ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALHashTblAdd() failed" );
@@ -615,15 +630,23 @@ int main( int argc, char **argv )
 
         /* check if this narrow-band SFT exists */
         SFTFilenameSpec key = {
-          .detector = { detector[0], detector[1], 0 },
-          .SFTtimebase = timebase,
+          .SFTtimebase = inputSFTspec.SFTtimebase,
+          .window_param = inputSFTspec.window_param,
+          .pubObsRun = inputSFTspec.pubObsRun,
+          .pubRevision = inputSFTspec.pubRevision,
           .nbFirstBinFreq = outfreq,
           .nbFirstBinRem = outfreqbin,
           .nbBinWidthFreq = outwidth,
           .nbBinWidthRem = outwidthbin,
         };
-        XLALPrintInfo( "Looking for SFT:det=%c%c timebase=%u firstbin=(%u,%u) binwidth=(%u,%u)\n",
-                       key.detector[0], key.detector[1], key.SFTtimebase,
+        strncpy( key.detector, inputSFTspec.detector, sizeof( key.detector ) );
+        strncpy( key.window_type, inputSFTspec.window_type, sizeof( key.window_type ) );
+        strncpy( key.privMisc, inputSFTspec.privMisc, sizeof( key.privMisc ) );
+        strncpy( key.pubObsKind, inputSFTspec.pubObsKind, sizeof( key.pubObsKind ) );
+        strncpy( key.pubChannel, inputSFTspec.pubChannel, sizeof( key.pubChannel ) );
+        XLALPrintInfo( "Looking for SFT: det=%s timebase=%u window=(%s,%g) priv=(%s) pub=(%i,%s,%i,%s) firstbin=(%u,%u) binwidth=(%u,%u)\n",
+                       key.detector, key.SFTtimebase, key.window_type, key.window_param,
+                       key.privMisc, key.pubObsRun, key.pubObsKind, key.pubRevision, key.pubChannel,
                        key.nbFirstBinFreq, key.nbFirstBinRem, key.nbBinWidthFreq, key.nbBinWidthRem );
         SFTFilenameSpec *rec = NULL;
         XLAL_CHECK_MAIN( XLALHashTblExtract( nbsfts, &key, ( void ** ) &rec ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALHashTblExtract() failed" );
@@ -682,8 +705,9 @@ int main( int argc, char **argv )
         }
 
         /* store new SFT record */
-        XLALPrintInfo( "New/updated SFT: det=%c%c timebase=%u firstbin=(%u,%u) binwidth=(%u,%u) filename=%s\n",
-                       rec->detector[0], rec->detector[1], rec->SFTtimebase,
+        XLALPrintInfo( "New/updated SFT: det=%s timebase=%u window=(%s,%g) priv=(%s) pub=(%i,%s,%i,%s) firstbin=(%u,%u) binwidth=(%u,%u) filename=%s\n",
+                       rec->detector, rec->SFTtimebase, rec->window_type, rec->window_param,
+                       rec->privMisc, rec->pubObsRun, rec->pubObsKind, rec->pubRevision, rec->pubChannel,
                        rec->nbFirstBinFreq, rec->nbFirstBinRem, rec->nbBinWidthFreq, rec->nbBinWidthRem,
                        newSFTfilename );
         XLAL_CHECK_MAIN( XLALHashTblAdd( nbsfts, rec ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALHashTblAdd() failed" );
