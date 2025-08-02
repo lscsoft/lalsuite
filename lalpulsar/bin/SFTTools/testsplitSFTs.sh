@@ -179,35 +179,35 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 mkdir -p narrowband3a/
-cmdline="lalpulsar_splitSFTs --output-directory narrowband3a/ --start-frequency 51 --frequency-bandwidth 1 --end-frequency 52 -- broadband3/H-1_H1_1800SFT_${misc}-1257800000-1800.sft"
+cmdline="lalpulsar_splitSFTs --output-directory narrowband3a/ --start-frequency 51 --frequency-bandwidth 1 --end-frequency 52 -- broadband3/H-1_H1_${Tsft}SFT_${misc}-${start}-${Tsft}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 files=`echo narrowband3a/*.sft`
-if [ "X$files" != "Xnarrowband3a/H-1_H1_1800SFT_${misc}_NBF0051Hz0W0001Hz0-1257800000-1800.sft" ]; then
+if [ "X$files" != "Xnarrowband3a/H-1_H1_${Tsft}SFT_${misc}_NBF0051Hz0W0001Hz0-${start}-${Tsft}.sft" ]; then
     echo "ERROR: extra SFTs generated in narrowband3a/: ${files}"
     exit 1
 fi
 mkdir -p narrowband3b/
-cmdline="lalpulsar_splitSFTs --output-directory narrowband3b/ --start-frequency 51 --frequency-bandwidth 1.2212 --end-frequency 52.2212 -- broadband3/H-1_H1_1800SFT_${misc}-1257800000-1800.sft"
+cmdline="lalpulsar_splitSFTs --output-directory narrowband3b/ --start-frequency 51 --frequency-bandwidth 1.2212 --end-frequency 52.2212 -- broadband3/H-1_H1_${Tsft}SFT_${misc}-${start}-${Tsft}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 files=`echo narrowband3b/*.sft`
-if [ "X$files" != "Xnarrowband3b/H-1_H1_1800SFT_${misc}_NBF0051Hz0W0001Hz399-1257800000-1800.sft" ]; then
+if [ "X$files" != "Xnarrowband3b/H-1_H1_${Tsft}SFT_${misc}_NBF0051Hz0W0001Hz399-${start}-${Tsft}.sft" ]; then
     echo "ERROR: extra SFTs generated in narrowband3b/: ${files}"
     exit 1
 fi
 mkdir -p narrowband3c/
-cmdline="lalpulsar_splitSFTs --output-directory narrowband3c/ --start-frequency 50.9508 --frequency-bandwidth 1.2212 --end-frequency 52.172 -- broadband3/H-1_H1_1800SFT_${misc}-1257800000-1800.sft"
+cmdline="lalpulsar_splitSFTs --output-directory narrowband3c/ --start-frequency 50.9508 --frequency-bandwidth 1.2212 --end-frequency 52.172 -- broadband3/H-1_H1_${Tsft}SFT_${misc}-${start}-${Tsft}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 files=`echo narrowband3c/*.sft`
-if [ "X$files" != "Xnarrowband3c/H-1_H1_1800SFT_${misc}_NBF0050Hz1711W0001Hz399-1257800000-1800.sft" ]; then
+if [ "X$files" != "Xnarrowband3c/H-1_H1_${Tsft}SFT_${misc}_NBF0050Hz1711W0001Hz399-${start}-${Tsft}.sft" ]; then
     echo "ERROR: extra SFTs generated in narrowband3c/: ${files}"
     exit 1
 fi
