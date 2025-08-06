@@ -17,40 +17,8 @@
 *  MA  02110-1301  USA
 */
 
-/**
- * \author Matt Pitkin
- * \date 2013
- * \file
- * \ingroup lalpulsar_general
- * \brief Functions to read TEMPO pulsar parameter files
- *
-   Functions for reading pulsar parameters from TEMPO .par files.
-
-   # Prototypes
-
-
-
-   # Description
-
-   Radio astronomers fit pulsar parameters using TEMPO(2) which will output
-   the parameters in a <tt>.par</tt> file. The values allowed in this file can be
-   found in the TEMPO documentation.
-
-   The function \c XLALReadTEMPOParFile reads the parameters into a linked list \c PulsarParameters structure, from which the
-   parameters can be accessed using the appropriate access function. These use a hash table to quick look-up.
-   The parameters are assigned names, which are used as the hash table keys, which are fully uppercase
-   versions of the TEMPO parameter names.
-
-   All parameters read in are converted into SI units.
-
-   Functions are is also included which converts a string containing the right ascension or
-   declination in the format <tt>ddd/hh:mm:ss.s</tt> or <tt>ddd/hhmmss.s</tt>
-   (as is given in the <tt>.par</tt> file) into a \c REAL8 value in
-   radians.
-
-   # Notes
-
-*/
+/// \addtogroup ReadPulsarParFile_h
+/// @{
 
 #include <config.h>
 #include <string.h>
@@ -1834,3 +1802,5 @@ REAL8 XLALTCBMJDtoGPS( REAL8 MJD )
 
   return GPS;
 }
+
+/// @}
