@@ -278,6 +278,14 @@ wheel:pypi:
     - .deploy
   image: quay.io/lib/python
   script:
+    - |
+      if [ ! -d wheelhouse/ ]; then
+         echo "No wheels to deploy!"
+         exit 1
+      fi
+      echo "===== Wheels to deploy ====="
+      ls wheelhouse/
+      echo "----------------------------"
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     - !reference [.python-venv]
     - retry python -m pip install twine
@@ -321,6 +329,6 @@ wheel:pypi:
     - wheel:cp314-cp314t-macos-arm64
   rules:
     - !reference [.ci-lalsuite-tag-build, rules]
-    - !reference [.ci-nightly-deploy, rules]
+    - !reference [.ci-nightly-deploy-always, rules]
   allow_failure:
     exit_codes: 100   # EXECUTE_DEPLOY_ACTIONS!=yes
