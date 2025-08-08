@@ -56,12 +56,12 @@
   - env LAL_DEBUG_LEVEL=info lalsim-detector-noise --official --aligo-nsnsopt --duration 1 >/dev/null
   - env LAL_DEBUG_LEVEL=info lalpulsar_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
 
-# Build receipe for standalone wheels on Linux
+# build recipe for standalone wheels on Linux
 .wheel:manylinux:
   extends:
     - .wheel
   script:
-    - export PYTHON="/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')/bin/python"
+    - export PYTHON="/opt/python/${PYTHON_VERSION}/bin/python"
     # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
     # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
     - !reference [.python-venv]
@@ -88,7 +88,7 @@
     # Test: do some simple sanity checks in a virtualenv
     - !reference [.wheel-test]
 
-# Build receipe for standalone wheels on macOS
+# build recipe for standalone wheels on macOS
 .wheel:macos:
   extends:
     - .wheel
@@ -97,7 +97,7 @@
     # this build uses macports for the libraries and Python
     - . /opt/local/share/macports/setupenv.bash
     # find python
-    - PYTHON=$(which python$(echo ${CI_JOB_NAME} | sed 's/.*:cp\([0-9]\)\([0-9]\{1,\}\).*/\1.\2/'))
+    - PYTHON=$(which python$(echo ${PYTHON_VERSION} | sed 's/cp\([0-9]\)\([0-9]\{1,\}\).*/\1.\2/'))
     # Enter virtualenv so that we have a controlled version of Numpy.
     # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
     # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
@@ -151,126 +151,104 @@
   tags:
     - aarch64
 
-# Build wheels for all supported platforms
-wheel:cp39-cp39-manylinux_2_28_x86_64:
+# -- build wheels for all supported platforms ---------------------------
+
+wheel:manylinux_2_28_x86_64:cp313-cp313:
   extends:
     - .wheel:manylinux_2_28_x86_64
-wheel:cp310-cp310-manylinux_2_28_x86_64:
-  extends:
-    - .wheel:manylinux_2_28_x86_64
-wheel:cp311-cp311-manylinux_2_28_x86_64:
-  extends:
-    - .wheel:manylinux_2_28_x86_64
-wheel:cp312-cp312-manylinux_2_28_x86_64:
-  extends:
-    - .wheel:manylinux_2_28_x86_64
-wheel:cp313-cp313-manylinux_2_28_x86_64:
-  extends:
-    - .wheel:manylinux_2_28_x86_64
+  variables:
+    PYTHON_VERSION: cp313-cp313
   rules:  # reference build for this platform
     - !reference [.ci-wheels, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
-wheel:cp314-cp314-manylinux_2_28_x86_64:
+wheel:manylinux_2_28_x86_64:matrix:
   extends:
     - .wheel:manylinux_2_28_x86_64
-wheel:cp314-cp314t-manylinux_2_28_x86_64:
-  extends:
-    - .wheel:manylinux_2_28_x86_64
-wheel:cp39-cp39-manylinux_2_28_aarch64:
-  extends:
-    - .wheel:manylinux_2_28_aarch64
-wheel:cp310-cp310-manylinux_2_28_aarch64:
-  extends:
-    - .wheel:manylinux_2_28_aarch64
-wheel:cp311-cp311-manylinux_2_28_aarch64:
-  extends:
-    - .wheel:manylinux_2_28_aarch64
-wheel:cp312-cp312-manylinux_2_28_aarch64:
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+          - cp39-cp39
+          - cp310-cp310
+          - cp311-cp311
+          - cp312-cp312
+          - cp314-cp314
+          - cp314-cp314t
+
+wheel:manylinux_2_28_aarch64:cp313-cp313:
   extends:
     - .wheel:manylinux_2_28_aarch64
-wheel:cp313-cp313-manylinux_2_28_aarch64:
-  extends:
-    - .wheel:manylinux_2_28_aarch64
+  variables:
+    PYTHON_VERSION: cp313-cp313
   rules:  # reference build for this platform
     - !reference [.ci-wheels, rules]
     # Disable building aarch64 for MRs due to low availability of aarch64 runners
     # - !reference [.ci-merge-build, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
-wheel:cp314-cp314-manylinux_2_28_aarch64:
+wheel:manylinux_2_28_aarch64:matrix:
   extends:
     - .wheel:manylinux_2_28_aarch64
-wheel:cp314-cp314t-manylinux_2_28_aarch64:
-  extends:
-    - .wheel:manylinux_2_28_aarch64
-wheel:cp39-cp39-macos-x86_64:
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+          - cp39-cp39
+          - cp310-cp310
+          - cp311-cp311
+          - cp312-cp312
+          - cp314-cp314
+          - cp314-cp314t
+
+wheel:macos-x86_64:cp313-cp313:
   extends:
     - .wheel:macos
     - .wheel:macos:x86_64
-wheel:cp310-cp310-macos-x86_64:
-  extends:
-     - .wheel:macos
-     - .wheel:macos:x86_64
-wheel:cp311-cp311-macos-x86_64:
-  extends:
-     - .wheel:macos
-     - .wheel:macos:x86_64
-wheel:cp312-cp312-macos-x86_64:
-  extends:
-     - .wheel:macos
-     - .wheel:macos:x86_64
-wheel:cp313-cp313-macos-x86_64:
-  extends:
-     - .wheel:macos
-     - .wheel:macos:x86_64
+  variables:
+    PYTHON_VERSION: cp313-cp313
   rules:  # reference build for this platform
     - !reference [.ci-wheels, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
-wheel:cp314-cp314-macos-x86_64:
+wheel:macos-x86_64:matrix:
   extends:
-     - .wheel:macos
-     - .wheel:macos:x86_64
-wheel:cp314-cp314t-macos-x86_64:
-  extends:
-     - .wheel:macos
-     - .wheel:macos:x86_64
-wheel:cp39-cp39-macos-arm64:
+    - .wheel:macos
+    - .wheel:macos:x86_64
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+          - cp39-cp39
+          - cp310-cp310
+          - cp311-cp311
+          - cp312-cp312
+          - cp314-cp314
+          - cp314-cp314t
+
+wheel:macos-arm64:cp313-cp313:
   extends:
     - .wheel:macos
     - .wheel:macos:arm64
-wheel:cp310-cp310-macos-arm64:
-  extends:
-     - .wheel:macos
-     - .wheel:macos:arm64
-wheel:cp311-cp311-macos-arm64:
-  extends:
-     - .wheel:macos
-     - .wheel:macos:arm64
-wheel:cp312-cp312-macos-arm64:
-  extends:
-     - .wheel:macos
-     - .wheel:macos:arm64
-wheel:cp313-cp313-macos-arm64:
-  extends:
-     - .wheel:macos
-     - .wheel:macos:arm64
+  variables:
+    PYTHON_VERSION: cp313-cp313
   rules:  # reference build for this platform
     - !reference [.ci-wheels, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
-wheel:cp314-cp314-macos-arm64:
+wheel:macos-arm64:matrix:
   extends:
-     - .wheel:macos
-     - .wheel:macos:arm64
-wheel:cp314-cp314t-macos-arm64:
-  extends:
-     - .wheel:macos
-     - .wheel:macos:arm64
+    - .wheel:macos
+    - .wheel:macos:arm64
+  parallel:
+    matrix:
+      - PYTHON_VERSION:
+          - cp39-cp39
+          - cp310-cp310
+          - cp311-cp311
+          - cp312-cp312
+          - cp314-cp314
+          - cp314-cp314t
 
 # deploy wheels
 wheel:pypi:
@@ -299,34 +277,14 @@ wheel:pypi:
     # upload
     - retry python -m twine upload wheelhouse/*
   needs:
-    - wheel:cp39-cp39-manylinux_2_28_x86_64
-    - wheel:cp310-cp310-manylinux_2_28_x86_64
-    - wheel:cp311-cp311-manylinux_2_28_x86_64
-    - wheel:cp312-cp312-manylinux_2_28_x86_64
-    - wheel:cp313-cp313-manylinux_2_28_x86_64
-    - wheel:cp314-cp314-manylinux_2_28_x86_64
-    - wheel:cp314-cp314t-manylinux_2_28_x86_64
-    - wheel:cp39-cp39-manylinux_2_28_aarch64
-    - wheel:cp310-cp310-manylinux_2_28_aarch64
-    - wheel:cp311-cp311-manylinux_2_28_aarch64
-    - wheel:cp312-cp312-manylinux_2_28_aarch64
-    - wheel:cp313-cp313-manylinux_2_28_aarch64
-    - wheel:cp314-cp314-manylinux_2_28_aarch64
-    - wheel:cp314-cp314t-manylinux_2_28_aarch64
-    - wheel:cp39-cp39-macos-x86_64
-    - wheel:cp310-cp310-macos-x86_64
-    - wheel:cp311-cp311-macos-x86_64
-    - wheel:cp312-cp312-macos-x86_64
-    - wheel:cp313-cp313-macos-x86_64
-    - wheel:cp314-cp314-macos-x86_64
-    - wheel:cp314-cp314t-macos-x86_64
-    - wheel:cp39-cp39-macos-arm64
-    - wheel:cp310-cp310-macos-arm64
-    - wheel:cp311-cp311-macos-arm64
-    - wheel:cp312-cp312-macos-arm64
-    - wheel:cp313-cp313-macos-arm64
-    - wheel:cp314-cp314-macos-arm64
-    - wheel:cp314-cp314t-macos-arm64
+    - wheel:manylinux_2_28_x86_64:cp313-cp313
+    - wheel:manylinux_2_28_x86_64:matrix
+    - wheel:manylinux_2_28_aarch64:cp313-cp313
+    - wheel:manylinux_2_28_aarch64:matrix
+    - wheel:macos-x86_64:cp313-cp313
+    - wheel:macos-x86_64:matrix
+    - wheel:macos-arm64:cp313-cp313
+    - wheel:macos-arm64:matrix
   rules:
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy-always, rules]
