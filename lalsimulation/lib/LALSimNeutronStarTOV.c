@@ -32,20 +32,6 @@
 #include <lal/LALSimNeutronStar.h>
 
 
-//CUTER-dev // TODO why can I not name this LAL blabla ??
-/* Structure containing phase transition information (hpt, ppt, delta_eps),
- * one EOS structure (eos_low) for the equation of state before the phase transition,
- * and a one EOS structure (eos_up) for the eos after the phase transition.
- */
-struct EOSTwoPartsWithPTinfo{
-  LALSimNeutronStarEOS * eos_low;
-  LALSimNeutronStarEOS * eos_up;
-  double hpt;
-  double ppt;
-  double delta_eps;
-};
-
-
 /* Implements Eq. (50) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).
  * See also Eq. (14) of Hinderer et al. Phys. Rev. D 81 123016 (2010). */
 static double tidal_Love_number_k2(double c, double y)
@@ -692,7 +678,6 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
 
     /* Equation of state */
     int number_eos = eos->number_of_parts;
-    double *hmin = eos->hmin;
 
     /* Central values */
     double pc = central_pressure_si * LAL_G_C4_SI; // convert the pressure from Pascal to geometrized units [/m^2]
@@ -711,9 +696,10 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
 
     for(int j = number_eos-1; j >= 0; j--) {
         params = eos->eos_part[j];
-        double pmin = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmin[j], eos->eos_part[j]);
-        while (h > hmin[j]) {
-            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin[j], &dh, y);
+        double hmin = XLALSimNeutronStarEOSMinEnthalpy(eos->eos_part[j]);
+        double pmin = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmin, eos->eos_part[j]);
+        while (h > hmin) {
+            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
             if (s != GSL_SUCCESS)
                 XLAL_ERROR(XLAL_EERR,
                     "Error encountered in GSL's ODE integrator\n");
@@ -930,8 +916,6 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
 
     /* Equation of state */
     int number_eos = eos->number_of_parts;
-    double *hmin = eos->hmin;
-//     printf("hmin = %.6e \n", hmin[0]);
 
     /* Central values */
     double pc = central_pressure_si * LAL_G_C4_SI; // convert the pressure from Pascal to geometrized units [/m^2]
@@ -949,19 +933,19 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
     double h_old = h;
     double dh_old = dh;
     tov_ext_initial_condition(ec, pc, dh, eos->eos_part[number_eos-1], vars);
-//     printf("Initial conditions: ex = %.6e hc = %.6e pc = %.6e\n", ec, hc, pc);
     virial_initial_condition(vars->r, pc, dh, vars_vir);
 
     for(int j = number_eos-1; j >= 0; j--) {
         params = eos->eos_part[j];
-        double pmin = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmin[j], eos->eos_part[j]);
-        while (h > hmin[j]) {
+        double hmin = XLALSimNeutronStarEOSMinEnthalpy(eos->eos_part[j]);
+        double pmin = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmin, eos->eos_part[j]);
+        while (h > hmin) {
             params_vir.old_m = vars->m;
             params_vir.old_r = vars->r;
             params_vir.eos = eos->eos_part[j];
 //             printf("Before virial solver: h = %.6e dh = %.6e r = %.6e\n", h, dh, vars->r);
 
-            s_vir = gsl_odeiv_evolve_apply(evolv_vir, ctrl_vir, step_vir, &sys_vir, &h_old, hmin[j], &dh_old, y_vir);
+            s_vir = gsl_odeiv_evolve_apply(evolv_vir, ctrl_vir, step_vir, &sys_vir, &h_old, hmin, &dh_old, y_vir);
 //             printf("After virial solver: h = %.6e dh = %.6e\n", h, dh);
             if (s_vir != GSL_SUCCESS)
                 XLAL_ERROR(XLAL_EERR,
@@ -969,7 +953,7 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
 
 //             printf("Before TOV solver: h = %.6e dh = %.6e\n", h, dh);
 
-            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin[j], &dh, y);
+            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
 //             printf("After TOV solver: h = %.6e dh = %.6e\n", h, dh);
             if (s != GSL_SUCCESS)
                 XLAL_ERROR(XLAL_EERR,

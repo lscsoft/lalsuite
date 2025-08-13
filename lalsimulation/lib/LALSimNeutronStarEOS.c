@@ -63,6 +63,7 @@ struct tagLALSimNeutronStarEOS {
     char name[LALNameLength];
     double pmax;
     double hmax;
+    double hmin;
     double hMinAcausal; /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1) */
     double (*e_of_p) (double p, LALSimNeutronStarEOS * myself);
     double (*h_of_p) (double p, LALSimNeutronStarEOS * myself);
@@ -132,6 +133,8 @@ void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
     return;
 }
 
+// TODO CUTER-dev make a destroy function for multiple parts eos
+
 /** @} */
 
 /* Tabular Equation of State Code. */
@@ -172,6 +175,17 @@ double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS *
     eos)
 {
     return eos->pmax;
+}
+
+/**
+ * @brief Returns the minimum enthalpy of the EOS.
+ * @param eos Pointer to the EOS structure.
+ * @return The minimum enthalpy of the EOS.
+ */
+double XLALSimNeutronStarEOSMinEnthalpy(LALSimNeutronStarEOS *
+    eos)
+{
+    return eos->hmin;
 }
 
 /**
