@@ -67,6 +67,18 @@ static double fminimizer_gslfunction(double x, void * params)
     return -m; /* maximum mass is minimum negative mass */
 }
 
+/* gsl function for use in finding the maximum neutron star mass */
+static double fminimizer_multi_gslfunction(double x, void * params);
+static double fminimizer_multi_gslfunction(double x, void * params)
+{
+    EOSMultiParts * eos = params;
+    double r, m, mb, k2, k3, k4;
+    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
+        &r, &m, &mb, &k2, &k3, &k4, x, eos, 1e-6);
+    return -m; /* maximum mass is minimum negative mass */
+}
+
+
 /** @endcond */
 
 /**
@@ -226,7 +238,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
     int nbranch = 1;
 
     fam->pmin = exp(logpmin);
-    fam->pmax = XLALSimNeutronStarEOSMultiPartsMaxPressure(eos);//eos->pmax;
+    fam->pmax = XLALSimNeutronStarEOSMultiPartsMaxPressure(eos);
 
     //FIXME: Is 4 enough? Too many?
     fam->fam_branch = (LALSimNeutronStarFamily **) LALMalloc(sizeof(LALSimNeutronStarFamily *) * nbranch_max);
@@ -288,6 +300,46 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
 
 	if (turnover > 1){
 
+            // Find precise maximum mass of branch
+            int i = turnover+1;
+            /* replace the ith point with the maximum mass */
+            const double epsabs = 0.0, epsrel = 1e-6;
+            double a = fam_branch_i->pdat[i - 2];
+            double x = fam_branch_i->pdat[i - 1];
+            double c = fam_branch_i->pdat[i];
+            double fa = -fam_branch_i->mdat[i - 2];
+            double fx = -fam_branch_i->mdat[i - 1];
+            double fc = -fam_branch_i->mdat[i];
+            int status;
+            gsl_function F;
+            gsl_min_fminimizer * s;
+            F.function = &fminimizer_multi_gslfunction;
+            F.params = eos;
+            s = gsl_min_fminimizer_alloc(gsl_min_fminimizer_brent);
+            gsl_min_fminimizer_set_with_values(s, &F, x, fx, a, fa, c, fc);
+            do {
+                status = gsl_min_fminimizer_iterate(s);
+                x = gsl_min_fminimizer_x_minimum(s);
+                a = gsl_min_fminimizer_x_lower(s);
+                c = gsl_min_fminimizer_x_upper(s);
+                status = gsl_min_test_interval(a, c, epsabs, epsrel);
+            } while (status == GSL_CONTINUE);
+            gsl_min_fminimizer_free(s);
+            fam_branch_i->pdat[i] = x;
+	    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
+                &fam_branch_i->rdat[i], &fam_branch_i->mdat[i],
+                &mb[i], &fam_branch_i->kdat[i], &k3[i], &k4[i],
+                fam_branch_i->pdat[i], eos, 1e-6);
+
+            /* resize arrays */
+            if(fam_branch_i->pdat[i] <= fam_branch_i->pdat[i-1]){
+                fam_branch_i->pdat[i-1] = fam_branch_i->pdat[i];
+                turnover = i;
+            }
+            else{
+                turnover = i + 1;
+            }
+
 	    // Reset length
             fam_branch_i->ndat = turnover;
 
@@ -298,6 +350,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
             fam_branch_i->kdat = LALRealloc(fam_branch_i->kdat, turnover * sizeof(*fam_branch_i->kdat));
 
 	    // Set up p(m), r(m), and k(m) interpolators
+	    // FIXME: Also set up m(p)
             fam_branch_i->p_of_m_acc = gsl_interp_accel_alloc();
             fam_branch_i->r_of_m_acc = gsl_interp_accel_alloc();
             fam_branch_i->k_of_m_acc = gsl_interp_accel_alloc();
