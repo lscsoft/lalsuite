@@ -181,6 +181,7 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
 /* MASS-RADIUS TYPE RELATIONSHIP ROUTINES */
 
 void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam);
+void XLALDestroySimNeutronStarMultiBranchFamily(FamMultiParts * fam);
 LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     LALSimNeutronStarEOS * eos);
 FamMultiParts * XLALCreateSimNeutronStarFamilyPT(

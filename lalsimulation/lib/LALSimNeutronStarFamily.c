@@ -92,6 +92,22 @@ void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam)
 }
 
 /**
+ * @brief Frees the memory associated with a pointer to a neutron star multi-branch family.
+ * @param fam Pointer to the neutron star multi-branch family structure to be freed.
+ */
+void XLALDestroySimNeutronStarMultiBranchFamily(FamMultiParts * fam)
+{
+    if (fam) {
+	for(int i = 0; i < fam->number_of_branches; i++){
+	    LALSimNeutronStarFamily * branch = fam->fam_branch[i];
+	    XLALDestroySimNeutronStarFamily(branch);
+        }
+        LALFree(fam);
+    }
+    return;
+}
+
+/**
  * @brief Creates a neutron star family structure for a given equation of state.
  * @details
  * A neutron star family is a one-parameter family of neturon stars for a
