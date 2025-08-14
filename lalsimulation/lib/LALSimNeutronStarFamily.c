@@ -199,7 +199,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
 
 
 
-FamMultiParts * XLALCreateSimNeutronStarFamilyPT(struct EOSMultiParts * eos){
+FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
 
     FamMultiParts *fam;
     fam = LALMalloc(sizeof(*fam));
@@ -210,7 +210,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(struct EOSMultiParts * eos){
     int nbranch = 1;
 
     fam->pmin = exp(logpmin);
-    fam->pmax = eos->pmax;
+    fam->pmax = XLALSimNeutronStarEOSMultiPartsMaxPressure(eos);//eos->pmax;
 
     //FIXME: Is 4 enough? Too many?
     fam->fam_branch = (LALSimNeutronStarFamily **) LALMalloc(sizeof(LALSimNeutronStarFamily *) * nbranch_max);

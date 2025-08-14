@@ -32,20 +32,6 @@
 #include <lal/LALSimNeutronStar.h>
 
 
-//CUTER-dev // TODO why can I not name this LAL blabla ??
-/* Structure containing phase transition information (hpt, ppt, delta_eps),
- * one EOS structure (eos_low) for the equation of state before the phase transition,
- * and a one EOS structure (eos_up) for the eos after the phase transition.
- */
-struct EOSTwoPartsWithPTinfo{
-  LALSimNeutronStarEOS * eos_low;
-  LALSimNeutronStarEOS * eos_up;
-  double hpt;
-  double ppt;
-  double delta_eps;
-};
-
-
 /* Implements Eq. (50) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).
  * See also Eq. (14) of Hinderer et al. Phys. Rev. D 81 123016 (2010). */
 static double tidal_Love_number_k2(double c, double y)
@@ -668,7 +654,7 @@ static int tov_ext_ode(double h, const double *y, double *dy, void *params)
 int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
-             struct EOSMultiParts *eos,
+             EOSMultiParts *eos,
              double epsrel){
 
     /* ode integration variables */
@@ -678,7 +664,6 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
     size_t i;
     int s;
     LALSimNeutronStarEOS * params;
-
 
     struct tov_ext_ode_vars *vars = tov_ext_ode_vars_cast(y);
     /* Set up the actual ODE system to solve with tov_virial_ode */
@@ -691,13 +676,13 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
     gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_EXT_ODE_VARS_DIM);
 
     /* Equation of state */
-    int number_eos = eos->number_of_parts;
-    double *hmin = eos->hmin;
+    int number_eos = XLALSimNeutronStarEOSMultiPartsNumber(eos);
 
     /* Central values */
+    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos,number_eos-1);
     double pc = central_pressure_si * LAL_G_C4_SI; // convert the pressure from Pascal to geometrized units [/m^2]
-    double ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos->eos_part[number_eos-1]);
-    double hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos->eos_part[number_eos-1]);
+    double ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos_part);
+    double hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos_part);
 
 
     /* Initial condition */
@@ -706,14 +691,17 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
     double h1 = 0.0 - dh;
     double h;
 
-    tov_ext_initial_condition(ec, pc, dh, eos->eos_part[number_eos-1], vars);
+    tov_ext_initial_condition(ec, pc, dh, eos_part, vars);
     h = h0;
 
     for(int j = number_eos-1; j >= 0; j--) {
-        params = eos->eos_part[j];
-        double pmin = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmin[j], eos->eos_part[j]);
-        while (h > hmin[j]) {
-            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin[j], &dh, y);
+        LALSimNeutronStarEOS * eos_part_1 = XLALSimNeutronStarEOSPart(eos,j);
+	LALSimNeutronStarEOS * eos_part_0 = XLALSimNeutronStarEOSPart(eos,j-1);
+	params = eos_part_1;
+        double hmin = XLALSimNeutronStarEOSMinEnthalpy(eos_part_1);
+        double pmin = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmin, eos_part_1);
+        while (h > hmin) {
+            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
             if (s != GSL_SUCCESS)
                 XLAL_ERROR(XLAL_EERR,
                     "Error encountered in GSL's ODE integrator\n");
@@ -727,9 +715,9 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
             * takes an approximation for the denominator on the correction terms
             */
             double r3 = (vars->r)*(vars->r)*(vars->r);
-            double pres_pt = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos->eos_part[j]);
-            double dpt_eps =  XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos->eos_part[j])
-                            - XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos->eos_part[j-1]) ;
+            double pres_pt = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos_part_1);
+            double dpt_eps =  XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos_part_1)
+                            - XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos_part_0) ;
 
             double rho_bar = (vars->m + 4.0 * LAL_PI * r3 * pres_pt)/ (4.0 / 3.0 * LAL_PI * r3 ) ;
             vars->b_k2 += - vars->H_k2 / vars->r * dpt_eps * 3.0 / rho_bar ;
@@ -748,7 +736,8 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
 
     /*take one final Euler step to get to surface*/
     for (int w = 0 ; w < 1 ; ++w){
-        tov_ext_ode(h, y, dy, &eos->eos_part[0]);
+	eos_part = XLALSimNeutronStarEOSPart(eos,0);
+        tov_ext_ode(h, y, dy, &eos_part);
         for (i = 0; i < TOV_EXT_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
             y[i] += dy[i] * (0.0 - h1);
     }
@@ -895,7 +884,7 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double *intI1, double *intI2, double *intI3, double *intJ1, double *intJ2, double *intJ3,
              double central_pressure_si,
-             struct EOSMultiParts eos,
+             EOSMultiParts *eos,
              double epsrel){
 
     /* ode integration variables */
@@ -929,14 +918,13 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
     gsl_odeiv_evolve *evolv_vir = gsl_odeiv_evolve_alloc(VIRIAL_ODE_VARS_DIM);
 
     /* Equation of state */
-    int number_eos = eos.number_of_parts;
-    double *hmin = eos.hmin;
-//     printf("hmin = %.6e \n", hmin[0]);
+    int number_eos = XLALSimNeutronStarEOSMultiPartsNumber(eos);
 
     /* Central values */
+    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos,number_eos-1);
     double pc = central_pressure_si * LAL_G_C4_SI; // convert the pressure from Pascal to geometrized units [/m^2]
-    double ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos.eos_part[number_eos-1]);
-    double hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos.eos_part[number_eos-1]);
+    double ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(pc, eos_part);
+    double hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(pc, eos_part);
 
 //     printf("hc = %.6e \n", hc);
 
@@ -948,20 +936,22 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
     double h = h0;
     double h_old = h;
     double dh_old = dh;
-    tov_ext_initial_condition(ec, pc, dh, eos.eos_part[number_eos-1], vars);
-//     printf("Initial conditions: ex = %.6e hc = %.6e pc = %.6e\n", ec, hc, pc);
+    tov_ext_initial_condition(ec, pc, dh, eos_part, vars);
     virial_initial_condition(vars->r, pc, dh, vars_vir);
 
     for(int j = number_eos-1; j >= 0; j--) {
-        params = eos.eos_part[j];
-        double pmin = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmin[j], eos.eos_part[j]);
-        while (h > hmin[j]) {
+        LALSimNeutronStarEOS * eos_part_1 = XLALSimNeutronStarEOSPart(eos,j);
+        LALSimNeutronStarEOS * eos_part_0 = XLALSimNeutronStarEOSPart(eos,j-1);
+	params = eos_part_1;
+        double hmin = XLALSimNeutronStarEOSMinEnthalpy(eos_part_1);
+        double pmin = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(hmin, eos_part_1);
+        while (h > hmin) {
             params_vir.old_m = vars->m;
             params_vir.old_r = vars->r;
-            params_vir.eos = eos.eos_part[j];
+            params_vir.eos = eos_part_1;
 //             printf("Before virial solver: h = %.6e dh = %.6e r = %.6e\n", h, dh, vars->r);
 
-            s_vir = gsl_odeiv_evolve_apply(evolv_vir, ctrl_vir, step_vir, &sys_vir, &h_old, hmin[j], &dh_old, y_vir);
+            s_vir = gsl_odeiv_evolve_apply(evolv_vir, ctrl_vir, step_vir, &sys_vir, &h_old, hmin, &dh_old, y_vir);
 //             printf("After virial solver: h = %.6e dh = %.6e\n", h, dh);
             if (s_vir != GSL_SUCCESS)
                 XLAL_ERROR(XLAL_EERR,
@@ -969,7 +959,7 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
 
 //             printf("Before TOV solver: h = %.6e dh = %.6e\n", h, dh);
 
-            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin[j], &dh, y);
+            s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
 //             printf("After TOV solver: h = %.6e dh = %.6e\n", h, dh);
             if (s != GSL_SUCCESS)
                 XLAL_ERROR(XLAL_EERR,
@@ -992,9 +982,9 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
             * takes an approximation for the denominator on the correction terms
             */
             double r3 = (vars->r)*(vars->r)*(vars->r);
-            double pres_pt = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos.eos_part[j]);
-            double dpt_eps =  XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos.eos_part[j])
-                            - XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos.eos_part[j-1]) ;
+            double pres_pt = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos_part_1);
+            double dpt_eps =  XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos_part_1)
+                            - XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h, eos_part_0) ;
 
             double rho_bar = (vars->m + 4.0 * LAL_PI * r3 * pres_pt)/ (4.0 / 3.0 * LAL_PI * r3 ) ;
             vars->b_k2 += - vars->H_k2 / vars->r * dpt_eps * 3.0 / rho_bar ;
@@ -1015,12 +1005,13 @@ int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius,
 
 
     /*take one final Euler step to get to surface*/
+    eos_part = XLALSimNeutronStarEOSPart(eos,0);
     params_vir.old_m = vars->m;
     params_vir.old_r = vars->r;
-    params_vir.eos = eos.eos_part[0];
+    params_vir.eos = eos_part;
 
     for (int w = 0 ; w < 1 ; ++w){
-        tov_ext_ode(h, y, dy, &eos.eos_part[0]);
+        tov_ext_ode(h, y, dy, &eos_part);
         for (i = 0; i < TOV_EXT_ODE_VARS_DIM; ++i) y[i] += dy[i] * (0.0 - h1);
     }
 

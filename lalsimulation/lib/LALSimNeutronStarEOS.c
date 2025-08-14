@@ -79,6 +79,14 @@ struct tagLALSimNeutronStarEOS {
     LALSimNeutronStarEOSData data;
 };
 
+struct tagEOSMultiParts{
+  //char name[LALNameLength]; TODO fix this and maybe move the structure to ...EOS.c
+  int number_of_parts;
+  double pmax;
+  LALSimNeutronStarEOS ** eos_part;
+  void (*free) (EOSMultiParts * myself);
+};
+
 /** @endcond */
 
 /** Recognised equations of state names */
@@ -133,9 +141,26 @@ void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
     return;
 }
 
-// TODO CUTER-dev make a destroy function for multiple parts eos
+/** @} */
+
+/**
+ * @name Destruction routine
+ * @{
+ */
+
+/**
+ * @brief Frees the memory associated with a pointer to an EOS Multi Parts structure.
+ * @param eos Pointer to the EOS Multi Parts structure to be freed.
+ */
+void XLALDestroySimNeutronStarEOSMultiParts(EOSMultiParts * eos)
+{
+    eos->free(eos);
+    return;
+}
 
 /** @} */
+
+// TODO CUTER-dev make a destroy function for multiple parts eos
 
 /* Tabular Equation of State Code. */
 #include "LALSimNeutronStarEOSTabular.c"
@@ -176,6 +201,23 @@ double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS *
 {
     return eos->pmax;
 }
+
+double XLALSimNeutronStarEOSMultiPartsMaxPressure(EOSMultiParts * eos)
+{
+    return eos->pmax;
+}
+
+int XLALSimNeutronStarEOSMultiPartsNumber(EOSMultiParts * eos)
+{
+    return eos->number_of_parts;
+}
+
+LALSimNeutronStarEOS * XLALSimNeutronStarEOSPart(EOSMultiParts * eos, int part_number)
+{
+    return eos->eos_part[part_number];
+}
+
+
 
 /**
  * @brief Returns the minimum enthalpy of the EOS.
