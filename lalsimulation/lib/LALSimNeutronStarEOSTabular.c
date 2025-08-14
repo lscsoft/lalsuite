@@ -330,38 +330,37 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
  * Then, the energy density values on both sides of the phase transition are
  * recalculated using a linear extrapolation as well.
  */
-static void eos_correct_phase_transition(double *edat, double *pdat, double *hdat, int * id_pt){
+static void eos_correct_phase_transition(double *edat, double *pdat, double *hdat, int index_pt){
 
     double slope_low, slope_high, slope_eps_low, slope_eps_high;
     double b_low, b_high, b_eps_low, b_eps_high;
     double e_trans_low, e_trans_high, p_trans, h_trans;
 
-    for (int i = 1; i <= id_pt[0]; i++){
-        slope_low = (pdat[id_pt[i]] - pdat[id_pt[i]-1])/(hdat[id_pt[i]] - hdat[id_pt[i]-1]);
-        b_low = (pdat[id_pt[i]] + pdat[id_pt[i]-1] - slope_low * (hdat[id_pt[i]-1] + hdat[id_pt[i]]) )/2. ;
+    slope_low = (pdat[index_pt] - pdat[index_pt-1])/(hdat[index_pt] - hdat[index_pt-1]);
+    b_low = (pdat[index_pt] + pdat[index_pt-1] - slope_low * (hdat[index_pt-1] + hdat[index_pt]) )/2. ;
 
-        slope_high = (pdat[id_pt[i]+2] - pdat[id_pt[i]+1])/(hdat[id_pt[i]+2] - hdat[id_pt[i]+1]);
-        b_high = (pdat[id_pt[i]+2] + pdat[id_pt[i]+1] - slope_high * (hdat[id_pt[i]+2] + hdat[id_pt[i]+1]) )/2. ;
+    slope_high = (pdat[index_pt+2] - pdat[index_pt+1])/(hdat[index_pt+2] - hdat[index_pt+1]);
+    b_high = (pdat[index_pt+2] + pdat[index_pt+1] - slope_high * (hdat[index_pt+2] + hdat[index_pt+1]) )/2. ;
 
-        h_trans = (b_high - b_low)/(slope_low - slope_high);
-        p_trans = slope_low * h_trans + b_low;
+    h_trans = (b_high - b_low)/(slope_low - slope_high);
+    p_trans = slope_low * h_trans + b_low;
 
-        slope_eps_low = (pdat[id_pt[i]] - pdat[id_pt[i]-1])/(edat[id_pt[i]] - edat[id_pt[i]-1]);
-        b_eps_low = (pdat[id_pt[i]] + pdat[id_pt[i]-1] - slope_eps_low * (edat[id_pt[i]-1] + edat[id_pt[i]]) )/2. ;
+    slope_eps_low = (pdat[index_pt] - pdat[index_pt-1])/(edat[index_pt] - edat[index_pt-1]);
+    b_eps_low = (pdat[index_pt] + pdat[index_pt-1] - slope_eps_low * (edat[index_pt-1] + edat[index_pt]) )/2. ;
 
-        slope_eps_high = (pdat[id_pt[i]+2] - pdat[id_pt[i]+1])/(edat[id_pt[i]+2] - edat[id_pt[i]+1]);
-        b_eps_high = (pdat[id_pt[i]+2] + pdat[id_pt[i]+1] - slope_eps_high * (edat[id_pt[i]+2] + edat[id_pt[i]+1]) )/2. ;
+    slope_eps_high = (pdat[index_pt+2] - pdat[index_pt+1])/(edat[index_pt+2] - edat[index_pt+1]);
+    b_eps_high = (pdat[index_pt+2] + pdat[index_pt+1] - slope_eps_high * (edat[index_pt+2] + edat[index_pt+1]) )/2. ;
 
-        e_trans_low = (p_trans - b_eps_low)/slope_eps_low;
-        e_trans_high = (p_trans - b_eps_high)/slope_eps_high;
+    e_trans_low = (p_trans - b_eps_low)/slope_eps_low;
+    e_trans_high = (p_trans - b_eps_high)/slope_eps_high;
 
-        edat[id_pt[i]] = e_trans_low;
-        edat[id_pt[i]+1] = e_trans_high;
-        pdat[id_pt[i]] = p_trans;
-        pdat[id_pt[i]+1] = p_trans;
-        hdat[id_pt[i]] = h_trans;
-        hdat[id_pt[i]+1] = h_trans;
-    }
+    edat[index_pt] = e_trans_low;
+    edat[index_pt+1] = e_trans_high;
+    pdat[index_pt] = p_trans;
+    pdat[index_pt+1] = p_trans;
+    hdat[index_pt] = h_trans;
+    hdat[index_pt+1] = h_trans;
+
     return;
 }
 
@@ -400,6 +399,7 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
         delta_gradient = (gradient - old_gradient)/gradient;
         if (edat[i] > eps_min_pt && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {
             id_phase_transition[count_id] = i-1;
+            count_id += 1;
         }
         old_gradient = gradient;
     }
@@ -929,15 +929,15 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
                 printf("\t Phase transition found at index %d. This phase transition is clean.\n", indices_phase_transition[i]);
             } else {
                 printf("\t Phase transition found at index %d. This phase transition is dirty.\n", indices_phase_transition[i]);
-
                 if (hdat != NULL ) {
-                    eos_correct_phase_transition(edat, pdat, hdat, indices_phase_transition) ; //TODO possibility to work with just P and eps as I did before ?
+                    eos_correct_phase_transition(edat, pdat, hdat, indices_phase_transition[i]) ; //TODO possibility to work with just P and eps as I did before ?
                 } else {
                     printf("\t The dirty phase transition cannot be cleaned (enthalpy not provided).\n");
                 }
             }
         }
     }
+
 
     /* Construct the multiple part equation of state */
     size_t bottom_index = 0, upper_index = 0;
