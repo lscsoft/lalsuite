@@ -318,9 +318,9 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
   uvar->outputNormSFT = FALSE;
   uvar->outFreqBinEnd = FALSE;
 
-  uvar->PSDmthopSFTs = MATH_OP_HARMONIC_MEAN;
+  uvar->PSDmthopSFTs = MATH_OP_HARMONIC_SUM;
   uvar->PSDmthopIFOs = MATH_OP_HARMONIC_SUM;
-  uvar->PSDnormByTotalNumSFTs = FALSE;
+  uvar->PSDnormByTotalNumSFTs = TRUE;
 
   uvar->nSFTmthopSFTs = MATH_OP_ARITHMETIC_MEAN;
   uvar->nSFTmthopIFOs = MATH_OP_MAXIMUM;

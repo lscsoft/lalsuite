@@ -170,7 +170,7 @@ for mthop in 0 1 2 3 4 5 6 7 8; do
         for minT in $startTime $startTime2; do
             for maxT in $endTime1 $endTime2; do
                 if (( $maxT > $minT )); then
-                    get_psd $mthop $IFO $minT $maxT
+                    get_psd $mthop $IFO $minT $maxT "--PSDnormByTotalNumSFTs=no"
                     # storing the results in dynamically named variables
                     # so they can be accessed again outside the loop
                     psdvar="psd_${IFO}_${minT}_${maxT}"
