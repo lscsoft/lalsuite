@@ -358,7 +358,7 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
                                  "min (7), max (8)" );
   XLALRegisterUvarAuxDataMember( PSDmthopIFOs,     UserEnum, &MathOpTypeChoices, 'I', OPTIONAL, "For PSD, type of math. op. over IFOs: "
                                  "see --PSDmthopSFTs" );
-  XLALRegisterUvarMember( PSDnormByTotalNumSFTs,    BOOLEAN, 0, OPTIONAL, "For harmsum/powerminus2sum, apply normalization factor from total number of SFTs over all IFOs (mimics harmmean/powerminus2mean over a combined set of all SFTs)" );
+  XLALRegisterUvarMember( PSDnormByTotalNumSFTs,    BOOLEAN, 'T', OPTIONAL, "For harmsum/powerminus2sum, apply normalization factor from total number of SFTs over all IFOs (mimics harmmean/powerminus2mean over a combined set of all SFTs)" );
 
   XLALRegisterUvarMember( outputNormSFT,    BOOLEAN, 'n', OPTIONAL, "Output normalised SFT power to PSD file" );
   XLALRegisterUvarAuxDataMember( nSFTmthopSFTs,    UserEnum, &MathOpTypeChoices, 'N', OPTIONAL, "For norm. SFT, type of math. op. over SFTs: "
