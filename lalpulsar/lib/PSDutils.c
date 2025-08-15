@@ -38,9 +38,6 @@
 
 /*---------- global variables ----------*/
 
-// for backwards compatibility, we currently allow calling the same internal
-// enum entries by either human-friendly names or by the old-style numerical
-// arguments. The latter may get deprecated at some point in the future.
 const UserChoices MathOpTypeChoices = {
   { MATH_OP_ARITHMETIC_SUM,    "arithsum" },
   { MATH_OP_ARITHMETIC_MEAN,   "arithmean" },
@@ -51,15 +48,18 @@ const UserChoices MathOpTypeChoices = {
   { MATH_OP_POWERMINUS2_MEAN,  "powerminus2mean" },
   { MATH_OP_MINIMUM,           "min" },
   { MATH_OP_MAXIMUM,           "max" },
-  { MATH_OP_ARITHMETIC_SUM,    "0" },
-  { MATH_OP_ARITHMETIC_MEAN,   "1" },
-  { MATH_OP_ARITHMETIC_MEDIAN, "2" },
-  { MATH_OP_HARMONIC_SUM,      "3" },
-  { MATH_OP_HARMONIC_MEAN,     "4" },
-  { MATH_OP_POWERMINUS2_SUM,   "5" },
-  { MATH_OP_POWERMINUS2_MEAN,  "6" },
-  { MATH_OP_MINIMUM,           "7" },
-  { MATH_OP_MAXIMUM,           "8" },
+  /*
+   * NOTE: these options used to also be available as numerical values:
+   * - MATH_OP_ARITHMETIC_SUM:    0
+   * - MATH_OP_ARITHMETIC_MEAN:   1
+   * - MATH_OP_ARITHMETIC_MEDIAN: 2
+   * - MATH_OP_HARMONIC_SUM:      3
+   * - MATH_OP_HARMONIC_MEAN:     4
+   * - MATH_OP_POWERMINUS2_SUM:   5
+   * - MATH_OP_POWERMINUS2_MEAN:  6
+   * - MATH_OP_MINIMUM:           7
+   * - MATH_OP_MAXIMUM:           8
+   */
 };
 
 /*========== function definitions ==========*/
@@ -507,7 +507,7 @@ REAL8 XLALMathOpOverArray( const REAL8 *data,      /**< input data array */
 
     break;
 
-  case MATH_OP_ARITHMETIC_MEAN: /* sum(data)/length  */
+  case MATH_OP_ARITHMETIC_MEAN: /* sum(data) / length  */
 
     for ( i = 0; i < length; ++i ) {
       res += *( data++ );
@@ -534,7 +534,7 @@ REAL8 XLALMathOpOverArray( const REAL8 *data,      /**< input data array */
 
     break;
 
-  case MATH_OP_POWERMINUS2_SUM: /*   1 / sqrt ( sum(1 / data/data) )*/
+  case MATH_OP_POWERMINUS2_SUM: /* sqrt(1 / sum(1 / (data * data))) */
 
     for ( i = 0; i < length; ++i ) {
       res += 1.0 / ( data[i] * data[i] );
@@ -543,7 +543,7 @@ REAL8 XLALMathOpOverArray( const REAL8 *data,      /**< input data array */
 
     break;
 
-  case MATH_OP_POWERMINUS2_MEAN: /*   1 / sqrt ( sum(1/data/data) / length )*/
+  case MATH_OP_POWERMINUS2_MEAN: /* sqrt(length / sum(1 / (data * data))) */
 
     for ( i = 0; i < length; ++i ) {
       res += 1.0 / ( data[i] * data[i] );
@@ -635,20 +635,20 @@ REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs(
   switch ( optypeSFTs ) {
 
   case MATH_OP_ARITHMETIC_SUM: /* sum(data) */
-  case MATH_OP_ARITHMETIC_MEAN: /* sum(data)/length  */
-  case MATH_OP_HARMONIC_MEAN:
-  case MATH_OP_ARITHMETIC_MEDIAN:
-  case MATH_OP_MINIMUM:
-  case MATH_OP_MAXIMUM:
-  case MATH_OP_POWERMINUS2_MEAN:
+  case MATH_OP_ARITHMETIC_MEAN: /* sum(data) / length  */
+  case MATH_OP_HARMONIC_MEAN: /* length / sum(1 / data) */
+  case MATH_OP_ARITHMETIC_MEDIAN: /* middle element of sorted data */
+  case MATH_OP_MINIMUM: /* first element of sorted data */
+  case MATH_OP_MAXIMUM: /* last element of sorted data */
+  case MATH_OP_POWERMINUS2_MEAN: /* sqrt(length / sum(1 / (data * data))) */
     XLAL_ERROR_REAL8( XLAL_EINVAL, "For math operation '%i' it makes no sense to call this function!", optypeSFTs );
     break;
 
-  case MATH_OP_HARMONIC_SUM: /* length / sum(1 / data) */
+  case MATH_OP_HARMONIC_SUM: /* 1 / sum(1 / data) */
     factor = totalNumSFTs;
     break;
 
-  case MATH_OP_POWERMINUS2_SUM: /*   1 / sqrt ( sum(1 / data/data) )*/
+  case MATH_OP_POWERMINUS2_SUM: /* sqrt(1 / sum(1 / (data * data))) */
     factor = sqrt( totalNumSFTs );
     break;
 

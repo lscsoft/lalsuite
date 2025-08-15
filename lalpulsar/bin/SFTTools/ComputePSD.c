@@ -351,11 +351,16 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
 
   XLALRegisterUvarMember( blocksRngMed,     INT4, 'w', OPTIONAL, "Running Median window size" );
 
-  XLALRegisterUvarAuxDataMember( PSDmthopSFTs,     UserEnum, &MathOpTypeChoices, 'S', OPTIONAL, "For PSD, type of math. operation over SFTs, can be given by string names (preferred) or legacy numbers: \n"
-                                 "arithsum (0), arithmean (1), arithmedian (2), "
-                                 "harmsum (3), harmmean (4), "
-                                 "powerminus2sum (5), powerminus2mean (6), "
-                                 "min (7), max (8)" );
+  XLALRegisterUvarAuxDataMember( PSDmthopSFTs,     UserEnum, &MathOpTypeChoices, 'S', OPTIONAL, "For PSD, type of math. operation over SFTs, can be given by string names:\n"
+                                 "    arithsum: sum(data)\n"
+                                 "    arithmean: sum(data) / length\n"
+                                 "    arithmedian: middle element of sorted data\n"
+                                 "    harmsum: 1 / sum(1 / data)\n"
+                                 "    harmmean: length / sum(1 / data)\n"
+                                 "    powerminus2sum: sqrt(1 / sum(1 / (data * data)))\n"
+                                 "    powerminus2mean: sqrt(length / sum(1 / (data * data)))\n"
+                                 "    min: first element of sorted data\n"
+                                 "    max: last element of sorted data" );
   XLALRegisterUvarAuxDataMember( PSDmthopIFOs,     UserEnum, &MathOpTypeChoices, 'I', OPTIONAL, "For PSD, type of math. op. over IFOs: "
                                  "see --PSDmthopSFTs" );
   XLALRegisterUvarMember( PSDnormByTotalNumSFTs,    BOOLEAN, 'T', OPTIONAL, "For harmsum/powerminus2sum, apply normalization factor from total number of SFTs over all IFOs (mimics harmmean/powerminus2mean over a combined set of all SFTs)" );
@@ -397,32 +402,8 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
   }
 
   /* check user-input consistency */
-  if ( XLALUserVarWasSet( &( uvar->PSDmthopSFTs ) ) && !( 0 <= uvar->PSDmthopSFTs && uvar->PSDmthopSFTs < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --PSDmthopSFTs(-S) must be between 0 and %i", MATH_OP_LAST - 1 );
-    return XLAL_FAILURE;
-  }
-  if ( XLALUserVarWasSet( &( uvar->PSDmthopIFOs ) ) && !( 0 <= uvar->PSDmthopIFOs && uvar->PSDmthopIFOs < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --PSDmthopIFOs(-I) must be between 0 and %i", MATH_OP_LAST - 1 );
-    return XLAL_FAILURE;
-  }
   if ( uvar->outputNormSFT && !UVAR_ALLSET2( nSFTmthopSFTs, nSFTmthopIFOs ) ) {
     XLALPrintError( "ERROR: --nSFTmthopSFTs(-N), --nSFTmthopIFOs(-J) must all be set if --outputNormSFT(-n) is true" );
-    return XLAL_FAILURE;
-  }
-  if ( XLALUserVarWasSet( &( uvar->nSFTmthopSFTs ) ) && !( 0 <= uvar->nSFTmthopSFTs && uvar->nSFTmthopSFTs < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --nSFTmthopSFTs(-N) must be between 0 and %i", MATH_OP_LAST - 1 );
-    return XLAL_FAILURE;
-  }
-  if ( XLALUserVarWasSet( &( uvar->nSFTmthopIFOs ) ) && !( 0 <= uvar->nSFTmthopIFOs && uvar->nSFTmthopIFOs < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --nSFTmthopIFOs(-J) must be between 0 and %i", MATH_OP_LAST - 1 );
-    return XLAL_FAILURE;
-  }
-  if ( XLALUserVarWasSet( &( uvar->PSDmthopBins ) ) && !( 0 <= uvar->PSDmthopBins && uvar->PSDmthopBins < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --PSDmthopBins(-A) must be between 0 and %i", MATH_OP_LAST - 1 );
-    return XLAL_FAILURE;
-  }
-  if ( XLALUserVarWasSet( &( uvar->nSFTmthopBins ) ) && !( 0 <= uvar->nSFTmthopBins && uvar->nSFTmthopBins < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --nSFTmthopBins(-B) must be between 0 and %i", MATH_OP_LAST - 1 );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binSize ) ) && XLALUserVarWasSet( &( uvar->binSizeHz ) ) ) {
