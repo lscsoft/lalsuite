@@ -73,7 +73,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
 //CUTER-dev
 EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname);
-EOSMultiParts *XLALSimNeutronStarEOSFromFilePT(const char *fname);
 
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
