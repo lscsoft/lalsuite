@@ -82,6 +82,7 @@ Depends:
  python3-astropy (>= 1.1.1),
  python3-gwdatafind,
  python3-h5py,
+ python3-healpy (>= 1.9.1),
  python3-igwn-ligolw (>= @MIN_PYTHON_IGWN_LIGOLW_VERSION@~),
  python3-igwn-segments,
  python3-lal (>= @MIN_LAL_VERSION@~),

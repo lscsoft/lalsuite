@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 186
+# serial 187
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -590,6 +590,10 @@ AC_DEFUN([LALSUITE_USE_LIBTOOL],[
   ])
   AC_LANG(_AC_LANG)
   LALSUITE_ADD_FLAGS([],[],[${lalsuite_libtool_flags}])
+  # add -Wl,--as-needed to prevent overlinking to shared libraries
+  LALSUITE_CHECK_LINK_FLAGS([-Wl[,]--as-needed],[
+    LALSUITE_ADD_FLAGS([],[],[-Wl,--as-needed])
+  ])
   # Libtool compiles library code twice for dynamic/static linking.
   # Errors from the 2nd compile are usually suppressed, but passing
   # -no-suppress to libtool --mode=compile will print them. See

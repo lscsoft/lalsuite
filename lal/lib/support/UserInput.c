@@ -901,13 +901,13 @@ XLALUserVarPrintHelp ( FILE *file )
   fflush( f );
 
   /* Print program name and synopsis of command line syntax */
-  fprintf( f, "\nNAME\n" );
+  fprintf( f, "\n*NAME*\n" );
   fprintf( f, "       %s", program_name );
   if ( lalUserVarHelpBrief != NULL ) {
     fprintf( f, " - %s", lalUserVarHelpBrief );
   }
   fprintf( f, "\n" );
-  fprintf( f, "\nSYNOPSIS\n" );
+  fprintf( f, "\n*SYNOPSIS*\n" );
   {
     fprintf( f, "       %s --help\n", program_name );
     CHAR help_str[] = "Display this help page.";
@@ -934,7 +934,7 @@ XLALUserVarPrintHelp ( FILE *file )
   if ( lalUserVarHelpDescription != NULL ) {
     CHAR *description = XLALStringDuplicate( lalUserVarHelpDescription );
     XLAL_CHECK_FAIL ( description != NULL, XLAL_EFUNC );
-    fprintf( f, "\nDESCRIPTION\n" );
+    fprintf( f, "\n*DESCRIPTION*\n" );
     fprint_wrapped( f, line_width, "       ", description );
     XLALFree( description );
   }
@@ -976,12 +976,12 @@ XLALUserVarPrintHelp ( FILE *file )
               /* Print section (and possibly subsection) headers */
               if ( print_section_header )
                 {
-                  fprintf( f, "%s\n", section_headers[section] );
+                  fprintf( f, "*%s*\n", section_headers[section] );
                   print_section_header = 0;
                 }
               if ( ptr->subsection != NULL && ( subsection == NULL || strcmp( ptr->subsection, subsection ) != 0 ) )
                 {
-                  fprintf( f, "   %s\n", ptr->subsection );
+                  fprintf( f, "%s:\n", ptr->subsection );
                   subsection = ptr->subsection;
                 }
 

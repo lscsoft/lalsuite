@@ -284,7 +284,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_ExactDeriv(
       break;
     default:
       {
-	printf("XLALSimIMRSpinEOBHamiltonian_ExactDeriv(): Derivative option not supported: %d!\n",which_to_vary); exit(1);
+	printf("XLALSimIMRSpinEOBHamiltonian_ExactDeriv(): Derivative option not supported: %d!\n",which_to_vary); abort();
 	break;
       }
     }
@@ -298,7 +298,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_ExactDeriv(
       break;
     default:
       {
-	printf("XLALSimIMRSpinEOBHamiltonian_ExactDeriv(): Derivative option not supported: %d!\n",which_to_vary); exit(1);
+	printf("XLALSimIMRSpinEOBHamiltonian_ExactDeriv(): Derivative option not supported: %d!\n",which_to_vary); abort();
 	break;
       }
     }
@@ -430,7 +430,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_derivs_allatonce(
     output[2]=g2;
     output[3]=g3;
     output[4]=g4;
-    output[5]=g5;//    printf("ERROR: NOT EXPECTING THAT %d.\n",tortoise); exit(1);
+    output[5]=g5;//    printf("ERROR: NOT EXPECTING THAT %d.\n",tortoise); abort();
   }
 
   return returnval;

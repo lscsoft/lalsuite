@@ -126,7 +126,7 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     for(i=0;i<15;i++) mean[i]=LALInferenceAnalyticMeansCBC[i] + 4.0/scaling[i]*sqrt(CM[i][i]);
   } else {
     printf("Error!  Unrecognized mode in analytic likelihood!\n");
-    exit(1);
+    abort();
   }
 
   for(i=0;i<15;i++)
@@ -177,7 +177,7 @@ static void extractBurstDimensionlessVariableVector(LALInferenceVariables *curre
     mean[8] = 0.25 + 8./burst_scaling[8]*sqrt(bCM[8][8]);
   } else {
     printf("Error!  Unrecognized mode in analytic likelihood!\n");
-    exit(1);
+    abort();
   }
 
   loghrss = LALInferenceGetREAL8Variable(currentParams, "loghrss");

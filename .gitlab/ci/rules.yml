@@ -88,59 +88,59 @@ workflow:
 .ci-compiler:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci compiler\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]compiler/'
-      when: always
+      when: on_success
 
 .ci-conda:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci conda\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]conda/'
-      when: always
+      when: on_success
 
 .ci-coverage:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci coverage\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]coverage/'
-      when: always
+      when: on_success
 
-.ci-debian:
+.ci-deb:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci debian\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]debian/'
-      when: always
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci deb\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]deb/'
+      when: on_success
 
 .ci-docs:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci docs\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]docs/'
-      when: always
+      when: on_success
 
 .ci-docker:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci docker\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]docker/'
-      when: always
+      when: on_success
 
 .ci-integration:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci integration\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]integration/'
-      when: always
+      when: on_success
 
 .ci-lint:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci lint\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]lint/'
-      when: always
+      when: on_success
 
 .ci-platform:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci platform\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]platform/'
-      when: always
+      when: on_success
 
 .ci-pkg:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci pkg\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]pkg/'
-      when: always
+      when: on_success
 
-.ci-rhel:
+.ci-rpm:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci rhel\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]rhel/'
-      when: always
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci rpm\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]rpm/'
+      when: on_success
 
 .ci-wheels:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci wheels\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]wheels/'
-      when: always
+      when: on_success

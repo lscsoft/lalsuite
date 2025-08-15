@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 125
+# serial 126
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -489,8 +489,10 @@ EOF
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_octave_cxxflags}
       -Wno-address
+      -Wno-class-memaccess
       -Wno-deprecated-declarations
       -Wno-format-extra-args
+      -Wno-maybe-uninitialized
       -Wno-stringop-overflow
       -Wno-tautological-compare
       -Wno-uninitialized
@@ -632,6 +634,7 @@ EOD`]
       -Wno-address
       -Wno-deprecated-declarations
       -Wno-format-extra-args
+      -Wno-maybe-uninitialized
       -Wno-stringop-overflow
       -Wno-tautological-compare
       -Wno-uninitialized

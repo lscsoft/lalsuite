@@ -128,6 +128,8 @@ AC_SUBST([MIN_PYTHON_IGWN_LIGOLW_VERSION])
 
 AC_CANONICAL_HOST
 
+LALSUITE_ARG_VAR
+
 LALSUITE_CHECK_PLATFORM
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
@@ -355,6 +357,9 @@ AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # make sure local library module is in python path
 LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"
+
+# do not install user environment scripts into /etc
+AM_CONDITIONAL([SYSCONFDIR_IS_ETC],[test "x${sysconfdir}" = "x/etc"])
 
 # output
 AC_OUTPUT

@@ -349,7 +349,7 @@ LALDoCoherentEstimation ( LALStatus          *stat,
     }
     fclose(out);
 
-    exit(0);
+    abort();
   }
   */
 

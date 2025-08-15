@@ -536,7 +536,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
     else if (ncol < 2)
     {
         fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
-        exit(1);
+        abort();
     }
 
 

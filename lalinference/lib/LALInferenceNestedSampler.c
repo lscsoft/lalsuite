@@ -376,7 +376,7 @@ static NSintegralState *initNSintegralState(UINT4 Nruns, UINT4 Nlive)
   REAL8 logw=0;
 
   if(s->logZarray==NULL || s->Harray==NULL || s->oldZarray==NULL || s->logwarray==NULL)
-  {fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
+  {fprintf(stderr,"Unable to allocate RAM\n"); abort();}
   for(UINT4 i=0;i<Nruns;i++)  {s->logwarray->data[i]=logw; s->logZarray->data[i]=-INFINITY;
     s->oldZarray->data[i]=-INFINITY; s->Harray->data[i]=0.0;s->logtarray->data[i]=-1.0/Nlive;
     s->logt2array->data[i]=-1.0/Nlive;
@@ -458,20 +458,20 @@ static void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live
 
 	/* Set up matrix if necessary */
 	if(*cvm==NULL)
-	{if(NULL==(*cvm=gsl_matrix_alloc(ND,ND))) {fprintf(stderr,"Unable to allocate matrix memory\n"); exit(1);}}
+	{if(NULL==(*cvm=gsl_matrix_alloc(ND,ND))) {fprintf(stderr,"Unable to allocate matrix memory\n"); abort();}}
 	else {
 		if((*cvm)->size1!=(*cvm)->size2 || (*cvm)->size1!=ND)
 		{	fprintf(stderr,"ERROR: Matrix wrong size. Something has gone wrong in LALInferenceNScalcCVM\n");
-			exit(1);
+			abort();
 		}
 	}
 	/* clear the matrix */
 	for(i=0;i<(*cvm)->size1;i++) for(j=0;j<(*cvm)->size2;j++) gsl_matrix_set(*cvm,i,j,0.0);
 
 	/* Find the means */
-	if(NULL==(means = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
-	if(NULL==(ms = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
-	if(NULL==(mc = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); exit(-1);}
+	if(NULL==(means = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); abort();}
+	if(NULL==(ms = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); abort();}
+	if(NULL==(mc = XLALMalloc((size_t)ND*sizeof(REAL8)))){fprintf(stderr,"Can't allocate RAM"); abort();}
 	for(i=0;i<ND;i++){
           means[i]=0.0;
           ms[i] = 0.;
@@ -661,7 +661,7 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
     tmpi=atoi(ppt->value);
   else {
     fprintf(stderr,"Error, must specify number of live points\n");
-    exit(1);
+    abort();
   }
   LALInferenceAddVariable(runState->algorithmParams,"Nlive",&tmpi, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 
@@ -799,7 +799,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
   if(!ppt){
       fprintf(stderr,"Must specify --outfile <filename.hdf5>\n");
-      exit(1);
+      abort();
   }
   char *outfile=ppt->value;
   /* Check if the output file has hdf5 extension */
@@ -853,7 +853,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if (filetest==2) /* Run is complete, do not overwrite */
   {
      printf("Output file %s contains complete run, not over-writing\n",outfile);
-     exit(1);
+     abort();
   }
   else if(filetest==1) /* Run contains a resume file */
   {
@@ -903,7 +903,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     if(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i])) {
       fprintf(stderr,"Detected logL[%i]=%lf! Sanity checking...\n",i,logLikelihoods[i]);
       if(LALInferenceSanityCheck(runState))
-	exit(1);
+	abort();
     }
   }
   /* sort points for consistent order after attaching delta parameters */
@@ -1008,7 +1008,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     }
    /* Have we been told to quit? */
   if(__ns_exitFlag) {
-    exit(CondorExitCode);
+    abort();
   }
 
   /* Update the proposal */
@@ -1409,7 +1409,7 @@ void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gs
 	if (proposeIterator == NULL) {
     fprintf(stderr, "Bad proposed params in %s, line %d\n",
             __FILE__, __LINE__);
-    exit(1);
+    abort();
   }
   for(i=0;i<N;i++){
   	j=0;
@@ -1642,7 +1642,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	if(runState->livePoints==NULL)
 	{
 		fprintf(stderr,"Unable to allocate memory for %i live points\n",Nlive);
-		exit(1);
+		abort();
 	}
 	threadState->differentialPoints=runState->livePoints;
 	threadState->differentialPointsLength=(size_t) Nlive;

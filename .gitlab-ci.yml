@@ -41,8 +41,6 @@ include:
   # see https://computing.docs.ligo.org/gitlab-ci-templates/
   - project: computing/gitlab-ci-templates
     file:
-      # helpers for codequality jobs
-      - codequality.yml
       # helpers for debian builds
       - debian.yml
       # helpers for RHEL builds
@@ -185,7 +183,7 @@ default:
   - !reference [.retry]
   - |
     rm -rf .venv/
-    ${PYTHON_VENV:-${PYTHON:-python3}} -m venv .venv/
+    ${PYTHON:-python3} -m venv --system-site-packages .venv/
     source .venv/bin/activate
     for n in python python3 pip; do
       if [ "X`type -p ${n}`" != "X${VIRTUAL_ENV}/bin/${n}" ]; then
@@ -194,6 +192,48 @@ default:
       fi
     done
     retry python -m pip install --upgrade pip
+
+# concatenate code quality reports
+# - concatenate all reports matching `code-quality-*.json` into a single report
+# - mark non-ignored entries as "blocker", requiring them to be addressed
+# - returns non-zero exit code if there are any non-ignored entries
+.concatenate-code-quality:
+  - |
+    python <<EOF
+    import json
+    import os
+    import re
+    import sys
+    from pathlib import Path
+    ignore_severity_regex = r''
+    concat_code_qual = []
+    exit_code = 0
+    wd = Path(os.environ["CI_PROJECT_DIR"])
+    for fn in wd.glob("code-quality-*.json"):
+      severities = {}
+      with fn.open("rt") as f:
+        code_qual = json.load(f)
+      for cq in code_qual:
+        if re.fullmatch(ignore_severity_regex, cq["severity"]) is None:
+          cq["severity"] = "blocker"
+          exit_code = 1
+        concat_code_qual.append(cq)
+        sv = severities.get(cq["severity"], 0)
+        severities[cq["severity"]] = sv + 1
+      print(f"Found code quality report: {fn}", end="")
+      if severities:
+        for severity, count in sorted(severities.items()):
+          if re.fullmatch(ignore_severity_regex, severity) is None:
+            severity = severity.upper()
+          print(f", {severity}={count}", end="")
+      n = len(code_qual)
+      print(f", total={n} entries")
+    concat_fn = wd / "code-quality.json"
+    with concat_fn.open("wt") as f:
+      json.dump(concat_code_qual, f)
+    print(f"Concatenated code quality report: {concat_fn}")
+    sys.exit(exit_code)
+    EOF
 
 # -- base templates ----------------------------------
 
@@ -211,6 +251,8 @@ default:
     GIT_STRATEGY: clone
     # Clang has weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
+    # stop Clang generating profile files
+    LLVM_PROFILE_FILE: "/dev/null"
 
 # tag for macOS x86_64 architecture jobs
 .macos-x86_64:

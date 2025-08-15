@@ -98,7 +98,7 @@ double XLALComovingTransverseDistance(
     else
     {
         fprintf(stderr,"Something funny happened. Aborting.\n");
-        exit(-1);
+        abort();
     }
 
 }

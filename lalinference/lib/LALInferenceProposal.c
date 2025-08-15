@@ -167,7 +167,7 @@ void LALInferenceAddProposalToCycle(LALInferenceProposalCycle *cycle, LALInferen
     cycle->order = XLALRealloc(cycle->order, (cycle->length + weight)*sizeof(INT4));
     if (cycle->order == NULL) {
         XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
-        exit(1);
+        abort();
     }
 
     for (i = cycle->length; i < cycle->length + weight; i++) {
@@ -178,7 +178,7 @@ void LALInferenceAddProposalToCycle(LALInferenceProposalCycle *cycle, LALInferen
     cycle->proposals = XLALRealloc(cycle->proposals, (cycle->nProposals)*sizeof(LALInferenceProposal));
     if (cycle->proposals == NULL) {
         XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
-        exit(1);
+        abort();
     }
     cycle->proposals[cycle->nProposals-1] = prop;
 
@@ -211,12 +211,12 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
     cycle = thread->cycle;
     if (cycle == NULL) {
         XLALError("LALInferenceCyclicProposal()",__FILE__,__LINE__,XLAL_FAILURE);
-        exit(1);
+        abort();
     }
 
     if (cycle->counter >= cycle->length) {
         XLALError("LALInferenceCyclicProposal()",__FILE__,__LINE__,XLAL_FAILURE);
-        exit(1);
+        abort();
     }
 
     /* One instance of each proposal object is stored in cycle->proposals.
@@ -621,14 +621,14 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
         if (param->type != LALINFERENCE_REAL8_t) {
             fprintf(stderr, "Attempting to set non-REAL8 parameter with numerical sigma (in %s, %d)\n",
                     __FILE__, __LINE__);
-            exit(1);
+            abort();
         }
 
         sprintf(tmpname,"%s_%s",param->name,ADAPTSUFFIX);
         if (!LALInferenceCheckVariable(thread->proposalArgs, tmpname)) {
             fprintf(stderr, "Attempting to draw single-parameter jump for %s but cannot find sigma!\nError in %s, line %d.\n",
                     param->name,__FILE__, __LINE__);
-            exit(1);
+            abort();
         }
 
         sigma = LALInferenceGetREAL8Variable(thread->proposalArgs, tmpname);
@@ -729,7 +729,7 @@ REAL8 LALInferenceSingleProposal(LALInferenceThreadState *thread,
             sigma = 0.1;
         } else {
             fprintf(stderr, "Could not find parameter %s!", param->name);
-            exit(1);
+            abort();
         }
 
         *(REAL8 *)param->value += gsl_ran_ugaussian(GSLrandom)*sigma;
@@ -780,7 +780,7 @@ REAL8 LALInferenceCovarianceEigenvectorJump(LALInferenceThreadState *thread,
     if (proposeIterator == NULL) {
         fprintf(stderr, "Bad proposed params in %s, line %d\n",
                 __FILE__, __LINE__);
-        exit(1);
+        abort();
     }
 
     do {
@@ -1263,7 +1263,7 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
                                   LALInferenceVariables *proposedParams) {
     REAL8 tmp = 0.0;
     INT4 analytic_test, i;
-    REAL8 logBackwardJump;
+    REAL8 logBackwardJump = 0.0;
     REAL8 logPropRatio;
     LALInferenceVariableItem *ptr;
 
@@ -1385,7 +1385,7 @@ static void unit_vector(REAL8 v[3], const REAL8 w[3]) {
 
     if (n == 0.0) {
         XLALError("unit_vector", __FILE__, __LINE__, XLAL_FAILURE);
-        exit(1);
+        abort();
     } else {
         v[0] = w[0] / n;
         v[1] = w[1] / n;
@@ -3068,7 +3068,7 @@ void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *th
     if (!kde->kmeans) {
         fprintf(stderr, "\nERROR: Couldn't build kmeans clustering from the file specified.\n");
         XLALFree(kde);
-        exit(-1);
+        abort();
     }
 
     LALInferenceAddClusteredKDEProposalToSet(thread->proposalArgs, kde);
@@ -3647,11 +3647,11 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
     for (i = 0; i < nspl; i++) {
       if((VARNAME_MAX <= snprintf(ampName, VARNAME_MAX, "%s_spcal_amp_%i", det->name, i)))
       {
-        fprintf(stderr,"variable name too long\n"); exit(1);
+        fprintf(stderr,"variable name too long\n"); abort();
       }
       if((VARNAME_MAX <= snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase_%i", det->name, i)))
       {
-        fprintf(stderr,"variable name too long\n"); exit(1);
+        fprintf(stderr,"variable name too long\n"); abort();
       }
 
       LALInferenceGetGaussianPrior(thread->priorArgs, ampName, &dummy, &ampWidth);

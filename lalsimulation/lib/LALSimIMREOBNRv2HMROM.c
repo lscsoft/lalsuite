@@ -562,7 +562,7 @@ static INT4 EOBNRv2HMROM_Init_LALDATA(void) {
   }
   if(ret!=XLAL_SUCCESS) {
     XLALPrintError("Unable to find EOBNRv2HMROM data files in $LAL_DATA_PATH\n");
-    exit(XLAL_FAILURE);
+    abort();
   }
   __lalsim_EOBNRv2HMROM_setup = ret;
   return(ret);

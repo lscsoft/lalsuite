@@ -1,6 +1,7 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
+man1_MANS =
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
@@ -66,7 +67,3 @@ installcheck-local:
 	$(bindir)/lal_path2cache --help
 
 endif
-
-# -- Manuals ----------------
-
-man1_MANS = $(help2man_MANS)
