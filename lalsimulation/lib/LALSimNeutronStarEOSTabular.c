@@ -582,8 +582,9 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
 
 
 /*
- * This function creates two EOS structure from tabulated equation of state variables
- * using a cutting index to seperate the two parts.
+ * This function creates an LALSimNeutronStarEOS pointer from a piece of
+ * tabulated equation of state information, given minimum and maximum
+ * indices for the tables.
  */
 //CUTER-dev
 static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *edat, double *pdat,
@@ -750,25 +751,25 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
 
 
 
-// //CUTER-dev TODO
-// /**
-//  * @brief Reads a data file containing a tabulated equation of state to create
-//  * the equation of state structure.
-//  * @details Read a data file specified by a path fname that contains either
-//  * i) Two whitespace separated columns of equation of state data with
-//  * the pressure in Pa (first column) and the energy density in J/m^3 (second column).
-//  * ii) 9 whitespace separated columns of equation of state data; this format containts
-//  * (in order of the columns) the table index, the baryon density in /fm^3,
-//  * the energy density in g/cm^3, the pressure in dyn/cm^2, the baryon chemical potential in MeV,
-//  * the electron chemical potential in MeV, the log-enthalpy, the lepton fraction
-//  * and the square of the speed of sound normalized to light velocity.
-//  * Every line beginning with the character '#' is ignored.
-//  * If the path is an absolute path then this specific file is opened;
-//  * otherwise, search for the file in paths given in the environment variable
-//  * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
-//  * @param[in] fname The path of the file to open.
-//  * @return A pointer to neutron star equation of state structure.
-//  */
+//CUTER-dev
+/**
+ * @brief Reads a data file containing a tabulated equation of state to create
+ * the equation of state structure containing a multipart structure.
+ * @details Read a data file specified by a path fname that contains either
+ * i) Two whitespace separated columns of equation of state data with
+ * the pressure in Pa (first column) and the energy density in J/m^3 (second column).
+ * ii) 9 whitespace separated columns of equation of state data; this format containts
+ * (in order of the columns) the table index, the baryon density in /fm^3,
+ * the energy density in g/cm^3, the pressure in dyn/cm^2, the baryon chemical potential in MeV,
+ * the electron chemical potential in MeV, the log-enthalpy, the lepton fraction
+ * and the square of the speed of sound normalized to light velocity.
+ * Every line beginning with the character '#' is ignored.
+ * If the path is an absolute path then this specific file is opened;
+ * otherwise, search for the file in paths given in the environment variable
+ * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
+ * @param[in] fname The path of the file to open.
+ * @return A pointer to neutron star equation of state structure.
+ */
 EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
 
     EOSMultiParts *eos;
