@@ -22,6 +22,7 @@ Build-Depends:
  python3-astropy,
  python3-gwdatafind,
  python3-h5py,
+ python3-igwn-segments,
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),

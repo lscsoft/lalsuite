@@ -1,8 +1,3 @@
-if ! ${PYTHON} -c 'import gwpy' >/dev/null 2>&1; then
-    echo "Skipping test: requires gwpy"
-    exit 77
-fi
-
 ## test exit status
 status=0
 

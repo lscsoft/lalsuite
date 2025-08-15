@@ -48,6 +48,7 @@ BuildRequires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: python3dist(astropy)
 BuildRequires: python3dist(gwdatafind)
 BuildRequires: python3dist(h5py)
+BuildRequires: python3dist(igwn-segments)
 BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 BuildRequires: python3dist(pytest)
 
