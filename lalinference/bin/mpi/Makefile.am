@@ -1,3 +1,4 @@
+BUILT_SOURCES =
 MOSTLYCLEANFILES =
 man1_MANS =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
