@@ -686,7 +686,7 @@ XLALComputePSDandNormSFTPower(
   const MathOpType PSDmthopIFOs, /* [in] math operation over IFOs (PSD) */
   const MathOpType nSFTmthopSFTs, /* [in] math operation over SFTs for each IFO (normSFT) */
   const MathOpType nSFTmthopIFOs, /* [in] math operation over IFOs (normSFT) */
-  const BOOLEAN normalizeByTotalNumSFTs, /* [in] whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
+  const BOOLEAN normalizeByTotalNumSFTs, /* [in] for PSD, whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
   const REAL8 FreqMin, /* [in] starting frequency -> first output bin (if -1: use full SFT data including rngmed bins, else must be >=0) */
   const REAL8 FreqBand, /* [in] frequency band to cover with output bins (must be >=0) */
   const BOOLEAN normalizeSFTsInPlace /* [in] if FALSE, a copy of inputSFTs will be used internally and the original will not be modified */

@@ -237,9 +237,9 @@ echo "----------------------------------------------------------------------"
 echo
 
 
-## ----- test the special normalizeByTotalNumSFTs mode
-mthops_loop=('harmsum' # together with --normalizeByTotalNumSFTs should emulate harmmean
-             'powerminus2sum' # together with --normalizeByTotalNumSFTs should emulate powerminus2mean
+## ----- test the special PSDnormByTotalNumSFTs mode
+mthops_loop=('harmsum' # together with --PSDnormByTotalNumSFTs should emulate harmmean
+             'powerminus2sum' # together with --PSDnormByTotalNumSFTs should emulate powerminus2mean
             )
 mthops_awk=('{printf "%.6e", 4./(1./$1+1./$2+1./$3+1./$4)}' # harmonic mean over 4 inputs
             '{printf "%.6e", sqrt(4.)/sqrt((1./($1*$1)+1./($2*$2)+1./($3*$3)+1./($4*$4)))}' # power-minus-2 mean over 4 inputs
@@ -248,12 +248,12 @@ for mthopidx in 0 1; do
     startTime2=$(echo "$startTime + $TSFT" | bc)
     endTime1=$(echo "$startTime + 1" | bc)
     endTime2=$(echo "$startTime2 + 1" | bc)
-    echo "Running ComputePSD with PSDmthopSFTs=PSDmthopIFOs=${mthops_loop[$mthopidx]} and --normalizeByTotalNumSFTs..."
+    echo "Running ComputePSD with PSDmthopSFTs=PSDmthopIFOs=${mthops_loop[$mthopidx]} and --PSDnormByTotalNumSFTs..."
     for IFO in "H1" "L1" "H1L1"; do
         for minT in $startTime $startTime2; do
             for maxT in $endTime1 $endTime2; do
                 if (( $maxT > $minT )); then
-                    get_psd ${mthops_loop[$mthopidx]} $IFO $minT $maxT "--normalizeByTotalNumSFTs"
+                    get_psd ${mthops_loop[$mthopidx]} $IFO $minT $maxT "--PSDnormByTotalNumSFTs"
                     # storing the results in dynamically named variables
                     # so they can be accessed again outside the loop
                     psdvar="psd_${IFO}_${minT}_${maxT}"
@@ -265,7 +265,7 @@ for mthopidx in 0 1; do
         done
     done
 
-    echo "--------- Compare results (PSDmthopSFTs=PSDmthopIFOs=${mthops_loop[$mthopidx]} --normalizeByTotalNumSFTs) ----------------------------------------------------------------------------------------"
+    echo "--------- Compare results (PSDmthopSFTs=PSDmthopIFOs=${mthops_loop[$mthopidx]} --PSDnormByTotalNumSFTs) ----------------------------------------------------------------------------------------"
     echo "                	[T0,T1]		[T1,T2]		[T0,T2]		awk		(reldev) [Tolerance=$tolerance_rel]"
     for IFO in "H1" "L1" "H1L1"; do
         psd1=$(eval "echo \$"$(echo "psd_${IFO}_${startTime}_${endTime1}")"")

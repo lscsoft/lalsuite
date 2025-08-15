@@ -99,10 +99,11 @@ typedef struct {
 
   INT4 PSDmthopSFTs;     /**< for PSD, type of math. operation over SFTs */
   INT4 PSDmthopIFOs;     /**< for PSD, type of math. operation over IFOs */
+  BOOLEAN PSDnormByTotalNumSFTs; /**< apply normalization factor from total number of SFTs over all IFOs */
+
   BOOLEAN outputNormSFT; /**< output normalised SFT power? */
   INT4 nSFTmthopSFTs;    /**< for norm. SFT, type of math. operation over SFTs */
   INT4 nSFTmthopIFOs;    /**< for norm. SFT, type of math. operation over IFOs */
-  BOOLEAN normalizeByTotalNumSFTs; /**< apply normalization factor from total number of SFTs over all IFOs */
 
   REAL8 binSizeHz;       /**< output PSD bin size in Hz */
   INT4  binSize;         /**< output PSD bin size in no. of bins */
@@ -206,7 +207,7 @@ main( int argc, char *argv[] )
                    uvar.PSDmthopIFOs,
                    uvar.nSFTmthopSFTs,
                    uvar.nSFTmthopIFOs,
-                   uvar.normalizeByTotalNumSFTs,
+                   uvar.PSDnormByTotalNumSFTs,
                    cfg.FreqMin,
                    cfg.FreqBand,
                    TRUE // normalizeSFTsInPlace
@@ -319,11 +320,10 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
 
   uvar->PSDmthopSFTs = MATH_OP_HARMONIC_MEAN;
   uvar->PSDmthopIFOs = MATH_OP_HARMONIC_SUM;
+  uvar->PSDnormByTotalNumSFTs = FALSE;
 
   uvar->nSFTmthopSFTs = MATH_OP_ARITHMETIC_MEAN;
   uvar->nSFTmthopIFOs = MATH_OP_MAXIMUM;
-
-  uvar->normalizeByTotalNumSFTs = FALSE;
 
   uvar->dumpMultiPSDVector = FALSE;
 
@@ -358,13 +358,13 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
                                  "min (7), max (8)" );
   XLALRegisterUvarAuxDataMember( PSDmthopIFOs,     UserEnum, &MathOpTypeChoices, 'I', OPTIONAL, "For PSD, type of math. op. over IFOs: "
                                  "see --PSDmthopSFTs" );
+  XLALRegisterUvarMember( PSDnormByTotalNumSFTs,    BOOLEAN, 0, OPTIONAL, "For harmsum/powerminus2sum, apply normalization factor from total number of SFTs over all IFOs (mimics harmmean/powerminus2mean over a combined set of all SFTs)" );
+
   XLALRegisterUvarMember( outputNormSFT,    BOOLEAN, 'n', OPTIONAL, "Output normalised SFT power to PSD file" );
   XLALRegisterUvarAuxDataMember( nSFTmthopSFTs,    UserEnum, &MathOpTypeChoices, 'N', OPTIONAL, "For norm. SFT, type of math. op. over SFTs: "
                                  "see --PSDmthopSFTs" );
   XLALRegisterUvarAuxDataMember( nSFTmthopIFOs,    UserEnum, &MathOpTypeChoices, 'J', OPTIONAL, "For norm. SFT, type of math. op. over IFOs: "
                                  "see --PSDmthopSFTs" );
-
-  XLALRegisterUvarMember( normalizeByTotalNumSFTs,    BOOLEAN, 0, OPTIONAL, "For harmsum/powerminus2sum, apply normalization factor from total number of SFTs over all IFOs (mimics harmmean/powerminus2mean over a combined set of all SFTs)" );
 
   XLALRegisterUvarMember( binSize,          INT4, 'z', OPTIONAL, "Bin the output into bins of size (in number of bins)" );
   XLALRegisterUvarMember( binSizeHz,        REAL8, 'Z', OPTIONAL, "Bin the output into bins of size (in Hz)" );
