@@ -43,7 +43,7 @@ outPSD_full="./psd_fullsft.dat"
 outPSD_band="./psd_freqband.dat"
 
 ## ----- run computePSD once for full SFT
-cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_full --blocksRngMed=$blocksRngMed --outputNormSFT=1"
+cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_full --blocksRngMed=$blocksRngMed --outputNormSFT=yes --nSFTmthopSFTs=arithmean --nSFTmthopIFOs=max"
 
 echo $cmdline;
 if ! eval $cmdline; then
@@ -52,7 +52,7 @@ if ! eval $cmdline; then
 fi
 
 ## ----- run computePSD for a second time, with restricted band
-cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_band --blocksRngMed=$blocksRngMed --outputNormSFT=1  --Freq=50.03 --FreqBand=0.04"
+cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_band --blocksRngMed=$blocksRngMed --outputNormSFT=yes --nSFTmthopSFTs=arithmean --nSFTmthopIFOs=max  --Freq=50.03 --FreqBand=0.04"
 
 echo $cmdline;
 if ! eval $cmdline; then
@@ -136,7 +136,7 @@ get_psd () { # expected argument order: mthop IFO startTime endTime extrArgs
     else
         IFObit=""
     fi
-    cmdline="${psd_code} ${IFObit} --inputData=${outSFTbname}* --outputPSD=$psdfile --blocksRngMed=$blocksRngMed --outputNormSFT=1 --startTime=$3 --endTime=$4 --PSDmthopSFTs=$1 --PSDmthopIFOs=$1 $5"
+    cmdline="${psd_code} ${IFObit} --inputData=${outSFTbname}* --outputPSD=$psdfile --blocksRngMed=$blocksRngMed --outputNormSFT=yes --nSFTmthopSFTs=arithmean --nSFTmthopIFOs=max --startTime=$3 --endTime=$4 --PSDmthopSFTs=$1 --PSDmthopIFOs=$1 $5"
     echo $cmdline;
     if ! eval $cmdline; then
         echo "Error.. something failed when running '$psd_code' ..."

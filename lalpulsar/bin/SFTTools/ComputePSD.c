@@ -322,8 +322,8 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
   uvar->PSDmthopIFOs = MATH_OP_HARMONIC_SUM;
   uvar->PSDnormByTotalNumSFTs = TRUE;
 
-  uvar->nSFTmthopSFTs = MATH_OP_ARITHMETIC_MEAN;
-  uvar->nSFTmthopIFOs = MATH_OP_MAXIMUM;
+  uvar->nSFTmthopSFTs = -1;
+  uvar->nSFTmthopIFOs = -1;
 
   uvar->dumpMultiPSDVector = FALSE;
 
@@ -361,9 +361,9 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
   XLALRegisterUvarMember( PSDnormByTotalNumSFTs,    BOOLEAN, 'T', OPTIONAL, "For harmsum/powerminus2sum, apply normalization factor from total number of SFTs over all IFOs (mimics harmmean/powerminus2mean over a combined set of all SFTs)" );
 
   XLALRegisterUvarMember( outputNormSFT,    BOOLEAN, 'n', OPTIONAL, "Output normalised SFT power to PSD file" );
-  XLALRegisterUvarAuxDataMember( nSFTmthopSFTs,    UserEnum, &MathOpTypeChoices, 'N', OPTIONAL, "For norm. SFT, type of math. op. over SFTs: "
+  XLALRegisterUvarAuxDataMember( nSFTmthopSFTs,    UserEnum, &MathOpTypeChoices, 'N', NODEFAULT, "For norm. SFT, type of math. op. over SFTs: "
                                  "see --PSDmthopSFTs" );
-  XLALRegisterUvarAuxDataMember( nSFTmthopIFOs,    UserEnum, &MathOpTypeChoices, 'J', OPTIONAL, "For norm. SFT, type of math. op. over IFOs: "
+  XLALRegisterUvarAuxDataMember( nSFTmthopIFOs,    UserEnum, &MathOpTypeChoices, 'J', NODEFAULT, "For norm. SFT, type of math. op. over IFOs: "
                                  "see --PSDmthopSFTs" );
 
   XLALRegisterUvarMember( binSize,          INT4, 'z', OPTIONAL, "Bin the output into bins of size (in number of bins)" );
@@ -403,6 +403,10 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
   }
   if ( XLALUserVarWasSet( &( uvar->PSDmthopIFOs ) ) && !( 0 <= uvar->PSDmthopIFOs && uvar->PSDmthopIFOs < MATH_OP_LAST ) ) {
     XLALPrintError( "ERROR: --PSDmthopIFOs(-I) must be between 0 and %i", MATH_OP_LAST - 1 );
+    return XLAL_FAILURE;
+  }
+  if ( uvar->outputNormSFT && !UVAR_ALLSET2( nSFTmthopSFTs, nSFTmthopIFOs ) ) {
+    XLALPrintError( "ERROR: --nSFTmthopSFTs(-N), --nSFTmthopIFOs(-J) must all be set if --outputNormSFT(-n) is true" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->nSFTmthopSFTs ) ) && !( 0 <= uvar->nSFTmthopSFTs && uvar->nSFTmthopSFTs < MATH_OP_LAST ) ) {
