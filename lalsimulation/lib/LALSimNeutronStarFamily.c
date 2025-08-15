@@ -79,8 +79,8 @@ static double fminimizer_gslfunction(double x, void * params)
 }
 
 /* gsl function for use in finding the maximum neutron star mass */
-static double fminimizer_multi_gslfunction(double x, void * params);
-static double fminimizer_multi_gslfunction(double x, void * params)
+static double fmaximizer_multi_gslfunction(double x, void * params);
+static double fmaximizer_multi_gslfunction(double x, void * params)
 {
     EOSMultiParts * eos = params;
     double r, m, mb, k2, k3, k4;
@@ -89,6 +89,16 @@ static double fminimizer_multi_gslfunction(double x, void * params)
     return -m; /* maximum mass is minimum negative mass */
 }
 
+/* gsl function for use in finding the minimum neutron star mass */
+static double fminimizer_multi_gslfunction(double x, void * params);
+static double fminimizer_multi_gslfunction(double x, void * params)
+{
+    EOSMultiParts * eos = params;
+    double r, m, mb, k2, k3, k4;
+    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
+        &r, &m, &mb, &k2, &k3, &k4, x, eos, 1e-6);
+    return m;
+}
 
 /** @endcond */
 
@@ -314,7 +324,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
 		turnover = j-1;
 
 	    // End of unstable branch; Rising from min mass of unstable branch
-            if (j > 0 && turnover > 0 && fam_branch_i->mdat[j] >= fam_branch_i->mdat[j-1]){
+            if (j > 2 && turnover > 0 && fam_branch_i->mdat[j] >= fam_branch_i->mdat[j-1]){
                 // Find precise minimum mass of next branch
                 const double epsabs = 0.0, epsrel = 1e-6;
                 double a = fam_branch_i->pdat[j - 2];
@@ -339,9 +349,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
                 } while (status == GSL_CONTINUE);
                 gsl_min_fminimizer_free(s);
                 // Set new logpmin to be at minimum mass
-		// FIXME: Doesn't seem to get the lowest mass...
 	        logpmin = log(x);
-		//logpmin = log(fam_branch_i->pdat[j-1]);
 		cont = 1;
                 ndat -= j-1;
 	        break;
@@ -363,7 +371,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
             int status;
             gsl_function F;
             gsl_min_fminimizer * s;
-            F.function = &fminimizer_multi_gslfunction;
+            F.function = &fmaximizer_multi_gslfunction;
             F.params = eos;
             s = gsl_min_fminimizer_alloc(gsl_min_fminimizer_brent);
             gsl_min_fminimizer_set_with_values(s, &F, x, fx, a, fa, c, fc);
