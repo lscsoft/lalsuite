@@ -79,13 +79,16 @@ struct tagLALSimNeutronStarEOS {
     LALSimNeutronStarEOSData data;
 };
 
+
+//CUTER-dev
 struct tagEOSMultiParts{
-  //char name[LALNameLength]; TODO fix this and maybe move the structure to ...EOS.c
+  //char name[LALNameLength];
   int number_of_parts;
   double pmax;
   LALSimNeutronStarEOS ** eos_part;
   void (*free) (EOSMultiParts * myself);
 };
+
 
 /** @endcond */
 
@@ -141,13 +144,7 @@ void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
     return;
 }
 
-/** @} */
-
-/**
- * @name Destruction routine
- * @{
- */
-
+//CUTER-dev
 /**
  * @brief Frees the memory associated with a pointer to an EOS Multi Parts structure.
  * @param eos Pointer to the EOS Multi Parts structure to be freed.
@@ -158,9 +155,8 @@ void XLALDestroySimNeutronStarEOSMultiParts(EOSMultiParts * eos)
     return;
 }
 
-/** @} */
 
-// TODO CUTER-dev make a destroy function for multiple parts eos
+/** @} */
 
 /* Tabular Equation of State Code. */
 #include "LALSimNeutronStarEOSTabular.c"
@@ -202,21 +198,22 @@ double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS *
     return eos->pmax;
 }
 
+
+//CUTER-dev
 double XLALSimNeutronStarEOSMultiPartsMaxPressure(EOSMultiParts * eos)
 {
     return eos->pmax;
 }
-
+//CUTER-dev
 int XLALSimNeutronStarEOSMultiPartsNumber(EOSMultiParts * eos)
 {
     return eos->number_of_parts;
 }
-
+//CUTER-dev
 LALSimNeutronStarEOS * XLALSimNeutronStarEOSPart(EOSMultiParts * eos, int part_number)
 {
     return eos->eos_part[part_number];
 }
-
 
 
 /**
