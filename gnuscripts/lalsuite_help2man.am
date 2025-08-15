@@ -10,11 +10,13 @@ endif
 
 man1_MANS += $(help2man_MANS)
 
+BUILT_SOURCES += help2man-setup
+
 MOSTLYCLEANFILES += $(help2man_MANS) $(help2man_MANS:.man=.man.tmp)
 
 endif
 
-%.man: % help2man-setup
+%.man: %
 	$(AM_V_GEN)manmanpage="$(srcdir)/$*.1"; \
 	if test -f $${manmanpage}; then \
 		cat "$${manmanpage}" > $@; \
@@ -25,11 +27,11 @@ endif
 		rm -f $@.tmp; \
 	fi
 
-%.pyman: %.py help2man-setup
+%.pyman: %.py
 	$(AM_V_GEN)name=`$(builddir)/$* --help 2>&1 | $(SED) -n '/:/d;/./p' | $(SED) -n '1p'`; \
 	$(HELP2MAN) --no-discard-stderr --no-info --name="$${name:-a program from $(PACKAGE_NAME)}" --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@ $(builddir)/$*
 
-%.shman: % help2man-setup
+%.shman: %
 	$(AM_V_GEN)$(MKDIR_P) $(builddir)/.libs || exit 1; \
 	rm -f $(builddir)/.libs/$* || exit 1; \
 	cp $(srcdir)/$* $(builddir)/.libs/$* || exit 1; \
