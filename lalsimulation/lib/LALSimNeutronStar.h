@@ -173,12 +173,17 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
              EOSMultiParts * eos,
              double epsrel);
 //CUTER-dev
-int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
-             double *love_number_k2, double *love_number_k3, double *love_number_k4,
-             double *intI1, double *intI2, double *intI3, double *intJ1, double *intJ2, double *intJ3,
-             double central_pressure_si,
-             EOSMultiParts *eos,
+int XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *mass,
+             double *love_number_k2, double central_pressure_si,
+             EOSMultiParts * eos,
              double epsrel);
+// //CUTER-dev
+// int XLALSimNeutronStarTOVODEExtendedVirialIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
+//              double *love_number_k2, double *love_number_k3, double *love_number_k4,
+//              double *intI1, double *intI2, double *intI3, double *intJ1, double *intJ2, double *intJ3,
+//              double central_pressure_si,
+//              EOSMultiParts *eos,
+//              double epsrel);
 
 /* MASS-RADIUS TYPE RELATIONSHIP ROUTINES */
 
