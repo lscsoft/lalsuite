@@ -124,7 +124,7 @@
           LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
-    - delocate-wheel -v -w wheelhouse wheel/*.whl
+    - python -m delocate.cmd.delocate_wheel -v -w wheelhouse wheel/*.whl
     # Test: do some simple sanity checks in a virtualenv
     - !reference [.wheel-test]
 
