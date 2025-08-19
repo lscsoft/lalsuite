@@ -41,15 +41,22 @@ include:
 # update component jobs with our rules
 
 gitlab-advanced-sast:
-  rules: !reference [.ci-merge-build, rules]
+  rules:
+    - !reference [.ci-lint, rules]
+    - !reference [.ci-merge-build, rules]
   needs: []
   variables:
     # set XDG_CONFIG_HOME (set in global variables) to something that always exists
     XDG_CONFIG_HOME: "/tmp"
 
 semgrep-sast:
-  rules: !reference [.ci-merge-build, rules]
+  rules:
+    - !reference [.ci-lint, rules]
+    - !reference [.ci-merge-build, rules]
   needs: []
+  variables:
+    # set XDG_CONFIG_HOME (set in global variables) to something that always exists
+    XDG_CONFIG_HOME: "/tmp"
 
 # -- local lint jobs -- general
 
