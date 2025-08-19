@@ -320,9 +320,38 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
 }
 
 
+/* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
+ * If the EOS is always causal, return some large value hmax instead. */
+static double eosMultiParts_min_acausal_pseudo_enthalpy_tabular(double hmax,
+    EOSMultiParts * eos)
+{
+    size_t i;
+    double h_im1, h_i;
+    double v_im1, v_i;
+    double m;   /* slope for linear interpolation */
+    double hMinAcausal = hmax;  /* default large number for EOS that is always causal */
+    int number_of_parts = XLALSimNeutronStarEOSMultiPartsNumber(eos);
+    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, number_of_parts-1);
+    h_im1 = exp(eos_part ->data.tabular->log_hdat[0]);
+    v_im1 = eos_v_of_h_tabular(h_im1, eos_part);
+    for (i = 1; i < eos_part ->data.tabular->ndat; i++) {
+        h_i = exp(eos_part ->data.tabular->log_hdat[i]);
+        v_i = eos_v_of_h_tabular(h_i, eos_part);
+        if (v_i > 1.0) {
+            /* solve vsound(h) = 1 */
+            m = (v_i - v_im1) / (h_i - h_im1);
+            hMinAcausal = h_im1 + (1.0 - v_im1) / m;
+            break;
+        }
+        h_im1 = h_i;
+        v_im1 = v_i;
+    }
+//    printf("hMinAcausal = %e, v = %e\n", hMinAcausal, eos_v_of_h_tabular(hMinAcausal, eos));
 
-
-//CUTER-dev
+    /* Value of h where EOS first becomes acausal.
+     * Or, if EOS is always causal, hmax */
+    return hMinAcausal;
+}
 
 
 // CUTER-dev
@@ -636,8 +665,8 @@ static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *ed
         }
     }
 
-//     eos = XLALSimNeutronStarEOSFromTabData(nbdat_cut, edat_cut, pdat_cut, mubdat_cut, muedat_cut, hdat_cut, yedat_cut, cs2dat_cut, ndat);
     eos =     eos_alloc_tabular(nbdat_cut, edat_cut, pdat_cut, mubdat_cut, muedat_cut, hdat_cut, yedat_cut, cs2dat_cut, ndat, ncol);
+
     LALFree(nbdat_cut);
     LALFree(edat_cut);
     LALFree(pdat_cut);
@@ -745,7 +774,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
     LALFree(yedat);
     LALFree(cs2dat);
 
-//     snprintf(eos->name, sizeof(eos->name), "%s", fname); TODO fix this
+    snprintf(eos->name, sizeof(eos->name), "%s", fname);
     return eos;
 }
 
@@ -950,6 +979,8 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     size_t bottom_index = 0, upper_index = 0;
     eos->number_of_parts = number_eos;
     eos->pmax = pdat[ndat-1];
+    eos->hmin = hdat[0];
+    eos->hmax = hdat[ndat-1];
 
     /* Allocate each piece of the equation of state separated by a phase transition */
     eos->eos_part = (LALSimNeutronStarEOS **) XLALMalloc(sizeof(LALSimNeutronStarEOS *) * (number_eos));
@@ -959,6 +990,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
         eos->eos_part[i] = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
         bottom_index = indices_phase_transition[i+1] + 1;
     }
+    eos->hMinAcausal = eosMultiParts_min_acausal_pseudo_enthalpy_tabular(hdat[ndat-1], eos);
 
 
     return eos;

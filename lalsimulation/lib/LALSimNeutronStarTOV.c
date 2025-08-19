@@ -845,7 +845,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
         for (int w = 0 ; w < 1 ; ++w){
             eos_part = XLALSimNeutronStarEOSPart(eos,0);
             tov_ext_ode(h, y, dy, &eos_part);
-            for (int i = 0; i < TOV_EXT_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
+            for (size_t i = 0; i < TOV_EXT_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
                 y[i] += dy[i] * (0.0 - h1);
         }
 
@@ -907,7 +907,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
         for (int w = 0 ; w < 1 ; ++w){
             eos_part = XLALSimNeutronStarEOSPart(eos,0);
             tov_mini_ode(h, y, dy, &eos_part);
-            for (i = 0; i < TOV_MINI_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
+            for (size_t i = 0; i < TOV_MINI_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
                 y[i] += dy[i] * (0.0 - h1);
         }
 
@@ -1015,7 +1015,7 @@ int XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *m
     for (int w = 0 ; w < 1 ; ++w){
         eos_part = XLALSimNeutronStarEOSPart(eos,0);
         tov_mini_ode(h, y, dy, &eos_part);
-        for (int i = 0; i < TOV_MINI_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
+        for (size_t i = 0; i < TOV_MINI_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
             y[i] += dy[i] * (0.0 - h1);
     }
 
