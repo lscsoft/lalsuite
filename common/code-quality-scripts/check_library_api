@@ -7,10 +7,27 @@ import sys
 import json
 import re
 import argparse
+import logging
 from tempfile import TemporaryDirectory
 from pathlib import Path
 from subprocess import run, PIPE, DEVNULL
 from xml.etree.ElementTree import parse
+
+# configure logging
+LOGGER = logging.getLogger(__name__.rsplit(".", 1)[-1])
+try:
+    from coloredlogs import ColoredFormatter as _Formatter
+except ImportError:
+    _Formatter = logging.Formatter
+if not LOGGER.hasHandlers():
+    _LOG_HANDLER = logging.StreamHandler()
+    _LOG_HANDLER.setFormatter(
+        _Formatter(
+            fmt="[%(asctime)s] %(levelname)+8s: %(message)s",
+        )
+    )
+    LOGGER.addHandler(_LOG_HANDLER)
+LOGGER.setLevel(logging.DEBUG)
 
 API_NONE = 0
 API_MINOR = 1
@@ -25,6 +42,7 @@ def parse_command_line():
     # Create parser
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", help="subcommand help")
+    subparsers.required = True
     parser_dump = subparsers.add_parser("dump", help="dump help")
     parser_dump.set_defaults(subcommand=dump)
     parser_dump.add_argument(
@@ -99,8 +117,8 @@ def check_tool_version(tool_name, min_version):
 
     # Compare version with the minimum required
     if version < min_version:
-        print(
-            "ERROR: {tool_name} version {version} is less than {min_version}".format(
+        LOGGER.critical(
+            "{tool_name} version {version} is less than {min_version}".format(
                 tool_name=tool_name,
                 version=".".join(version),
                 min_version=".".join(min_version),
@@ -116,24 +134,24 @@ def get_lalsuite_version(output_dir, sha):
     cmdline = ["autoconf", "--trace", "AC_INIT:$1:$2"]
 
     # Run command
-    print(f"Running {cmdline}")
+    LOGGER.debug(f"Running {cmdline}")
     proc = run(cmdline, stdout=PIPE, stderr=PIPE)
     stdout = proc.stdout.decode("utf-8")
     stderr = proc.stderr.decode("utf-8")
 
     # Check for errors
     if proc.returncode > 0:
-        print(
-            f"ERROR: {cmdline} failed\n=== stdout ===\n{stdout}\n=== stderr ===\n{stderr}\n--------------",
-            file=sys.stderr,
-        )
+        LOGGER.critical(f"{cmdline} failed")
+        LOGGER.critical("=== stdout ===\n{stdout}")
+        LOGGER.critical("=== stderr ===\n{stderr}")
+        LOGGER.critical("--------------")
         sys.exit(1)
 
     # Get version number
     stdout = stdout.strip()
     name, version = stdout.split(":")
     if name != "LALSuite":
-        print(f"ERROR: unexpected output '{stdout}'")
+        LOGGER.critical(f"unexpected output '{stdout}'")
         sys.exit(1)
 
     # Add shortened SHA if given
@@ -152,7 +170,7 @@ def find_library_and_version(lib_dir, lib_name, lib_sha):
     lib_glob = f"lib{lib_name}.so.*.*.*"
     lib_paths = list(Path(lib_dir).glob(str(lib_glob)))
     if len(lib_paths) != 1:
-        print(f"ERROR: glob('{lib_glob}') returned '{lib_paths}'")
+        LOGGER.critical(f"glob('{lib_glob}') returned '{lib_paths}'")
         sys.exit(1)
 
     # Extract library version number
@@ -192,17 +210,17 @@ def run_abi_dumper(
     cmdline.extend([str(lib_path.absolute())])
 
     # Run command
-    print(f"Running {cmdline}")
+    LOGGER.debug(f"Running {cmdline}")
     proc = run(cmdline, stdout=PIPE, stderr=PIPE)
     stdout = proc.stdout.decode("utf-8")
     stderr = proc.stderr.decode("utf-8")
 
     # Check for errors
     if proc.returncode > 0:
-        print(
-            f"ERROR: {cmdline} failed\n=== stdout ===\n{stdout}\n=== stderr ===\n{stderr}\n--------------",
-            file=sys.stderr,
-        )
+        LOGGER.critical(f"{cmdline} failed")
+        LOGGER.critical("=== stdout ===\n{stdout}")
+        LOGGER.critical("=== stderr ===\n{stderr}")
+        LOGGER.critical("--------------")
         sys.exit(1)
 
 
@@ -238,7 +256,7 @@ def run_abi_compliance_checker(
         cmdline = base_cmdline + report_cmdline
 
         # Run command
-        print(f"Running {cmdline}")
+        LOGGER.debug(f"Running {cmdline}")
         proc = run(cmdline, stdout=PIPE, stderr=PIPE)
         stdout = proc.stdout.decode("utf-8")
         stderr = proc.stderr.decode("utf-8")
@@ -246,10 +264,10 @@ def run_abi_compliance_checker(
         # Check for errors
         # - abi-compliance-checker return 0(1) for (in)compatible libraries; not considered errors
         if proc.returncode > 1:
-            print(
-                f"ERROR: {cmdline} failed\n=== stdout ===\n{stdout}\n=== stderr ===\n{stderr}\n--------------",
-                file=sys.stderr,
-            )
+            LOGGER.critical(f"{cmdline} failed")
+            LOGGER.critical("=== stdout ===\n{stdout}")
+            LOGGER.critical("=== stderr ===\n{stderr}")
+            LOGGER.critical("--------------")
             sys.exit(1)
 
     # Parse XML report for version numbers, verdict, and count number of problems
