@@ -67,8 +67,6 @@ lint:pre-commit:
     GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
   script:
     # this jobs needs the full Git history to update the authors
-    - retry conda install --quiet git-lfs
-    - git lfs install
     - git fetch --unshallow --quiet
     # check that the first commit in LALSuite exists
     - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381

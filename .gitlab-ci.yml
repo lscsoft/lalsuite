@@ -177,6 +177,9 @@ default:
     echo "===== env ====="
     declare -x | cut -c 12-
     echo "----- env -----"
+  # ensure Git-LFS files are checked out
+  - |
+    test "X${GIT_STRATEGY}" = Xnone || ( git lfs ls-files | sed 's/^/LFS: /' )
 
 # set up Python virtual environment for pip installing local packages, etc.
 .python-venv:
