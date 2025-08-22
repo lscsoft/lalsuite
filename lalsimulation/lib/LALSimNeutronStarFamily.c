@@ -83,9 +83,9 @@ static double fmaximizer_multi_gslfunction(double x, void * params);
 static double fmaximizer_multi_gslfunction(double x, void * params)
 {
     EOSMultiParts * eos = params;
-    double r, m, mb, k2, k3, k4;
-    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
-        &r, &m, &mb, &k2, &k3, &k4, x, eos, 1e-6, 0);
+    double r, m, k2;
+    XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(
+        &r, &m, &k2, x, eos, 1e-6);
     return -m; /* maximum mass is minimum negative mass */
 }
 
@@ -94,9 +94,9 @@ static double fminimizer_multi_gslfunction(double x, void * params);
 static double fminimizer_multi_gslfunction(double x, void * params)
 {
     EOSMultiParts * eos = params;
-    double r, m, mb, k2, k3, k4;
-    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
-        &r, &m, &mb, &k2, &k3, &k4, x, eos, 1e-6, 0);
+    double r, m, k2;
+    XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(
+        &r, &m, &k2, x, eos, 1e-6);
     return m;
 }
 
@@ -259,8 +259,10 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
 
 
 
-FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
+FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fam){
 
+    if(min_fam!=0 && min_fam!=1) XLAL_ERROR_NULL(XLAL_EDOM);
+	    
     FamMultiParts *fam;
     fam = LALMalloc(sizeof(*fam));
 
@@ -294,18 +296,38 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
 
 	LALSimNeutronStarFamily * fam_branch_i = LALMalloc(sizeof(LALSimNeutronStarFamily));
 
+        // FIXME: Is this necessary??
+        if(min_fam==1){
+            fam_branch_i->mbdat = NULL;
+            fam_branch_i->k3dat = NULL;
+            fam_branch_i->k4dat = NULL;
+            fam_branch_i->mb_of_m_interp = NULL;
+            fam_branch_i->k3_of_m_interp = NULL;
+            fam_branch_i->k4_of_m_interp = NULL;
+            fam_branch_i->mb_of_m_acc = NULL;
+            fam_branch_i->k3_of_m_acc = NULL;
+            fam_branch_i->k4_of_m_acc = NULL;
+        }
+
         fam_branch_i->pdat = LALMalloc(ndat * sizeof(*fam_branch_i->pdat));
         fam_branch_i->mdat = LALMalloc(ndat * sizeof(*fam_branch_i->mdat));
-	fam_branch_i->mbdat = LALMalloc(ndat * sizeof(*fam_branch_i->mbdat));
-        fam_branch_i->rdat = LALMalloc(ndat * sizeof(*fam_branch_i->rdat));
+	fam_branch_i->rdat = LALMalloc(ndat * sizeof(*fam_branch_i->rdat));
         fam_branch_i->k2dat = LALMalloc(ndat * sizeof(*fam_branch_i->k2dat));
-	fam_branch_i->k3dat = LALMalloc(ndat * sizeof(*fam_branch_i->k3dat));
-	fam_branch_i->k4dat = LALMalloc(ndat * sizeof(*fam_branch_i->k4dat));
+	if(min_fam==0){
+	    fam_branch_i->mbdat = LALMalloc(ndat * sizeof(*fam_branch_i->mbdat));
+	    fam_branch_i->k3dat = LALMalloc(ndat * sizeof(*fam_branch_i->k3dat));
+	    fam_branch_i->k4dat = LALMalloc(ndat * sizeof(*fam_branch_i->k4dat));
+	}
 	fam_branch_i->ndat = ndat;
 
-        if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat
-	    || !fam_branch_i->mbdat || !fam_branch_i->k3dat || !fam_branch_i->k4dat)
-            XLAL_ERROR_NULL(XLAL_ENOMEM);
+	if(min_fam==1){
+            if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat)
+                XLAL_ERROR_NULL(XLAL_ENOMEM);
+	} else {
+            if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat
+	        || !fam_branch_i->mbdat || !fam_branch_i->k3dat || !fam_branch_i->k4dat)
+                XLAL_ERROR_NULL(XLAL_ENOMEM);
+        }
 
 	dlogp = (logpmax - logpmin) / ndat; // in Pascal
 
@@ -313,11 +335,17 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
 
             fam_branch_i->pdat[j] = exp(logpmin + j * dlogp); // pressure in Pascal
 
-	    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
-	        &fam_branch_i->rdat[j], &fam_branch_i->mdat[j],
-		&fam_branch_i->mbdat[j], &fam_branch_i->k2dat[j],
-		&fam_branch_i->k3dat[j], &fam_branch_i->k4dat[j],
-		fam_branch_i->pdat[j], eos, 1e-6, 0);
+	    if(min_fam==1){
+                XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(
+                    &fam_branch_i->rdat[j], &fam_branch_i->mdat[j],
+                    &fam_branch_i->k2dat[j], fam_branch_i->pdat[j], eos, 1e-6);
+            } else {
+	        XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
+	            &fam_branch_i->rdat[j], &fam_branch_i->mdat[j],
+		    &fam_branch_i->mbdat[j], &fam_branch_i->k2dat[j],
+		    &fam_branch_i->k3dat[j], &fam_branch_i->k4dat[j],
+		    fam_branch_i->pdat[j], eos, 1e-6, 0);
+	    }
 
 	    // End of stable branch; Coming down from max mass
 	    if (j > 0 && turnover == 0 && fam_branch_i->mdat[j] <= fam_branch_i->mdat[j-1])
@@ -384,11 +412,17 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
             } while (status == GSL_CONTINUE);
             gsl_min_fminimizer_free(s);
             fam_branch_i->pdat[i] = x;
-	    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
-                &fam_branch_i->rdat[i], &fam_branch_i->mdat[i],
-                &fam_branch_i->mbdat[i], &fam_branch_i->k2dat[i],
-		&fam_branch_i->k3dat[i], &fam_branch_i->k4dat[i],
-                fam_branch_i->pdat[i], eos, 1e-6, 0);
+	    if(min_fam==1){
+                XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(
+                    &fam_branch_i->rdat[i], &fam_branch_i->mdat[i],
+                    &fam_branch_i->k2dat[i], fam_branch_i->pdat[i], eos, 1e-6);
+	    } else {
+	        XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
+                    &fam_branch_i->rdat[i], &fam_branch_i->mdat[i],
+                    &fam_branch_i->mbdat[i], &fam_branch_i->k2dat[i],
+		    &fam_branch_i->k3dat[i], &fam_branch_i->k4dat[i],
+                    fam_branch_i->pdat[i], eos, 1e-6, 0);
+	    }
 
             /* resize arrays */
             if(fam_branch_i->pdat[i] <= fam_branch_i->pdat[i-1]){
@@ -405,36 +439,42 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
 	    // Reset size of arrays
             fam_branch_i->pdat = LALRealloc(fam_branch_i->pdat, turnover * sizeof(*fam_branch_i->pdat));
             fam_branch_i->mdat = LALRealloc(fam_branch_i->mdat, turnover * sizeof(*fam_branch_i->mdat));
-	    fam_branch_i->mbdat = LALRealloc(fam_branch_i->mbdat, turnover * sizeof(*fam_branch_i->mbdat));
-            fam_branch_i->rdat = LALRealloc(fam_branch_i->rdat, turnover * sizeof(*fam_branch_i->rdat));
+	    fam_branch_i->rdat = LALRealloc(fam_branch_i->rdat, turnover * sizeof(*fam_branch_i->rdat));
             fam_branch_i->k2dat = LALRealloc(fam_branch_i->k2dat, turnover * sizeof(*fam_branch_i->k2dat));
-	    fam_branch_i->k3dat = LALRealloc(fam_branch_i->k3dat, turnover * sizeof(*fam_branch_i->k3dat));
-	    fam_branch_i->k4dat = LALRealloc(fam_branch_i->k4dat, turnover * sizeof(*fam_branch_i->k4dat));
 
 	    // Set up p(m), r(m), and k(m) interpolators
 	    fam_branch_i->m_of_p_acc = gsl_interp_accel_alloc();
             fam_branch_i->p_of_m_acc = gsl_interp_accel_alloc();
-	    fam_branch_i->mb_of_m_acc = gsl_interp_accel_alloc();
             fam_branch_i->r_of_m_acc = gsl_interp_accel_alloc();
             fam_branch_i->k2_of_m_acc = gsl_interp_accel_alloc();
-	    fam_branch_i->k3_of_m_acc = gsl_interp_accel_alloc();
-	    fam_branch_i->k4_of_m_acc = gsl_interp_accel_alloc();
 
 	    fam_branch_i->m_of_p_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
             fam_branch_i->p_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
-	    fam_branch_i->mb_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
             fam_branch_i->r_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
             fam_branch_i->k2_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
-	    fam_branch_i->k3_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
-	    fam_branch_i->k4_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
 
 	    gsl_interp_init(fam_branch_i->m_of_p_interp, fam_branch_i->pdat, fam_branch_i->mdat, turnover);
             gsl_interp_init(fam_branch_i->p_of_m_interp, fam_branch_i->mdat, fam_branch_i->pdat, turnover);
-	    gsl_interp_init(fam_branch_i->mb_of_m_interp, fam_branch_i->mdat, fam_branch_i->mbdat, turnover);
             gsl_interp_init(fam_branch_i->r_of_m_interp, fam_branch_i->mdat, fam_branch_i->rdat, turnover);
             gsl_interp_init(fam_branch_i->k2_of_m_interp, fam_branch_i->mdat, fam_branch_i->k2dat, turnover);
-	    gsl_interp_init(fam_branch_i->k3_of_m_interp, fam_branch_i->mdat, fam_branch_i->k3dat, turnover);
-	    gsl_interp_init(fam_branch_i->k4_of_m_interp, fam_branch_i->mdat, fam_branch_i->k4dat, turnover);
+
+            if(min_fam==0){
+                fam_branch_i->mbdat = LALRealloc(fam_branch_i->mbdat, turnover * sizeof(*fam_branch_i->mbdat));
+                fam_branch_i->k3dat = LALRealloc(fam_branch_i->k3dat, turnover * sizeof(*fam_branch_i->k3dat));
+                fam_branch_i->k4dat = LALRealloc(fam_branch_i->k4dat, turnover * sizeof(*fam_branch_i->k4dat));
+
+                fam_branch_i->mb_of_m_acc = gsl_interp_accel_alloc();
+                fam_branch_i->k3_of_m_acc = gsl_interp_accel_alloc();
+                fam_branch_i->k4_of_m_acc = gsl_interp_accel_alloc();
+
+                fam_branch_i->mb_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
+                fam_branch_i->k3_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
+                fam_branch_i->k4_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, turnover);
+
+                gsl_interp_init(fam_branch_i->mb_of_m_interp, fam_branch_i->mdat, fam_branch_i->mbdat, turnover);
+                gsl_interp_init(fam_branch_i->k3_of_m_interp, fam_branch_i->mdat, fam_branch_i->k3dat, turnover);
+                gsl_interp_init(fam_branch_i->k4_of_m_interp, fam_branch_i->mdat, fam_branch_i->k4dat, turnover);
+            }
 
             if (cont==1){
                 turnover = 0; // Reset turnover location
@@ -447,27 +487,32 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
             // Set up p(m), r(m), and k(m) interpolators
 	    fam_branch_i->m_of_p_acc = gsl_interp_accel_alloc();
             fam_branch_i->p_of_m_acc = gsl_interp_accel_alloc();
-	    fam_branch_i->mb_of_m_acc = gsl_interp_accel_alloc();
             fam_branch_i->r_of_m_acc = gsl_interp_accel_alloc();
             fam_branch_i->k2_of_m_acc = gsl_interp_accel_alloc();
-	    fam_branch_i->k3_of_m_acc = gsl_interp_accel_alloc();
-	    fam_branch_i->k4_of_m_acc = gsl_interp_accel_alloc();
 
 	    fam_branch_i->m_of_p_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
             fam_branch_i->p_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-	    fam_branch_i->mb_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
             fam_branch_i->r_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
             fam_branch_i->k2_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-	    fam_branch_i->k3_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-	    fam_branch_i->k4_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
 
 	    gsl_interp_init(fam_branch_i->m_of_p_interp, fam_branch_i->pdat, fam_branch_i->mdat, ndat);
             gsl_interp_init(fam_branch_i->p_of_m_interp, fam_branch_i->mdat, fam_branch_i->pdat, ndat);
-	    gsl_interp_init(fam_branch_i->mb_of_m_interp, fam_branch_i->mdat, fam_branch_i->mbdat, ndat);
             gsl_interp_init(fam_branch_i->r_of_m_interp, fam_branch_i->mdat, fam_branch_i->rdat, ndat);
             gsl_interp_init(fam_branch_i->k2_of_m_interp, fam_branch_i->mdat, fam_branch_i->k2dat, ndat);
-	    gsl_interp_init(fam_branch_i->k3_of_m_interp, fam_branch_i->mdat, fam_branch_i->k3dat, ndat);
-	    gsl_interp_init(fam_branch_i->k4_of_m_interp, fam_branch_i->mdat, fam_branch_i->k4dat, ndat);
+
+            if(min_fam==0){
+                fam_branch_i->mb_of_m_acc = gsl_interp_accel_alloc();
+		fam_branch_i->k3_of_m_acc = gsl_interp_accel_alloc();
+                fam_branch_i->k4_of_m_acc = gsl_interp_accel_alloc();
+
+		fam_branch_i->mb_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+		fam_branch_i->k3_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+		fam_branch_i->k4_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+
+		gsl_interp_init(fam_branch_i->mb_of_m_interp, fam_branch_i->mdat, fam_branch_i->mbdat, ndat);
+		gsl_interp_init(fam_branch_i->k3_of_m_interp, fam_branch_i->mdat, fam_branch_i->k3dat, ndat);
+		gsl_interp_init(fam_branch_i->k4_of_m_interp, fam_branch_i->mdat, fam_branch_i->k4dat, ndat);
+	    }
 
 	}
 
@@ -552,6 +597,8 @@ double XLALSimNeutronStarFamBranchMass(double p, int branch, FamMultiParts * fam
 double XLALSimNeutronStarFamBranchBaryonicMass(double m, int branch, FamMultiParts * fam)
 {
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    if (b == NULL || b->mb_of_m_interp == NULL)
+        XLAL_ERROR_REAL8(XLAL_EINVAL);
     double mb;
     mb = gsl_interp_eval(b->mb_of_m_interp, b->mdat, b->mbdat, m,
         b->mb_of_m_acc);
@@ -570,6 +617,8 @@ double XLALSimNeutronStarFamBranchLoveNumberK2(double m, int branch, FamMultiPar
 double XLALSimNeutronStarFamBranchLoveNumberK3(double m, int branch, FamMultiParts * fam)
 {
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    if (b == NULL || b->k3_of_m_interp == NULL)
+        XLAL_ERROR_REAL8(XLAL_EINVAL);
     double k3;
     k3 = gsl_interp_eval(b->k3_of_m_interp, b->mdat, b->k3dat, m,
         b->k3_of_m_acc);
@@ -579,6 +628,8 @@ double XLALSimNeutronStarFamBranchLoveNumberK3(double m, int branch, FamMultiPar
 double XLALSimNeutronStarFamBranchLoveNumberK4(double m, int branch, FamMultiParts * fam)
 {
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    if (b == NULL || b->k4_of_m_interp == NULL)
+        XLAL_ERROR_REAL8(XLAL_EINVAL);
     double k4;
     k4 = gsl_interp_eval(b->k4_of_m_interp, b->mdat, b->k4dat, m,
         b->k4_of_m_acc);

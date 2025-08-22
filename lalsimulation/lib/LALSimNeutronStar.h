@@ -62,7 +62,7 @@ extern const char * const lalSimNeutronStarEOSNames[111];
 
 /** Incomplete type for a neutron star family having a particular EOS. */
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
-
+typedef struct tagFamMultiParts FamMultiParts;
 
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
 void XLALDestroySimNeutronStarEOSMultiParts(EOSMultiParts * eos);
@@ -70,11 +70,13 @@ char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
+//CUTER-dev
 EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname);
-
+EOSMultiParts *XLALSimNeutronStarEOSFromFilePT(const char *fname);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
+
 EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat);
@@ -195,6 +197,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos, double epsrel);
+
 //CUTER-dev
 int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
@@ -210,8 +213,24 @@ int XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *m
 /* MASS-RADIUS TYPE RELATIONSHIP ROUTINES */
 
 void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam);
+void XLALDestroySimNeutronStarMultiBranchFamily(FamMultiParts * fam);
 LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     LALSimNeutronStarEOS * eos);
+FamMultiParts * XLALCreateSimNeutronStarFamilyPT(
+    EOSMultiParts * eos, int min_fam);
+
+int XLALSimNeutronStarFamNumberOfBranches(FamMultiParts *fam);
+double XLALSimNeutronStarFamBranchMinMass(int branch, FamMultiParts *fam);
+double XLALSimNeutronStarFamBranchMinCentralPressure(int branch, FamMultiParts *fam);
+double XLALSimNeutronStarFamBranchMaxMass(int branch, FamMultiParts *fam);
+double XLALSimNeutronStarFamBranchMaxCentralPressure(int branch, FamMultiParts *fam);
+double XLALSimNeutronStarFamBranchRadius(double m, int branch, FamMultiParts * fam);
+double XLALSimNeutronStarFamBranchCentralPressure(double m, int branch, FamMultiParts * fam);
+double XLALSimNeutronStarFamBranchMass(double p, int branch, FamMultiParts * fam);
+double XLALSimNeutronStarFamBranchBaryonicMass(double m, int branch, FamMultiParts * fam);
+double XLALSimNeutronStarFamBranchLoveNumberK2(double m, int branch, FamMultiParts * fam);
+double XLALSimNeutronStarFamBranchLoveNumberK3(double m, int branch, FamMultiParts * fam);
+double XLALSimNeutronStarFamBranchLoveNumberK4(double m, int branch, FamMultiParts * fam);
 
 double XLALSimNeutronStarFamMinimumMass(LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarMaximumMass(LALSimNeutronStarFamily * fam);
