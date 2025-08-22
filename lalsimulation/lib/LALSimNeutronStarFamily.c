@@ -85,7 +85,7 @@ static double fmaximizer_multi_gslfunction(double x, void * params)
     EOSMultiParts * eos = params;
     double r, m, mb, k2, k3, k4;
     XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
-        &r, &m, &mb, &k2, &k3, &k4, x, eos, 1e-6);
+        &r, &m, &mb, &k2, &k3, &k4, x, eos, 1e-6, 0);
     return -m; /* maximum mass is minimum negative mass */
 }
 
@@ -96,7 +96,7 @@ static double fminimizer_multi_gslfunction(double x, void * params)
     EOSMultiParts * eos = params;
     double r, m, mb, k2, k3, k4;
     XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
-        &r, &m, &mb, &k2, &k3, &k4, x, eos, 1e-6);
+        &r, &m, &mb, &k2, &k3, &k4, x, eos, 1e-6, 0);
     return m;
 }
 
@@ -271,7 +271,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
     int min_interp_points = 5; // Minimum number of points required for all gls interpolators
 
     fam->pmin = exp(logpmin);
-    fam->pmax = XLALSimNeutronStarEOSMultiPartsMaxPressure(eos);
+    fam->pmax = XLALSimNeutronStarEOSMultiPartsMaxPressureGeometerized(eos);
 
     //FIXME: Is 4 enough? Too many?
     fam->fam_branch = (LALSimNeutronStarFamily **) LALMalloc(sizeof(LALSimNeutronStarFamily *) * nbranch_max);
@@ -317,7 +317,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
 	        &fam_branch_i->rdat[j], &fam_branch_i->mdat[j],
 		&fam_branch_i->mbdat[j], &fam_branch_i->k2dat[j],
 		&fam_branch_i->k3dat[j], &fam_branch_i->k4dat[j],
-		fam_branch_i->pdat[j], eos, 1e-6);
+		fam_branch_i->pdat[j], eos, 1e-6, 0);
 
 	    // End of stable branch; Coming down from max mass
 	    if (j > 0 && turnover == 0 && fam_branch_i->mdat[j] <= fam_branch_i->mdat[j-1])
@@ -388,7 +388,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos){
                 &fam_branch_i->rdat[i], &fam_branch_i->mdat[i],
                 &fam_branch_i->mbdat[i], &fam_branch_i->k2dat[i],
 		&fam_branch_i->k3dat[i], &fam_branch_i->k4dat[i],
-                fam_branch_i->pdat[i], eos, 1e-6);
+                fam_branch_i->pdat[i], eos, 1e-6, 0);
 
             /* resize arrays */
             if(fam_branch_i->pdat[i] <= fam_branch_i->pdat[i-1]){

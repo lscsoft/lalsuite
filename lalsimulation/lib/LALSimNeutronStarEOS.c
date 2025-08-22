@@ -92,7 +92,6 @@ struct tagEOSMultiParts{
   void (*free) (EOSMultiParts * myself);
 };
 
-
 /** @endcond */
 
 /** Recognised equations of state names */
@@ -158,8 +157,9 @@ void XLALDestroySimNeutronStarEOSMultiParts(EOSMultiParts * eos)
     return;
 }
 
-
 /** @} */
+
+// TODO CUTER-dev make a destroy function for multiple parts eos
 
 /* Tabular Equation of State Code. */
 #include "LALSimNeutronStarEOSTabular.c"
@@ -200,6 +200,8 @@ double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS *
 {
     return eos->pmax;
 }
+
+
 
 /**
  * @brief Returns the maximum pressure of the EOS in geometrized units m^-2.
