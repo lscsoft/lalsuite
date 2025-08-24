@@ -322,6 +322,7 @@ int XLALSimNeutronStarEOSMultiPartsNumber(EOSMultiParts * eos)
  */
 LALSimNeutronStarEOS * XLALSimNeutronStarEOSPart(EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_NULL(XLAL_EDOM);
     LALSimNeutronStarEOS * eos_part = eos->eos_part[part_number];
     return eos_part;
 }
@@ -355,6 +356,7 @@ double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(double p,
 double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPressureGeometerized(double p,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double e;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     e = eos_part->e_of_p(p, eos_part);
@@ -387,6 +389,7 @@ double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(double p,
 double XLALSimNeutronStarEOSMultiPartsPseudoEnthalpyOfPressureGeometerized(double p,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double h;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     h = eos_part->h_of_p(p, eos_part);
@@ -419,6 +422,7 @@ double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(double h,
 double XLALSimNeutronStarEOSMutliPartsPressureOfPseudoEnthalpyGeometerized(double h,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double p;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     p = eos_part->p_of_h(h, eos_part); // TODO put some safeguards if interpolatino cannot be made ??
@@ -451,6 +455,7 @@ double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(double
 double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPseudoEnthalpyGeometerized(double
     h, EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double e;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     e = eos_part->e_of_h(h, eos_part);
@@ -484,6 +489,7 @@ double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(double
 double XLALSimNeutronStarEOSMultiPartsRestMassDensityOfPseudoEnthalpyGeometerized(double
     h, EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double rho;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     rho = eos_part->rho_of_h(h, eos_part);
@@ -520,6 +526,7 @@ double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(double p,
 double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressureGeometerized(double p,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double dedp;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     dedp = eos_part->dedp_of_p(p, eos_part);
@@ -552,6 +559,7 @@ double XLALSimNeutronStarEOSSpeedOfSoundGeometerized(double h,
 double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundGeometerized(double h,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double v;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     v = eos_part->v_of_h(h, eos_part);
@@ -586,6 +594,7 @@ double XLALSimNeutronStarEOSEnergyDensityOfPressure(double p,
 double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPressure(double p,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double e;
     p *= LAL_G_C4_SI;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
@@ -619,6 +628,7 @@ double XLALSimNeutronStarEOSPseudoEnthalpyOfPressure(double p,
 double XLALSimNeutronStarEOSMultiPartsPseudoEnthalpyOfPressure(double p,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double h;
     p *= LAL_G_C4_SI;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
@@ -655,6 +665,7 @@ double XLALSimNeutronStarEOSPressureOfPseudoEnthalpy(double h,
 double XLALSimNeutronStarEOSMultiPartsPressureOfPseudoEnthalpy(double h,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double p;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h, eos_part);
@@ -690,6 +701,7 @@ double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpy(double h,
 double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPseudoEnthalpy(double h,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double e;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(h,
@@ -729,6 +741,7 @@ double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpy(double h,
 double XLALSimNeutronStarEOSMultiPartsRestMassDensityOfPseudoEnthalpy(double h,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double rho;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     rho =
@@ -768,6 +781,7 @@ double XLALSimNeutronStarEOSEnergyDensityDerivOfPressure(double p,
 double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressure(double p,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double dedp;
     p *= LAL_G_C4_SI;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
@@ -801,6 +815,7 @@ double XLALSimNeutronStarEOSSpeedOfSound(double h, LALSimNeutronStarEOS * eos)
  */
 double XLALSimNeutronStarEOSMultiPartsSpeedOfSound(double h, EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double v;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
     v = XLALSimNeutronStarEOSSpeedOfSoundGeometerized(h, eos_part);
@@ -836,6 +851,7 @@ double XLALSimNeutronStarEOSPressureOfEnergyDensity(double e,
 double XLALSimNeutronStarEOSMutliPartsPressureOfEnergyDensity(double e,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double p;
     e *= LAL_G_C4_SI;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
@@ -872,6 +888,7 @@ double XLALSimNeutronStarEOSPressureOfRestMassDensity(double rho,
 double XLALSimNeutronStarEOSMultiPartsPressureOfRestMassDensity(double rho,
     EOSMultiParts * eos, int part_number)
 {
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
     double p;
     rho *= LAL_G_C2_SI;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
