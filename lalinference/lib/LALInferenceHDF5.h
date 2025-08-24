@@ -48,7 +48,7 @@ int LALInferenceH5DatasetToVariablesArray(
 LALH5File *LALInferenceH5CreateGroupStructure(
     LALH5File *h5file, const char *codename, const char *runID);
 
-extern const char LALInferenceHDF5PosteriorSamplesDatasetName[];
-extern const char LALInferenceHDF5NestedSamplesDatasetName[];
+extern const char *const LALInferenceHDF5PosteriorSamplesDatasetName;
+extern const char *const LALInferenceHDF5NestedSamplesDatasetName;
 
 #endif /* LALInferenceHDF5_h */
