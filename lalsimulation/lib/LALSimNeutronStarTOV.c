@@ -49,7 +49,6 @@ static double tidal_Love_number_k2(double c, double y)
     return num / den;
 }
 
-//CUTER-dev
 /* Implements Eq.(51) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).*/
 static double tidal_Love_number_k3(double c, double y){
     double num;
@@ -71,7 +70,6 @@ static double tidal_Love_number_k3(double c, double y){
     return num / den;
 }
 
-//CUTER-dev
 /* Implements Eq.(52) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).*/
 static double tidal_Love_number_k4(double c, double y){
     double num;
@@ -94,9 +92,6 @@ static double tidal_Love_number_k4(double c, double y){
     return num / den;
 }
 
-
-
-//CUTER-dev
 static double constant_zero_for_kl(double r, double m, double A, double e, double p, double dedp, int l){
     /* Eq. (29) of Damour & Nagar PRD 80 084035 (2009). */
     double C0 =
@@ -503,7 +498,6 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
 }
 
 
-//CUTER-dev
 /* Structure that contains the set of physical variables to solve with ODE solver */
 struct tov_ext_ode_vars {
     double r;   /* radial coordinate, m */
@@ -529,8 +523,6 @@ static struct tov_ext_ode_vars *tov_ext_ode_vars_cast(const double *y)
     return u.v;
 }
 
-
-//CUTER-dev
 /* Structure that contains the set of physical variables to solve with ODE solver */
 struct tov_mini_ode_vars {
     double r;   /* radial coordinate, m */
@@ -551,9 +543,6 @@ static struct tov_mini_ode_vars *tov_mini_ode_vars_cast(const double *y)
     return u.v;
 }
 
-
-
-// CUTER-dev
 /* Boundary condition for gravitaitonal mass, baryonic mass,
  * radius and tidal deformability related parameters (H and beta)
  * defined for the center of the star.
@@ -594,8 +583,6 @@ static int tov_ext_initial_condition(double eps, double p, double dh, LALSimNeut
     return 0;
 }
 
-
-//CUTER-dev
 /* ODE integrand for TOV (including the baryonic mass) and
  * Love number (k2, k3 and k4) equations with pseudo-enthalpy as
  * the independent variable.
@@ -652,8 +639,7 @@ static int tov_ext_ode(double h, const double *y, double *dy, void *params)
 }
 
 
-// CUTER-dev
-/* Boundary condition for gravitaitonal mass,
+/* Boundary condition for gravitational mass,
  * radius and tidal deformability related parameters (H and beta)
  * defined for the center of the star.
 */
@@ -683,8 +669,6 @@ static int tov_mini_initial_condition(double eps, double p, double dh, LALSimNeu
     return 0;
 }
 
-
-//CUTER-dev
 /* ODE integrand for TOV and Love number (k2) equations with pseudo-enthalpy as
  * the independent variable.
  */
@@ -742,8 +726,6 @@ static double correction_phase_transition(double r, double m, double b_kl, doubl
 }
 
 
-
-//CUTER-dev
 /**
  * @brief Integrates the Tolman-Oppenheimer-Volkov stellar structure equations.
  * @details
@@ -759,17 +741,19 @@ static double correction_phase_transition(double r, double m, double b_kl, doubl
  * @param[out] love_number_k4 The k_4 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
  * @param eos Pointer to the Equation of State structure with multiple parts.
- * @param flag_mini Choose either to compute all variables (flag_mini = 0)
- * or minimum solver with mass, radius, k2 (flag_mini = 1)
+ * @param min_tov Choose either to compute all variables (min_tov = 0)
+ * or minimum solver with mass, radius, k2 (min_tov = 1)
  * @param[in] epsrel The relative error for the TOV solver routine
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
+void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
              EOSMultiParts *eos,
-             double epsrel, int flag_mini){
+             double epsrel, int min_tov){
+
+    if(min_tov!=0 && min_tov!=1) XLAL_ERROR_VOID(XLAL_EDOM);
 
     /* ode integration variables */
     const double epsabs = 0.0;
@@ -794,7 +778,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
     double h;
 
 
-    if (flag_mini ==0){
+    if (min_tov ==0){
         double y[TOV_EXT_ODE_VARS_DIM];
         double dy[TOV_EXT_ODE_VARS_DIM];
 
@@ -804,7 +788,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
         /* Set up the iterative method to solve the ODE, and the dimension of the ODE set */
         gsl_odeiv_step *step = gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_EXT_ODE_VARS_DIM);
         /* Set up the precision of the numerical method with relative error epsrel */
-        gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel); // TODO test the error absolute vs relative
+        gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);
         /* Set up evolution function to solve ODE with the dimension of the ODE set */
         gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_EXT_ODE_VARS_DIM);
 
@@ -821,7 +805,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
 
             while (h > hmin) {
                 s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
-                if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
+                if (s != GSL_SUCCESS) XLAL_ERROR_VOID(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
             }
 
             if (pc >= pmin && j != 0){
@@ -862,7 +846,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
         gsl_odeiv_control_free(ctrl);
         gsl_odeiv_step_free(step);
 
-    } else if (flag_mini == 1){
+    } else if (min_tov == 1){
         double y[TOV_MINI_ODE_VARS_DIM]; // array for the variables of the ODE equations
         double dy[TOV_MINI_ODE_VARS_DIM];
 
@@ -872,7 +856,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
         /* Set up the iterative method to solve the ODE, and the dimension of the ODE set */
         gsl_odeiv_step *step = gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_MINI_ODE_VARS_DIM);
         /* Set up the precision of the numerical method with relative error epsrel */
-        gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel); // TODO test the error absolute vs relative
+        gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);
         /* Set up evolution function to solve ODE with the dimension of the ODE set */
         gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_MINI_ODE_VARS_DIM);
 
@@ -889,7 +873,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
 
             while (h > hmin) {
                 s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
-                if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
+                if (s != GSL_SUCCESS) XLAL_ERROR_VOID(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
             }
 
             if (pc >= pmin && j != 0){
@@ -924,13 +908,12 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
     } else printf("Flag mini must be either 0 or 1\n");
 
 
-    return 0;
+    return;
 
 
 }
 
 
-//CUTER-dev
 /**
  * @brief Integrates the Tolman-Oppenheimer-Volkov stellar structure equations.
  * @details
@@ -947,7 +930,7 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *mass,
+void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *mass,
              double *love_number_k2, double central_pressure_si,
              EOSMultiParts *eos,
              double epsrel){
@@ -965,7 +948,7 @@ int XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *m
     /* Set up the iterative method to solve the ODE, and the dimension of the ODE set */
     gsl_odeiv_step *step = gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, TOV_MINI_ODE_VARS_DIM);
     /* Set up the precision of the numerical method with relative error epsrel */
-    gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel); // TODO test the error absolute vs relative
+    gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);
     /* Set up evolution function to solve ODE with the dimension of the ODE set */
     gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_MINI_ODE_VARS_DIM);
 
@@ -997,7 +980,7 @@ int XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *m
 
         while (h > hmin) {
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
-            if (s != GSL_SUCCESS) XLAL_ERROR(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
+            if (s != GSL_SUCCESS) XLAL_ERROR_VOID(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
         }
 
         if (pc >= pmin && j != 0){
@@ -1030,19 +1013,37 @@ int XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *m
     gsl_odeiv_control_free(ctrl);
     gsl_odeiv_step_free(step);
 
-    return 0;
+    return ;
 
 
 }
-
-
-//TODO add all the functions that go with it
 
 int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos)
 {
     const double epsrel = 1e-6;
     return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
+}
+
+void XLALSimNeutronStarTOVODEExtendedIntegrate(double *radius, double *mass, double *baryon_mass,
+             double *love_number_k2, double *love_number_k3, double *love_number_k4,
+             double central_pressure_si,
+             EOSMultiParts *eos,
+             int min_tov)
+{
+    const double epsrel = 1e-6;
+    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(radius, mass, baryon_mass, love_number_k2,
+                                                           love_number_k3, love_number_k4, central_pressure_si,
+                                                           eos, epsrel, min_tov);
+    return ;
+}
+
+void XLALSimNeutronStarTOVODEMiniIntegrate(double *radius, double *mass, double *love_number_k2,
+                                       double central_pressure_si, EOSMultiParts *eos)
+{
+    const double epsrel = 1e-6;
+    XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
+    return ;
 }
 
 

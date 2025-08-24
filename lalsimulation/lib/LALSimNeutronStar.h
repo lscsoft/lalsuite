@@ -55,7 +55,6 @@
 
 /** Incomplete type for the neutron star Equation of State (EOS). */
 typedef struct tagLALSimNeutronStarEOS LALSimNeutronStarEOS;
-//CUTER-dev
 typedef struct tagEOSMultiParts EOSMultiParts;
 /** Recognised names of equations of state */
 extern const char * const lalSimNeutronStarEOSNames[111];
@@ -70,7 +69,6 @@ char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
-//CUTER-dev
 EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname);
 EOSMultiParts *XLALSimNeutronStarEOSFromFilePT(const char *fname);
 
@@ -198,14 +196,22 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos, double epsrel);
 
-//CUTER-dev
-int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
+void XLALSimNeutronStarTOVODEExtendedIntegrate(double *radius, double *mass, double *baryon_mass,
+             double *love_number_k2, double *love_number_k3, double *love_number_k4,
+             double central_pressure_si,
+             EOSMultiParts *eos,
+             int min_tov);
+
+void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
              EOSMultiParts * eos,
              double epsrel, int flag_mini);
-//CUTER-dev
-int XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *mass,
+
+void XLALSimNeutronStarTOVODEMiniIntegrate(double *radius, double *mass, double *love_number_k2,
+                                       double central_pressure_si, EOSMultiParts *eos);
+
+void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *mass,
              double *love_number_k2, double central_pressure_si,
              EOSMultiParts * eos,
              double epsrel);

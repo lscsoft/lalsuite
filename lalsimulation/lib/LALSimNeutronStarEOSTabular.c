@@ -265,7 +265,6 @@ static void eos_free_tabular(LALSimNeutronStarEOS * eos)
 }
 
 
-//CUTER-dev
 static void eos_multi_part_free_tabular(EOSMultiParts * eos)
 {
     if (eos) {
@@ -277,7 +276,6 @@ static void eos_multi_part_free_tabular(EOSMultiParts * eos)
     }
     return;
 }
-
 
 /* Finding density where EOS becomes acausal */
 
@@ -354,7 +352,6 @@ static double eosMultiParts_min_acausal_pseudo_enthalpy_tabular(double hmax,
 }
 
 
-// CUTER-dev
 /* This function corrects "dirty" phase transitions which are defined
  * by Delta P != 0 and Delta h != 0 exactly but numerically zero. The enthalpy
  * is used for the correction: we linearly extrapolate h(P) on both sides of the phase
@@ -397,7 +394,6 @@ static void eos_correct_phase_transition(double *edat, double *pdat, double *hda
 }
 
 
-// CUTER-dev
 /* This function finds phase transitions in a tabulated equation of state
  * and returns a list of indices at which the phase transition occurs.
  */
@@ -440,13 +436,12 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
 }
 
 
-//CUTER-dev for documentation + changes made for hmin
 /**
  * This function create an EoS structure from tabulated equation of state variables.
  * The EoS structure contains a data structure (where all original tabulated data is stored),
  * and a series of interpolated functions (e.g. e_of_p, h_of_p ...).
- * Quanitities nbdat, mubdat, muedat, hdat, yedat, and cs2dat that have been added in the
- * new LAL format are only stored in the data structure, not used for interpolated quantities.   //TODO discuss with Micaela the use of the new format honestly
+ * Quantities nbdat, mubdat, muedat, hdat, yedat, and cs2dat that have been added in the
+ * new LAL format are only stored in the data structure, not used for interpolated quantities.
  * In this function, we use only edat and pdat (as was for the old LAL format) which must
  * be given in geometrized units (/m^2). From edat (energy density) and pdat (pressure)
  * and the first law of thermodynamics, this function computes h (the enthalpy, dimensionless)
@@ -615,7 +610,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
  * tabulated equation of state information, given minimum and maximum
  * indices for the tables.
  */
-//CUTER-dev
 static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *edat, double *pdat,
                                                 double *mubdat, double *muedat, double *hdat,
                                                 double *yedat, double *cs2dat,
@@ -682,7 +676,7 @@ static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *ed
 /** @endcond */
 
 /**
- * @brief Reads a data file containing a tabulated equation of state. //CUTER-dev TODO update the comments
+ * @brief Reads a data file containing a tabulated equation of state. // TODO update the comments
  * @details Read a data file specified by a path fname that contains two
  * whitespace separated columns of equation of state data.  The first column
  * contains the pressure in Pa and the second column contains the energy
@@ -779,8 +773,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
 }
 
 
-
-//CUTER-dev
 /**
  * @brief Reads a data file containing a tabulated equation of state to create
  * the equation of state structure containing a multipart structure.
@@ -893,7 +885,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
     return eos;
 }
 
-//CUTER-dev TODO this needs to be updated, the description of the function is wrong + is it ok to have only the new format EoS
+//TODO this needs to be updated, the description of the function is wrong + is it ok to have only the new format EoS
 /**
  * @details Reads 9 arrays a data file specified by a path fname that contains two
  * whitespace separated columns of equation of state data.  The first column
@@ -917,7 +909,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat)
 {
     LALSimNeutronStarEOS *eos;
-    //CUTER-dev
     int ncol = 9;
     if (hdat == NULL) ncol = 2;
     eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
@@ -926,7 +917,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
 
 
 
-// CUTER-dev
 /**
  * @brief Reads arrays for the equation of state variables to construct a multiple parts EoS
  * that can accomodate phase transitions.
@@ -996,6 +986,103 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     return eos;
 
 }
+
+// TODO: Generalize... This assumes a PT
+EOSMultiParts *XLALSimNeutronStarEOSFromFilePT(const char *fname)
+{
+    EOSMultiParts *eos;
+    double *f_dat;
+    size_t ncol;
+    size_t ndat;
+    LALFILE *fp;
+
+    double *nbdat;
+    double *edat;
+    double *pdat;
+    double *mubdat;
+    double *muedat;
+    double *hdat;
+    double *yedat;
+    double *cs2dat;
+
+    fp = XLALSimReadDataFileOpen(fname);
+    if (!fp)
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+
+    ndat = XLALSimReadDataFileNCol(&f_dat, &ncol, fp);
+    XLALFileClose(fp);
+
+    if (ndat == (size_t) (-1))
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+
+    nbdat = LALMalloc(ndat * sizeof(*nbdat));
+    edat = LALMalloc(ndat * sizeof(*edat));
+    pdat = LALMalloc(ndat * sizeof(*pdat));
+    mubdat = LALMalloc(ndat * sizeof(*mubdat));
+    muedat = LALMalloc(ndat * sizeof(*muedat));
+    hdat = LALMalloc(ndat * sizeof(*hdat));
+    yedat = LALMalloc(ndat * sizeof(*yedat));
+    cs2dat = LALMalloc(ndat * sizeof(*cs2dat));
+
+    double speed_of_light = 299792458.0;
+    double elemc = 1.602176634e-19;
+    double mev_to_gcm = 1.e9*elemc/speed_of_light/speed_of_light*1.e39;
+    double mev_si = elemc*1.e6;
+    double p_factor_nu_to_cgs = mev_si*1.e46;
+
+    // FIXME: This is specific for 4 columns with certain units...
+    if (ncol > 2)
+    {
+        for (size_t i = 0 ; i < ndat ; i++) {
+            nbdat[i] = f_dat[i * ncol + 1];
+            edat[i] = f_dat[i * ncol + 2] * mev_to_gcm * 1e3 * LAL_G_C2_SI; /* transform from CGS to SI and then to Geometrized units */
+            pdat[i] = f_dat[i * ncol + 3] * p_factor_nu_to_cgs * 1e-1 * LAL_G_C4_SI; /* transform from CGS to SI and then to Geometrized units */
+            mubdat[i] = 0.0;
+            muedat[i] = 0.0;
+            hdat[i] = 0.0;
+            yedat[i] = 0.0;
+            cs2dat[i] = 0.0;
+        }
+	double dh_over_dp[ndat];
+        double deltap;
+        hdat[0] = 1.0e-10;
+        dh_over_dp[0] = 1/(edat[0] + pdat[0]);
+        for (size_t i = 1; i < ndat; i++){
+            deltap = pdat[i] - pdat[i-1];
+            dh_over_dp[i] = 1/(edat[i] + pdat[i]);
+            hdat[i] = hdat[i-1] + deltap*(dh_over_dp[i] + dh_over_dp[i-1])/2;
+        }
+
+    }
+    else if (ncol == 2)
+    {
+	//FIXME
+	fprintf(stderr, "error: eos files (currently) must have at least 4 columns, ncol >= 2\n");
+        exit(1);
+    }
+    else if (ncol < 2)
+    {
+        fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
+        exit(1);
+    }
+
+    eos = XLALSimNeutronStarEOSFromTabDataPhaseTransition(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat);
+
+    XLALFree(f_dat);
+    LALFree(nbdat);
+    LALFree(edat);
+    LALFree(pdat);
+    LALFree(mubdat);
+    LALFree(muedat);
+    LALFree(hdat);
+    LALFree(yedat);
+    LALFree(cs2dat);
+
+    // TODO: Add eos->name
+    //snprintf(eos->name, sizeof(eos->name), "%s", fname);
+    return eos;
+}
+
 
 
 /**
