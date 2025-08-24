@@ -70,7 +70,6 @@ char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
 EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname);
-EOSMultiParts *XLALSimNeutronStarEOSFromFilePT(const char *fname);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
