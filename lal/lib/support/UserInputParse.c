@@ -871,7 +871,7 @@ XLALParseStringValueAsSTRINGVector ( LALStringVector **strVect,	///< [out] alloc
 /// \note The output string-vector (*vect) must be NULL
 ///
 #define DEFN_XLALParseStringValueAsVector(CTYPE)                        \
-DECL_XLALParseStringValueAsVector(CTYPE)                                \
+int XLALParseStringValueAs ##CTYPE## Vector ( CTYPE ## Vector **vect, const CHAR *valString ) \
 {                                                                       \
  XLAL_CHECK ( (valString != NULL) && (strlen(valString) > 0), XLAL_EINVAL ); \
  XLAL_CHECK ( (vect != NULL) && (*vect == NULL) , XLAL_EINVAL );        \
