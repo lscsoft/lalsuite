@@ -156,7 +156,10 @@ def get_urls(args):
                     framefile = m.group(9)
                     urls.append(framefile)
 
-    return urls
+    # sort the urls by gps time since find_urls() may not return a sorted list
+    sorted_urls = sorted(urls, key=lambda x: file_segment(x)[0])
+
+    return sorted_urls
 
 
 def make_cache(
