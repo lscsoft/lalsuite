@@ -20,6 +20,7 @@
     - retry apt-get install -y -q -q
           lintian
           python3-venv
+          xz-utils
     # setup local apt repository to house upstream packages
     - if test -n "$(find . -maxdepth 1 -name '*.deb' -print -quit)"; then
           retry apt-get -y -q -q install local-apt-repository;
