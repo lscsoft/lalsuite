@@ -63,7 +63,7 @@
     - retry yum -y -q install ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
     # lint packages (RPM files only)
     - |
-      tar xfO ${TARBALL} $(tar tf ${TARBALL} | grep '/rpmlintrc$') > rpmlintrc
+      tar -O -xf ${TARBALL} $(tar -tf ${TARBALL} | grep '/rpmlintrc$') > rpmlintrc
       echo "----- rpmlintrc"
       grep . rpmlintrc
       echo "----- rpmlintrc"
