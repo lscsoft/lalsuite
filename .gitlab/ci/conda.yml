@@ -32,6 +32,7 @@
         conda-forge-pinning
         "conda-smithy>=3.7.5"
         conda-libmamba-solver
+        xz
   # print info
   - conda activate base
   - conda info --all
