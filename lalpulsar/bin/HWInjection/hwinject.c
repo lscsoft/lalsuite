@@ -851,7 +851,7 @@ int main( int argc, char *argv[] )
       printf( "[%02d] %s\n", i, command );
     } else {
       errno = 0;
-      if ( !( fp[i] = popen( command, "r" ) ) || errno ) {
+      if ( !( fp[i] = popen( command, "r" ) ) ) {
         syserror( 1, "Unable to popen(3) %s\n", command );
         exit( 1 );
       }
