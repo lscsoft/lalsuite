@@ -356,7 +356,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
 	            &fam_branch_i->rdat[j], &fam_branch_i->mdat[j],
 		    &fam_branch_i->mbdat[j], &fam_branch_i->k2dat[j],
 		    &fam_branch_i->k3dat[j], &fam_branch_i->k4dat[j],
-		    fam_branch_i->pdat[j], eos, 1e-6, 0);
+		    fam_branch_i->pdat[j], eos, 1e-6);
 	    }
 
 	    // End of stable branch; Coming down from max mass
@@ -433,7 +433,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
                     &fam_branch_i->rdat[i], &fam_branch_i->mdat[i],
                     &fam_branch_i->mbdat[i], &fam_branch_i->k2dat[i],
 		    &fam_branch_i->k3dat[i], &fam_branch_i->k4dat[i],
-                    fam_branch_i->pdat[i], eos, 1e-6, 0);
+                    fam_branch_i->pdat[i], eos, 1e-6);
 	    }
 
             /* resize arrays */

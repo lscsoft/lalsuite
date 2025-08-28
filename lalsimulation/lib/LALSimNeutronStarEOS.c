@@ -212,6 +212,33 @@ double XLALSimNeutronStarEOSMultiPartsMaxPressureGeometerized(EOSMultiParts * eo
 }
 
 /**
+ * @brief Returns the maximum pressure of the ith EoS piece in geometrized units m^-2.
+ * @param eos Pointer to the EOSMultiParts structure.
+ * @param part_number Integer to the piece number.
+ * @return The maximum pressure of the EOS in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometerized(EOSMultiParts * eos, int part_number)
+{
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
+    return XLALSimNeutronStarEOSMaxPressureGeometerized(eos_part);
+}
+
+/**
+ * @brief Returns the minimum pressure of the ith EoS piece in geometrized units m^-2.
+ * @param eos Pointer to the EOSMultiParts structure.
+ * @param part_number Integer to the piece number.
+ * @return The minimum pressure of the EOS in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometerized(EOSMultiParts * eos, int part_number)
+{
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    double hmin = XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(eos, part_number);
+    return XLALSimNeutronStarEOSMutliPartsPressureOfPseudoEnthalpyGeometerized(hmin, eos, part_number);
+}
+
+
+/**
  * @brief Returns the minimum enthalpy of the EOS.
  * @param eos Pointer to the EOS structure.
  * @return The minimum enthalpy of the EOS.
@@ -231,6 +258,20 @@ double XLALSimNeutronStarEOSMultiPartsMinEnthalpy(EOSMultiParts * eos)
 {
     return eos->hmin;
 }
+
+
+/**
+ * @brief Returns the minimum enthalpy of the ith EOS piece.
+ * @param eos Pointer to the EOSMultiParts structure.
+ * @param part_number Integer to the piece number.
+ * @return The minimum enthalpy of the EOS.
+ */
+double XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(EOSMultiParts * eos, int part_number){
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
+    return XLALSimNeutronStarEOSMinEnthalpy(eos_part);
+}
+
 
 /**
  * @brief Returns the maximum pressure of the EOS in Pa.
@@ -258,6 +299,39 @@ double XLALSimNeutronStarEOSMultiPartsMaxPressure(EOSMultiParts * eos)
     return pmax;
 }
 
+
+/**
+ * @brief Returns the maximum pressure of the ith EOS piece in Pa.
+ * @param eos Pointer to the EOS structure.
+ * @param part_number Integer to the piece number.
+ * @return The maximum pressure of the EOS in Pa.
+ */
+double XLALSimNeutronStarEOSMutliPartsPieceMaxPressure(EOSMultiParts * eos, int part_number)
+{
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
+    double pmax;
+    pmax = XLALSimNeutronStarEOSMaxPressureGeometerized(eos_part);
+    pmax /= LAL_G_C4_SI;
+    return pmax;
+}
+
+/**
+ * @brief Returns the minimum pressure of the ith EOS piece in Pa.
+ * @param eos Pointer to the EOS structure.
+ * @param part_number Integer to the piece number.
+ * @return The minimum pressure of the EOS in Pa.
+ */
+double XLALSimNeutronStarEOSMutliPartsPieceMinPressure(EOSMultiParts * eos, int part_number)
+{
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    double hmin = XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(eos, part_number);
+    double pmin;
+    pmin = XLALSimNeutronStarEOSMutliPartsPressureOfPseudoEnthalpyGeometerized(hmin, eos, part_number);
+    pmin /= LAL_G_C4_SI;
+    return pmin;
+}
+
 /**
  * @brief Returns the maximum pseudo enthalpy of the EOS (dimensionless).
  * @param eos Pointer to the EOS structure.
@@ -273,9 +347,21 @@ double XLALSimNeutronStarEOSMaxPseudoEnthalpy(LALSimNeutronStarEOS * eos)
  * @param eos Pointer to the EOSMultiParts structure.
  * @return The maximum pseudo enthalpy of the EOS (dimensionless).
  */
-double XLALSimNeutronStarEOSMultiPartsMaxPseudoEnthalpy(EOSMultiParts * eos)
+double XLALSimNeutronStarEOSMultiPartsMaxEnthalpy(EOSMultiParts * eos)
 {
     return eos->hmax;
+}
+
+/**
+ * @brief Returns the maximum pressure of the EOS in geometrized units m^-2.
+ * @param eos Pointer to the EOSMultiParts structure.
+ * @param part_number Integer to the piece number.
+ * @return The maximum pressure of the EOS in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMultiPartsPieceMaxEnthalpy(EOSMultiParts * eos, int part_number){
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
+    return XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos_part);
 }
 
 
@@ -303,6 +389,21 @@ double XLALSimNeutronStarEOSMultiPartsMinAcausalPseudoEnthalpy(EOSMultiParts * e
 {
     return eos->hMinAcausal;
 }
+
+
+/**
+ * @brief Returns the maximum pressure of the ith EOS piece in geometrized units m^-2.
+ * @param eos Pointer to the EOSMultiParts structure.
+ * @param part_number Integer to the piece number.
+ * @return The maximum pressure of the EOS in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMultiPartsPieceMinAcausalPseudoEnthalpy(EOSMultiParts * eos, int part_number){
+    if (part_number >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, part_number);
+    return XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(eos_part);
+}
+
+
 
 /**
  * @brief Returns the number of parts divided by phase transitions in the EOS.
