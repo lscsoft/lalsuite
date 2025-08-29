@@ -261,7 +261,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
 /**
  * @brief Creates a neutron star family structure for a given equation of state.
  * @details
- * A neutron star family is a one-parameter family of neturon stars for a
+ * A neutron star family is a one-parameter family of neutron stars for a
  * fixed equation of state.  The one parameter is the neutron star central
  * pressure, or, equivalently, the mass of the neutron star.  The family
  * is terminated at the maximum neutron star mass for the specified equation

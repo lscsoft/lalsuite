@@ -110,21 +110,6 @@ static int find_eos_piece_pressure(double p, EOSMultiParts *eos)
     return item_piece;
 }
 
-// static int find_eos_piece_pressure_geometrized(double p, EOSMultiParts *eos)
-// {
-//     int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-//     int item_piece = 0;
-//     for (int j = 0 ; j < number_pieces; j++){
-//         double pmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometerized(eos, j);
-//         double pmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometerized(eos, j);
-//         if (p >= pmin && p <= pmax) {
-//             item_piece = j;
-//             break;
-//         }
-//     }
-//     return item_piece;
-// } TODO
-
 
 /* This function finds the id number of the piece EoS containing
  * the pseudo-enthalpy value h, in a EOSMultiParts structure.

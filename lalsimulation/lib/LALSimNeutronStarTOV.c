@@ -853,20 +853,23 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
 
 
 /**
- * @brief Integrates the Tolman-Oppenheimer-Volkov stellar structure equations.
+ * @brief Integrates the stellar structure system of ordinary differential
+ * equations to obtain neutron star's macroscopic parameters.
  * @details
- * Solves the Tolman-Oppenheimer-Volkov stellar structure equations using the
- * pseudo-enthalpy formalism introduced in:
- * Lindblom (1992) "Determining the Nuclear Equation of State from Neutron-Star
- * Masses and Radii", Astrophys. J. 398 569.
+ * Solves the Tolman-Oppenheimer-Volkoff stellar structure equations and
+ * the gravito-electric tidal Love number equations, given an equation of
+ * state and a central pressure. The solution to this set of ODEs provide
+ * the neutron star's radius, gravitational mass and
+ * second order gravito-electric tidal Love number.
+ * It uses the pseudo-enthalpy formalism introduced in Lindblom (1992)
+ * Astrophys. J. 398 569 "Determining the Nuclear Equation of State from
+ * Neutron-Star Masses and Radii".
  * @param[out] radius The radius of the star in m.
- * @param[out] mass The mass of the star in kg.
+ * @param[out] mass The gravitationnal mass of the star in kg.
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
- * @param eos Pointer to the Equation of State structure with multiple parts.
- * @param[in] epsrel The relative error for the TOV solver routine
- * @retval 0 Success.
- * @retval <0 Failure.
+ * @param eos Pointer to the Equation of State structure.
+ * @param[in] epsrel The relative error for the numerical solver routine.
  */
 void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *mass,
              double *love_number_k2, double central_pressure_si,

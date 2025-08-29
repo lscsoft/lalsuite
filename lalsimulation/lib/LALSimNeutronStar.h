@@ -271,7 +271,7 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
              EOSMultiParts * eos,
              double epsrel);
 
-/* MASS-RADIUS TYPE RELATIONSHIP ROUTINES */
+/* NEUTRON STAR ASTROPHYSICAL PARAMETER'S RELATED ROUTINES */
 
 void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam);
 void XLALDestroySimNeutronStarMultiBranchFamily(FamMultiParts * fam);
