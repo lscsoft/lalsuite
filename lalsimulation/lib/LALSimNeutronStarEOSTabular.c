@@ -27,8 +27,6 @@
 
 #include <lal/LALSimReadData.h>
 #include <gsl/gsl_interp.h>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_spline.h>
 #include <lal/LALSimNeutronStar.h>
 
 /** @cond */
@@ -64,7 +62,6 @@ struct tagLALSimNeutronStarEOSDataTabular {
     gsl_interp_accel *log_p_of_log_rho_acc;
     gsl_interp_accel *log_cs2_of_log_h_acc;
 };
-
 
 static double eos_p_of_e_tabular(double e, LALSimNeutronStarEOS * eos)
 {
@@ -222,7 +219,6 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 //      return sqrt(dpdh/dedh);
 //}
 
-
 static void eos_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
 {
     if (data) {
@@ -259,19 +255,6 @@ static void eos_free_tabular(LALSimNeutronStarEOS * eos)
 {
     if (eos) {
         eos_free_tabular_data(eos->data.tabular);
-        LALFree(eos);
-    }
-    return;
-}
-
-
-static void eos_multi_part_free_tabular(EOSMultiParts * eos)
-{
-    if (eos) {
-	for (int i = 0; i < eos->number_of_parts; i++){
-	    LALSimNeutronStarEOS * eos_parts = eos->eos_part[i];
-            eos_free_tabular_data(eos_parts->data.tabular);
-	}
         LALFree(eos);
     }
     return;
@@ -317,136 +300,6 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
     return hMinAcausal;
 }
 
-
-/* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
- * If the EOS is always causal, return some large value hmax instead. */
-static double eosMultiParts_min_acausal_pseudo_enthalpy_tabular(double hmax,
-    EOSMultiParts * eos)
-{
-    size_t i;
-    double h_im1, h_i;
-    double v_im1, v_i;
-    double m;   /* slope for linear interpolation */
-    double hMinAcausal = hmax;  /* default large number for EOS that is always causal */
-    int number_of_parts = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, number_of_parts-1);
-    h_im1 = exp(eos_part ->data.tabular->log_hdat[0]);
-    v_im1 = eos_v_of_h_tabular(h_im1, eos_part);
-    for (i = 1; i < eos_part ->data.tabular->ndat; i++) {
-        h_i = exp(eos_part ->data.tabular->log_hdat[i]);
-        v_i = eos_v_of_h_tabular(h_i, eos_part);
-        if (v_i > 1.0) {
-            /* solve vsound(h) = 1 */
-            m = (v_i - v_im1) / (h_i - h_im1);
-            hMinAcausal = h_im1 + (1.0 - v_im1) / m;
-            break;
-        }
-        h_im1 = h_i;
-        v_im1 = v_i;
-    }
-//    printf("hMinAcausal = %e, v = %e\n", hMinAcausal, eos_v_of_h_tabular(hMinAcausal, eos));
-
-    /* Value of h where EOS first becomes acausal.
-     * Or, if EOS is always causal, hmax */
-    return hMinAcausal;
-}
-
-
-/* This function corrects "dirty" phase transitions which are defined
- * by Delta P != 0 and Delta h != 0 exactly but numerically zero. The enthalpy
- * is used for the correction: we linearly extrapolate h(P) on both sides of the phase
- * transition, and find the crossing point to determine h and P at the transition.
- * Then, the energy density values on both sides of the phase transition are
- * recalculated using a linear extrapolation as well.
- */
-static void eos_correct_phase_transition(double *edat, double *pdat, double *hdat, int index_pt){
-
-    double slope_low, slope_high, slope_eps_low, slope_eps_high;
-    double b_low, b_high, b_eps_low, b_eps_high;
-    double e_trans_low, e_trans_high, p_trans, h_trans;
-
-    slope_low = (pdat[index_pt] - pdat[index_pt-1])/(hdat[index_pt] - hdat[index_pt-1]);
-    b_low = (pdat[index_pt] + pdat[index_pt-1] - slope_low * (hdat[index_pt-1] + hdat[index_pt]) )/2. ;
-
-    slope_high = (pdat[index_pt+2] - pdat[index_pt+1])/(hdat[index_pt+2] - hdat[index_pt+1]);
-    b_high = (pdat[index_pt+2] + pdat[index_pt+1] - slope_high * (hdat[index_pt+2] + hdat[index_pt+1]) )/2. ;
-
-    h_trans = (b_high - b_low)/(slope_low - slope_high);
-    p_trans = slope_low * h_trans + b_low;
-
-    slope_eps_low = (pdat[index_pt] - pdat[index_pt-1])/(edat[index_pt] - edat[index_pt-1]);
-    b_eps_low = (pdat[index_pt] + pdat[index_pt-1] - slope_eps_low * (edat[index_pt-1] + edat[index_pt]) )/2. ;
-
-    slope_eps_high = (pdat[index_pt+2] - pdat[index_pt+1])/(edat[index_pt+2] - edat[index_pt+1]);
-    b_eps_high = (pdat[index_pt+2] + pdat[index_pt+1] - slope_eps_high * (edat[index_pt+2] + edat[index_pt+1]) )/2. ;
-
-    e_trans_low = (p_trans - b_eps_low)/slope_eps_low;
-    e_trans_high = (p_trans - b_eps_high)/slope_eps_high;
-
-    edat[index_pt] = e_trans_low;
-    edat[index_pt+1] = e_trans_high;
-    pdat[index_pt] = p_trans;
-    pdat[index_pt+1] = p_trans;
-    hdat[index_pt] = h_trans;
-    hdat[index_pt+1] = h_trans;
-
-    return;
-}
-
-
-/* This function finds phase transitions in a tabulated equation of state
- * and returns a list of indices at which the phase transition occurs.
- */
-static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
-{
-    int number_phase_transition = 0;
-    int *id_phase_transition;
-    double gradient = 0.0;
-    double old_gradient = 0.0;
-    double delta_gradient = 0.0;
-    double pt_tolerance = 2.;
-    double eps_min_pt = 1.5e14 * 1e3 * LAL_G_C2_SI; // TODO check that this value is satisfactory
-    int count_id = 1;
-
-    for (size_t i = 1; i < ndat; i++){
-        gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
-        delta_gradient = (gradient - old_gradient)/gradient;
-        if (edat[i] > eps_min_pt && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {
-            number_phase_transition += 1;
-        }
-
-        old_gradient = gradient;
-    }
-
-    id_phase_transition = LALMalloc((number_phase_transition + 2) * sizeof(int));
-    id_phase_transition[0] = number_phase_transition;
-    id_phase_transition[number_phase_transition+1] = ndat-1;
-    // TODO phil can we avoid the second loop ?
-    for (size_t i = 1; i < ndat; i++){
-        gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
-        delta_gradient = (gradient - old_gradient)/gradient;
-        if (edat[i] > eps_min_pt && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {
-            id_phase_transition[count_id] = i-1;
-            count_id += 1;
-        }
-        old_gradient = gradient;
-    }
-
-    return id_phase_transition;
-}
-
-
-/**
- * This function create an EoS structure from tabulated equation of state variables.
- * The EoS structure contains a data structure (where all original tabulated data is stored),
- * and a series of interpolated functions (e.g. e_of_p, h_of_p ...).
- * Quantities nbdat, mubdat, muedat, hdat, yedat, and cs2dat that have been added in the
- * new LAL format are only stored in the data structure, not used for interpolated quantities.
- * In this function, we use only edat and pdat (as was for the old LAL format) which must
- * be given in geometrized units (/m^2). From edat (energy density) and pdat (pressure)
- * and the first law of thermodynamics, this function computes h (the enthalpy, dimensionless)
- * and rho (the rest mass density in geometrized units) using a GSL integration.
- */
 static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
 {
@@ -560,7 +413,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
     for (i = 0; i < ndat; i++)
         data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
 
-
     eos->pmax = exp(data->log_pdat[ndat - 1]);
     eos->hmax = exp(data->log_hdat[ndat - 1]);
     eos->hmin = exp(data->log_hdat[0]);
@@ -604,10 +456,136 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
     return eos;
 }
 
+static void eos_multi_part_free_tabular(EOSMultiParts * eos)
+{
+    if (eos) {
+	for (int i = 0; i < eos->number_of_parts; i++){
+	    LALSimNeutronStarEOS * eos_parts = eos->eos_part[i];
+            eos_free_tabular_data(eos_parts->data.tabular);
+	}
+        LALFree(eos);
+    }
+    return;
+}
+
+/* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
+ * If the EOS is always causal, return some large value hmax instead. */
+static double eosMultiParts_min_acausal_pseudo_enthalpy_tabular(double hmax,
+    EOSMultiParts * eos)
+{
+    size_t i;
+    double h_im1, h_i;
+    double v_im1, v_i;
+    double m;   /* slope for linear interpolation */
+    double hMinAcausal = hmax;  /* default large number for EOS that is always causal */
+    int number_of_parts = XLALSimNeutronStarEOSMultiPartsNumber(eos);
+    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, number_of_parts-1);
+    h_im1 = exp(eos_part ->data.tabular->log_hdat[0]);
+    v_im1 = eos_v_of_h_tabular(h_im1, eos_part);
+    for (i = 1; i < eos_part ->data.tabular->ndat; i++) {
+        h_i = exp(eos_part ->data.tabular->log_hdat[i]);
+        v_i = eos_v_of_h_tabular(h_i, eos_part);
+        if (v_i > 1.0) {
+            /* solve vsound(h) = 1 */
+            m = (v_i - v_im1) / (h_i - h_im1);
+            hMinAcausal = h_im1 + (1.0 - v_im1) / m;
+            break;
+        }
+        h_im1 = h_i;
+        v_im1 = v_i;
+    }
+    return hMinAcausal;
+}
+
+
+/* This function corrects "dirty" phase transitions which are defined
+ * by Delta P != 0 and Delta h != 0 exactly but numerically zero. The enthalpy
+ * is used for the correction: we linearly extrapolate h(P) on both sides of the phase
+ * transition, and find the crossing point to determine h and P at the transition.
+ * Then, the energy density values on both sides of the phase transition are
+ * recalculated using a linear extrapolation as well.
+ */
+static void eos_correct_phase_transition(double *edat, double *pdat, double *hdat, int index_pt){
+
+    double slope_low, slope_high, slope_eps_low, slope_eps_high;
+    double b_low, b_high, b_eps_low, b_eps_high;
+    double e_trans_low, e_trans_high, p_trans, h_trans;
+
+    slope_low = (pdat[index_pt] - pdat[index_pt-1])/(hdat[index_pt] - hdat[index_pt-1]);
+    b_low = (pdat[index_pt] + pdat[index_pt-1] - slope_low * (hdat[index_pt-1] + hdat[index_pt]) )/2. ;
+
+    slope_high = (pdat[index_pt+2] - pdat[index_pt+1])/(hdat[index_pt+2] - hdat[index_pt+1]);
+    b_high = (pdat[index_pt+2] + pdat[index_pt+1] - slope_high * (hdat[index_pt+2] + hdat[index_pt+1]) )/2. ;
+
+    h_trans = (b_high - b_low)/(slope_low - slope_high);
+    p_trans = slope_low * h_trans + b_low;
+
+    slope_eps_low = (pdat[index_pt] - pdat[index_pt-1])/(edat[index_pt] - edat[index_pt-1]);
+    b_eps_low = (pdat[index_pt] + pdat[index_pt-1] - slope_eps_low * (edat[index_pt-1] + edat[index_pt]) )/2. ;
+
+    slope_eps_high = (pdat[index_pt+2] - pdat[index_pt+1])/(edat[index_pt+2] - edat[index_pt+1]);
+    b_eps_high = (pdat[index_pt+2] + pdat[index_pt+1] - slope_eps_high * (edat[index_pt+2] + edat[index_pt+1]) )/2. ;
+
+    e_trans_low = (p_trans - b_eps_low)/slope_eps_low;
+    e_trans_high = (p_trans - b_eps_high)/slope_eps_high;
+
+    edat[index_pt] = e_trans_low;
+    edat[index_pt+1] = e_trans_high;
+    pdat[index_pt] = p_trans;
+    pdat[index_pt+1] = p_trans;
+    hdat[index_pt] = h_trans;
+    hdat[index_pt+1] = h_trans;
+
+    return;
+}
+
+
+/* This function finds phase transitions in a tabulated equation of state
+ * and returns a list of indices at which the phase transitions occur.
+ */
+static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
+{
+    int number_phase_transition = 0;
+    int *id_phase_transition;
+    double gradient = 0.0;
+    double old_gradient = 0.0;
+    double delta_gradient = 0.0;
+    double pt_tolerance = 2.;
+    double eps_min_pt = 1.5e14 * 1e3 * LAL_G_C2_SI; // TODO check that this value is satisfactory
+    int count_id = 1;
+
+    for (size_t i = 1; i < ndat; i++){
+        gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
+        delta_gradient = (gradient - old_gradient)/gradient;
+        if (edat[i] > eps_min_pt && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {
+            number_phase_transition += 1;
+        }
+
+        old_gradient = gradient;
+    }
+
+    id_phase_transition = LALMalloc((number_phase_transition + 2) * sizeof(int));
+    id_phase_transition[0] = number_phase_transition;
+    id_phase_transition[number_phase_transition+1] = ndat-1;
+    // TODO phil can we avoid the second loop ?
+    for (size_t i = 1; i < ndat; i++){
+        gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
+        delta_gradient = (gradient - old_gradient)/gradient;
+        if (edat[i] > eps_min_pt && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {
+            id_phase_transition[count_id] = i-1;
+            count_id += 1;
+        }
+        old_gradient = gradient;
+    }
+
+    return id_phase_transition;
+}
+
+
 
 /*
- * This function creates an LALSimNeutronStarEOS pointer from a piece of
- * tabulated equation of state information, given minimum and maximum
+ * This function creates a LALSimNeutronStarEOS pointer from a piece of
+ * tabulated equation of state tabulated data, given minimum and maximum
  * indices for the tables.
  */
 static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *edat, double *pdat,
@@ -621,7 +599,6 @@ static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *ed
     size_t ndat;
 
     ndat = end_index - begin_index + 1;
-
 
     nbdat_cut  = LALMalloc(ndat * sizeof(*nbdat));
     edat_cut   = LALMalloc(ndat * sizeof(*edat));
@@ -671,21 +648,30 @@ static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *ed
     LALFree(cs2dat_cut);
 
     return eos;
-
 }
+
 /** @endcond */
 
 /**
- * @brief Reads a data file containing a tabulated equation of state. // TODO update the comments
- * @details Read a data file specified by a path fname that contains two
- * whitespace separated columns of equation of state data.  The first column
- * contains the pressure in Pa and the second column contains the energy
- * density in J/m^3.  Every line beginning with the character '#' then it is
- * ignored.  If the path is an absolute path then this specific file is opened;
+ * @brief Reads a data file containing tabulated neutron star
+ * equation of state data to create the LALSimNeutronStarEOS
+ * equation of state structure.
+ * @details Read a data file specified by a path fname that contains either
+ * i) Two whitespace separated columns of equation of state data with
+ * the pressure in Pa (first column) and the energy density in J/m^3 (second column).
+ * ii) Nine whitespace separated columns of equation of state data;
+ * this format containts (in order of the columns) the table index,
+ * the baryon density in /fm^3, the energy density in g/cm^3,
+ * the pressure in dyn/cm^2, the baryon chemical potential in MeV,
+ * the electron chemical potential in MeV, the log-enthalpy,
+ * the lepton fraction and the square of the speed of sound normalized
+ * to light velocity.
+ * Every line beginning with the character '#' is ignored.
+ * If the path is an absolute path then this specific file is opened;
  * otherwise, search for the file in paths given in the environment variable
  * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
  * @param[in] fname The path of the file to open.
- * @return A pointer to neutron star equation of state structure.
+ * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOS).
  */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
     LALSimNeutronStarEOS *eos;
@@ -755,7 +741,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
         exit(1);
     }
 
-
     eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
 
     XLALFree(f_dat);
@@ -772,31 +757,75 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
     return eos;
 }
 
+/**
+ * @brief Reads 9 arrays of neutron star equation of state data
+ * to create the LALSimNeutronStarEOS equation of state structure.
+ * @details The arrays read contain each ndat lines of neutron star
+ * equation of state data in the new LAL EoS format. Mandatory minimum
+ * quantities required to be non NULL or non zero are the pressure and
+ * the energy density, all other arrays set to zero or NULL will not
+ * lead to an error. If the log-enthalpy array is set to NULL,
+ * the "old" LAL EoS format is set (assuming input for edat in J/m^3
+ * and pdat in Pa) and the enthalpy is recalculated with the
+ * first law of thermodynamics; otherwise the units of the new LAL format
+ * (see detail in units of the parameters) are assumed. //TODO check this
+ * @param nbdat Array for the baryon density in 1/fm^3.
+ * @param edat Array for the energy density in g/cm^3.
+ * @param pdat Array for the pressure in dyn/cm^2.
+ * @param mubdat Array for the baryon chemical potential in MeV.
+ * @param muedat Array for the electron chemical potential in MeV.
+ * @param hdat Array for the log of enthalpy (dimensionless).
+ * @param yedat Array for the lepton fration (dimensionless).
+ * @param cs2dat Array for the sound speed squared normalized
+ * to the speed of light (dimensionless).
+ * @param ndat Size of the arrays for equation of state quantities.
+ * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOS).
+ */
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
+   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat)
+{
+    LALSimNeutronStarEOS *eos;
+    int ncol = 9;
+    if (hdat == NULL) ncol = 2;
+    eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
+    return eos;
+}
+
 
 /**
- * @brief Reads a data file containing a tabulated equation of state to create
- * the equation of state structure containing a multipart structure.
+ * @brief Reads a data file containing tabulated neutron star
+ * equation of state data to create the EOSMultiParts equation
+ * of state structure.
  * @details Read a data file specified by a path fname that contains either
  * i) Two whitespace separated columns of equation of state data with
- * the pressure in Pa (first column) and the energy density in J/m^3 (second column).
- * ii) 9 whitespace separated columns of equation of state data; this format containts
+ * the pressure in Pa (first column) and the energy density in J/m^3 (second column);
+ * this is the "old" LAL EoS format.
+ * ii) 9 whitespace separated columns of equation of state data; this format contains
  * (in order of the columns) the table index, the baryon density in /fm^3,
  * the energy density in g/cm^3, the pressure in dyn/cm^2, the baryon chemical potential in MeV,
  * the electron chemical potential in MeV, the log-enthalpy, the lepton fraction
- * and the square of the speed of sound normalized to light velocity.
+ * and the square of the speed of sound normalized to light velocity;
+ * this is the "new" LAL EoS format.
  * Every line beginning with the character '#' is ignored.
  * If the path is an absolute path then this specific file is opened;
  * otherwise, search for the file in paths given in the environment variable
  * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
+ * This function tests if the equation of state data includes phase transitions.
+ * If N phase transitions are found (defined by a pressure plateau
+ * associated to a jump in energy density), EOSMultiParts contains N+1
+ * LALSimNeutronStarEOS equation of state piece, each accessible with the function
+ * XLALSimNeutronStarEOSPart.
+ * This function can handle "clean" phase transitions (Delta P = 0) in both
+ * the old and the new format. This function can also correct "dirty"
+ * phase transitions (Delta P != 0 but numerically close to zero),
+ * in which case the data must include the enthalpy (only for "new" LAL format).
  * @param[in] fname The path of the file to open.
- * @return A pointer to neutron star equation of state structure.
+ * @return A pointer to neutron star equation of state structure (EOSMultiParts).
  */
 EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
 
     EOSMultiParts *eos;
-
     eos = LALCalloc(1, sizeof(*eos));
-
     eos->free = eos_multi_part_free_tabular;
 
     double *f_dat;
@@ -870,7 +899,6 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
 
     eos = XLALSimNeutronStarEOSFromTabDataPhaseTransition(nbdat, edat, pdat, mubdat, muedat, hdat,
                                                                     yedat, cs2dat, ndat);
-
     XLALFree(f_dat);
     LALFree(nbdat);
     LALFree(edat);
@@ -881,68 +909,49 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
     LALFree(yedat);
     LALFree(cs2dat);
 
-//     snprintf(eos->name, sizeof(eos->name), "%s", fname); // TODO fix this !
+    snprintf(eos->name, sizeof(eos->name), "%s", fname);
     return eos;
 }
 
-//TODO this needs to be updated, the description of the function is wrong + is it ok to have only the new format EoS
 /**
- * @details Reads 9 arrays a data file specified by a path fname that contains two
- * whitespace separated columns of equation of state data.  The first column
- * contains the pressure in Pa and the second column contains the energy
- * density in J/m^3.  Every line beginning with the character '#' then it is
- * ignored.  If the path is an absolute path then this specific file is opened;
- * otherwise, search for the file in paths given in the environment variable
- * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
- * @param nbdat array of size ndat containing the baryon density in 1/fm^3
- * @param edat array of size ndat containing the energy density in g/cm^3
- * @param pdat array of size ndat containing the pressure in dyn/cm^2
- * @param mubdat array of size ndat containing the baryon chemical potential in MeV
- * @param muedat array of size ndat containing the electron chemical potential in MeV
- * @param hdat array of size ndat containing the log of enthalpy (dimensionless)
- * @param yedat array of size ndat containing the lepton fration (dimensionless)
- * @param cs2dat array of size ndat containing the sound speed squared normalized to the speed of light (dimensionless)
- * @param ndat size of the arrays for equation of state quantities
- * @return A pointer to neutron star equation of state structure.
- */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
-   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat)
-{
-    LALSimNeutronStarEOS *eos;
-    int ncol = 9;
-    if (hdat == NULL) ncol = 2;
-    eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
-    return eos;
-}
-
-
-
-/**
- * @brief Reads arrays for the equation of state variables to construct a multiple parts EoS
- * that can accomodate phase transitions.
- * @details Reads 9 arrays that contain the equation of state data; this specifically treat the new LAL Format.
- * To avoid interpolation errors, edat, pdat and hdat must be monotonically increasing,
- * with the exception of phase transition points.
- * @param nbdat array of size ndat containing the baryon density [/fm^3]
- * @param edat array of size ndat containing the energy density [/m^2] Geometrized units
- * @param pdat array of size ndat containing the pressure [/m^2] Geometrized units
- * @param mubdat array of size ndat containing the baryon chemical potential [MeV]
- * @param muedat array of size ndat containing the electron chemical potential [MeV]
- * @param hdat array of size ndat containing the log of enthalpy [dimensionless]
- * @param yedat array of size ndat containing the lepton fration [dimensionless]
- * @param cs2dat array of size ndat containing the sound speed squared normalized
- * to the speed of light [dimensionless]
- * @param ndat size of the arrays for equation of state quantities
- * @return The neutron star multipart equation of state structure.
+ * @brief Reads 9 arrays of neutron star equation of state data
+ * to create the EOSMultiParts equation of state structure.
+ * @details The arrays read contain each ndat lines of neutron star
+ * equation of state data in the "new" LAL EoS format. Mandatory
+ * quantities required to be non NULL or non zero are the pressure and
+ * the energy density, all other arrays set to zero or NULL will not
+ * lead to an error. If the log-enthalpy array is set to NULL,
+ * the "old" EoS format is set (assuming input for edat in J/m^3
+ * and pdat in Pa) and the enthalpy is recalculated with the
+ * first law of thermodynamics; otherwise the units of the new LAL format
+ * (see detail in units of the parameters) are assumed. //TODO check this
+ * This function tests if the equation of state data includes phase transitions.
+ * If N phase transitions are found (defined by a pressure plateau
+ * associated to a jump in energy density), EOSMultiParts contains N+1
+ * LALSimNeutronStarEOS equation of state piece, each accessible with the function
+ * XLALSimNeutronStarEOSPart.
+ * This function can handle "clean" phase transitions (Delta P = 0) in both
+ * the old and the new format. This function can also correct "dirty"
+ * phase transitions (Delta P != 0 but numerically close to zero),
+ * in which case the data must include the enthalpy (only for "new" LAL format).
+ * @param nbdat Array for the baryon density in 1/fm^3.
+ * @param edat Array for the energy density in g/cm^3.
+ * @param pdat Array for the pressure in dyn/cm^2.
+ * @param mubdat Array for the baryon chemical potential in MeV.
+ * @param muedat Array for the electron chemical potential in MeV.
+ * @param hdat Array for the log of enthalpy (dimensionless).
+ * @param yedat Array for the lepton fration (dimensionless).
+ * @param cs2dat Array for the sound speed squared normalized
+ * to the speed of light (dimensionless).
+ * @param ndat Size of the arrays for equation of state quantities.
+ * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOS).
  */
 EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat)
 {
     EOSMultiParts *eos;
-
     eos = LALCalloc(1, sizeof(*eos));
-
     eos->free = eos_multi_part_free_tabular;
 
     /* Inquire about phase transitions in the equation of state */
@@ -956,7 +965,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
             } else {
                 printf("\t Phase transition found at index %d. This phase transition is dirty.\n", indices_phase_transition[i]);
                 if (hdat != NULL ) {
-                    eos_correct_phase_transition(edat, pdat, hdat, indices_phase_transition[i]) ; //TODO possibility to work with just P and eps as I did before ?
+                    eos_correct_phase_transition(edat, pdat, hdat, indices_phase_transition[i]) ;
                 } else {
                     printf("\t The dirty phase transition cannot be cleaned (enthalpy not provided).\n");
                 }
@@ -964,10 +973,10 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
         }
     }
 
-
     /* Construct the multiple part equation of state */
     size_t bottom_index = 0, upper_index = 0;
     eos->number_of_parts = number_eos;
+    eos->pmin = pdat[0];
     eos->pmax = pdat[ndat-1];
     eos->hmin = hdat[0];
     eos->hmax = hdat[ndat-1];
@@ -982,9 +991,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     }
     eos->hMinAcausal = eosMultiParts_min_acausal_pseudo_enthalpy_tabular(hdat[ndat-1], eos);
 
-
     return eos;
-
 }
 
 
