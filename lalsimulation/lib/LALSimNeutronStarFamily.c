@@ -273,7 +273,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
 FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fam){
 
     if(min_fam!=0 && min_fam!=1) XLAL_ERROR_NULL(XLAL_EDOM);
-	    
+
     FamMultiParts *fam;
     fam = LALMalloc(sizeof(*fam));
 
