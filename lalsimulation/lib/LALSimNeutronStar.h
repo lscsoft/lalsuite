@@ -202,7 +202,8 @@ double XLALSimNeutronStarEOSMultiPartsPressureOfRestMassDensity(double rho,
     EOSMultiParts * eos);
 
 
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name); // TODO check this
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
+EOSMultiParts *XLALSimNeutronStarEOSMultiPartsByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
 EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname); // TODO check this
 
