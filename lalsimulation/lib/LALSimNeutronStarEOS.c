@@ -366,7 +366,7 @@ int XLALSimNeutronStarEOSMultiPartsNumber(EOSMultiParts * eos)
  */
 LALSimNeutronStarEOS * XLALSimNeutronStarEOSPart(EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts) XLAL_ERROR_NULL(XLAL_EDOM);
+    if (piece_id < 0 || piece_id >= eos->number_of_parts) XLAL_ERROR_NULL(XLAL_EDOM);
     LALSimNeutronStarEOS * eos_part = eos->eos_part[piece_id];
     return eos_part;
 }

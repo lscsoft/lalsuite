@@ -1113,32 +1113,27 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
 
 /**
  * @brief Creates an equation of state structure from tabulated equation
- * of state data of a known name. The name of the tabulated equation of state
- * must belong to the sample of equations of state from the old frame work or
- *  added for the new framework.
- * @details A known, installed, named tabulated equation of state data file, whose name
- * is included in the old EOS framework names or the new ones, is read and then used to
- * create the equation of state structure.
- * The equations of state for the OLD framework available are the representative sample drawn from
- * http://xtreme.as.arizona.edu/NeutronStars/ they are:
+ * of state data of a known name available in LALSimulation database.
+ * @details The name of the tabulated equation of state must belong
+ * to the sample of equations of state from the old or the new framework.
+ * Available equation of state name included are listed in the following.
+ * Regarding the old framework,
+ * 1) From http://xtreme.as.arizona.edu/NeutronStars/):
  * - ALF1, ALF2, ALF3, ALF4, AP1, AP2, AP3, AP4, APR4_EPP,
  * BBB2, BGN1H1, BPAL12, BSK19, BSK20, BSK21, ENG, FPS,
  * GNH3, GS1, GS2, H1, H2, H3, H4, H5, H6, H7,
  * MPA1, MS1B, MS1B_PP, MS1_PP, MS1, MS2, PAL6,
  * PCL2, PS, QMC700, SLY4, SLY, SQM1, SQM2, SQM3,
  * WFF1, WFF2, WFF3.
- * We also include more modern equations from the CompOSE website
- * https://compose.obspm.fr/ downloaded on 18 June 2018. These EOSs are:
+ * 2) From the CompOSE website (https://compose.obspm.fr/, downloaded on 18 June 2018):
  * - APR, BHF_BBB2, KDE0V, KDE0V1, RS, SK255, SK272, SKA, SKB,
  * SKI2, SKI3, SKI4, SKI5, SKI6, SKMP, SKOP, SLY2, SLY230A, SLY9.
- * We include HQC18 from http://user.numazu-ct.ac.jp/~sumi/eos/HQC18_submit
+ * 3) From http://user.numazu-ct.ac.jp/~sumi/eos/HQC18_submit
  * - HQC18
- * We include equation of state for the new EOS framework (9 column EoS data).
- * For files ending with _BSK24, the outer crust is calculated using analytical fits
+ * Regarding the new framework (9 column EoS data), based on the CompOSE database
+ * (https://compose.obspm.fr/)
+ * 1) Files ending with _BSK24, the outer crust is calculated using analytical fits
  * of the BSk24 energy-density functionals (Pearson et al., MNRAS, 481, 2994 (2018)).
- * For files ending with _META, the outer crust and the inner crust is calculated
- * with the Crust Unified Tool for Equation-of-state Reconstruction (CUTER,
- * Davis et al., Eur. Phys. J. A 61, 120 (2025)). TODO add info on meta data
  * - GMSR_BSK14_BSK24, GMSR_DHSL59_BSK24, GMSR_DHSL69_BSK24, GMSR_F0_BSK24,
  * GMSR_H1_BSK24, GMSR_H2_BSK24, GMSR_H3_BSK24, GMSR_H4_BSK24, GMSR_H5_BSK24,
  * GMSR_LN55_BSK24, GMSR_SLY5_BSK24, GPPVA_DD2_BSK24, GPPVA_DDME2_BSK24,
@@ -1147,8 +1142,11 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
  * SKA_BSK24, SKB_BSK24, SKI2_BSK24, SKI3_BSK24, SKI4_BSK24, SKI6_BSK24,
  * SKOP_BSK24, SLY2_BSK24, SLY9_BSK24, SLY230A_BSK24, XMLSLZ_DDLZ1_BSK24,
  * XMLSLZ_DDME2_BSK24, XMLSLZ_DDMEX_BSK24, XMLSLZ_GM1_BSK24, XMLSLZ_MTVTC_BSK24,
- * XMLSLZ_NL3_BSK24, XMLSLZ_PKDD_BSK24, XMLSLZ_TM1_BSK24, XMLSLZ_TW99_BSK24,
- * ABHT_QMC_RMF1_META, ABHT_QMC_RMF2_META, ABHT_QMC_RMF3_META, ABHT_QMC_RMF4_META,
+ * XMLSLZ_NL3_BSK24, XMLSLZ_PKDD_BSK24, XMLSLZ_TM1_BSK24, XMLSLZ_TW99_BSK24
+ * 2) Files ending with _META, the outer crust and the inner crust is calculated
+ * with the Crust Unified Tool for Equation-of-state Reconstruction (CUTER,
+ * Davis et al., Eur. Phys. J. A 61, 120 (2025)). TODO add info on meta data
+ * - ABHT_QMC_RMF1_META, ABHT_QMC_RMF2_META, ABHT_QMC_RMF3_META, ABHT_QMC_RMF4_META,
  * BL_CHIRAL_META.
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.

@@ -563,6 +563,7 @@ int XLALSimNeutronStarFamNumberOfBranches(FamMultiParts *fam)
  */
 double XLALSimNeutronStarFamBranchMinMass(int branch, FamMultiParts *fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
 
     return b->mdat[0];
@@ -577,6 +578,7 @@ double XLALSimNeutronStarFamBranchMinMass(int branch, FamMultiParts *fam)
  */
 double XLALSimNeutronStarFamBranchMaxMass(int branch, FamMultiParts *fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
 
     return b->mdat[b->ndat - 1];
@@ -591,6 +593,7 @@ double XLALSimNeutronStarFamBranchMaxMass(int branch, FamMultiParts *fam)
  */
 double XLALSimNeutronStarFamBranchMinCentralPressure(int branch, FamMultiParts *fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
 
     return b->pdat[0];
@@ -604,6 +607,7 @@ double XLALSimNeutronStarFamBranchMinCentralPressure(int branch, FamMultiParts *
  */
 double XLALSimNeutronStarFamBranchMaxCentralPressure(int branch, FamMultiParts *fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
 
     return b->pdat[b->ndat - 1];
@@ -619,6 +623,7 @@ double XLALSimNeutronStarFamBranchMaxCentralPressure(int branch, FamMultiParts *
  */
 double XLALSimNeutronStarFamBranchRadius(double m, int branch, FamMultiParts * fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
     double r;
     r = gsl_interp_eval(b->r_of_m_interp, b->mdat, b->rdat, m,
@@ -637,6 +642,7 @@ double XLALSimNeutronStarFamBranchRadius(double m, int branch, FamMultiParts * f
  */
 double XLALSimNeutronStarFamBranchCentralPressure(double m, int branch, FamMultiParts * fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
     double p;
     p = gsl_interp_eval(b->p_of_m_interp, b->mdat, b->pdat, m,
@@ -655,6 +661,7 @@ double XLALSimNeutronStarFamBranchCentralPressure(double m, int branch, FamMulti
  */
 double XLALSimNeutronStarFamBranchMass(double p, int branch, FamMultiParts * fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
     double m;
     m = gsl_interp_eval(b->m_of_p_interp, b->pdat, b->mdat, p,
@@ -672,6 +679,7 @@ double XLALSimNeutronStarFamBranchMass(double p, int branch, FamMultiParts * fam
  */
 double XLALSimNeutronStarFamBranchBaryonicMass(double m, int branch, FamMultiParts * fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
     if (b == NULL || b->mb_of_m_interp == NULL)
         XLAL_ERROR_REAL8(XLAL_EINVAL);
@@ -691,6 +699,7 @@ double XLALSimNeutronStarFamBranchBaryonicMass(double m, int branch, FamMultiPar
  */
 double XLALSimNeutronStarFamBranchLoveNumberK2(double m, int branch, FamMultiParts * fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
     double k2;
     k2 = gsl_interp_eval(b->k2_of_m_interp, b->mdat, b->k2dat, m,
@@ -708,6 +717,7 @@ double XLALSimNeutronStarFamBranchLoveNumberK2(double m, int branch, FamMultiPar
  */
 double XLALSimNeutronStarFamBranchLoveNumberK3(double m, int branch, FamMultiParts * fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
     if (b == NULL || b->k3_of_m_interp == NULL)
         XLAL_ERROR_REAL8(XLAL_EINVAL);
@@ -727,6 +737,7 @@ double XLALSimNeutronStarFamBranchLoveNumberK3(double m, int branch, FamMultiPar
  */
 double XLALSimNeutronStarFamBranchLoveNumberK4(double m, int branch, FamMultiParts * fam)
 {
+    if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
     if (b == NULL || b->k4_of_m_interp == NULL)
         XLAL_ERROR_REAL8(XLAL_EINVAL);
