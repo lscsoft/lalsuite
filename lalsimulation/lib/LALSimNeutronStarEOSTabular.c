@@ -991,6 +991,8 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     }
     eos->hMinAcausal = eosMultiParts_min_acausal_pseudo_enthalpy_tabular(hdat[ndat-1], eos);
 
+    char name[LALNameLength] = "unknown_eos_name";
+    snprintf(eos->name, sizeof(eos->name), "%s", name);
     return eos;
 }
 
