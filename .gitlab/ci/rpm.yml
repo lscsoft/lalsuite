@@ -34,7 +34,9 @@
       EOF
       fi
     # install srpm dependencies
-    - retry yum install -y -q lscsoft-packaging-tools
+    - retry yum install -y -q
+          igwn-packaging-tools
+          xz
     # build src.rpm
     - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
@@ -63,7 +65,7 @@
     - retry yum -y -q install ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
     # lint packages (RPM files only)
     - |
-      tar xfO ${TARBALL} $(tar tf ${TARBALL} | grep '/rpmlintrc$') > rpmlintrc
+      tar -O -xf ${TARBALL} $(tar -tf ${TARBALL} | grep '/rpmlintrc$') > rpmlintrc
       echo "----- rpmlintrc"
       grep . rpmlintrc
       echo "----- rpmlintrc"
