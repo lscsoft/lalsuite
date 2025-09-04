@@ -1320,7 +1320,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpy(doubl
 double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityDerivOfPressure(double p,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
     double dedp;
     p *= LAL_G_C4_SI;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
@@ -1345,7 +1345,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityDerivOfPressure(double p
  */
 double XLALSimNeutronStarEOSMultiPartsPieceSpeedOfSound(double h, EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
     double v;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
     v = XLALSimNeutronStarEOSSpeedOfSoundGeometerized(h, eos_part);
@@ -1371,7 +1371,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceSpeedOfSound(double h, EOSMultiParts 
 double XLALSimNeutronStarEOSMultiPartsPiecePressureOfEnergyDensity(double e,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
     double p;
     e *= LAL_G_C4_SI;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
@@ -1397,7 +1397,7 @@ double XLALSimNeutronStarEOSMultiPartsPiecePressureOfEnergyDensity(double e,
 double XLALSimNeutronStarEOSMultiPartsPiecePressureOfRestMassDensity(double rho,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
     double p;
     rho *= LAL_G_C2_SI;
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
