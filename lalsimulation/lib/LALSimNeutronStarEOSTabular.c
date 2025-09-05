@@ -28,6 +28,7 @@
 #include <lal/LALSimReadData.h>
 #include <gsl/gsl_interp.h>
 #include <lal/LALSimNeutronStar.h>
+#include <stdbool.h>
 
 /** @cond */
 
@@ -552,13 +553,14 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
     double delta_gradient = 0.0;
     double pt_tolerance = 2.;
     double eps_min_pt = 1.5e14 * 1e3 * LAL_G_C2_SI; // TODO check that this value is satisfactory
-    int count_id = 1;
+    bool pt_occurence[ndat] = {};
 
     for (size_t i = 1; i < ndat; i++){
         gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
         delta_gradient = (gradient - old_gradient)/gradient;
         if (edat[i] > eps_min_pt && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {
             number_phase_transition += 1;
+            pt_occurence[i] = true;
         }
 
         old_gradient = gradient;
@@ -567,15 +569,13 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
     id_phase_transition = LALMalloc((number_phase_transition + 2) * sizeof(int));
     id_phase_transition[0] = number_phase_transition;
     id_phase_transition[number_phase_transition+1] = ndat-1;
-    // TODO phil can we avoid the second loop ?
+
+    int count_id = 1;
     for (size_t i = 1; i < ndat; i++){
-        gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
-        delta_gradient = (gradient - old_gradient)/gradient;
-        if (edat[i] > eps_min_pt && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {
+        if (pt_occurence[i] == true) {
             id_phase_transition[count_id] = i-1;
             count_id += 1;
         }
-        old_gradient = gradient;
     }
 
     return id_phase_transition;
