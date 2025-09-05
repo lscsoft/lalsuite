@@ -25,10 +25,10 @@
  * @{
  */
 
+#include <stdbool.h>
 #include <lal/LALSimReadData.h>
 #include <gsl/gsl_interp.h>
 #include <lal/LALSimNeutronStar.h>
-#include <stdbool.h>
 
 /** @cond */
 
@@ -553,7 +553,8 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
     double delta_gradient = 0.0;
     double pt_tolerance = 2.;
     double eps_min_pt = 1.5e14 * 1e3 * LAL_G_C2_SI; // TODO check that this value is satisfactory
-    bool pt_occurence[ndat] = {};
+    bool *pt_occurence;
+    pt_occurence = LALMalloc(ndat * sizeof(*pt_occurence));
 
     for (size_t i = 1; i < ndat; i++){
         gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
@@ -578,6 +579,7 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
         }
     }
 
+    LALFree(pt_occurence);
     return id_phase_transition;
 }
 
