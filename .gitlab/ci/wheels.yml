@@ -248,7 +248,7 @@ wheel:cp313-cp313-macos-arm64:
 wheel:pypi:
   extends:
     - .deploy
-  image: quay.io/lib/python
+  image: python:3
   script:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     - !reference [.python-venv]
