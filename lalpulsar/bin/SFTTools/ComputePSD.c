@@ -402,6 +402,10 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
   }
 
   /* check user-input consistency */
+  if ( UVAR_ANYSET3( PSDmthopSFTs, PSDmthopIFOs, PSDnormByTotalNumSFTs ) && !UVAR_ALLSET3( PSDmthopSFTs, PSDmthopIFOs, PSDnormByTotalNumSFTs ) ) {
+    XLALPrintError( "ERROR: --PSDmthopSFTs(-S), --PSDmthopIFOs(-I), and --PSDnormByTotalNumSFTs(-T) must all be set" );
+    return XLAL_FAILURE;
+  }
   if ( uvar->outputNormSFT && !UVAR_ALLSET2( nSFTmthopSFTs, nSFTmthopIFOs ) ) {
     XLALPrintError( "ERROR: --nSFTmthopSFTs(-N), --nSFTmthopIFOs(-J) must all be set if --outputNormSFT(-n) is true" );
     return XLAL_FAILURE;
