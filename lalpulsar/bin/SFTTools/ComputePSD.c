@@ -406,6 +406,20 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
     XLALPrintError( "ERROR: --PSDmthopSFTs(-S), --PSDmthopIFOs(-I), and --PSDnormByTotalNumSFTs(-T) must all be set" );
     return XLAL_FAILURE;
   }
+  if ( uvar->PSDnormByTotalNumSFTs && !( ( uvar->PSDmthopSFTs == MATH_OP_HARMONIC_SUM || uvar->PSDmthopSFTs == MATH_OP_POWERMINUS2_SUM ) && uvar->PSDmthopIFOs == uvar->PSDmthopSFTs ) ) {
+    const char *PSDmthopSFTs_str = "???";
+    const char *PSDmthopIFOs_str = "???";
+    for ( size_t i = 0; i < MATH_OP_LAST; ++i ) {
+      if ( MathOpTypeChoices[i].val == uvar->PSDmthopSFTs ) {
+        PSDmthopSFTs_str = MathOpTypeChoices[i].name;
+      }
+      if ( MathOpTypeChoices[i].val == uvar->PSDmthopIFOs ) {
+        PSDmthopIFOs_str = MathOpTypeChoices[i].name;
+      }
+    }
+    XLALPrintError( "ERROR: invalid values for --PSDmthopSFTs(-S)=%s, --PSDmthopIFOs(-I)=%s when --PSDnormByTotalNumSFTs(-T) is true", PSDmthopSFTs_str, PSDmthopIFOs_str );
+    return XLAL_FAILURE;
+  }
   if ( uvar->outputNormSFT && !UVAR_ALLSET2( nSFTmthopSFTs, nSFTmthopIFOs ) ) {
     XLALPrintError( "ERROR: --nSFTmthopSFTs(-N), --nSFTmthopIFOs(-J) must all be set if --outputNormSFT(-n) is true" );
     return XLAL_FAILURE;
