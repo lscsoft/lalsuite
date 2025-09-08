@@ -691,12 +691,10 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT2(EOSMultiParts * eos, int min_f
             fam_branch_i->k4dat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->k4dat));
         }
 
-        if(min_fam==1){
-            if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat)
+        if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat)
                 XLAL_ERROR_NULL(XLAL_ENOMEM);
-        } else {
-            if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat
-	        || !fam_branch_i->mbdat || !fam_branch_i->k3dat || !fam_branch_i->k4dat)
+        if(min_fam==0){
+            if (!fam_branch_i->mbdat || !fam_branch_i->k3dat || !fam_branch_i->k4dat)
                 XLAL_ERROR_NULL(XLAL_ENOMEM);
         }
 
