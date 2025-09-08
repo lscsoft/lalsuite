@@ -641,7 +641,8 @@ REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs(
   case MATH_OP_MINIMUM: /* first element of sorted data */
   case MATH_OP_MAXIMUM: /* last element of sorted data */
   case MATH_OP_POWERMINUS2_MEAN: /* sqrt(length / sum(1 / (data * data))) */
-    XLAL_ERROR_REAL8( XLAL_EINVAL, "For math operation '%i' it makes no sense to call this function!", optypeSFTs );
+    XLALPrintWarning( "%s: no additional normalisation factor defined for math operation '%i'", __func__, optypeSFTs );
+    factor = 1;
     break;
 
   case MATH_OP_HARMONIC_SUM: /* 1 / sum(1 / data) */
@@ -653,7 +654,6 @@ REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs(
     break;
 
   default:
-
     XLAL_ERROR_REAL8( XLAL_EINVAL, "'%i' is not an implemented math. operation", optypeSFTs );
 
   } /* switch (optypeSFTs) */
