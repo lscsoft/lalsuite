@@ -146,9 +146,9 @@ REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs( const UINT4 totalNu
 
 int XLALComputePSDandNormSFTPower( REAL8Vector **finalPSD, MultiPSDVector **multiPSDVector, REAL8Vector **normSFT, MultiSFTVector *inputSFTs, const BOOLEAN returnMultiPSDVector, const BOOLEAN returnNormSFT,
                                    const UINT4 blocksRngMed, const MathOpType PSDmthopSFTs, const MathOpType PSDmthopIFOs, const MathOpType nSFTmthopSFTs, const MathOpType nSFTmthopIFOs,
-                                   const BOOLEAN normalizeByTotalNumSFTs, const REAL8 FreqMin, const REAL8 FreqBand, const BOOLEAN normalizeSFTsInPlace );
+                                   const BOOLEAN PSDnormByTotalNumSFTs, const REAL8 FreqMin, const REAL8 FreqBand, const BOOLEAN normalizeSFTsInPlace );
 int XLALComputePSDfromSFTs( REAL8Vector **finalPSD, MultiSFTVector *inputSFTs, const UINT4 blocksRngMed, const MathOpType PSDmthopSFTs, const MathOpType PSDmthopIFOs,
-                            const BOOLEAN normalizeByTotalNumSFTs, const REAL8 FreqMin, const REAL8 FreqBand );
+                            const BOOLEAN PSDnormByTotalNumSFTs, const REAL8 FreqMin, const REAL8 FreqBand );
 
 /** @} */
 

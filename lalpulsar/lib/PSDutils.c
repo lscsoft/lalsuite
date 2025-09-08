@@ -712,7 +712,7 @@ XLALComputePSDandNormSFTPower(
   const MathOpType PSDmthopIFOs, /* [in] math operation over IFOs (PSD) */
   const MathOpType nSFTmthopSFTs, /* [in] math operation over SFTs for each IFO (normSFT) */
   const MathOpType nSFTmthopIFOs, /* [in] math operation over IFOs (normSFT) */
-  const BOOLEAN normalizeByTotalNumSFTs, /* [in] for PSD, whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
+  const BOOLEAN PSDnormByTotalNumSFTs, /* [in] for PSD, whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
   const REAL8 FreqMin, /* [in] starting frequency -> first output bin (if -1: use full SFT data including rngmed bins, else must be >=0) */
   const REAL8 FreqBand, /* [in] frequency band to cover with output bins (must be >=0) */
   const BOOLEAN normalizeSFTsInPlace /* [in] if FALSE, a copy of inputSFTs will be used internally and the original will not be modified */
@@ -725,7 +725,7 @@ XLALComputePSDandNormSFTPower(
   XLAL_CHECK( normSFT, XLAL_EINVAL );
   XLAL_CHECK( inputSFTs && inputSFTs->data && inputSFTs->length > 0, XLAL_EINVAL, "inputSFTs must be pre-allocated." );
   XLAL_CHECK( ( FreqMin >= 0 && FreqBand >= 0 ) || ( FreqMin == -1 && FreqBand == 0 ), XLAL_EINVAL, "Need either both Freqmin>=0 && FreqBand>=0 (truncate PSD band to this range) or FreqMin=-1 && FreqBand=0 (use full band as loaded from SFTs, including rngmed-sidebands." );
-  XLAL_CHECK( !normalizeByTotalNumSFTs || PSDmthopSFTs == PSDmthopIFOs, XLAL_EINVAL, "when normalizeByTotalNumSFTs=true, PSDmthopSFTs(=%i) must equal PSDmthopIFOs(=%i)", PSDmthopSFTs, PSDmthopIFOs );
+  XLAL_CHECK( !PSDnormByTotalNumSFTs || PSDmthopSFTs == PSDmthopIFOs, XLAL_EINVAL, "when PSDnormByTotalNumSFTs=true, PSDmthopSFTs(=%i) must equal PSDmthopIFOs(=%i)", PSDmthopSFTs, PSDmthopIFOs );
 
   /* get power running-median rngmed[ |data|^2 ] from SFTs *
    * as the output of XLALNormalizeMultiSFTVect(),
@@ -812,13 +812,13 @@ XLALComputePSDandNormSFTPower(
    * which gives equivalent results to if we had rewritten the loop order
    * to allow for calling MATH_OP_[HARMONIC/POWERMINUS2]_MEAN over the combined array.
    */
-  REAL8 totalNumSFTsNormalizingFactor = 1.;
-  if ( normalizeByTotalNumSFTs ) {
+  REAL8 PSDtotalNumSFTsNormalizingFactor = 1.;
+  if ( PSDnormByTotalNumSFTs ) {
     UINT4 totalNumSFTs = 0;
     for ( UINT4 X = 0; X < numIFOs; ++X ) {
       totalNumSFTs += ( *multiPSDVector )->data[X]->length;
     }
-    totalNumSFTsNormalizingFactor = XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs( totalNumSFTs, PSDmthopSFTs );
+    PSDtotalNumSFTsNormalizingFactor = XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs( totalNumSFTs, PSDmthopSFTs );
   }
 
   XLAL_PRINT_INFO( "Computing spectrogram and PSD ..." );
@@ -847,8 +847,8 @@ XLALComputePSDandNormSFTPower(
     ( *finalPSD )->data[k] = XLALMathOpOverArray( overIFOs->data, numIFOs, PSDmthopIFOs );
     XLAL_CHECK( !XLAL_IS_REAL8_FAIL_NAN( ( *finalPSD )->data[k] ), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for finalPSD->data[k=%d]", k );
 
-    if ( normalizeByTotalNumSFTs ) {
-      ( *finalPSD )->data[k] *= totalNumSFTsNormalizingFactor;
+    if ( PSDnormByTotalNumSFTs ) {
+      ( *finalPSD )->data[k] *= PSDtotalNumSFTsNormalizingFactor;
     }
 
   } /* for freq bins k */
@@ -924,7 +924,7 @@ XLALComputePSDfromSFTs(
   const UINT4 blocksRngMed, /* [in] running Median window size */
   const MathOpType PSDmthopSFTs, /* [in] math operation over SFTs for each IFO (PSD) */
   const MathOpType PSDmthopIFOs, /* [in] math operation over IFOs (PSD) */
-  const BOOLEAN normalizeByTotalNumSFTs, /* [in] whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
+  const BOOLEAN PSDnormByTotalNumSFTs, /* [in] for PSD, whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
   const REAL8 FreqMin, /* [in] starting frequency -> first output bin (if -1: use full SFT data including rngmed bins, else must be >=0) */
   const REAL8 FreqBand /* [in] frequency band to cover with output bins (must be >=0) */
 )
@@ -943,7 +943,7 @@ XLALComputePSDfromSFTs(
               PSDmthopIFOs,
               0, // nSFTmthopSFTs
               0, // nSFTmthopIFOs
-              normalizeByTotalNumSFTs,
+              PSDnormByTotalNumSFTs,
               FreqMin,
               FreqBand,
               FALSE // normalizeSFTsInPlace
