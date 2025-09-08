@@ -699,6 +699,7 @@ XLALComputePSDandNormSFTPower(
   XLAL_CHECK( normSFT, XLAL_EINVAL );
   XLAL_CHECK( inputSFTs && inputSFTs->data && inputSFTs->length > 0, XLAL_EINVAL, "inputSFTs must be pre-allocated." );
   XLAL_CHECK( ( FreqMin >= 0 && FreqBand >= 0 ) || ( FreqMin == -1 && FreqBand == 0 ), XLAL_EINVAL, "Need either both Freqmin>=0 && FreqBand>=0 (truncate PSD band to this range) or FreqMin=-1 && FreqBand=0 (use full band as loaded from SFTs, including rngmed-sidebands." );
+  XLAL_CHECK( !normalizeByTotalNumSFTs || PSDmthopSFTs == PSDmthopIFOs, XLAL_EINVAL, "when normalizeByTotalNumSFTs=true, PSDmthopSFTs(=%i) must equal PSDmthopIFOs(=%i)", PSDmthopSFTs, PSDmthopIFOs );
 
   /* get power running-median rngmed[ |data|^2 ] from SFTs *
    * as the output of XLALNormalizeMultiSFTVect(),
