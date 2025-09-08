@@ -557,6 +557,7 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
     pt_occurence = LALMalloc(ndat * sizeof(*pt_occurence));
 
     for (size_t i = 1; i < ndat; i++){
+        pt_occurence[i] = false;
         gradient = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1]);
         delta_gradient = (gradient - old_gradient)/gradient;
         if (edat[i] > eps_min_pt && (gradient == 0.0 || fabs(delta_gradient) >= pt_tolerance)) {

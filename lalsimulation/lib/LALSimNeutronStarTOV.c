@@ -555,12 +555,12 @@ static int tov_ext_initial_condition(double eps, double p, double dh, LALSimNeut
 
     double rval = sqrt(-3.0 * dh / (2.0 * LAL_PI * (eps + 3.0 * p)));
     double mval = 4.0 * LAL_PI * rval * rval * rval * eps / 3.0;
-    double Hval_k2 = rval * rval;
+    double Hval_k2 = rval * rval; // See section IV.A of Damour & Nagar
     double bval_k2 = 2.0 * rval;
-    double Hval_k3 = rval * rval;
-    double bval_k3 = 2.0 * rval;
-    double Hval_k4 = rval * rval;
-    double bval_k4 = 2.0 * rval; // TODO check the initial conditions ?
+    double Hval_k3 = rval * rval * rval;
+    double bval_k3 = 3.0 * rval * rval ;
+    double Hval_k4 = rval * rval * rval * rval;
+    double bval_k4 = 4.0 * rval * rval * rval;
 
     /* series expansion for the initial core */
     /* second factor of Eq. (7) of Lindblom (1992) */
