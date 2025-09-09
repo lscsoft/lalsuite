@@ -42,6 +42,31 @@ fi
 outPSD_full="./psd_fullsft.dat"
 outPSD_band="./psd_freqband.dat"
 
+## ----- run computePSD with invalid command lines to check option parsing
+badargs=(
+    # --PSDmthop{SFT|IFO}s, --PSDnormByTotalNumSFTs must be set if any are set
+    "--PSDmthopSFTs=harmmean"
+    "--PSDmthopIFOs=harmsum"
+    "--PSDmthopSFTs=arithmedian --PSDmthopIFOs=min"
+    "--PSDnormByTotalNumSFTs=no"
+    # check for invalid values of --PSDmthop{SFT|IFO}s when --PSDnormByTotalNumSFTs is true
+    "--PSDmthopSFTs=harmmean --PSDmthopIFOs=harmsum --PSDnormByTotalNumSFTs=yes"
+    "--PSDmthopSFTs=harmmean --PSDmthopIFOs=harmmean --PSDnormByTotalNumSFTs=yes"
+    "--PSDmthopSFTs=powerminus2mean --PSDmthopIFOs=powerminus2sum --PSDnormByTotalNumSFTs=yes"
+    "--PSDmthopSFTs=powerminus2mean --PSDmthopIFOs=powerminus2mean --PSDnormByTotalNumSFTs=yes"
+    # --nSFTmthop{SFT|IFO}s must be set if --outputNormSFT is true
+    "--outputNormSFT=yes"
+    "--outputNormSFT=yes --nSFTmthopSFTs=arithmean"
+    "--outputNormSFT=yes --nSFTmthopIFOs=max"
+)
+for badarg in "${badargs[@]}"; do
+    cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_full --blocksRngMed=$blocksRngMed $badarg"
+    if eval $cmdline >/dev/null 2>&1; then
+        echo "Error.. '$cmdline' should have failed but didn't, check option parsing..."
+        exit 1
+    fi
+done
+
 ## ----- run computePSD once for full SFT
 cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_full --blocksRngMed=$blocksRngMed --outputNormSFT=yes --nSFTmthopSFTs=arithmean --nSFTmthopIFOs=max"
 
