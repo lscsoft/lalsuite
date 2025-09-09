@@ -403,7 +403,7 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
 
   /* check user-input consistency */
   if ( UVAR_ANYSET3( PSDmthopSFTs, PSDmthopIFOs, PSDnormByTotalNumSFTs ) && !UVAR_ALLSET3( PSDmthopSFTs, PSDmthopIFOs, PSDnormByTotalNumSFTs ) ) {
-    XLALPrintError( "ERROR: --PSDmthopSFTs(-S), --PSDmthopIFOs(-I), and --PSDnormByTotalNumSFTs(-T) must all be set" );
+    XLALPrintError( "ERROR: --PSDmthopSFTs(-S), --PSDmthopIFOs(-I), and --PSDnormByTotalNumSFTs(-T) must all be set\n" );
     return XLAL_FAILURE;
   }
   if ( uvar->PSDnormByTotalNumSFTs && !( ( uvar->PSDmthopSFTs == MATH_OP_HARMONIC_SUM || uvar->PSDmthopSFTs == MATH_OP_POWERMINUS2_SUM ) && uvar->PSDmthopIFOs == uvar->PSDmthopSFTs ) ) {
@@ -417,35 +417,35 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
         PSDmthopIFOs_str = MathOpTypeChoices[i].name;
       }
     }
-    XLALPrintError( "ERROR: invalid values for --PSDmthopSFTs(-S)=%s, --PSDmthopIFOs(-I)=%s when --PSDnormByTotalNumSFTs(-T) is true", PSDmthopSFTs_str, PSDmthopIFOs_str );
+    XLALPrintError( "ERROR: invalid values for --PSDmthopSFTs(-S)=%s, --PSDmthopIFOs(-I)=%s when --PSDnormByTotalNumSFTs(-T) is true\n", PSDmthopSFTs_str, PSDmthopIFOs_str );
     return XLAL_FAILURE;
   }
   if ( uvar->outputNormSFT && !UVAR_ALLSET2( nSFTmthopSFTs, nSFTmthopIFOs ) ) {
-    XLALPrintError( "ERROR: --nSFTmthopSFTs(-N), --nSFTmthopIFOs(-J) must all be set if --outputNormSFT(-n) is true" );
+    XLALPrintError( "ERROR: --nSFTmthopSFTs(-N), --nSFTmthopIFOs(-J) must all be set if --outputNormSFT(-n) is true\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binSize ) ) && XLALUserVarWasSet( &( uvar->binSizeHz ) ) ) {
-    XLALPrintError( "ERROR: --binSize(-z) and --binSizeHz(-Z) are mutually exclusive" );
+    XLALPrintError( "ERROR: --binSize(-z) and --binSizeHz(-Z) are mutually exclusive\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binSize ) ) && uvar->binSize <= 0 ) {
-    XLALPrintError( "ERROR: --binSize(-z) must be strictly positive" );
+    XLALPrintError( "ERROR: --binSize(-z) must be strictly positive\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binSizeHz ) ) && uvar->binSizeHz <= 0.0 ) {
-    XLALPrintError( "ERROR: --binSizeHz(-Z) must be strictly positive" );
+    XLALPrintError( "ERROR: --binSizeHz(-Z) must be strictly positive\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binStep ) ) && XLALUserVarWasSet( &( uvar->binStepHz ) ) ) {
-    XLALPrintError( "ERROR: --binStep(-p) and --binStepHz(-P) are mutually exclusive" );
+    XLALPrintError( "ERROR: --binStep(-p) and --binStepHz(-P) are mutually exclusive\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binStep ) ) && uvar->binStep <= 0 ) {
-    XLALPrintError( "ERROR: --binStep(-p) must be strictly positive" );
+    XLALPrintError( "ERROR: --binStep(-p) must be strictly positive\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binStepHz ) ) && uvar->binStepHz <= 0.0 ) {
-    XLALPrintError( "ERROR: --binStepHz(-P) must be strictly positive" );
+    XLALPrintError( "ERROR: --binStepHz(-P) must be strictly positive\n" );
     return XLAL_FAILURE;
   }
   BOOLEAN have_fStart   = XLALUserVarWasSet( &uvar->fStart );
@@ -590,7 +590,7 @@ XLALReadSFTs( ConfigVariables_t *cfg,           /**< [out] return derived config
     XLAL_ERROR_NULL( XLAL_EINVAL );
   }
   if ( !cfg ) {
-    XLALPrintError( "%s: invalid NULL input 'cfg'", __func__ );
+    XLALPrintError( "%s: invalid NULL input 'cfg'\n", __func__ );
     XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
