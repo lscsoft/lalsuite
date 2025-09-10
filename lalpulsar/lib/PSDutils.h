@@ -141,6 +141,7 @@ MultiNoiseWeights *XLALComputeMultiNoiseWeights( const MultiPSDVector *rngmed, U
 
 REAL8FrequencySeries *XLALComputeSegmentDataQ( const MultiPSDVector *multiPSDVect, LALSeg segment );
 REAL8 XLALMathOpOverArray( const REAL8 *data, const size_t length, const MathOpType optype );
+REAL8 XLALMathOpOverREAL8Vector( const REAL8Vector *data, const MathOpType optype );
 REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs( const UINT4 totalNumSFTs, const MathOpType optypeSFTs );
 
 int XLALComputePSDandNormSFTPower( REAL8Vector **finalPSD, MultiPSDVector **multiPSDVector, REAL8Vector **normSFT, MultiSFTVector *inputSFTs, const BOOLEAN returnMultiPSDVector, const BOOLEAN returnNormSFT,

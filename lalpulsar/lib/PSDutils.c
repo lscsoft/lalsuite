@@ -487,6 +487,8 @@ XLALComputeSegmentDataQ( const MultiPSDVector *multiPSDVect,   /**< input PSD ma
  * This can be used e.g. for the different established conventions of combining
  * SFTs for a PSD estimate.
  *
+ * See also XLALMathOpOverREAL8Vector().
+ *
  */
 REAL8 XLALMathOpOverArray( const REAL8 *data,      /**< input data array */
                            const size_t length,    /**< length of the input data array */
@@ -607,6 +609,30 @@ REAL8 XLALMathOpOverArray( const REAL8 *data,      /**< input data array */
   return res;
 
 } /* XLALMathOpOverArray() */
+
+
+/**
+ * Compute various types of "math operations" over the entries of a REAL8Vector.
+ *
+ * The supported optypes (e.g. sums and averages) are defined in \c MathOpType.
+ *
+ * See also XLALMathOpOverArray().
+ */
+REAL8 XLALMathOpOverREAL8Vector(
+  const REAL8Vector *data,    /**< input data array */
+  const MathOpType optype     /**< type of operation */
+)
+{
+
+  XLAL_CHECK_REAL8( data != NULL, XLAL_EINVAL );
+
+  // Call XLALMathOpOverArray()
+  REAL8 res = XLALMathOpOverArray( data->data, data->length, optype );
+  XLAL_CHECK_REAL8( !XLAL_IS_REAL8_FAIL_NAN( res ), XLAL_EFUNC );
+
+  return res;
+
+}
 
 
 /**
