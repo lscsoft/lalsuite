@@ -2,6 +2,272 @@
 # LALSuite: RPM package-level build
 # ----------------------------------------------------------------------
 
+# -- from https://git.ligo.org/computing/gitlab-ci-templates/-/blob/master/rhel.yml
+
+.install-dnf: &install-dnf
+  if ! command -v dnf &> /dev/null; then
+      if grep -q "scientificlinux:7" /etc/os-release; then yum -y -q install yum-conf-extras; fi;
+      yum -y -q install dnf;
+      if grep -q "scientificlinux:7" /etc/os-release; then ln -sv /etc/yum/vars/sl* /etc/dnf/vars/; fi;
+  fi
+
+# find yum/dnf
+.set-dnf-variable: &set-dnf-variable
+  if command -v yum &> /dev/null; then
+      DNF="yum";
+  else
+      DNF="dnf";
+  fi
+
+# disable repos the user doesn't want
+.disable-repos: &disable-repos
+  _config_manager_args="--disable ${DISABLE_REPOS}" &&
+  _install_args="--disablerepo ${DISABLE_REPOS/ /,}" &&
+  if [ -z "${DISABLE_REPOS}" ]; then
+      true;
+  elif command -v yum &> /dev/null; then
+      yum -y -q install ${_install_args} "yum-utils" &&
+      yum-config-manager ${_config_manager_args} 1>/dev/null;
+  else
+      dnf -y -q install ${_install_args} "dnf-command(config-manager)" &&
+      dnf config-manager ${_config_manager_args};
+  fi
+
+# configure yum/dnf to cache packages locally
+.configure-rpm-cache: &configure-rpm-cache
+  _config_manager_args="--save --setopt=cachedir=${RPM_CACHE_DIR:=${CI_PROJECT_DIR}/.cache/rpm} --setopt=keepcache=1" &&
+  if command -v yum &> /dev/null; then
+      yum -y -q install "yum-utils" &&
+      yum-config-manager ${_config_manager_args} 1>/dev/null;
+  else
+      dnf -y -q install "dnf-command(config-manager)" &&
+      dnf config-manager ${_config_manager_args};
+  fi
+
+# enable the powertools repo for Centos 8
+.enable-powertools: &enable-powertools
+  if grep -q "platform:el8" /etc/os-release && "${POWERTOOLS}"; then
+      dnf -y -q install dnf-plugins-core &&
+      dnf config-manager --set-enabled powertools;
+  fi
+
+# install and configure EPEL
+.install-epel: &install-epel
+  if [ "${EPEL}" = true ]; then
+      if command -v yum &> /dev/null; then
+          yum -y -q install epel-release && yum -y -q install epel-rpm-macros;
+      else
+          dnf -y -q install epel-release && dnf -y -q install epel-rpm-macros;
+      fi
+  fi
+
+.disable-python-package-index: &disable-python-package-index |
+  # disable Python from downloading packages on-the-fly
+  # everything should be specified as BuildRequires
+
+  # if not a disposable environment, we will not create files outside of the
+  # CI_PROJECT_DIR
+  if [ ! "${CI_DISPOSABLE_ENVIRONMENT}" = true ]; then
+      echo -e "\x1B[93mCannot safely disable easy_install index-url in a non-disposable environment.\x1B[0m";
+  # if the user didn't opt-out, then create ~/.pydistutils.cfg
+  elif [ "${DISABLE_PYTHON_PACKAGE_INDEX}" = true ]; then
+      export PIP_NO_INDEX=1;
+      cat > ~/.pydistutils.cfg <<EOF
+  [easy_install]
+  index-url = CI_DISABLED_INDEX_URL
+  EOF
+      echo "Created ~/.pydistutils.cfg to disable pip/setuptools downloading packages.";
+      echo "All build requirements should be specified in the RPM spec file and installed using yum-builddep.";
+  else
+      echo "User disabled disabling Python package index, ~/.pydistutils.cfg not created.";
+  fi
+
+# -- RHEL caching -----------
+# configure yum/dnf to cache
+# RPMs locally and gitlab-ci
+# to cache the cache
+# ---------------------------
+
+.rhel:cache:
+  image: rockylinux:8
+  variables:
+    RPM_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/rpm"
+  before_script:
+    - *configure-rpm-cache
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/rpm
+
+# -- generic job ------------
+# default job template for
+# RHEL-based jobs, including
+# caching and hooks for EPEL
+# and CentOS 8 PowerTools
+# ---------------------------
+
+.rhel:base:
+  extends:
+    - .rhel:cache
+  variables:
+    EPEL: "false"
+    POWERTOOLS: "false"
+  before_script:
+    - *install-dnf
+    - *set-dnf-variable
+    - *disable-repos
+    - *configure-rpm-cache
+    - *enable-powertools
+    - *install-epel
+
+# -- SRPM build -------------
+# build an SRPM from a
+# tarball
+# ---------------------------
+
+.rhel:srpm:
+  extends:
+    - .rhel:base
+  variables:
+    # disable downloading packages from PyPI by defaults
+    DISABLE_PYTHON_PACKAGE_INDEX: "true"
+    # if 'true' enable EPEL repo
+    EPEL: "false"
+    # probably don't need the git repo
+    GIT_STRATEGY: none
+    # if 'true' enable CentOS PowerTools repo
+    POWERTOOLS: "false"
+    # options to pass to rpmbuild
+    RPMBUILD_OPTIONS: ""
+    # packages to install for SRPM
+    SRPM_DEPENDENCIES: ""
+  before_script:
+    # standard config
+    # NOTE: we don't use !reference tags here because
+    # [DMM] they don't support nesting, and we want
+    #       users to be able to use !reference tags
+    - *install-dnf
+    - *set-dnf-variable
+    - *disable-repos
+    - *configure-rpm-cache
+    - *enable-powertools
+    - *install-epel
+    - *disable-python-package-index
+    - dnf -y -q install
+          findutils
+          rpm-build
+          ${SRPM_DEPENDENCIES}
+  script:
+    # build the src.rpm
+    - xargs -t rpmbuild -ts --define "_srcrpmdir ${CI_PROJECT_DIR}" ${TARBALL:="${CI_PROJECT_NAME}*.tar.*"} <<< ${RPMBUILD_OPTIONS}
+  artifacts:
+    paths:
+      - "*.src.rpm"
+
+# -- binary RPM build -------
+# build an RPM from an SRPM
+# ---------------------------
+
+.rhel:rpm:
+  extends:
+    - .rhel:base
+  variables:
+    # disable downloading packages from PyPI by defaults
+    DISABLE_PYTHON_PACKAGE_INDEX: "true"
+    # if 'true' enable EPEL repo
+    EPEL: "false"
+    # probably don't need the git repo
+    GIT_STRATEGY: none
+    # if 'true' enable CentOS PowerTools repo
+    POWERTOOLS: "false"
+    # options to pass to rpmbuild
+    RPMBUILD_OPTIONS: ""
+  before_script:
+    # standard config
+    # NOTE: we don't use !reference tags here because
+    # [DMM] they don't support nesting, and we want
+    #       users to be able to use !reference tags
+    - *install-dnf
+    - *set-dnf-variable
+    - *disable-repos
+    - *configure-rpm-cache
+    - *enable-powertools
+    - *install-epel
+    - *disable-python-package-index
+    # install rpmbuild and yum-builddep
+    - dnf -y -q install
+          findutils
+          rpm-build
+          yum-utils
+  script:
+    # install build dependencies for src rpm
+    - yum-builddep -y ${SRPM:="${CI_PROJECT_NAME}-*.src.rpm"}
+    # build binary rpms and move them into this directory
+    - xargs -t rpmbuild --rebuild --define "_rpmdir $(pwd)" ${SRPM} <<< ${RPMBUILD_OPTIONS}
+    # list the contents of the rpms
+    - for rpmf in */*.rpm; do
+          rpmname=$(basename ${rpmf}) &&
+          echo "===== ${rpmname}" &&
+          rpm -qp --info "${rpmf}" &&
+          echo "-- Files:" &&
+          rpm -qp --list "${rpmf}" &&
+          echo "-- Provides:" &&
+          rpm -qp --provides "${rpmf}" &&
+          echo "-- Conflicts:" &&
+          rpm -qp --conflicts "${rpmf}" &&
+          echo "-- Requires:" &&
+          rpm -qp --requires "${rpmf}";
+      done
+    # archive the rpms in the base directory
+    - mv -v */*.rpm .
+  artifacts:
+    paths:
+      - "*.rpm"
+    exclude:
+      - "*.src.rpm"
+
+# -- lint RPMs --------------
+# run rpmlint against a set
+# of RPMs
+# ---------------------------
+
+.rhel:lint:
+  extends:
+    - .rhel:base
+  variables:
+    # probably don't need the git repo
+    GIT_STRATEGY: none
+    # options to pass to rpmlint
+    RPMLINT_OPTIONS: '--info'
+    # RPMs to lint
+    INSTALLED_RPMS: ''
+    RPMS: '*.rpm'
+  before_script:
+    # standard config
+    # NOTE: we don't use !reference tags here because
+    # [DMM] they don't support nesting, and we want
+    #       users to be able to use !reference tags
+    - *install-dnf
+    - *set-dnf-variable
+    - *disable-repos
+    - *configure-rpm-cache
+    - *enable-powertools
+    - *install-epel
+    # install rpmlint
+    - dnf -y -q install
+          rpmlint
+  script:
+    # write the raw output to a file to record as an artefact
+    - if [[ "${RPMLINT_OPTIONS}" != *"rawout"* ]]; then RPMLINT_OPTIONS="${RPMLINT_OPTIONS} --rawout rpmlint.log"; fi
+    # install the RPMs
+    - if [ ! -z "${INSTALLED_RPMS}" ]; then dnf -y install ${RPMS}; fi
+    # run rpmlint
+    - set -- ${RPMLINT_OPTIONS}
+    - rpmlint "$@" ${RPMS} ${INSTALLED_RPMS}
+  artifacts:
+    paths:
+      - rpmlint.log
+
 # -- templates
 
 .rpmbuild:
