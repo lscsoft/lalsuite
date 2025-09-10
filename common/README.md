@@ -3,11 +3,6 @@
 This directory contains common code used by the constituent LALSuite
 packages. It also contains miscellaneous scripts useful for maintenance.
 
-## `common/code-quality-scripts`: Code quality scripts
-
-This directory contains various scripts used to check code quality issues. They
-are generally run from a CI `lint:` job (see `.gitlab/ci/lint.yml`).
-
 ## `common/conda/`: LALSuite Conda packages
 
 This directory contains common code for Conda packages.
@@ -27,6 +22,10 @@ builds for all of the LALSuite subpackages.
 The build is controlled by the automake file `gnuscripts/lalsuite_doxygen.am`,
 customisations for each subpackage can be added in
 `<package>/doxygen/Makefile.am`.
+
+## `common/gitlab-ci-scripts`: Code quality scripts
+
+This directory contains various scripts used in the GitLab CI pipelines.
 
 ## `common/maintainer-scripts`: Maintainer scripts
 
