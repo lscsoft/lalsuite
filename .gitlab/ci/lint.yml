@@ -94,7 +94,8 @@ lint:pre-commit:
     # generate code quality report
     - pre-commit run -a --hook-stage manual
     - ./common/gitlab-ci-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
-    - !reference [.concatenate-code-quality]
+    # check/concatenate code quality reports
+    - ./common/gitlab-ci-scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
   artifacts:
     reports:
       codequality: code-quality.json
@@ -126,7 +127,8 @@ lint:gitignore:
       fi
     # generate code quality report
     - ./common/gitlab-ci-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
-    - !reference [.concatenate-code-quality]
+    # check/concatenate code quality reports
+    - ./common/gitlab-ci-scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
   artifacts:
     reports:
       codequality: code-quality.json
