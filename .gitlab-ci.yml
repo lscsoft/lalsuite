@@ -37,17 +37,6 @@ stages:
   - deploy
 
 include:
-  # include job templates from the gitlab-ci-templates repo
-  # see https://computing.docs.ligo.org/gitlab-ci-templates/
-  - project: computing/gitlab-ci-templates
-    file:
-      # helpers for debian builds
-      - debian.yml
-      # helpers for RHEL builds
-      - rhel.yml
-      # a flake8 job template
-      - python.yml
-
   # retry() macro
   - local: '/.gitlab/ci/retry.yml'
 
