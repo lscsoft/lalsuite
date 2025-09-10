@@ -49,47 +49,6 @@
     - *configure-apt-cache
     - *apt-update
 
-# -- DSC build --------------
-# build a debian source
-# package using dpkg-source
-# ---------------------------
-
-.debian:dsc:
-  extends:
-    - .debian:base
-  variables:
-    # probably don't need the git repo
-    GIT_STRATEGY: none
-  before_script:
-    # standard config
-    # NOTE: we don't use !reference tags here because
-    # [DMM] they don't support nesting, and we want
-    #       users to be able to use !reference tags
-    - *configure-apt-cache
-    - *apt-update
-    # install dpkg-source
-    - apt-get -y -q install
-          dpkg-dev
-          ${DSC_DEPENDENCIES}
-  script:
-    # extract tarball
-    - mkdir _dsc_src
-    - tar -xf ${TARBALL:="${CI_PROJECT_NAME}*.tar.*"} -C _dsc_src --strip-components=1
-    # get Source name from Debian packaging (preserve regex match if that fails)
-    - |
-      SOURCE_NAME=$((grep "^Source:" _dsc_src/debian/control || echo "Source: \1" ) | awk '{print $2}')
-    # rename tarball for debian orig
-    - _orig=$(basename ${TARBALL} | sed "s|\(.*\)-\(.*\).\(tar\..*\)|${SOURCE_NAME}_\2.orig.\3|")
-    - mv -v ${TARBALL} "${_orig}"
-    # create debian source package files
-    - dpkg-source --build _dsc_src
-  artifacts:
-    paths:
-      - "*.debian.tar.*"
-      - "*.diff.gz"
-      - "*.dsc"
-      - "*.orig.tar.*"
-
 # -- binary DEB build -------
 # build one or more binary
 # deban packages using
@@ -138,35 +97,6 @@
       - "*.buildinfo"
       - "*.changes"
       - "*.deb"
-
-# -- lint debs --------------
-# run lintian against a set
-# of debs
-# ---------------------------
-
-.debian:lint:
-  extends:
-    - .debian:base
-  variables:
-    # probably don't need the git repo
-    GIT_STRATEGY: none
-    # options to pass to lintian
-    LINTIAN_OPTIONS: "--color=auto"
-    # what to lint
-    LINTIAN_TARGET: '*.changes'
-  before_script:
-    # standard config
-    # NOTE: we don't use !reference tags here because
-    # [DMM] they don't support nesting, and we want
-    #       users to be able to use !reference tags
-    - *configure-apt-cache
-    - *apt-update
-    # install lintian
-    - apt-get -y -q install
-          findutils
-          lintian
-  script:
-    - xargs -t lintian ${LINTIAN_TARGET} <<< ${LINTIAN_OPTIONS}
 
 # -- templates
 
