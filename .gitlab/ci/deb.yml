@@ -2,6 +2,172 @@
 # LALSuite: Debian package-level build
 # ----------------------------------------------------------------------
 
+# -- from https://git.ligo.org/computing/gitlab-ci-templates/-/blob/master/debian.yml
+
+# configure the apt cache
+.configure-apt-cache: &configure-apt-cache
+  echo "Dir::Cache \"${APT_CACHE_DIR:=${CI_PROJECT_DIR}/.cache/apt}\";" > /etc/apt/apt.conf.d/99cache.conf &&
+  mkdir -p "${APT_CACHE_DIR}/archives/partial"
+
+# update the local APT packages
+.apt-update: &apt-update
+  apt-get autoclean && apt-get --yes --quiet --allow-releaseinfo-change-suite update
+
+# -- Deb caching ------------
+# configure apt to cache
+# packages locally and
+# gitlab-ci to cache the
+# cache
+# ---------------------------
+
+.debian:cache:
+  image: debian
+  variables:
+    APT_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/apt"
+  before_script:
+    - *configure-apt-cache
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/apt
+
+# -- generic job ------------
+# default job template for
+# Debian-based jobs,
+# including caching and a
+# basic 'apt-get update'
+# ---------------------------
+
+.debian:base:
+  extends:
+    - .debian:cache
+  before_script:
+    # standard config
+    # NOTE: we don't use !reference tags here because
+    # [DMM] they don't support nesting, and we want
+    #       users to be able to use !reference tags
+    - *configure-apt-cache
+    - *apt-update
+
+# -- DSC build --------------
+# build a debian source
+# package using dpkg-source
+# ---------------------------
+
+.debian:dsc:
+  extends:
+    - .debian:base
+  variables:
+    # probably don't need the git repo
+    GIT_STRATEGY: none
+  before_script:
+    # standard config
+    # NOTE: we don't use !reference tags here because
+    # [DMM] they don't support nesting, and we want
+    #       users to be able to use !reference tags
+    - *configure-apt-cache
+    - *apt-update
+    # install dpkg-source
+    - apt-get -y -q install
+          dpkg-dev
+          ${DSC_DEPENDENCIES}
+  script:
+    # extract tarball
+    - mkdir _dsc_src
+    - tar -xf ${TARBALL:="${CI_PROJECT_NAME}*.tar.*"} -C _dsc_src --strip-components=1
+    # get Source name from Debian packaging (preserve regex match if that fails)
+    - |
+      SOURCE_NAME=$((grep "^Source:" _dsc_src/debian/control || echo "Source: \1" ) | awk '{print $2}')
+    # rename tarball for debian orig
+    - _orig=$(basename ${TARBALL} | sed "s|\(.*\)-\(.*\).\(tar\..*\)|${SOURCE_NAME}_\2.orig.\3|")
+    - mv -v ${TARBALL} "${_orig}"
+    # create debian source package files
+    - dpkg-source --build _dsc_src
+  artifacts:
+    paths:
+      - "*.debian.tar.*"
+      - "*.diff.gz"
+      - "*.dsc"
+      - "*.orig.tar.*"
+
+# -- binary DEB build -------
+# build one or more binary
+# deban packages using
+# dpkg-buildpackage
+# ---------------------------
+
+.debian:deb:
+  extends:
+    - .debian:base
+  variables:
+    # probably don't need the git repo
+    GIT_STRATEGY: none
+    # options for apt-get
+    APT_GET_OPTIONS: "-o Debug::pkgProblemResolver=yes --no-install-recommends"
+  before_script:
+    # standard config
+    # NOTE: we don't use !reference tags here because
+    # [DMM] they don't support nesting, and we want
+    #       users to be able to use !reference tags
+    - *configure-apt-cache
+    - *apt-update
+    # install mk-build-deps and dpkg-buildpackage
+    - apt-get -y -q install
+          dpkg-dev
+          devscripts
+  script:
+    # unpack source package
+    - dpkg-source --extract ${DSC:="${CI_PROJECT_NAME}_*.dsc"} _deb_src
+    - cd _deb_src
+    # install build dependencies
+    - mk-build-deps
+          --tool "apt-get -y -q ${APT_GET_OPTIONS}"
+          --install
+          --remove
+    # build debian packages
+    - dpkg-buildpackage -us -uc -b
+    - cd -
+    # print contents of packages
+    - for debf in *.deb; do
+          echo "===== ${debf}";
+          dpkg --info "${debf}";
+          dpkg --contents "${debf}";
+      done
+  artifacts:
+    paths:
+      - "*.buildinfo"
+      - "*.changes"
+      - "*.deb"
+
+# -- lint debs --------------
+# run lintian against a set
+# of debs
+# ---------------------------
+
+.debian:lint:
+  extends:
+    - .debian:base
+  variables:
+    # probably don't need the git repo
+    GIT_STRATEGY: none
+    # options to pass to lintian
+    LINTIAN_OPTIONS: "--color=auto"
+    # what to lint
+    LINTIAN_TARGET: '*.changes'
+  before_script:
+    # standard config
+    # NOTE: we don't use !reference tags here because
+    # [DMM] they don't support nesting, and we want
+    #       users to be able to use !reference tags
+    - *configure-apt-cache
+    - *apt-update
+    # install lintian
+    - apt-get -y -q install
+          findutils
+          lintian
+  script:
+    - xargs -t lintian ${LINTIAN_TARGET} <<< ${LINTIAN_OPTIONS}
+
 # -- templates
 
 .debuild:
