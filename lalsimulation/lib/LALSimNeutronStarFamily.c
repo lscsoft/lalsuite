@@ -591,7 +591,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT2(EOSMultiParts * eos, int min_f
     fam = LALMalloc(sizeof(*fam));
 
     int ndat = 100;
-//     int min_interp_points = 5; // Minimum number of points required for all gls interpolators
+    int min_interp_points = 5; // Minimum number of points required for all gls interpolators
 
     double logpmin = 75.5; // pmin = 6.16e32
     fam->pmin = exp(logpmin);
@@ -610,13 +610,10 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT2(EOSMultiParts * eos, int min_f
 
 
     int nb_stable_branches = 0;
-    int nb_unstable_branches = 0;
     int flag_unstable = 0;
     int flag_stable = 0;
-    int index_begin_stable_branch[100];
-    int index_end_stable_branch[100];
-    index_begin_stable_branch[0] = 0;
-      //TODO what happens if we start on an unstable branch ??
+    int index_begin_stable_branch[100] = { [ 0 ... 99 ] = 0};
+    int index_end_stable_branch[100] = { [ 0 ... 99 ] = 0};
     for (int j = 0; j < ndat; ++j) {
         pdat[j] = exp(logpmin + j * dlogp); // pressure in Pascal
         // Solve TOV+Love number ODEs
@@ -631,8 +628,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT2(EOSMultiParts * eos, int min_f
                 &k3dat[j], &k4dat[j],
                 pdat[j], eos, 1e-6);
         }
-
-      // Determine stable and unstable branches
+        // Determine stable and unstable branches
         if (j > 0){
             if (mdat[j] > mdat[j-1]){ // Stable branch
                 if (flag_stable == 0) {
@@ -643,149 +639,152 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT2(EOSMultiParts * eos, int min_f
                 flag_unstable = 0;
             } else {
                 if (flag_unstable == 0){
-                    index_end_stable_branch[nb_unstable_branches] = j-1;
-                    nb_unstable_branches +=1;
+                    if (nb_stable_branches != 0) index_end_stable_branch[nb_stable_branches-1] = j-1;
                 }
                 flag_stable = 0;
                 flag_unstable = 1;
             }
         }
+
     }
 
     // If the sequence ends on a stable branch
-    if (flag_stable == 1) index_end_stable_branch[nb_stable_branches+1] = ndat-1; //TODO test this
     fam->number_of_branches = nb_stable_branches;
-    fam->fam_branch = (LALSimNeutronStarFamily **) LALMalloc(sizeof(LALSimNeutronStarFamily *) * nb_stable_branches);
-
-    //TODO make the case of just an unstable branch in the solution
-
-    int *ndat_branch;
-    ndat_branch = LALMalloc(nb_stable_branches * sizeof(*ndat_branch));
-    for (int b = 0; b < nb_stable_branches; b++){
-        ndat_branch[b] = index_end_stable_branch[b] - index_begin_stable_branch[b];
-        LALSimNeutronStarFamily * fam_branch_i = LALMalloc(sizeof(LALSimNeutronStarFamily));
-
-        // FIXME: Is this necessary??
-        if(min_fam==1){
-            fam_branch_i->mbdat = NULL;
-            fam_branch_i->k3dat = NULL;
-            fam_branch_i->k4dat = NULL;
-            fam_branch_i->mb_of_m_interp = NULL;
-            fam_branch_i->k3_of_m_interp = NULL;
-            fam_branch_i->k4_of_m_interp = NULL;
-            fam_branch_i->mb_of_m_acc = NULL;
-            fam_branch_i->k3_of_m_acc = NULL;
-            fam_branch_i->k4_of_m_acc = NULL;
-        }
-
-        // Redefine ndat as the number of points per branch
-        fam_branch_i->ndat = ndat_branch[b];
-        printf("%d gggggggggggggggggg\n", ndat_branch[b]);
-        fam_branch_i->pdat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->pdat));
-        fam_branch_i->mdat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->mdat));
-        fam_branch_i->rdat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->rdat));
-        fam_branch_i->k2dat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->k2dat));
-        if(min_fam==0){
-            fam_branch_i->mbdat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->mbdat));
-            fam_branch_i->k3dat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->k3dat));
-            fam_branch_i->k4dat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->k4dat));
-        }
-
-        if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat)
-                XLAL_ERROR_NULL(XLAL_ENOMEM);
-        if(min_fam==0){
-            if (!fam_branch_i->mbdat || !fam_branch_i->k3dat || !fam_branch_i->k4dat)
-                XLAL_ERROR_NULL(XLAL_ENOMEM);
-        }
-
-        // Append the data into the branch
-        for (int j = 0 ; j < ndat_branch[b] ; j++){
-            fam_branch_i->pdat[j] = pdat[index_begin_stable_branch[b] + j];
-            fam_branch_i->mdat[j] = mdat[index_begin_stable_branch[b] + j];
-            fam_branch_i->rdat[j] = rdat[index_begin_stable_branch[b] + j];
-            fam_branch_i->k2dat[j] = k2dat[index_begin_stable_branch[b] + j];
-            if (min_fam == 0) {
-                fam_branch_i->mbdat[j] = mbdat[index_begin_stable_branch[b] + j];
-                fam_branch_i->k3dat[j] = k3dat[index_begin_stable_branch[b] + j];
-                fam_branch_i->k4dat[j] = k4dat[index_begin_stable_branch[b] + j];
-            }
-        }
-
-        // Recalculate the maximum mass of a branch
-        if (index_end_stable_branch[b] < ndat-1) { // if an unstable branch follows the current stable branch
-            double pc_max = get_central_pressure_mext(eos, index_end_stable_branch[b], pdat, mdat, -1.0);
-            if(min_fam==1) XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(
-                                &fam_branch_i->rdat[ndat_branch[b]-1],
-                                &fam_branch_i->mdat[ndat_branch[b]-1],
-                                &fam_branch_i->k2dat[ndat_branch[b]-1],
-                                pc_max, eos, 1e-6);
-            else XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
-                    &fam_branch_i->rdat[ndat_branch[b]-1],
-                    &fam_branch_i->mdat[ndat_branch[b]-1],
-                    &fam_branch_i->mbdat[ndat_branch[b]-1],
-                    &fam_branch_i->k2dat[ndat_branch[b]-1],
-                    &fam_branch_i->k3dat[ndat_branch[b]-1],
-                    &fam_branch_i->k4dat[ndat_branch[b]-1],
-                    pc_max, eos, 1e-6);
-            fam_branch_i->pdat[ndat_branch[b]-1] = pc_max;
-        }
-        // Recalculate the minimum mass of a branch
-        if (index_begin_stable_branch[b] != 0) {
-            double pc_min = get_central_pressure_mext(eos, index_begin_stable_branch[b], pdat, mdat, 1.0);
+    if (nb_stable_branches != 0) {
+        if (flag_stable == 1) index_end_stable_branch[nb_stable_branches-1] = ndat-1;
+        fam->fam_branch = (LALSimNeutronStarFamily **) LALMalloc(sizeof(LALSimNeutronStarFamily *) * nb_stable_branches);
+        int *ndat_branch;
+        ndat_branch = LALMalloc(nb_stable_branches * sizeof(*ndat_branch));
+        for (int b = 0; b < nb_stable_branches; b++){
+            ndat_branch[b] = index_end_stable_branch[b] - index_begin_stable_branch[b];
+            LALSimNeutronStarFamily * fam_branch_i = LALMalloc(sizeof(LALSimNeutronStarFamily));
+            // FIXME: Is this necessary??
             if(min_fam==1){
-                XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(
-                    &fam_branch_i->rdat[0],
-                    &fam_branch_i->mdat[0],
-                    &fam_branch_i->k2dat[0],
-                    pc_min, eos, 1e-6);
-
-            } else {
-                XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
-                    &fam_branch_i->rdat[0],
-                    &fam_branch_i->mdat[0],
-                    &fam_branch_i->mbdat[0],
-                    &fam_branch_i->k2dat[0],
-                    &fam_branch_i->k3dat[0],
-                    &fam_branch_i->k4dat[0],
-                    pc_min, eos, 1e-6);
+                fam_branch_i->mbdat = NULL;
+                fam_branch_i->k3dat = NULL;
+                fam_branch_i->k4dat = NULL;
+                fam_branch_i->mb_of_m_interp = NULL;
+                fam_branch_i->k3_of_m_interp = NULL;
+                fam_branch_i->k4_of_m_interp = NULL;
+                fam_branch_i->mb_of_m_acc = NULL;
+                fam_branch_i->k3_of_m_acc = NULL;
+                fam_branch_i->k4_of_m_acc = NULL;
             }
-            fam_branch_i->pdat[0] = pc_min;
+
+            // Redefine ndat as the number of points per branch
+            fam_branch_i->ndat = ndat_branch[b];
+            fam_branch_i->pdat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->pdat));
+            fam_branch_i->mdat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->mdat));
+            fam_branch_i->rdat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->rdat));
+            fam_branch_i->k2dat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->k2dat));
+            if(min_fam==0){
+                fam_branch_i->mbdat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->mbdat));
+                fam_branch_i->k3dat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->k3dat));
+                fam_branch_i->k4dat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->k4dat));
+            }
+
+            if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat)
+                    XLAL_ERROR_NULL(XLAL_ENOMEM);
+            if(min_fam==0){
+                if (!fam_branch_i->mbdat || !fam_branch_i->k3dat || !fam_branch_i->k4dat)
+                    XLAL_ERROR_NULL(XLAL_ENOMEM);
+            }
+
+            // Append the data into the branch
+            for (int j = 0 ; j < ndat_branch[b] ; j++){
+                fam_branch_i->pdat[j] = pdat[index_begin_stable_branch[b] + j];
+                fam_branch_i->mdat[j] = mdat[index_begin_stable_branch[b] + j];
+                fam_branch_i->rdat[j] = rdat[index_begin_stable_branch[b] + j];
+                fam_branch_i->k2dat[j] = k2dat[index_begin_stable_branch[b] + j];
+                if (min_fam == 0) {
+                    fam_branch_i->mbdat[j] = mbdat[index_begin_stable_branch[b] + j];
+                    fam_branch_i->k3dat[j] = k3dat[index_begin_stable_branch[b] + j];
+                    fam_branch_i->k4dat[j] = k4dat[index_begin_stable_branch[b] + j];
+                }
+            }
+
+            // Recalculate the maximum mass of a branch
+            if (index_end_stable_branch[b] < ndat-1) { // if an unstable branch follows the current stable branch
+                double pc_max = get_central_pressure_mext(eos, index_end_stable_branch[b], pdat, mdat, -1.0);
+                if(min_fam==1) XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(
+                                    &fam_branch_i->rdat[ndat_branch[b]-1],
+                                    &fam_branch_i->mdat[ndat_branch[b]-1],
+                                    &fam_branch_i->k2dat[ndat_branch[b]-1],
+                                    pc_max, eos, 1e-6);
+                else XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
+                        &fam_branch_i->rdat[ndat_branch[b]-1],
+                        &fam_branch_i->mdat[ndat_branch[b]-1],
+                        &fam_branch_i->mbdat[ndat_branch[b]-1],
+                        &fam_branch_i->k2dat[ndat_branch[b]-1],
+                        &fam_branch_i->k3dat[ndat_branch[b]-1],
+                        &fam_branch_i->k4dat[ndat_branch[b]-1],
+                        pc_max, eos, 1e-6);
+                fam_branch_i->pdat[ndat_branch[b]-1] = pc_max;
+            }
+
+
+            // Recalculate the minimum mass of a branch
+            if (index_begin_stable_branch[b] != 0) {
+                double pc_min = get_central_pressure_mext(eos, index_begin_stable_branch[b], pdat, mdat, 1.0);
+                if(min_fam==1){
+                    XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(
+                        &fam_branch_i->rdat[0],
+                        &fam_branch_i->mdat[0],
+                        &fam_branch_i->k2dat[0],
+                        pc_min, eos, 1e-6);
+
+                } else {
+                    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(
+                        &fam_branch_i->rdat[0],
+                        &fam_branch_i->mdat[0],
+                        &fam_branch_i->mbdat[0],
+                        &fam_branch_i->k2dat[0],
+                        &fam_branch_i->k3dat[0],
+                        &fam_branch_i->k4dat[0],
+                        pc_min, eos, 1e-6);
+                }
+                fam_branch_i->pdat[0] = pc_min;
+            }
+
+            if (ndat_branch[b] > min_interp_points) {
+                // Set up p(m), r(m), and k(m) interpolators
+                fam_branch_i->m_of_p_acc = gsl_interp_accel_alloc();
+                fam_branch_i->p_of_m_acc = gsl_interp_accel_alloc();
+                fam_branch_i->r_of_m_acc = gsl_interp_accel_alloc();
+                fam_branch_i->k2_of_m_acc = gsl_interp_accel_alloc();
+
+                fam_branch_i->m_of_p_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
+                fam_branch_i->p_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
+                fam_branch_i->r_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
+                fam_branch_i->k2_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
+
+                gsl_interp_init(fam_branch_i->m_of_p_interp, fam_branch_i->pdat, fam_branch_i->mdat, ndat_branch[b]);
+                gsl_interp_init(fam_branch_i->p_of_m_interp, fam_branch_i->mdat, fam_branch_i->pdat, ndat_branch[b]);
+                gsl_interp_init(fam_branch_i->r_of_m_interp, fam_branch_i->mdat, fam_branch_i->rdat, ndat_branch[b]);
+                gsl_interp_init(fam_branch_i->k2_of_m_interp, fam_branch_i->mdat, fam_branch_i->k2dat, ndat_branch[b]);
+
+                if(min_fam==0){
+                    fam_branch_i->mbdat = LALRealloc(fam_branch_i->mbdat, ndat_branch[b] * sizeof(*fam_branch_i->mbdat));
+                    fam_branch_i->k3dat = LALRealloc(fam_branch_i->k3dat, ndat_branch[b] * sizeof(*fam_branch_i->k3dat));
+                    fam_branch_i->k4dat = LALRealloc(fam_branch_i->k4dat, ndat_branch[b] * sizeof(*fam_branch_i->k4dat));
+
+                    fam_branch_i->mb_of_m_acc = gsl_interp_accel_alloc();
+                    fam_branch_i->k3_of_m_acc = gsl_interp_accel_alloc();
+                    fam_branch_i->k4_of_m_acc = gsl_interp_accel_alloc();
+
+                    fam_branch_i->mb_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
+                    fam_branch_i->k3_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
+                    fam_branch_i->k4_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
+
+                    gsl_interp_init(fam_branch_i->mb_of_m_interp, fam_branch_i->mdat, fam_branch_i->mbdat, ndat_branch[b]);
+                    gsl_interp_init(fam_branch_i->k3_of_m_interp, fam_branch_i->mdat, fam_branch_i->k3dat, ndat_branch[b]);
+                    gsl_interp_init(fam_branch_i->k4_of_m_interp, fam_branch_i->mdat, fam_branch_i->k4dat, ndat_branch[b]);
+                }
+            }
+        fam->fam_branch[b] = fam_branch_i;
         }
-        // Set up p(m), r(m), and k(m) interpolators
-        fam_branch_i->m_of_p_acc = gsl_interp_accel_alloc();
-        fam_branch_i->p_of_m_acc = gsl_interp_accel_alloc();
-        fam_branch_i->r_of_m_acc = gsl_interp_accel_alloc();
-        fam_branch_i->k2_of_m_acc = gsl_interp_accel_alloc();
-
-        fam_branch_i->m_of_p_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
-        fam_branch_i->p_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
-        fam_branch_i->r_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
-        fam_branch_i->k2_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
-
-	    gsl_interp_init(fam_branch_i->m_of_p_interp, fam_branch_i->pdat, fam_branch_i->mdat, ndat_branch[b]);
-        gsl_interp_init(fam_branch_i->p_of_m_interp, fam_branch_i->mdat, fam_branch_i->pdat, ndat_branch[b]);
-        gsl_interp_init(fam_branch_i->r_of_m_interp, fam_branch_i->mdat, fam_branch_i->rdat, ndat_branch[b]);
-        gsl_interp_init(fam_branch_i->k2_of_m_interp, fam_branch_i->mdat, fam_branch_i->k2dat, ndat_branch[b]);
-
-        if(min_fam==0){
-            fam_branch_i->mbdat = LALRealloc(fam_branch_i->mbdat, ndat_branch[b] * sizeof(*fam_branch_i->mbdat));
-            fam_branch_i->k3dat = LALRealloc(fam_branch_i->k3dat, ndat_branch[b] * sizeof(*fam_branch_i->k3dat));
-            fam_branch_i->k4dat = LALRealloc(fam_branch_i->k4dat, ndat_branch[b] * sizeof(*fam_branch_i->k4dat));
-
-            fam_branch_i->mb_of_m_acc = gsl_interp_accel_alloc();
-            fam_branch_i->k3_of_m_acc = gsl_interp_accel_alloc();
-            fam_branch_i->k4_of_m_acc = gsl_interp_accel_alloc();
-
-            fam_branch_i->mb_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
-            fam_branch_i->k3_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
-            fam_branch_i->k4_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat_branch[b]);
-
-            gsl_interp_init(fam_branch_i->mb_of_m_interp, fam_branch_i->mdat, fam_branch_i->mbdat, ndat_branch[b]);
-            gsl_interp_init(fam_branch_i->k3_of_m_interp, fam_branch_i->mdat, fam_branch_i->k3dat, ndat_branch[b]);
-            gsl_interp_init(fam_branch_i->k4_of_m_interp, fam_branch_i->mdat, fam_branch_i->k4dat, ndat_branch[b]);
-        }
-    fam->fam_branch[b] = fam_branch_i;
-    }
+        LALFree(ndat_branch);
+    } else printf("No stable branch has been found in the TOV solution\n");
 
     LALFree(pdat);
     LALFree(mdat);
@@ -794,7 +793,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT2(EOSMultiParts * eos, int min_f
     LALFree(k2dat);
     LALFree(k3dat);
     LALFree(k4dat);
-    LALFree(ndat_branch);
+
 
 
 
