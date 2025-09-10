@@ -120,50 +120,6 @@
     - *enable-powertools
     - *install-epel
 
-# -- SRPM build -------------
-# build an SRPM from a
-# tarball
-# ---------------------------
-
-.rhel:srpm:
-  extends:
-    - .rhel:base
-  variables:
-    # disable downloading packages from PyPI by defaults
-    DISABLE_PYTHON_PACKAGE_INDEX: "true"
-    # if 'true' enable EPEL repo
-    EPEL: "false"
-    # probably don't need the git repo
-    GIT_STRATEGY: none
-    # if 'true' enable CentOS PowerTools repo
-    POWERTOOLS: "false"
-    # options to pass to rpmbuild
-    RPMBUILD_OPTIONS: ""
-    # packages to install for SRPM
-    SRPM_DEPENDENCIES: ""
-  before_script:
-    # standard config
-    # NOTE: we don't use !reference tags here because
-    # [DMM] they don't support nesting, and we want
-    #       users to be able to use !reference tags
-    - *install-dnf
-    - *set-dnf-variable
-    - *disable-repos
-    - *configure-rpm-cache
-    - *enable-powertools
-    - *install-epel
-    - *disable-python-package-index
-    - dnf -y -q install
-          findutils
-          rpm-build
-          ${SRPM_DEPENDENCIES}
-  script:
-    # build the src.rpm
-    - xargs -t rpmbuild -ts --define "_srcrpmdir ${CI_PROJECT_DIR}" ${TARBALL:="${CI_PROJECT_NAME}*.tar.*"} <<< ${RPMBUILD_OPTIONS}
-  artifacts:
-    paths:
-      - "*.src.rpm"
-
 # -- binary RPM build -------
 # build an RPM from an SRPM
 # ---------------------------
@@ -225,48 +181,6 @@
       - "*.rpm"
     exclude:
       - "*.src.rpm"
-
-# -- lint RPMs --------------
-# run rpmlint against a set
-# of RPMs
-# ---------------------------
-
-.rhel:lint:
-  extends:
-    - .rhel:base
-  variables:
-    # probably don't need the git repo
-    GIT_STRATEGY: none
-    # options to pass to rpmlint
-    RPMLINT_OPTIONS: '--info'
-    # RPMs to lint
-    INSTALLED_RPMS: ''
-    RPMS: '*.rpm'
-  before_script:
-    # standard config
-    # NOTE: we don't use !reference tags here because
-    # [DMM] they don't support nesting, and we want
-    #       users to be able to use !reference tags
-    - *install-dnf
-    - *set-dnf-variable
-    - *disable-repos
-    - *configure-rpm-cache
-    - *enable-powertools
-    - *install-epel
-    # install rpmlint
-    - dnf -y -q install
-          rpmlint
-  script:
-    # write the raw output to a file to record as an artefact
-    - if [[ "${RPMLINT_OPTIONS}" != *"rawout"* ]]; then RPMLINT_OPTIONS="${RPMLINT_OPTIONS} --rawout rpmlint.log"; fi
-    # install the RPMs
-    - if [ ! -z "${INSTALLED_RPMS}" ]; then dnf -y install ${RPMS}; fi
-    # run rpmlint
-    - set -- ${RPMLINT_OPTIONS}
-    - rpmlint "$@" ${RPMS} ${INSTALLED_RPMS}
-  artifacts:
-    paths:
-      - rpmlint.log
 
 # -- templates
 
