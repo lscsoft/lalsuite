@@ -280,10 +280,9 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     LALSimNeutronStarEOS * eos);
 FamMultiParts * XLALCreateSimNeutronStarFamilyPT(
     EOSMultiParts * eos, int min_fam);
-FamMultiParts * XLALCreateSimNeutronStarFamilyPT2(
-    EOSMultiParts * eos, int min_fam);
 
 int XLALSimNeutronStarFamNumberOfBranches(FamMultiParts *fam);
+double XLALSimNeutronStarFamMassTOVLimit(FamMultiParts *fam);
 double XLALSimNeutronStarFamBranchMinMass(int branch, FamMultiParts *fam);
 double XLALSimNeutronStarFamBranchMinCentralPressure(int branch, FamMultiParts *fam);
 double XLALSimNeutronStarFamBranchMaxMass(int branch, FamMultiParts *fam);
