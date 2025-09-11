@@ -362,6 +362,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
     fam->number_of_branches = nb_stable_branches;
     fam->mtov = 0;
     if (nb_stable_branches != 0) {
+        // if the last branch is stable, append the index for the end of the stable branch as the last index of TOV data
         if (flag_stable == 1) index_end_stable_branch[nb_stable_branches-1] = ndat-1;
         fam->fam_branch = (LALSimNeutronStarFamily **) LALMalloc(sizeof(LALSimNeutronStarFamily *) * nb_stable_branches);
         int *ndat_branch;
