@@ -79,15 +79,16 @@ static double fminimizer_gslfunction(double x, void * params)
     return -m; /* maximum mass is minimum negative mass */
 }
 
-/* gsl function for use in finding the maximum neutron star mass
- from EOSMultiParts structure */
-static double fextrimizer_multi_gslfunction(double x, void * params)
+/* Function used by GSLminimizer to find the central pressure for the
+ * exact maximum or minimum neutron star mass from EOSMultiParts structure.
+ */
+static double fextrimizer(double x, void * params)
 {
     EOSMultiParts * eos = params;
     double r, m, k2;
     XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(
         &r, &m, &k2, x, eos, 1e-6);
-    return m; /* maximum mass is minimum negative mass */
+    return m;
 }
 
 static double get_central_pressure_mext(EOSMultiParts *eos, int index, double *pdat, double *mdat, int factor){
@@ -102,7 +103,7 @@ static double get_central_pressure_mext(EOSMultiParts *eos, int index, double *p
     int status;
     gsl_function F;
     gsl_min_fminimizer * s;
-    F.function = &fextrimizer_multi_gslfunction;
+    F.function = &fextrimizer;
     F.params = eos;
     s = gsl_min_fminimizer_alloc(gsl_min_fminimizer_brent);
     gsl_min_fminimizer_set_with_values(s, &F, x, fx, a, fa, c, fc);
