@@ -66,6 +66,9 @@ def parse_command_line():
         "-f", "--force", action="store_true", help="overwrite existing SFTs"
     )
     parser.add_argument(
+        "-t", "--test", action="store_true", help="test finding SFTs without copying"
+    )
+    parser.add_argument(
         "-n",
         "--no-validate",
         dest="validate",
@@ -214,6 +217,10 @@ if __name__ == "__main__":
     )
 
     make_dest_dirs(dest_dirs)
+
+    if args.test:
+        print(f"{__file__}: TESTING, not copying SFTs", flush=True)
+        sys.exit(0)
 
     copy_all_SFT_files(src_dest_paths, args.validate, args.processes)
 
