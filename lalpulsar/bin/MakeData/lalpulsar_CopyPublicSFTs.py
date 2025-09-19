@@ -76,10 +76,10 @@ def parse_command_line():
         help="do not validate destination SFTs",
     )
     parser.add_argument(
-        "--readme-md",
+        "--no-readme-md",
         dest="readme_md",
-        action="store_true",
-        help="write README.md in the destination directory",
+        action="store_false",
+        help="do not write README.md in the destination directory",
     )
     parser.add_argument("source_directory", type=str, help="SFT source directory")
     parser.add_argument("dest_directory", type=str, help="SFT destination directory")
