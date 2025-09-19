@@ -63,6 +63,9 @@ def parse_command_line():
         "-p", "--processes", type=int, default=1, help="number of copying processes"
     )
     parser.add_argument(
+        "-f", "--force", action="store_true", help="overwrite existing SFTs"
+    )
+    parser.add_argument(
         "-n",
         "--no-validate",
         dest="validate",
@@ -90,7 +93,7 @@ def parse_command_line():
     return args
 
 
-def find_SFT_files(source_directory, dest_directory):
+def find_SFT_files(source_directory, dest_directory, force):
     dest_dirs = set()
     src_dest_paths = []
 
@@ -110,6 +113,10 @@ def find_SFT_files(source_directory, dest_directory):
                 dest_dir = os.path.join(dest_directory, public_sft_directory(src_name))
                 dest_path = os.path.join(dest_dir, src_name)
 
+                # skip file if already exists and force=False
+                if os.path.isfile(dest_path) and not force:
+                    continue
+
                 # add to outputs
                 dest_dirs.add(dest_dir)
                 src_dest_paths.append((src_path, dest_path))
@@ -127,7 +134,7 @@ def find_SFT_files(source_directory, dest_directory):
                         print_progress_step *= 10
                         print_progress_max *= 10
 
-    print(f"{__file__}: found {num_SFTs} SFTs\n", flush=True)
+    print(f"{__file__}: found {num_SFTs} SFTs to copy\n", flush=True)
 
     return dest_dirs, src_dest_paths
 
@@ -203,7 +210,7 @@ if __name__ == "__main__":
     args = parse_command_line()
 
     dest_dirs, src_dest_paths = find_SFT_files(
-        args.source_directory, args.dest_directory
+        args.source_directory, args.dest_directory, args.force
     )
 
     make_dest_dirs(dest_dirs)
