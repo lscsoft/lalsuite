@@ -68,6 +68,7 @@ bin/MakeData/lalpulsar_MakeSFTs
 bin/MakeData/lalpulsar_Makefakedata_v4
 bin/MakeData/lalpulsar_Makefakedata_v5
 bin/MakeData/lalpulsar_MoveSFTs
+bin/MakeData/lalpulsar_PublicSFTDirs
 bin/MakeData/makeMultiChFrame
 bin/PiecewiseSearch/lalpulsar_PiecewiseSearch
 bin/PiecewiseSearch/lalpulsar_PiecewiseSearchTemplateBank
