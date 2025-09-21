@@ -29,6 +29,7 @@ import shutil
 from contextlib import contextmanager
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
+import logging
 
 from lal import LALERRORBIT, LALWARNINGBIT, LALINFOBIT, LALTRACEBIT
 from lal import GetDebugLevel, ClobberDebugLevel
@@ -41,6 +42,22 @@ from lalpulsar.public_sft_directory import public_sft_directory_readme_md
 __author__ = "Karl Wette <karl.wette@ligo.org>"
 __version__ = git_version.id
 __date__ = git_version.date
+
+# Configure logging
+LOGGER = logging.getLogger(__name__.rsplit(".", 1)[-1])
+try:
+    from coloredlogs import ColoredFormatter as _Formatter
+except ImportError:
+    _Formatter = logging.Formatter
+if not LOGGER.hasHandlers():
+    _LOG_HANDLER = logging.StreamHandler()
+    _LOG_HANDLER.setFormatter(
+        _Formatter(
+            fmt="[%(asctime)s] %(levelname)+8s: %(message)s",
+        )
+    )
+    LOGGER.addHandler(_LOG_HANDLER)
+LOGGER.setLevel(logging.INFO)
 
 
 @contextmanager
@@ -127,28 +144,29 @@ def find_SFT_files(source_directory, dest_directory, force):
                 # print progress
                 num_SFTs += 1
                 if num_SFTs % print_progress == 0:
-                    dt = time.time() - t0
-                    print(
-                        f"{__file__}: found {num_SFTs} SFTs in {dt:0.1f} seconds",
-                        flush=True,
+                    LOGGER.info(
+                        "found {n} SFTs in {dt:0.1f} seconds".format(
+                            n=num_SFTs,
+                            dt=time.time() - t0,
+                        )
                     )
                     print_progress += print_progress_step
                     if print_progress == print_progress_max:
                         print_progress_step *= 10
                         print_progress_max *= 10
 
-    print(f"{__file__}: found {num_SFTs} SFTs to copy\n", flush=True)
+    LOGGER.info("found {n} SFTs to copy".format(n=num_SFTs))
 
     return dest_dirs, src_dest_paths
 
 
 def make_dest_dirs(dest_dirs):
     # make destination SFT directories
-    print(f"{__file__}: making {len(dest_dirs)} directories ...", flush=True)
+    LOGGER.info("making {n} directories ...".format(n=len(dest_dirs)))
     for dest_dir in dest_dirs:
         if not os.path.isdir(dest_dir):
             os.makedirs(dest_dir)
-    print(f"{__file__}: making {len(dest_dirs)} directories ... done\n", flush=True)
+    LOGGER.info("making {n} directories ... done".format(n=len(dest_dirs)))
 
 
 def copy_SFT_file(src_path, dest_path, validate):
@@ -174,7 +192,7 @@ def copy_all_SFT_files(src_dest_paths, validate, processes):
     validate_errors = []
 
     # create executor
-    print(f"{__file__}: copying {len(src_dest_paths)} SFTs ...", flush=True)
+    LOGGER.info("copying {n} SFTs ...".format(n=len(src_dest_paths)))
     with ProcessPoolExecutor(max_workers=args.processes) as executor:
         # submit tasks
         pool = [
@@ -188,19 +206,17 @@ def copy_all_SFT_files(src_dest_paths, validate, processes):
             if validate_error is not None:
                 validate_errors.append(validate_error)
 
-    print("")
-
     # show any validation errors
     if validate_errors:
-        print(
-            f"{__file__}: failed to validate {len(validate_errors)} SFTs after copying:",
-            flush=True,
+        LOGGER.critical(
+            "failed to validate {n} SFTs after copying:".format(n=len(validate_errors))
         )
         for tmp_dest_path, validate_errorstr in validate_errors:
-            print(f"  {tmp_dest_path}\n    {validate_errorstr}", flush=True)
+            LOGGER.critical("  {p}".format(p=tmp_dest_path))
+            LOGGER.critical("    {e}".format(e=validate_errorstr))
         sys.exit(1)
 
-    print(f"{__file__}: copying {len(src_dest_paths)} SFTs ... done\n", flush=True)
+    LOGGER.info("copying {n} SFTs ... done".format(n=len(src_dest_paths)))
 
 
 def write_readme_md(dest_directory):
@@ -219,7 +235,7 @@ if __name__ == "__main__":
     make_dest_dirs(dest_dirs)
 
     if args.test:
-        print(f"{__file__}: TESTING, not copying SFTs", flush=True)
+        LOGGER.info("TESTING, not copying SFTs")
         sys.exit(0)
 
     copy_all_SFT_files(src_dest_paths, args.validate, args.processes)
@@ -227,4 +243,4 @@ if __name__ == "__main__":
     if args.readme_md:
         write_readme_md(args.dest_directory)
 
-    print(f"{__file__}: DONE", flush=True)
+    LOGGER.info("DONE")
