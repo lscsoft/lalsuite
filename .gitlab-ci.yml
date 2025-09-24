@@ -174,9 +174,7 @@ default:
   - export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
   # print environment for debugging
   - |
-    echo "===== env ====="
-    declare -x | cut -c 12-
-    echo "----- env -----"
+    declare -x | cut -c 12- | sed 's/^/ENV: /'
   # ensure Git-LFS files are checked out
   - |
     test "X${GIT_STRATEGY}" = Xnone || ( git lfs ls-files | sed 's/^/LFS: /' )
