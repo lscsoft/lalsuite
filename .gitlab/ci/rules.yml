@@ -32,12 +32,15 @@ workflow:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       variables:
         PIPELINE_NAME: "MR pipeline ($CI_MERGE_REQUEST_IID)"
-    # run all other pipelines
-    - when: always
+    # run push pipelines only when there is no open merge request
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS == null'
+      when: always
+    # otherwise do not run push pipelines
+    - when: never
 
 # -- CI pipelines
 
-# CI build for normal pushes:
+# CI build for pushes:
 # - runs if ALL of the following criteria are satisfied:
 #   - the trigger is a commit push
 #   - the commit message does NOT contain the text "[ci full]"
