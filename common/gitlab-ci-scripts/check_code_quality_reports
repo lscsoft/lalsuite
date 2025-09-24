@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+# Author: Karl Wette, 2025
+
+"""Check code quality reports and concatenate into a single report"""
+
+import json
+import re
+import sys
+from pathlib import Path
+import argparse
+from collections import defaultdict
+
+# Ignore values of the "severity" field that match this regular expression
+IGNORE_SEVERITY_REGEX = r""
+
+
+def parse_command_line():
+    """Parse command line"""
+
+    # Create parser
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        required=True,
+        help="Output concatenated code quality report",
+    )
+    parser.add_argument(
+        "code_quality_reports", type=Path, nargs="+", help="Input code quality reports"
+    )
+
+    # Parse command line
+    args = parser.parse_args()
+
+    return args
+
+
+def main():
+    """Main program"""
+
+    # Parse command line
+    args = parse_command_line()
+
+    # Concatenated output report
+    concat_code_qual = []
+
+    # Parse code quality reports
+    exit_code = 0
+    for fn in args.code_quality_reports:
+
+        # Count number of items at each severity
+        severities = defaultdict(int)
+
+        # Load report
+        with fn.open("rt") as f:
+            code_qual = json.load(f)
+
+        # Check report items
+        for cq in code_qual:
+
+            # If "severity" field matches regular expression, mark item as a blocker
+            if re.fullmatch(IGNORE_SEVERITY_REGEX, cq["severity"]) is None:
+                cq["severity"] = "blocker"
+                exit_code = 1
+
+            # Add to concatenated report
+            concat_code_qual.append(cq)
+
+            # Count severities
+            severities[cq["severity"]] += 1
+
+        # Print information on code quality report
+        print(f"Code quality report: {fn}", end="")
+        if severities:
+            for severity, count in sorted(severities.items()):
+                if re.fullmatch(IGNORE_SEVERITY_REGEX, severity) is None:
+                    severity = severity.upper()
+                print(f", {severity}={count}", end="")
+        n = len(code_qual)
+        print(f", total={n} entries")
+
+    # Output concatenated report
+    with args.output.open("wt") as f:
+        json.dump(concat_code_qual, f)
+    print(f"Concatenated code quality report: {args.output}")
+
+    return exit_code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

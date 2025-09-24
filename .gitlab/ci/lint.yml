@@ -93,8 +93,9 @@ lint:pre-commit:
       fi
     # generate code quality report
     - pre-commit run -a --hook-stage manual
-    - ./common/code-quality-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
-    - !reference [.concatenate-code-quality]
+    - ./common/gitlab-ci-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
+    # check/concatenate code quality reports
+    - ./common/gitlab-ci-scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
   artifacts:
     reports:
       codequality: code-quality.json
@@ -125,8 +126,9 @@ lint:gitignore:
         echo "------------------------------------------------------------------------"
       fi
     # generate code quality report
-    - ./common/code-quality-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
-    - !reference [.concatenate-code-quality]
+    - ./common/gitlab-ci-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
+    # check/concatenate code quality reports
+    - ./common/gitlab-ci-scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
   artifacts:
     reports:
       codequality: code-quality.json
@@ -139,7 +141,7 @@ lint:depends:
     - .build-job
     - .lint
   script:
-    - ./common/code-quality-scripts/check_library_dependencies
+    - ./common/gitlab-ci-scripts/check_library_dependencies
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
@@ -180,7 +182,7 @@ lint:api-dump-master:
     # build LALSuite
     - !reference [.lint-api-build-lalsuite]
     # dump API
-    - ./common/code-quality-scripts/check_library_api dump
+    - ./common/gitlab-ci-scripts/check_library_api dump
           --lib-dir=_inst/lib
           --pub-header-dir=_inst/include/lal
           --include-path=_inst/include
@@ -207,7 +209,7 @@ lint:api-dump-release:
     # build LALSuite
     - !reference [.lint-api-build-lalsuite]
     # dump API
-    - ./common/code-quality-scripts/check_library_api dump
+    - ./common/gitlab-ci-scripts/check_library_api dump
           --lib-dir=_inst/lib
           --pub-header-dir=_inst/include/lal
           --include-path=_inst/include
@@ -231,12 +233,12 @@ lint:api-cmp-merge-diff:
     - .lint-api-job
   script:
     # download API dump of the main branch at lscsoft/lalsuite
-    - retry ./common/code-quality-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite ${CI_DEFAULT_BRANCH}
+    - retry ./common/gitlab-ci-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite ${CI_DEFAULT_BRANCH}
     - tar xvf api-dump-master.tar.bz2
     # build LALSuite
     - !reference [.lint-api-build-lalsuite]
     # dump API
-    - ./common/code-quality-scripts/check_library_api dump
+    - ./common/gitlab-ci-scripts/check_library_api dump
           --lib-dir=_inst/lib
           --pub-header-dir=_inst/include/lal
           --include-path=_inst/include
@@ -244,7 +246,7 @@ lint:api-cmp-merge-diff:
           --output=api-dump-head/
           ${LALSUITE_LIBRARIES}
     # compare APIs
-    - ./common/code-quality-scripts/check_library_api compare
+    - ./common/gitlab-ci-scripts/check_library_api compare
           --old-dump-dir=api-dump-master/
           --new-dump-dir=api-dump-head/
           --table-title="API Changes From Merge Request"
@@ -263,12 +265,12 @@ lint:api-cmp-last-release:
     - .lint-api-job
   script:
     # download API dump of the main branch at lscsoft/lalsuite
-    - retry ./common/code-quality-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite release
+    - retry ./common/gitlab-ci-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite release
     - tar xvf api-dump-release.tar.bz2
     # build LALSuite
     - !reference [.lint-api-build-lalsuite]
     # dump API
-    - ./common/code-quality-scripts/check_library_api dump
+    - ./common/gitlab-ci-scripts/check_library_api dump
           --lib-dir=_inst/lib
           --pub-header-dir=_inst/include/lal
           --include-path=_inst/include
@@ -276,7 +278,7 @@ lint:api-cmp-last-release:
           --output=api-dump-head/
           ${LALSUITE_LIBRARIES}
     # compare APIs
-    - ./common/code-quality-scripts/check_library_api compare
+    - ./common/gitlab-ci-scripts/check_library_api compare
           --old-dump-dir=api-dump-release/
           --new-dump-dir=api-dump-head/
           --table-title="API Changes From Merge Request"
