@@ -275,37 +275,31 @@ CHAR * XLALUserVarGetLogEx ( UserVarLogFormat format, const BOOLEAN skip_unset )
 #define UVAR_STR6OR(n1,n2,n3,n4,n5,n6)          "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', `--"#n5"', or `--"#n6"'"
 /** @} */
 
-// declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
-#define DECL_REGISTER_UVAR(UTYPE,CTYPE)                                 \
-  DECL_REGISTER_UVAR_AUX_DATA(UTYPE,CTYPE,void)
-#define DECL_REGISTER_UVAR_AUX_DATA(UTYPE,CTYPE,DTYPE)                  \
-  int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const DTYPE *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7)
-
 // ------ declare registration functions
-DECL_REGISTER_UVAR(BOOLEAN,BOOLEAN);
-DECL_REGISTER_UVAR(INT4,INT4);
-DECL_REGISTER_UVAR(INT8,INT8);
-DECL_REGISTER_UVAR(UINT4,UINT4);
-DECL_REGISTER_UVAR(UINT8,UINT8);
-DECL_REGISTER_UVAR(REAL8,REAL8);
-DECL_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
-DECL_REGISTER_UVAR(RAJ,REAL8);
-DECL_REGISTER_UVAR(DECJ,REAL8);
-DECL_REGISTER_UVAR(STRING,CHAR*);
+int XLALRegisterBOOLEANUserVar ( BOOLEAN *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterINT4UserVar ( INT4 *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterINT8UserVar ( INT8 *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterUINT4UserVar ( UINT4 *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterUINT8UserVar ( UINT8 *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterREAL8UserVar ( REAL8 *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterEPOCHUserVar ( LIGOTimeGPS *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterRAJUserVar ( REAL8 *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterDECJUserVar ( REAL8 *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterSTRINGUserVar ( CHAR* *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
 
-DECL_REGISTER_UVAR(INT4Range,INT4Range);
-DECL_REGISTER_UVAR(REAL8Range,REAL8Range);
-DECL_REGISTER_UVAR(EPOCHRange,LIGOTimeGPSRange);
-DECL_REGISTER_UVAR(RAJRange,REAL8Range);
-DECL_REGISTER_UVAR(DECJRange,REAL8Range);
+int XLALRegisterINT4RangeUserVar ( INT4Range *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterREAL8RangeUserVar ( REAL8Range *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterEPOCHRangeUserVar ( LIGOTimeGPSRange *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterRAJRangeUserVar ( REAL8Range *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterDECJRangeUserVar ( REAL8Range *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
 
-DECL_REGISTER_UVAR_AUX_DATA(UserEnum,int,UserChoices);
-DECL_REGISTER_UVAR_AUX_DATA(UserFlag,int,UserChoices);
+int XLALRegisterUserEnumUserVar ( int *cvar, const UserChoices *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterUserFlagUserVar ( int *cvar, const UserChoices *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
 
-DECL_REGISTER_UVAR(INT4Vector,INT4Vector*);
-DECL_REGISTER_UVAR(UINT4Vector,UINT4Vector*);
-DECL_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
-DECL_REGISTER_UVAR(STRINGVector,LALStringVector*);
+int XLALRegisterINT4VectorUserVar ( INT4Vector* *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterUINT4VectorUserVar ( UINT4Vector* *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterREAL8VectorUserVar ( REAL8Vector* *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
+int XLALRegisterSTRINGVectorUserVar ( LALStringVector* *cvar, const void *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7);
 
 /** @} */
 

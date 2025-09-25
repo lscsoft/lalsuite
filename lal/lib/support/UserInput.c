@@ -181,8 +181,13 @@ typedef char *(*format_help_cdataT)(const void *cdata);
 //   a)  a parser function XLALParseStringValueAs\<UTYPE\>() (recommended to be added in \ref UserInputParse_h)
 //   b)  a printer function XLALPrintStringValueOf\<UTYPE\>() (recommended to be added in \ref UserInputPrint_h)
 //   c)  a unit test for the new parser+printer, ideally checking identity of print(parse(x)) or parse(print(x))
-// 3) generate a corresponding registration function declaration + definition using the macro-templates
-//    DECL_REGISTER_UVAR_AS<VALUE|POINTER>() and DEFN_REGISTER_UVAR_AS<VALUE|POINTER>(),
+// 3) generate a corresponding registration function declaration + definition; use the pattern
+//      int XLALRegister\<UTYPE\>UserVar ( \<CTYPE\> *cvar, const \<DTYPE\> *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7)
+//    where
+//      CTYPE is the C type of the user variable,
+//      DTYPE is either
+//        void - for normal user variables, where the value of the command line argumet is used directly
+//        UserChoices - for enum user variables, where the value of the command line argument is used to select a named enum value from a list
 // 4) add an entry in the master map 'UserInputTypeMap', specifying the parser, printer and (if required) a destructor
 //    If these follow the standard naming and API, the template macro REGULAR_MAP_ENTRY() can be used for that.
 //
