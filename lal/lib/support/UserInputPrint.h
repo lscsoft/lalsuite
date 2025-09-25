@@ -73,13 +73,9 @@ char *XLALFormatHelpStringOfUserFlag ( const UserChoices *flagData );
 char *XLALPrintStringValueOfSTRING ( char **valSTRING );
 char *XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector );
 
-// use macro templating to define printers for numerical <CTYPE>vectors
-#define DECL_XLALPrintStringValueOfVector(CTYPE) \
-char *XLALPrintStringValueOf##CTYPE##Vector ( CTYPE##Vector **valVector )
-
-DECL_XLALPrintStringValueOfVector(INT4);
-DECL_XLALPrintStringValueOfVector(UINT4);
-DECL_XLALPrintStringValueOfVector(REAL8);
+char *XLALPrintStringValueOfINT4Vector(INT4Vector **valVector);
+char *XLALPrintStringValueOfUINT4Vector(UINT4Vector **valVector);
+char *XLALPrintStringValueOfREAL8Vector(REAL8Vector **valVector);
 
 /** @} */
 
