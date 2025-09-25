@@ -368,7 +368,7 @@ XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector )
 /// The output is parseable by XLALParseStringValueAs\<CTYPE\>Vector().
 /// In case of a NULL or empty vector (data==NULL|length==0), generate the string 'NULL'.
 #define DEFN_XLALPrintStringValueOfVector(CTYPE)                        \
-DECL_XLALPrintStringValueOfVector(CTYPE)                                \
+char *XLALPrintStringValueOf##CTYPE##Vector ( CTYPE##Vector **valVector ) \
 {                                                                       \
  XLAL_CHECK_NULL ( valVector != NULL, XLAL_EINVAL );                    \
  char *ret = NULL;                                                      \
