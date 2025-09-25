@@ -254,7 +254,7 @@ wheel:macos-arm64:matrix:
 wheel:pypi:
   extends:
     - .deploy
-  image: quay.io/lib/python
+  image: python:3
   script:
     - |
       if [ ! -d wheelhouse/ ]; then
