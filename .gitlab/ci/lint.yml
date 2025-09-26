@@ -301,7 +301,7 @@ lint:api-cmp-last-release:
     - ./common/gitlab-ci-scripts/check_library_api compare
           --old-dump-dir=api-dump-release/
           --new-dump-dir=api-dump-head/
-          --table-title="API Changes From Merge Request"
+          --table-title="API Changes Since Last Release"
           --output-dir=api-report/
   artifacts:
     paths:
