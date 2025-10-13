@@ -1,6 +1,7 @@
 BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
+man1_MANS =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
@@ -28,3 +29,6 @@ endif
 #pkgdata_DATA = S3_H1_StringDag.ini S3_StringDag.ini S4_StringDag.ini
 
 EXTRA_DIST += cosmicstring.py $(DATA)
+
+help2man-setup:
+	@rm -f lalapps && ln -s ../lalapps && cd lalapps/ && rm -f cosmicstring.py && ln -s $(abs_srcdir)/cosmicstring.py

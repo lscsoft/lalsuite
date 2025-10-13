@@ -1,6 +1,7 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
+man1_MANS =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
@@ -44,6 +45,16 @@ lalapps_xtefitstoframe_SOURCES = xtefitstoframe.c
 endif
 endif
 
+# .1 man pages will be used automatically by lalsuite_help2man.am instead of the
+# generated ones, so these files do not need to be explicitly added to man1_MANS
+
 EXTRA_DIST += \
+	lalapps_frextr.1 \
+	lalapps_frinfo.1 \
+	lalapps_frjoin.1 \
+	lalapps_frread.1 \
+	lalapps_mkcalfac.1 \
+	lalapps_mkcalref.1 \
+	lalapps_ring.1 \
 	animate.png \
 	$(END_OF_LIST)

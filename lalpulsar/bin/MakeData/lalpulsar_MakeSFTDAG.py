@@ -32,7 +32,7 @@ from urllib.parse import urlparse
 from gwdatafind import find_urls
 from gwdatafind.utils import filename_metadata, file_segment
 
-from gwpy.segments import Segment, SegmentList
+from igwn_segments import segment, segmentlist
 
 from lalpulsar import (
     git_version,
@@ -156,7 +156,10 @@ def get_urls(args):
                     framefile = m.group(9)
                     urls.append(framefile)
 
-    return urls
+    # sort the urls by gps time since find_urls() may not return a sorted list
+    sorted_urls = sorted(urls, key=lambda x: file_segment(x)[0])
+
+    return sorted_urls
 
 
 def make_cache(
@@ -169,7 +172,7 @@ def make_cache(
     frames = []  # list of frame filenames used in the job
     for idx, url in enumerate(urls):
         obs, desc, dataseg = filename_metadata(url)
-        dataseg = Segment(dataseg)
+        dataseg = segment(dataseg)
         if dataseg.disjoint(job_seg) < 0:
             continue
         if dataseg.disjoint(job_seg) > 0:
@@ -181,9 +184,11 @@ def make_cache(
             # list in cache file if files not visible on execute node
             # otherwise use file url
             if "/home" in str(framefilepath.parent) or "osdf" in framefileurl.scheme:
-                newcache = f"{obs}\t{desc}\t{dataseg.start}\t{abs(dataseg)}\t{framefilepath.name}"
+                newcache = (
+                    f"{obs}\t{desc}\t{dataseg[0]}\t{abs(dataseg)}\t{framefilepath.name}"
+                )
             else:
-                newcache = f"{obs}\t{desc}\t{dataseg.start}\t{abs(dataseg)}\t{url}"
+                newcache = f"{obs}\t{desc}\t{dataseg[0]}\t{abs(dataseg)}\t{url}"
             cache.append(newcache)
 
             if "/home" in str(framefilepath.parent):
@@ -200,7 +205,7 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, urls, args
     MakeSFTs = f"MakeSFTs_{nodeCount}"
     tagStringOut = f"{args.tag_string}_{nodeCount}"
 
-    job_segment = Segment(
+    job_segment = segment(
         startTimeThisNode - args.extra_datafind_time,
         endTimeThisNode + args.extra_datafind_time,
     )
@@ -208,7 +213,7 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, urls, args
     frames, cache = make_cache(urls, job_segment)
 
     obs, desc, dataseg = filename_metadata(urls[0])
-    cacheFile = args.cache_path / f"{obs}-{job_segment.start}-{job_segment.end}.cache"
+    cacheFile = args.cache_path / f"{obs}-{job_segment[0]}-{job_segment[1]}.cache"
     with open(cacheFile, "w") as f:
         for l in cache:
             f.write(f"{l}\n")
@@ -794,7 +799,7 @@ for p in args.output_sft_path:
     p.mkdir(exist_ok=True)
 
 # Check if segment file was given, else set up one segment from the command line
-segList = SegmentList()
+segList = segmentlist()
 adjustSegExtraTime = False
 if args.segment_file is not None:
     if args.min_seg_length < 0:
@@ -807,7 +812,7 @@ if args.segment_file is not None:
     with open(args.segment_file) as fp_segfile:
         for idx, line in enumerate(fp_segfile):
             splitLine = line.split()
-            oneSeg = Segment(int(splitLine[0]), int(splitLine[1]))
+            oneSeg = segment(int(splitLine[0]), int(splitLine[1]))
             if abs(oneSeg) >= args.min_seg_length:
                 segList.append(oneSeg)
 
@@ -833,7 +838,7 @@ else:
     if args.analysis_end_time > (args.analysis_start_time + args.max_length_all_jobs):
         args.analysis_end_time = args.analysis_start_time + args.max_length_all_jobs
 
-    oneSeg = Segment(args.analysis_start_time, args.analysis_end_time)
+    oneSeg = segment(args.analysis_start_time, args.analysis_end_time)
     segList.append(oneSeg)
 # END if (args.segment_file != None)
 segList.coalesce()
@@ -853,7 +858,7 @@ if not args.transfer_frame_files:
             )
 
 # data segments created from the list of frame URLs
-dataSegs = SegmentList()
+dataSegs = segmentlist()
 for url in urls:
     dataSegs.append(file_segment(url))
 dataSegs.coalesce()

@@ -303,7 +303,7 @@ static int load_data(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_ph
 
 static void SplineData_Init( SplineData **splinedata )
 {
-  if(!splinedata) exit(1);
+  if(!splinedata) abort();
   if(*splinedata) SplineData_Destroy(*splinedata);
 
   (*splinedata)=XLALCalloc(1,sizeof(SplineData));
@@ -448,7 +448,7 @@ static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata) {
 /* Structure for internal use */
 static void SEOBNRROMdata_coeff_Init(SEOBNRROMdata_coeff **romdatacoeff) {
 
-  if(!romdatacoeff) exit(1);
+  if(!romdatacoeff) abort();
   /* Create storage for structures */
   if(!*romdatacoeff) *romdatacoeff=XLALCalloc(1,sizeof(SEOBNRROMdata_coeff));
   else

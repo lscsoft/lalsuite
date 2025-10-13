@@ -395,11 +395,11 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   }
   if (spcal_active && constantcal_active){
     fprintf(stderr,"ERROR: cannot use spline and constant calibration error marginalization together. Exiting...\n");
-    exit(1);
+    abort();
   }
   if (model->roq_flag && constantcal_active){
     fprintf(stderr,"ERROR: cannot use ROQ likelihood and constant calibration error marginalization together. Exiting...\n");
-    exit(1);
+    abort();
   }
 
   REAL8 degreesOfFreedom=2.0;
@@ -516,7 +516,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     {
 	    if(Nifos<2){
 		    fprintf(stderr,"ERROR: Cannot use --detector-frame with less than 2 detectors!\n");
-		    exit(1);
+		    abort();
 	    }
       if(!margtime)
       {
@@ -664,7 +664,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
             default: /* Panic! */
               fprintf(stderr,"Unhandled error in template generation - exiting!\n");
               fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
-              exit(1);
+              abort();
               break;
           }
 
@@ -865,7 +865,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 	char varname[VARNAME_MAX];
     if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_optimal_snr",dataPtr->name)))
     {
-        fprintf(stderr,"variable name too long\n"); exit(1);
+        fprintf(stderr,"variable name too long\n"); abort();
     }
     REAL8 this_ifo_snr = sqrt(this_ifo_s);
     model->ifo_SNRs[ifo] = this_ifo_snr;
@@ -873,14 +873,14 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
     if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_cplx_snr_amp",dataPtr->name)))
     {
-        fprintf(stderr,"variable name too long\n"); exit(1);
+        fprintf(stderr,"variable name too long\n"); abort();
     }
     REAL8 cplx_snr_amp = cabs(this_ifo_d_inner_h)/this_ifo_snr;
     LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_amp,LALINFERENCE_PARAM_OUTPUT);
 
     if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_cplx_snr_arg",dataPtr->name)))
     {
-        fprintf(stderr,"variable name too long\n"); exit(1);
+        fprintf(stderr,"variable name too long\n"); abort();
     }
     REAL8 cplx_snr_phase = carg(this_ifo_d_inner_h);
     LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_phase,LALINFERENCE_PARAM_OUTPUT);
@@ -1043,13 +1043,13 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     char varname[VARNAME_MAX];
     if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_optimal_snr",dataPtr->name)))
     {
-        fprintf(stderr,"variable name too long\n"); exit(1);
+        fprintf(stderr,"variable name too long\n"); abort();
     }
     LALInferenceAddREAL8Variable(currentParams,varname,sqrt(2.0*this_ifo_S),LALINFERENCE_PARAM_OUTPUT);
 
     if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_cplx_snr_amp",dataPtr->name)))
     {
-        fprintf(stderr,"variable name too long\n"); exit(1);
+        fprintf(stderr,"variable name too long\n"); abort();
     }
     REAL8 cplx_snr_amp=0.0;
     REAL8 cplx_snr_phase=carg(this_ifo_Rcplx);
@@ -1059,7 +1059,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
     if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_cplx_snr_arg",dataPtr->name)))
     {
-        fprintf(stderr,"variable name too long\n"); exit(1);
+        fprintf(stderr,"variable name too long\n"); abort();
     }
     LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_phase,LALINFERENCE_PARAM_OUTPUT);
     if(margdist )
@@ -1084,7 +1084,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
               default: /* Panic! */
                 fprintf(stderr,"Unhandled error in marginal distance likelihood - exiting!\n");
                 fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
-                exit(1);
+                abort();
                 break;
             }
           }
@@ -1175,7 +1175,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
               default: /* Panic! */
                 fprintf(stderr,"Unhandled error in marginal distance likelihood - exiting!\n");
                 fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
-                exit(1);
+                abort();
                 break;
             }
         }
@@ -1203,7 +1203,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
               default: /* Panic! */
                 fprintf(stderr,"Unhandled error in marginal distance likelihood - exiting!\n");
                 fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
-                exit(1);
+                abort();
                 break;
             }
         }
@@ -1234,7 +1234,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       int iend = (UINT4)round((time_high - t0)/deltaT);
       if(iend > (int) dh_S->length || istart < 0 ) {
               fprintf(stderr,"ERROR: integration over time extends past end of buffer! Is your time prior too wide?\n");
-              exit(1);
+              abort();
       }
       UINT4 n = iend - istart;
       REAL8 xMax = -1.0;
@@ -1264,7 +1264,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
                         default: /* Panic! */
                             fprintf(stderr,"Unhandled error in marginal distance likelihood - exiting!\n");
                             fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
-                            exit(1);
+                            abort();
                             break;
                     }
                 }
@@ -1294,7 +1294,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
                             default: /* Panic! */
                                 fprintf(stderr,"Unhandled error in marginal distance likelihood - exiting!\n");
                                 fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
-                                exit(1);
+                                abort();
                                 break;
                         }
                     }
@@ -1714,7 +1714,7 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
   {
     if(Nifos<2){
       fprintf(stderr,"ERROR: Cannot use --detector-frame with less than 2 detectors!\n");
-      exit(1);
+      abort();
     }
     REAL8 t0=LALInferenceGetREAL8Variable(currentParams,"t0");
     REAL8 alph=acos(LALInferenceGetREAL8Variable(currentParams,"cosalpha"));
@@ -1780,7 +1780,7 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
           default: /* Panic! */
             fprintf(stderr,"Unhandled error in template generation - exiting!\n");
             fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
-            exit(1);
+            abort();
             break;
         }
 
@@ -1938,7 +1938,7 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
   {
     if(Nifos<2){
       fprintf(stderr,"ERROR: Cannot use --detector-frame with less than 2 detectors!\n");
-      exit(1);
+      abort();
     }
     REAL8 t0=LALInferenceGetREAL8Variable(currentParams,"t0");
     REAL8 alph=acos(LALInferenceGetREAL8Variable(currentParams,"cosalpha"));
@@ -2011,7 +2011,7 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
           default: /* Panic! */
             fprintf(stderr,"Unhandled error in template generation - exiting!\n");
             fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
-            exit(1);
+            abort();
             break;
         }
 

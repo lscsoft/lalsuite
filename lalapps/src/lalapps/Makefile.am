@@ -2,6 +2,7 @@ BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 dist_bin_SCRIPTS =
+man1_MANS =
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am

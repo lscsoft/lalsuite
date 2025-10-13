@@ -178,6 +178,9 @@ LALSUITE_USE_DOXYGEN
 DOXYGEN_TAGFILES=`echo "${DOXYGEN_TAGFILES}" | ${SED} 's|\$(abs_top_builddir)/\.\./|$(abs_top_builddir)/|g'`
 DOXYGEN_INSTALL_DIRMAP=`echo "${DOXYGEN_INSTALL_DIRMAP}" | ${SED} 's|\$(abs_top_builddir)/\.\./|$(abs_top_builddir)/|g'`
 
+# do not install user environment scripts into /etc
+AM_CONDITIONAL([SYSCONFDIR_IS_ETC],[test "x${sysconfdir}" = "x/etc"])
+
 AC_SUBST([LALSUITE_PACKAGES])
 AC_SUBST([ac_configure_args])
 AC_SUBST([lalsuite_package_configure_deps])

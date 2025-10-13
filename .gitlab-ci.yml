@@ -41,8 +41,6 @@ include:
   # see https://computing.docs.ligo.org/gitlab-ci-templates/
   - project: computing/gitlab-ci-templates
     file:
-      # helpers for codequality jobs
-      - codequality.yml
       # helpers for debian builds
       - debian.yml
       # helpers for RHEL builds
@@ -146,7 +144,7 @@ variables:
 default:
   # retry running jobs on abnormal failures
   retry:
-    max: 1
+    max: 2
     when:
       - unknown_failure
       - stuck_or_timeout_failure
@@ -176,16 +174,17 @@ default:
   - export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
   # print environment for debugging
   - |
-    echo "===== env ====="
-    declare -x | cut -c 12-
-    echo "----- env -----"
+    declare -x | cut -c 12- | sed 's/^/ENV: /'
+  # ensure Git-LFS files are checked out
+  - |
+    test "X${GIT_STRATEGY}" = Xnone || ( git lfs ls-files | sed 's/^/LFS: /' )
 
 # set up Python virtual environment for pip installing local packages, etc.
 .python-venv:
   - !reference [.retry]
   - |
     rm -rf .venv/
-    ${PYTHON_VENV:-${PYTHON:-python3}} -m venv .venv/
+    ${PYTHON:-python3} -m venv --system-site-packages .venv/
     source .venv/bin/activate
     for n in python python3 pip; do
       if [ "X`type -p ${n}`" != "X${VIRTUAL_ENV}/bin/${n}" ]; then
@@ -211,6 +210,8 @@ default:
     GIT_STRATEGY: clone
     # Clang has weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
+    # stop Clang generating profile files
+    LLVM_PROFILE_FILE: "/dev/null"
 
 # tag for macOS x86_64 architecture jobs
 .macos-x86_64:

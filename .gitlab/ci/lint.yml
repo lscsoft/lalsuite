@@ -8,12 +8,21 @@
 
 .lint:
   stage: lint
+  extends:
+    - .build-job
   needs: []
-  image: quay.io/igwn/lalsuite-dev:el8-testing
+  image: quay.io/igwn/base:conda
   variables:
-    # minimum Python requirement for scripts installed in venv
-    # - pre-commit hooks require Python >=3.10
-    PYTHON_VENV: "python3.11"
+    ENVIRONMENT_FILE: "./conda-dev-env.yml"
+  before_script:
+    - !reference [.build-init]
+    # configure conda
+    - !reference [.conda-init]
+    # activate conda LALSuite development environment
+    - !reference [.conda-lalsuite-dev]
+    # install requirements for code quality scripts
+    - !reference [.python-venv]
+    - retry python -m pip install -r common/requirements-scripts.txt
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-nightly-deploy, rules]
@@ -32,188 +41,42 @@ include:
 # update component jobs with our rules
 
 gitlab-advanced-sast:
-  rules: !reference [.ci-merge-build, rules]
+  rules:
+    - !reference [.ci-lint, rules]
+    - !reference [.ci-merge-build, rules]
   needs: []
   variables:
     # set XDG_CONFIG_HOME (set in global variables) to something that always exists
     XDG_CONFIG_HOME: "/tmp"
 
 semgrep-sast:
-  rules: !reference [.ci-merge-build, rules]
+  rules:
+    - !reference [.ci-lint, rules]
+    - !reference [.ci-merge-build, rules]
   needs: []
-
-# -- local lint jobs
-
-.lint-api-job:
-  extends:
-    - .build-job
-    - .lint
   variables:
-    PYTHONUNBUFFERED: "yes"
-    CONFIGURE_FLAGS: >-
-      --disable-lalapps --disable-doxygen --disable-swig
-      --disable-framec --enable-framel
-      CFLAGS='-g -Og -fno-eliminate-unused-debug-types'
-    LALSUITE_LIBRARIES: >-
-      lal lalsupport
-      lalframe lalmetaio lalsimulation
-      lalburst lalinspiral lalinference lalpulsar
+    # set XDG_CONFIG_HOME (set in global variables) to something that always exists
+    XDG_CONFIG_HOME: "/tmp"
 
-.lint-api-init:
-  # install required packages
-  - retry yum -y install
-        abi-dumper
-        abi-compliance-checker
-  # install required Python packages
-  - !reference [.python-venv]
-  - retry python -m pip install -r common/requirements-scripts.txt
-
-.lint-api-build-lalsuite:
-  # configure, build, and install LALSuite
-  - ./00boot
-  - xargs ./configure --prefix=${PWD}/_inst <<< ${CONFIGURE_FLAGS}
-  - make -j${CPU_COUNT}
-  - make install
-
-lint:api-dump-master:
-  extends:
-    - .lint-api-job
-  script:
-    - !reference [.lint-api-init]
-    # build LALSuite
-    - !reference [.lint-api-build-lalsuite]
-    # dump API
-    - ./common/code-quality-scripts/check_library_api dump
-          --lib-dir=_inst/lib
-          --pub-header-dir=_inst/include/lal
-          --include-path=_inst/include
-          --sha=${CI_COMMIT_SHA}
-          --output=api-dump-master/
-          ${LALSUITE_LIBRARIES}
-    # create tarball of API dumps
-    - tar -jchvf api-dump-master.tar.bz2 api-dump-master/
-  artifacts:
-    paths:
-      - api-dump-master.tar.bz2
-      # for debugging
-      - config.log
-  rules:
-    # dump API of the main branch at lscsoft/lalsuite
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-    # for debugging
-    - !reference [.ci-lint, rules]
-
-lint:api-dump-release:
-  extends:
-    - .lint-api-job
-  script:
-    - !reference [.lint-api-init]
-    # build LALSuite
-    - !reference [.lint-api-build-lalsuite]
-    # dump API
-    - ./common/code-quality-scripts/check_library_api dump
-          --lib-dir=_inst/lib
-          --pub-header-dir=_inst/include/lal
-          --include-path=_inst/include
-          --output=api-dump-release/
-          ${LALSUITE_LIBRARIES}
-    # create tarball of API dumps
-    - tar -jchvf api-dump-release.tar.bz2 api-dump-release/
-  artifacts:
-    paths:
-      - api-dump-release.tar.bz2
-      # for debugging
-      - config.log
-  rules:
-    # dump API of LALSuite releases
-    - !reference [.ci-lalsuite-tag-build, rules]
-    # for debugging
-    - !reference [.ci-lint, rules]
-
-lint:api-cmp-merge-diff:
-  extends:
-    - .lint-api-job
-  script:
-    - !reference [.lint-api-init]
-    # download API dump of the main branch at lscsoft/lalsuite
-    - retry ./common/code-quality-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite ${CI_DEFAULT_BRANCH}
-    - tar xvf api-dump-master.tar.bz2
-    # build LALSuite
-    - !reference [.lint-api-build-lalsuite]
-    # dump API
-    - ./common/code-quality-scripts/check_library_api dump
-          --lib-dir=_inst/lib
-          --pub-header-dir=_inst/include/lal
-          --include-path=_inst/include
-          --sha=${CI_COMMIT_SHA}
-          --output=api-dump-head/
-          ${LALSUITE_LIBRARIES}
-    # compare APIs
-    - ./common/code-quality-scripts/check_library_api compare
-          --old-dump-dir=api-dump-master/
-          --new-dump-dir=api-dump-head/
-          --table-title="API Changes From Merge Request"
-          --output-dir=api-report/
-  artifacts:
-    paths:
-      - api-report/
-  rules:
-    # run for merge requests only
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-    # for debugging
-    - !reference [.ci-lint, rules]
-
-lint:api-cmp-last-release:
-  extends:
-    - .lint-api-job
-  script:
-    - !reference [.lint-api-init]
-    # download API dump of the main branch at lscsoft/lalsuite
-    - retry ./common/code-quality-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite release
-    - tar xvf api-dump-release.tar.bz2
-    # build LALSuite
-    - !reference [.lint-api-build-lalsuite]
-    # dump API
-    - ./common/code-quality-scripts/check_library_api dump
-          --lib-dir=_inst/lib
-          --pub-header-dir=_inst/include/lal
-          --include-path=_inst/include
-          --sha=${CI_COMMIT_SHA}
-          --output=api-dump-head/
-          ${LALSUITE_LIBRARIES}
-    # compare APIs
-    - ./common/code-quality-scripts/check_library_api compare
-          --old-dump-dir=api-dump-release/
-          --new-dump-dir=api-dump-head/
-          --table-title="API Changes From Merge Request"
-          --output-dir=api-report/
-  artifacts:
-    paths:
-      - api-report/
-  rules:
-    - !reference [.ci-lint, rules]
-    # run on release branches
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /release/'
+# -- local lint jobs -- general
 
 lint:pre-commit:
   extends:
     - .lint
   variables:
     GIT_STRATEGY: fetch   # this jobs needs the full Git history to update the authors
-  before_script:
+  script:
     # this jobs needs the full Git history to update the authors
     - git fetch --unshallow --quiet
     # check that the first commit in LALSuite exists
     - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
-  script:
     # install pre-commit
-    - !reference [.python-venv]
-    - retry python -m pip install pre-commit
+    - retry conda install --quiet pre-commit
     - retry pre-commit install-hooks
     # run pre-commit
     - |
       echo "env: CI_COMMIT_AUTHOR=${CI_COMMIT_AUTHOR}"
-      pre-commit run -a && status=0 || status=$?
+      pre-commit run -a || true
       if ! git diff --quiet; then
         echo "------------------------------------------------------------------------"
         echo "The pre-commit hooks have made the following fixes to your code:"
@@ -226,73 +89,253 @@ lint:pre-commit:
         echo "See CONTRIBUTING.md for further information."
         echo "------------------------------------------------------------------------"
       fi
-      echo "-------------------- generating code quality report --------------------"
-      pre-commit run -a --hook-stage manual
-      ./common/code-quality-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
-      python <<EOF
-      import sys
-      import glob
-      import json
-      concat_code_qual = []
-      for fn in glob.glob("code-quality-*.json"):
-        with open(fn, "rt") as f:
-          code_qual = json.load(f)
-        for cq in code_qual:
-          cq["severity"] = "blocker"
-          concat_code_qual.append(cq)
-      with open("concatenated-code-quality.json", "wt") as f:
-        json.dump(concat_code_qual, f)
-      EOF
-      exit ${status}
+    # generate code quality report
+    - pre-commit run -a --hook-stage manual
+    - ./common/gitlab-ci-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
+    # check/concatenate code quality reports
+    - ./common/gitlab-ci-scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
   artifacts:
     reports:
-      codequality: concatenated-code-quality.json
-
-lint:depends:
-  extends:
-    - .build-job
-    - .lint
-  before_script:
-    - !reference [.python-venv]
-    - retry python -m pip install -r common/requirements-scripts.txt
-  script:
-    - ./common/code-quality-scripts/check_library_dependencies
-  rules:
-    - !reference [.ci-lint, rules]
-    - !reference [.ci-merge-build, rules]
+      codequality: code-quality.json
 
 lint:gitignore:
   extends:
-    - .build-job
     - .lint
   script:
+    # install texlive-core for bibtex, needed for Doxygen documentation
+    - retry conda install --quiet texlive-core
     # build in source directory, including tests
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-python --enable-swig-python
     - make -j${CPU_COUNT} VERBOSE=1 all
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     # install pre-commit
-    - !reference [.python-venv]
-    - retry python -m pip install pre-commit
+    - retry conda install --quiet pre-commit
     - retry pre-commit install-hooks
     # check for build files not in .gitignore
     - |
-      status=0
       git status --short | sed -n 's|^?? ||p' >> .gitignore
-      pre-commit run -a fix-gitignore-entries
+      pre-commit run -a fix-gitignore-entries || true
       if ! git diff --quiet; then
         echo "------------------------------------------------------------------------"
         echo "The following entries are missing from the .gitignore files:"
         echo "------------------------------------------------------------------------"
         git diff
         echo "------------------------------------------------------------------------"
-        status=1
       fi
-      ./common/code-quality-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
-      exit ${status}
+    # generate code quality report
+    - ./common/gitlab-ci-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
+    # check/concatenate code quality reports
+    - ./common/gitlab-ci-scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
   artifacts:
     reports:
-      codequality: code-quality-gitignore.json
+      codequality: code-quality.json
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
+
+lint:depends:
+  extends:
+    - .build-job
+    - .lint
+  script:
+    - ./common/gitlab-ci-scripts/check_library_dependencies
+  rules:
+    - !reference [.ci-lint, rules]
+    - !reference [.ci-merge-build, rules]
+
+# -- local lint jobs -- api
+
+.lint-api-job:
+  extends:
+    - .lint
+  variables:
+    PYTHONUNBUFFERED: "yes"
+    CONFIGURE_FLAGS: >-
+      --disable-doxygen --disable-framec --enable-framel
+      CFLAGS='-g -Og -fno-eliminate-unused-debug-types'
+    # version number of API dump tarball
+    API_DUMP_VERSION: 2
+  before_script:
+    - !reference [.lint, before_script]
+    # install required packages for API jobs
+    - retry conda install --quiet
+          abi-dumper
+          abi-compliance-checker
+
+.lint-api-cmp-job:
+  extends:
+    - .lint-api-job
+  allow_failure:
+    # returned by `get_api_artifacts` if an API dump tarball with version
+    # ${API_DUMP_VERSION} does not exist in the latest artifacts for the
+    # given branch; this will occur when ${API_DUMP_VERSION} is bumped
+    exit_codes: 77
+
+.lint-api-build-lalsuite:
+  # configure, build, and install LALSuite
+  - ./00boot
+  - xargs ./configure --prefix=${PWD}/_inst <<< ${CONFIGURE_FLAGS}
+  - make -j${CPU_COUNT}
+  - make install
+  - source _inst/etc/lalsuite-user-env.sh
+
+lint:api-dump-master:
+  extends:
+    - .lint-api-job
+  script:
+    # build LALSuite
+    - !reference [.lint-api-build-lalsuite]
+    # dump API
+    - ./common/gitlab-ci-scripts/check_library_api dump
+          --bin-dir=_inst/bin
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --add-sha-to-version
+          --output=api-dump-master/
+          ${LALSUITE_PACKAGES}
+    # create tarball of API dumps
+    - tar -jchvf api-dump-master-v${API_DUMP_VERSION}.tar.bz2 api-dump-master/
+  artifacts:
+    paths:
+      - api-dump-master-v${API_DUMP_VERSION}.tar.bz2
+      # for debugging
+      - config.log
+  rules:
+    # dump API of the main branch at lscsoft/lalsuite
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    # for debugging
+    - !reference [.ci-lint, rules]
+
+lint:api-dump-release:
+  extends:
+    - .lint-api-job
+  script:
+    # build LALSuite
+    - !reference [.lint-api-build-lalsuite]
+    # dump API
+    - ./common/gitlab-ci-scripts/check_library_api dump
+          --bin-dir=_inst/bin
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --output=api-dump-release/
+          ${LALSUITE_PACKAGES}
+    # create tarball of API dumps
+    - tar -jchvf api-dump-release-v${API_DUMP_VERSION}.tar.bz2 api-dump-release/
+  artifacts:
+    paths:
+      - api-dump-release-v${API_DUMP_VERSION}.tar.bz2
+      # for debugging
+      - config.log
+  rules:
+    # dump API of LALSuite releases
+    - !reference [.ci-lalsuite-tag-build, rules]
+    # for debugging
+    - !reference [.ci-lint, rules]
+
+lint:api-cmp-merge-diff:
+  extends:
+    - .lint-api-cmp-job
+  script:
+    # download and unpack API dump of the main branch at lscsoft/lalsuite
+    - retry ./common/gitlab-ci-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite ${CI_DEFAULT_BRANCH} -v 2
+    - tar -xvf api-dump-master-v${API_DUMP_VERSION}.tar.bz2
+    # build LALSuite
+    - !reference [.lint-api-build-lalsuite]
+    # dump API
+    - ./common/gitlab-ci-scripts/check_library_api dump
+          --bin-dir=_inst/bin
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --add-sha-to-version
+          --output=api-dump-head/
+          ${LALSUITE_PACKAGES}
+    # create tarball of API dumps
+    - tar -jchvf api-dump-head-v${API_DUMP_VERSION}.tar.bz2 api-dump-head/
+    # compare APIs
+    - ./common/gitlab-ci-scripts/check_library_api compare
+          --old-dump-dir=api-dump-master/
+          --new-dump-dir=api-dump-head/
+          --table-title="API Changes From Merge Request"
+          --output-dir=api-report/
+  artifacts:
+    paths:
+      - api-dump-head-v${API_DUMP_VERSION}.tar.bz2
+      - api-report/
+      # for debugging
+      - config.log
+  rules:
+    # run for merge requests only
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    # for debugging
+    - !reference [.ci-lint, rules]
+
+lint:api-cmp-last-release:
+  extends:
+    - .lint-api-cmp-job
+  script:
+    # download and unpack API dump of the main branch at lscsoft/lalsuite
+    - retry ./common/gitlab-ci-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite release -v 2
+    - tar -xvf api-dump-release-v${API_DUMP_VERSION}.tar.bz2
+    # build LALSuite
+    - !reference [.lint-api-build-lalsuite]
+    # dump API
+    - ./common/gitlab-ci-scripts/check_library_api dump
+          --bin-dir=_inst/bin
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --add-sha-to-version
+          --output=api-dump-head/
+          ${LALSUITE_PACKAGES}
+    # create tarball of API dumps
+    - tar -jchvf api-dump-head-v${API_DUMP_VERSION}.tar.bz2 api-dump-head/
+    # compare APIs
+    - ./common/gitlab-ci-scripts/check_library_api compare
+          --old-dump-dir=api-dump-release/
+          --new-dump-dir=api-dump-head/
+          --table-title="API Changes Since Last Release"
+          --output-dir=api-report/
+  artifacts:
+    paths:
+      - api-dump-head-v${API_DUMP_VERSION}.tar.bz2
+      - api-report/
+      # for debugging
+      - config.log
+  rules:
+    # run on the main branch at lscsoft/lalsuite
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    # run on release branches
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /^release/'
+    # for debugging
+    - !reference [.ci-lint, rules]
+
+lint:api-cmp-debug:
+  extends:
+    - .lint-api-cmp-job
+  needs:
+    - lint:api-dump-master
+    - lint:api-dump-release
+  script:
+    # unpack API dumps from prerequisite jobs - for debugging
+    - tar -xvf api-dump-master-v${API_DUMP_VERSION}.tar.bz2
+    - tar -xvf api-dump-release-v${API_DUMP_VERSION}.tar.bz2
+    # compare APIs - for debugging
+    - ./common/gitlab-ci-scripts/check_library_api compare
+          --old-dump-dir=api-dump-release/
+          --new-dump-dir=api-dump-master/
+          --table-title="Test API Comparison"
+          --output-dir=api-report/
+  artifacts:
+    paths:
+      - api-report/
+  rules:
+    # for debugging
+    - !reference [.ci-lint, rules]

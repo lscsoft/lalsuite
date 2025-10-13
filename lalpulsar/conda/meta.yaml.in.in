@@ -272,6 +272,7 @@ outputs:
         - gwdatafind
         - gwpy
         - h5py
+        - igwn-segments
         - jplephem
         - lalinference >={{ lalinference_version }}
         - liblal >={{ lal_version }}
