@@ -54,7 +54,7 @@ extern "C" {
 
   #include <lal/LALSimIMR.h>
 
-  #define NMAX_INSPIRAL_COEFFICIENTS 13
+  #define NMAX_INSPIRAL_COEFFICIENTS 15
 
   #define FALSE_ZERO 1.0e-15
 
