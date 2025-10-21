@@ -1168,8 +1168,8 @@ REAL8 XLALSimInspiralWaveformParamsLookupSpin1tilt(LALDict *params){
 REAL8 XLALSimInspiralWaveformParamsLookupSpin1phi(LALDict *params){
 	UNREVIEWED_CODE_WARNING
         REAL8 spin1_phi = -1;
+        REAL8 spin1x;
         REAL8 spin1y;
-        REAL8 spin1z;
         if (XLALDictContains(params, "spin1_phi") == 1){
                 spin1_phi = XLALDictLookupREAL8Value(params, "spin1_phi");
         }
@@ -1230,8 +1230,8 @@ REAL8 XLALSimInspiralWaveformParamsLookupSpin2tilt(LALDict *params){
 REAL8 XLALSimInspiralWaveformParamsLookupSpin2phi(LALDict *params){
 	UNREVIEWED_CODE_WARNING
         REAL8 spin2_phi = -1;
+        REAL8 spin2x;
         REAL8 spin2y;
-        REAL8 spin2z;
         if (XLALDictContains(params, "spin2_phi") == 1){
                 spin2_phi = XLALDictLookupREAL8Value(params, "spin2_phi");
         }
