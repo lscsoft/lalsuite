@@ -278,6 +278,26 @@ class CacheEntry(object):
         """
         return hash((self.observatory, self.description, self.segment))
 
+    def __fspath__(self):
+        """
+        Return the path component of the URL.  This makes CacheEntry
+        objects usable as path-like objects in functions that accept
+        path-like objects, such as open().
+
+        Example:
+
+        >>> c = CacheEntry("H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml")
+        >>> os.path.basename(c)
+        'H1-815901601-576.xml'
+        """
+        if self.scheme not in ("", "file"):
+            msg = (
+                f"cannot use {type(self).__name__} as path-like object with "
+                f"scheme='{self.scheme}'"
+            )
+            raise ValueError(msg)
+        return self.path
+
     @property
     def url(self):
         """
