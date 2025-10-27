@@ -62,7 +62,11 @@
 #endif
 %}
 %init %{
+#if defined(import_array1)
+import_array1(0);
+#else
 import_array();
+#endif
 %}
 
 // Evaluates true if a PyObject is not empty, false otherwise.
