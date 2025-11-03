@@ -39,6 +39,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
+    BOOLEAN directed;
     CHAR *segment_list, *sft_files, *detector_motion, *ephem_earth, *ephem_sun, *output_file;
     LALStringVector *detectors;
     LIGOTimeGPS ref_time;
@@ -46,6 +47,7 @@ int main( int argc, char *argv[] )
     REAL8 segment_gap;
     UINT4 segment_count, spindowns;
   } uvar_struct = {
+    .directed = 0,
     .detector_motion = XLALStringDuplicate( "spin+orbit" ),
     .ephem_earth = XLALStringDuplicate( "earth00-40-DE405.dat.gz" ),
     .ephem_sun = XLALStringDuplicate( "sun00-40-DE405.dat.gz" ),
@@ -90,6 +92,13 @@ int main( int argc, char *argv[] )
     sft_files, STRING, 'I', NODEFAULT,
     "Pattern matching the SFT files to be analysed; used to discard empty segments. Possibilities are:\n"
     " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'"
+  );
+  //
+  // - Seach type (All-sky/Directed)
+  //
+  XLALRegisterUvarMember(
+    directed, BOOLEAN, 'D', OPTIONAL,
+    "If set, compute metrics for a directed search; otherwise, compute for an all-sky search."
   );
   //
   // - Parameter-space metric computation
@@ -286,7 +295,9 @@ int main( int argc, char *argv[] )
   //   metrics can later be rescaled by search code
   LogPrintf( LOG_NORMAL, "Computing reduced supersky metrics ...\n" );
   const double fiducial_freq = 100.0;
-  setup.metrics = XLALComputeSuperskyMetrics( SUPERSKY_METRIC_TYPE, uvar->spindowns, &setup.ref_time, setup.segments, fiducial_freq, &detector_info, NULL, detector_motion, setup.ephemerides );
+  /// Metric type for all-sky/directed search)
+  const SuperskyMetricType metric_type = uvar->directed ? SUPERSKY_DIRECTED_METRIC_TYPE : SUPERSKY_METRIC_TYPE;
+  setup.metrics = XLALComputeSuperskyMetrics( metric_type, uvar->spindowns, &setup.ref_time, setup.segments, fiducial_freq, &detector_info, NULL, detector_motion, setup.ephemerides );
   XLAL_CHECK_MAIN( setup.metrics != NULL, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Finished computing reduced supersky metrics\n" );
 

@@ -105,7 +105,9 @@ typedef struct tagSM_CallbackOut {
 /// Call XLALComputeDopplerPhaseMetric() to compute the phase metric for a given coordinate system.
 ///
 static gsl_matrix *SM_ComputePhaseMetric(
+  const SuperskyMetricType type,                ///< [in] Type of supersky metric to compute
   const DopplerCoordinateSystem *coords,        ///< [in] Coordinate system to compute metric for
+  const size_t spindowns,                       ///< [in] Number of frequency+spindown coordinates
   const LIGOTimeGPS *ref_time,                  ///< [in] Reference time of the metric
   const LIGOTimeGPS *start_time,                ///< [in] Start time of the metric
   const LIGOTimeGPS *end_time,                  ///< [in] End time of the metric
@@ -175,6 +177,20 @@ static gsl_matrix *SM_ComputePhaseMetric(
   gsl_matrix *g_ij = NULL;
   const REAL8 Dtau = XLALGPSDiff( ref_time, &par.signalParams.Doppler.refTime );
   XLAL_CHECK_NULL( XLALChangeMetricReferenceTime( &g_ij, NULL, metric->g_ij, coords, Dtau ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // For directed search, set sky submatrix to identity and zero sky-frequency terms
+  const size_t sky_dim = coords->dim - ( 1 + spindowns );
+  if ( type == SUPERSKY_DIRECTED_METRIC_TYPE ) {
+    for ( size_t i = 0; i < sky_dim; ++i ) {
+      for ( size_t j = 0; j < sky_dim; ++j ) {
+        gsl_matrix_set( g_ij, i, j, ( i == j ) ? 1.0 : 0.0 );
+      }
+      for ( size_t j = sky_dim; j < coords->dim; ++j ) {
+        gsl_matrix_set( g_ij, i, j, 0.0 );
+        gsl_matrix_set( g_ij, j, i, 0.0 );
+      }
+    }
+  }
 
   // Cleanup
   XLALDestroyDopplerPhaseMetric( metric );
@@ -662,12 +678,12 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
     const LIGOTimeGPS *end_time_seg = &segments->segs[n].end;
 
     // Compute the unrestricted supersky metric
-    gsl_matrix *ussky_metric_seg = SM_ComputePhaseMetric( &ucoords, ref_time, start_time_seg, end_time_seg, detectors, detector_weights, detector_motion, ephemerides );
+    gsl_matrix *ussky_metric_seg = SM_ComputePhaseMetric( type, &ucoords, spindowns, ref_time, start_time_seg, end_time_seg, detectors, detector_weights, detector_motion, ephemerides );
     XLAL_CHECK_NULL( ussky_metric_seg != NULL, XLAL_EFUNC );
     gsl_matrix_add( ussky_metric_avg, ussky_metric_seg );
 
     // Compute the orbital metric in ecliptic coordinates
-    gsl_matrix *orbital_metric_seg = SM_ComputePhaseMetric( &ocoords, ref_time, start_time_seg, end_time_seg, detectors, detector_weights, detector_motion, ephemerides );
+    gsl_matrix *orbital_metric_seg = SM_ComputePhaseMetric( type, &ocoords, spindowns, ref_time, start_time_seg, end_time_seg, detectors, detector_weights, detector_motion, ephemerides );
     XLAL_CHECK_NULL( orbital_metric_seg != NULL, XLAL_EFUNC );
     gsl_matrix_add( orbital_metric_avg, orbital_metric_seg );
 

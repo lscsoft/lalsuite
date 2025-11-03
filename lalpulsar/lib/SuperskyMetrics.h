@@ -50,6 +50,7 @@ typedef struct tagSuperskyTransformData SuperskyTransformData;
 ///
 typedef enum tagSuperskyMetricType {
   SUPERSKY_METRIC_TYPE,                         ///< Metric for all-sky searches
+  SUPERSKY_DIRECTED_METRIC_TYPE,                ///< Metric for directed searches
   MAX_METRIC_TYPE
 } SuperskyMetricType;
 
