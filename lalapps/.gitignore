@@ -7,6 +7,7 @@
 *.pyc
 *.pyman
 *.pyo
+*.shman
 .deps
 .libs
 /_build/
@@ -130,6 +131,7 @@ src/lalapps/LALAppsVCSInfo.c
 src/lalapps/LALAppsVCSInfo.h
 src/lalapps/LALAppsVCSInfoHeader.h
 src/lalapps/__init__.py
+src/lalapps/cosmicstring.py
 src/lalapps/git_version.py
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_fftw*_wisdom
@@ -175,6 +177,7 @@ src/stochastic/lalapps_stochastic_preprocess
 src/stochastic/lalapps_stochastic_virgo
 src/stochastic/lalapps_stopp
 src/stochastic/lalapps_stopp_bayes
+src/string/lalapps
 src/string/lalapps_StringAddFrame
 src/string/lalapps_StringSearch
 src/string/lalapps_cosmicstring_pipe

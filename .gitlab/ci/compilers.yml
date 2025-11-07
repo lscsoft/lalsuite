@@ -7,8 +7,6 @@
 .compiler-test:
   stage: compiler tests
   needs: []
-  extends:
-    - .make-distcheck
   rules:
     - !reference [.ci-compiler, rules]
     - !reference [.ci-merge-build, rules]
@@ -19,6 +17,7 @@
 clang:
   extends:
     - .compiler-test
+    - .make-distcheck-deb
   parallel:
     matrix:
       - CLANG_VERSION:
@@ -35,18 +34,19 @@ clang:
     CC: "clang-$CLANG_VERSION"
     CXX: "clang++-$CLANG_VERSION"
   before_script:
+    - !reference [.make-distcheck-deb, before_script]
     # 'dev' build doesn't use version in variables
     - if [ "${CLANG_VERSION}" = "dev" ]; then
         export CC="clang";
         export CXX="clang++";
       fi
-    - !reference [.compiler-test, before_script]
 
 # -- gcc -----------------------------
 
 gcc:
   extends:
     - .compiler-test
+    - .make-distcheck-deb
   parallel:
     matrix:
       - GCC_VERSION:
@@ -62,22 +62,24 @@ gcc:
 cuda:
   extends:
     - .compiler-test
+    - .make-distcheck-rpm
   image: quay.io/igwn/lalsuite-dev-cuda:el8
-  script:
-    - ./00boot
+  variables:
+    CONFIGURE_FLAGS: "--with-cuda=${CI_PROJECT_DIR}/gitlab-ci-non-sys-cuda-path"
+    # do not run a full distcheck as we can't run the test suite
+    MAKE_TARGET: "all"
+  before_script:
+    - !reference [.build-init]
     # test ./configure works with non-system CUDA install path
-    - rm -f $PWD/gitlab-ci-non-sys-cuda-path
-    - ln -s /usr/local/cuda $PWD/gitlab-ci-non-sys-cuda-path
-    - ./configure --with-cuda=$PWD/gitlab-ci-non-sys-cuda-path
-    - rm -f $PWD/gitlab-ci-non-sys-cuda-path
-    # test ./configure works with system CUDA install path
-    - ./configure --with-cuda=/usr/local/cuda
-    # check compilation and tarball
-    - make -j${CPU_COUNT} dist
-    - make -j${CPU_COUNT}
+    - rm -f ${CI_PROJECT_DIR}/gitlab-ci-non-sys-cuda-path
+    - ln -s /usr/local/cuda ${CI_PROJECT_DIR}/gitlab-ci-non-sys-cuda-path
+  script:
+    - !reference [.make-distcheck, script]
+    # check installation and tarball
+    - make -j${CPU_COUNT} VERBOSE=1 install
+    - make -j${CPU_COUNT} VERBOSE=1 dist
     # just compile test suite; some tests require a CUDA device to run
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
-    - make -j${CPU_COUNT} install
   artifacts:
     # we don't run the test suite, so there are no reports
     reports:

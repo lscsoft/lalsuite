@@ -941,7 +941,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
             //XLAL_PRINT_INFO("%.16e %.16e\n", timeVec->data[j], y[j]);
 	  }
 	  //fclose(out1);
-	  //exit(0);
+	  //abort();
 
 	  XLAL_CALLGSL(acc = (gsl_interp_accel *) gsl_interp_accel_alloc());
 	  //XLAL_CALLGSL(spline = (gsl_spline *) gsl_spline_alloc(gsl_interp_cspline, vecLength));

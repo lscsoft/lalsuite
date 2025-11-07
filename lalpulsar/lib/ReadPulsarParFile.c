@@ -2146,7 +2146,7 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
 
       if ( sscanf( val[i] + 4, "%d", &wnum ) != 1 ) {
         fprintf( stderr, "Error reading WAVE number from par file\n" );
-        exit( 1 );
+        abort();
       }
 
       if ( wnum > output->nwaves ) {
@@ -2546,7 +2546,7 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
       } else {
         if ( sscanf( val[i] + 2, "%d", &fbnum ) != 1 ) {
           fprintf( stderr, "Error reading FB value from par file\n" );
-          exit( 1 );
+          abort();
         }
       }
 

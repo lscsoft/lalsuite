@@ -79,7 +79,7 @@ REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double f_min, double
     if (F_sup== NULL || F_inf==NULL || deltaF ==NULL) {
         XLALPrintError(" ERROR F_inf/sup/deltaF MBfile == NULL.\n");
         printf(" ERROR new/sup/deltaF (MB file)== NULL.\n");
-        exit(1);
+        abort();
     }
 
     F_inf->data[0]=f_min;

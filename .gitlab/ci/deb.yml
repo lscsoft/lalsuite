@@ -20,6 +20,7 @@
     - retry apt-get install -y -q -q
           lintian
           python3-venv
+          xz-utils
     # setup local apt repository to house upstream packages
     - if test -n "$(find . -maxdepth 1 -name '*.deb' -print -quit)"; then
           retry apt-get -y -q -q install local-apt-repository;
@@ -54,16 +55,19 @@
          -us -uc -r
          --lintian-opts --color=always --allow-root
     # create a codeclimate report from the lintian report
+    - |
+      echo "---- *lintian-overrides"
+      find debian/ -name '*lintian-overrides' | sort | xargs grep -H .
+      echo "---- *lintian-overrides"
     - !reference [.python-venv]
     - retry python -m pip install "lintian-codeclimate>=0.1.1"
     - |
       lintian --allow-root --fail-on none --info --color never ../${PACKAGE}_*.changes > lintian.out
-      python -m lintian_codeclimate lintian.out -d . -o $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
+      python -m lintian_codeclimate lintian.out -d . -o ${CI_PROJECT_DIR}/code-quality-lintian.json
       sed -i \
         -e "s|debian\/control|debian/control.in|g" \
         -e "s|debian\/|$PACKAGE/debian/|g" \
-        $CI_PROJECT_DIR/lintian-gl-codeclimate-$PACKAGE.json
-      echo "lintian codeclimate report written to lintian-gl-codeclimate-${PACKAGE}.json"
+        ${CI_PROJECT_DIR}/code-quality-lintian.json
     # print package info
     - set +x
     - cd ${CI_PROJECT_DIR}
@@ -72,6 +76,9 @@
           dpkg --info "${debf}";
           dpkg --contents "${debf}";
       done
+    # check/concatenate code quality reports
+    - cd ${CI_PROJECT_DIR}
+    - ./common/gitlab-ci-scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
   artifacts:
     expire_in: 18h
     paths:
@@ -89,15 +96,16 @@
       # the orig tarball
       - "${CI_JOB_NAME%%:*}*.orig.*"
     reports:
-      codequality: "lintian-gl-codeclimate-*.json"
+      codequality: code-quality.json
       junit: "${CI_JOB_NAME%%:*}-*/**/*junit*.xml"
     when: always
   rules:
-    - !reference [.ci-debian, rules]
+    - !reference [.ci-deb, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-docker, rules]
+    - when: never
 
 # -- builds
 

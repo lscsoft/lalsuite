@@ -13,7 +13,6 @@ AC_CONFIG_FILES([\
   debian/control \
   doxygen/Makefile \
   lalapps.spec \
-  man/Makefile \
   src/Makefile \
   src/findchirp/Makefile \
   src/frametools/Makefile \
@@ -264,6 +263,9 @@ AM_CPPFLAGS="-I\$(top_srcdir)/src ${AM_CPPFLAGS}"
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# do not install user environment scripts into /etc
+AM_CONDITIONAL([SYSCONFDIR_IS_ETC],[test "x${sysconfdir}" = "x/etc"])
 
 # output
 AC_OUTPUT

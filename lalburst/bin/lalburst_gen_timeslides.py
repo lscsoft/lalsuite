@@ -101,7 +101,7 @@ def new_doc(comment = None, **kwargs):
 		cvs_entry_time = __date__,
 		comment = comment
 	)
-	doc.childNodes[0].appendChild(lsctables.New(lsctables.TimeSlideTable))
+	doc.childNodes[0].appendChild(lsctables.TimeSlideTable.new())
 
 	return doc, process
 

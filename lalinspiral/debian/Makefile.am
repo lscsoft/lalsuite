@@ -9,4 +9,6 @@ EXTRA_DIST = \
 	python3-lalinspiral.install \
 	rules \
 	lalsuite.mk \
-	source/format
+	source/format \
+	lintian-overrides \
+	$(END_OF_LIST)

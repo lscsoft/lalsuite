@@ -8,13 +8,13 @@ ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST += \
 	lalapps.spec \
+	rpmlintrc \
 	$(DATA)
 
 SUBDIRS = \
 	conda \
 	debian \
 	src \
-	man \
 	doxygen \
 	$(END_OF_LIST)
 

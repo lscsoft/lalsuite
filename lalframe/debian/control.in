@@ -72,7 +72,7 @@ Depends:
  ${misc:Depends},
  ${python3:Depends},
  ${shlibs:Depends},
- lalframe (= ${binary:Version}),
+ liblalframe@LIBMAJOR@ (= ${binary:Version}),
  python3-lal (>= @MIN_LAL_VERSION@~),
 Description: Python 3 bindings for LALFrame
  The LVK Algorithm Frame Library for gravitational wave data analysis.

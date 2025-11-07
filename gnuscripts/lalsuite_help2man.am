@@ -1,18 +1,42 @@
+.PHONY: help2man-setup
+
 if HELP2MAN
 
-help2man_MANS = $(bin_PROGRAMS:=.man)
+help2man_MANS = $(bin_PROGRAMS:=.man) $(dist_bin_SCRIPTS:=.shman)
 
 if HAVE_PYTHON
 help2man_MANS += $(pybin_scripts:=.pyman)
 endif
 
+man1_MANS += $(help2man_MANS)
+
+BUILT_SOURCES += help2man-setup
+
 MOSTLYCLEANFILES += $(help2man_MANS) $(help2man_MANS:.man=.man.tmp)
 
 endif
 
-%.pyman: %.py
-	$(AM_V_GEN)$(HELP2MAN) --no-discard-stderr --no-info --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@ $(builddir)/$*
-
 %.man: %
-	$(AM_V_GEN)$(HELP2MAN) --libtool --no-discard-stderr --no-info --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@.tmp $(builddir)/$* && \
-	$(SED) -e 's|lt\\-||g;s|$(abs_builddir)/.libs/||g' $@.tmp > $@ && rm -f $@.tmp
+	$(AM_V_GEN)manmanpage="$(srcdir)/$*.1"; \
+	if test -f $${manmanpage}; then \
+		cat "$${manmanpage}" > $@; \
+	else \
+		name=`$(builddir)/$* --help 2>&1 | $(SED) -n 's|^ *$* -  *||p'`; \
+		$(HELP2MAN) --libtool --no-discard-stderr --no-info --name="$${name:-a program from $(PACKAGE_NAME)}" --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@.tmp $(builddir)/$* || exit 1; \
+		$(SED) -e 's|lt\\-||g;s|$(abs_builddir)/.libs/||g' $@.tmp > $@; \
+		rm -f $@.tmp; \
+	fi
+
+%.pyman: %.py
+	$(AM_V_GEN)name=`$(builddir)/$* --help 2>&1 | $(SED) -n '/:/d;/./p' | $(SED) -n '1p'`; \
+	$(HELP2MAN) --no-discard-stderr --no-info --name="$${name:-a program from $(PACKAGE_NAME)}" --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@ $(builddir)/$*
+
+%.shman: %
+	$(AM_V_GEN)$(MKDIR_P) $(builddir)/.libs || exit 1; \
+	rm -f $(builddir)/.libs/$* || exit 1; \
+	cp $(srcdir)/$* $(builddir)/.libs/$* || exit 1; \
+	chmod +x $(builddir)/.libs/$* || exit 1; \
+	name=`$(builddir)/.libs/$* --help 2>&1 | $(SED) -n '/:/d;/./p' | $(SED) -n '1p'`; \
+	$(HELP2MAN) --libtool --no-discard-stderr --no-info --name="$${name:-a program from $(PACKAGE_NAME)}" --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@.tmp $(builddir)/.libs/$* || exit 1; \
+	$(SED) -e 's|lt\\-||g;s|$(abs_builddir)/.libs/||g' $@.tmp > $@; \
+	rm -f $@.tmp

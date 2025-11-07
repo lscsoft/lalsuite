@@ -114,13 +114,9 @@ int XLALParseStringValueAsUserFlag ( int *valFlag, const UserChoices *flagData, 
 int XLALParseStringValueAsSTRING ( CHAR **valOut, const char *valString );
 int XLALParseStringValueAsSTRINGVector ( LALStringVector **valSTRINGVector, const CHAR *valString );
 
-// use macro templating to define parsers for numerical <CTYPE>vectors
-#define DECL_XLALParseStringValueAsVector(CTYPE)                        \
-  int XLALParseStringValueAs ##CTYPE## Vector ( CTYPE ## Vector **vect, const CHAR *valString )
-
-DECL_XLALParseStringValueAsVector(INT4);
-DECL_XLALParseStringValueAsVector(UINT4);
-DECL_XLALParseStringValueAsVector(REAL8);
+int XLALParseStringValueAsINT4Vector( INT4Vector **vect, const CHAR *valString );
+int XLALParseStringValueAsUINT4Vector( UINT4Vector **vect, const CHAR *valString );
+int XLALParseStringValueAsREAL8Vector( REAL8Vector **vect, const CHAR *valString );
 
 /** @} */
 

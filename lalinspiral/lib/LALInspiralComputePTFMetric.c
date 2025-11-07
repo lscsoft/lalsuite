@@ -338,7 +338,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     if ( errcode != XLAL_SUCCESS )
     {
       fprintf( stderr, "XLALInspiralComputePTFDeriv failed\n" );
-      exit( 1 );
+      abort();
     }
     for (k = 0; k < N / 2 + 1; ++k)
     {
@@ -417,7 +417,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   if ( status.statusCode )
   {
     REPORTSTATUS( &status );
-    exit( 1 );
+    abort();
   }
 
   /* Calculating the intrinsic-intrinsic block of the metric */
@@ -444,7 +444,7 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   if ( status.statusCode )
   {
     REPORTSTATUS( &status );
-    exit( 1 );
+    abort();
   }
 
   for (i = 0; i < 5; ++i)
@@ -461,14 +461,14 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
   if ( status.statusCode )
   {
     REPORTSTATUS( &status );
-    exit( 1 );
+    abort();
   }
 
   LALDMatrixMultiply ( &status, matrix_4_x_4, IntExt_matrix, matrix_5_x_4 );
   if ( status.statusCode )
   {
     REPORTSTATUS( &status );
-    exit( 1 );
+    abort();
   }
 
   for ( i = 0; i < 4; ++i )
@@ -749,7 +749,7 @@ INT4 XLALInspiralComputePTFWDeriv (
   if ( errcode != XLAL_SUCCESS )
   {
 	fprintf( stderr, "XLALInspiralComputePTFWaveform failed\n" );
-	exit( 1 );
+	abort();
   }
   clen = params->tC / deltaT + 0.5;
 
@@ -787,13 +787,13 @@ INT4 XLALInspiralComputePTFWDeriv (
 	if ( status.statusCode )
 	{
       REPORTSTATUS( &status );
-      exit( 1 );
+      abort();
 	}
 	LALInspiralParameterCalc(&status, &mparams);
 	if ( status.statusCode )
 	{
       REPORTSTATUS( &status );
-      exit( 1 );
+      abort();
 	}
 
 	/* Generate new waveforms */
@@ -802,7 +802,7 @@ INT4 XLALInspiralComputePTFWDeriv (
 	if ( errcode != XLAL_SUCCESS )
 	{
 	  fprintf( stderr, "XLALInspiralComputePTFWaveform failed\n" );
-      exit( 1 );
+      abort();
 	}
 	plen = pparams.tC / deltaT + 0.5;
 	mlen = mparams.tC / deltaT + 0.5;

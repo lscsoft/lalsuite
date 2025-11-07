@@ -87,8 +87,13 @@
     local n=1
     local delay=15
     while true; do
-      if ( set -o pipefail; "$@" 2>&1 | awk "${awkprog}" ); then
+      ec=0
+      ( set -o pipefail; "$@" 2>&1 | awk "${awkprog}" ) || ec=$?
+      if [ ${ec} -eq 0 ]; then
         break
+      elif [ ${ec} -eq 77 ]; then
+        echo "retry: command exited with code 77, will not retry" >&2
+        exit ${ec}
       else
         if [[ ${n} -lt ${max} ]]; then
           ((n++))

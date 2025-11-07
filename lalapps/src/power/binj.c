@@ -251,7 +251,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 	do { paramaddpoint = add_process_param(paramaddpoint, process, type, long_options[option_index].name, LALoptarg); } while(0)
 
 
-static struct options parse_command_line(int *argc, char **argv[], const ProcessTable *process, ProcessParamsTable **paramaddpoint)
+static struct options parse_command_line(int argc, char *argv[], const ProcessTable *process, ProcessParamsTable **paramaddpoint)
 {
 	struct options options = options_defaults();
 	int c;
@@ -284,7 +284,7 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		{NULL, 0, NULL, 0}
 	};
 
-	do switch(c = LALgetopt_long(*argc, *argv, "", long_options, &option_index)) {
+	do switch(c = LALgetopt_long(argc, argv, "", long_options, &option_index)) {
 	case 'A':
 		XLALClearErrno();
 		{
@@ -1120,7 +1120,7 @@ int main(int argc, char *argv[])
 	 */
 
 
-	options = parse_command_line(&argc, &argv, process, &process_params_table_head);
+	options = parse_command_line(argc, argv, process, &process_params_table_head);
 	if(options.user_tag)
 		snprintf(process->comment, sizeof(process->comment), "%s", options.user_tag);
 

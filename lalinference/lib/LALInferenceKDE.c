@@ -227,7 +227,7 @@ INT4 LALInferenceCholeskyDecompose(gsl_matrix *mat) {
         if (status != GSL_EDOM) {
             fprintf(stderr, "ERROR: Unexpected problem \
                     Cholesky-decomposing matrix.\n");
-            exit(-1);
+            abort();
         }
     }
 

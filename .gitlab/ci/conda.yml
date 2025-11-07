@@ -26,14 +26,13 @@
   - conda config --file ${CONDARC} --add channels conda-forge
   - conda config --file ${CONDARC} --set channel_priority strict
   # install build helpers
-  - retry conda install
-        --name base
-        --satisfied-skip-solve
+  - retry conda install --quiet --name base --satisfied-skip-solve
         "conda>=25"
         "conda-build!=3.18.10,!=24.11.1"
         conda-forge-pinning
         "conda-smithy>=3.7.5"
         conda-libmamba-solver
+        xz
   # print info
   - conda activate base
   - conda info --all
@@ -156,10 +155,15 @@
 
 # activate conda LALSuite development environment
 .conda-lalsuite-dev:
+  # install the dev environment for the default python version
+  - sed "s/-  *python .*$/- python ==${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE} > ${ENVIRONMENT_FILE}-dev-python.yml
+  # create dev environment
   - retry conda env create
-        --file ${ENVIRONMENT_FILE}
+        --file ${ENVIRONMENT_FILE}-dev-python.yml
         --quiet
+  - rm -f ${ENVIRONMENT_FILE}-dev-python.yml
   - conda list --name lalsuite-dev
+  # activate dev environment
   - conda activate lalsuite-dev
 
 # -- builds

@@ -62,7 +62,11 @@
 #endif
 %}
 %init %{
+#if defined(import_array1)
+import_array1(0);
+#else
 import_array();
+#endif
 %}
 
 // Evaluates true if a PyObject is not empty, false otherwise.
@@ -860,7 +864,11 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       } else {
         PyArray_DescrProto src = {
           PyObject_HEAD_INIT(&PyArrayDescr_Type)
+#if SWIG_VERSION >= 0x040400
+          .typeobj = SwigPyObject_Type(),
+#else
           .typeobj = SwigPyObject_type(),
+#endif
           .kind = 'V',
           .type = 'V',
           .byteorder = '=',

@@ -1,6 +1,7 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
+man1_MANS =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
@@ -79,7 +80,3 @@ test_scripts +=
 test_helpers +=
 
 endif
-
-# -- Manuals ----------------
-
-man1_MANS = $(help2man_MANS)

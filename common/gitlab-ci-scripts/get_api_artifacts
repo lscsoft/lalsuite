@@ -5,9 +5,27 @@
 
 import sys
 import argparse
+import logging
 import gitlab
-from pathlib import Path
+from zipfile import ZipFile
+from io import BytesIO
 from natsort import natsorted
+
+# configure logging
+LOGGER = logging.getLogger(__name__.rsplit(".", 1)[-1])
+try:
+    from coloredlogs import ColoredFormatter as _Formatter
+except ImportError:
+    _Formatter = logging.Formatter
+if not LOGGER.hasHandlers():
+    _LOG_HANDLER = logging.StreamHandler()
+    _LOG_HANDLER.setFormatter(
+        _Formatter(
+            fmt="[%(asctime)s] %(levelname)+8s: %(message)s",
+        )
+    )
+    LOGGER.addHandler(_LOG_HANDLER)
+LOGGER.setLevel(logging.DEBUG)
 
 
 def parse_command_line():
@@ -30,6 +48,13 @@ def parse_command_line():
         type=str,
         choices=["master", "release"],
         help="Artifacts to get",
+    )
+    parser.add_argument(
+        "-v",
+        dest="version",
+        type=int,
+        required=True,
+        help="Artifact file version number",
     )
 
     # Parse command line
@@ -55,8 +80,8 @@ def main():
     repo = server.projects.get(args.repo)
 
     # Get artifact details
-    artifact_path = Path(f"api-dump-{args.artifact}.tar.bz2")
     job_name = f"lint:api-dump-{args.artifact}"
+    artifact_path = f"api-dump-{args.artifact}-v{args.version}.tar.bz2"
     if args.artifact == "release":
         tags = repo.tags.list(iterator=True)
         lalsuite_tags = [t.name for t in tags if t.name.startswith("lalsuite-v")]
@@ -64,16 +89,23 @@ def main():
     else:
         ref_name = "master"
 
-    # Download artifact
-    print(f"Downloading artifact: ref={ref_name}, path={artifact_path}, job={job_name}")
-    try:
-        with artifact_path.open("wb") as f:
-            repo.artifacts.raw(
-                ref_name, artifact_path, job_name, streamed=True, action=f.write
+    # Download latest artifacts as ZIP archive
+    LOGGER.info(f"downloading latest artifacts for ref={ref_name}, job={job_name}")
+    artifacts_archive = BytesIO()
+    repo.artifacts.download(
+        ref_name, job_name, streamed=True, action=artifacts_archive.write
+    )
+
+    # Extract artifact file from ZIP archive
+    with ZipFile(artifacts_archive) as zf:
+        if artifact_path not in zf.namelist():
+            LOGGER.warning(
+                f"artifact={artifact_path} does not exist in latest artifacts for ref={ref_name}, job={job_name}"
             )
-    except Exception as e:
-        artifact_path.unlink()
-        raise e
+            return 77
+        zf.extract(artifact_path)
+
+    return 0
 
 
 if __name__ == "__main__":

@@ -129,7 +129,7 @@ LALInferenceTemplateFunction LALInferenceInitBurstTemplate(LALInferenceRunState 
       }
     else{
       fprintf(stderr,"ERROR: can only use fastSineGaussianLikelihood with SineGaussianF approximants.\n");
-      exit(1);
+      abort();
       }
   }
   return templt;
@@ -288,7 +288,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
   }
   if(!(BinjTable || inj_table || endtime>=0.0 )){
     printf("Did not provide --trigtime or an xml file and event... Exiting.\n");
-    exit(1);
+    abort();
   }
   if (endtime_from_inj!=endtime){
     if(endtime_from_inj>0 && endtime>0)
@@ -332,7 +332,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     model->domain = LAL_SIM_DOMAIN_TIME;
   } else {
     fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
-    exit(1);
+    abort();
   }
 
     /* Handle, if present, requests for calibration parameters. */
@@ -391,7 +391,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     }
     if (LALInferenceGetProcParamVal(commandLine, "--margtimephi") || LALInferenceGetProcParamVal(commandLine, "--margphi")) {
       fprintf(stderr,"ERROR: cannot use margphi or margtimephi with burst approximants. Please use margtime or no marginalization\n");
-      exit(1);
+      abort();
     }
 
     ppt=LALInferenceGetProcParamVal(commandLine,"--approx");

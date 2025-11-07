@@ -377,7 +377,7 @@ static void SplineData5d_Init(
   double *x3,
   double *x4
 ) {
-  if(!splinedata) exit(1);
+  if(!splinedata) abort();
   if(*splinedata) SplineData5d_Destroy(*splinedata);
 
   (*splinedata)=XLALCalloc(1,sizeof(SplineData5d));
@@ -521,7 +521,7 @@ static int NRSurrogateData_Init_submodel(
 ) {
   int ret = XLAL_FAILURE;
 
-  if(!submodel) exit(1);
+  if(!submodel) abort();
   /* Create storage for submodel structures */
   if (!*submodel)
     *submodel = XLALCalloc(1,sizeof(NRSurrogateData_submodel));

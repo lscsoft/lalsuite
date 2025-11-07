@@ -1398,9 +1398,9 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
 
     /* construct detector string from tddes info */
     for (j=0;j<NPCU;j++) {
-      char temp[2];
+      char temp[12];
       if (tddes->detectors[i][j]) {
-	snprintf(temp,2,"%d",j);
+	snprintf(temp,12,"%d",j);
 	strcat((*array)->channeldata[i].detconfig,temp);
       }
     }
@@ -1524,8 +1524,8 @@ int XLALReadFITSEventData(XTECHARArray **event,       /**< [out] The FITSdata st
 
   /* construct detector string from tddes info */
   for (j=0;j<NPCU;j++) {
-    char temp[2];
-    snprintf(temp,2,"%d",j);
+    char temp[12];
+    snprintf(temp,12,"%d",j);
     strcat((*event)->channeldata[0].detconfig,temp);
   }
 

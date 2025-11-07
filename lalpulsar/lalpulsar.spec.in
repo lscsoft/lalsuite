@@ -1,5 +1,4 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
-%define _sysconfdir %{_prefix}/etc
 %define release 1
 %define configure_opts --enable-cfitsio CFITSIO_LIBS="-lcfitsio" --disable-sistr
 
@@ -47,7 +46,9 @@ BuildRequires: python3-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: python3dist(astropy)
+BuildRequires: python3dist(gwdatafind)
 BuildRequires: python3dist(h5py)
+BuildRequires: python3dist(igwn-segments)
 BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 BuildRequires: python3dist(pytest)
 
@@ -62,7 +63,6 @@ BuildRequires: lalinference-octave >= @MIN_LALINFERENCE_VERSION@
 
 # lalpulsar
 Summary: LVK Algorithm Pulsar Library - runtime tools
-Requires: gwdatafind
 Requires: lib%{name} = %{version}-%{release}
 Requires: python3-%{name} = %{version}-%{release}
 Requires: %{name}-data
@@ -123,6 +123,7 @@ Requires: python3-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python3-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python3-lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: python3dist(astropy)
+Requires: python3dist(gwdatafind)
 Requires: python3dist(h5py)
 Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 Recommends: python3dist(sympy)
@@ -147,7 +148,7 @@ This package provides the Octave bindings for LALPulsar.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-%configure %{configure_opts} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
+%configure %{configure_opts} --sysconfdir=%{_sysconfdir} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
 %check
@@ -206,7 +207,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{_bindir}/*
 %{_mandir}/man1/*
-%{_sysconfdir}/*
 
 # -- changelog --------------
 

@@ -1307,7 +1307,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 		 * );
 		 */
 		//XLAL_PRINT_INFO("Stas flux = %.16e \n", flux);
-		//exit(0);
+		//abort();
 		flux = flux / eta;
 
 		rDot = -flux / dEdr;

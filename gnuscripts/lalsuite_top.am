@@ -1,7 +1,10 @@
+EXTRA_DIST += README.md AUTHORS gnuscripts/generate_user_env.awk gnuscripts/reproducible-date
+
+if !SYSCONFDIR_IS_ETC
+
 BUILT_SOURCES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish
 sysconf_DATA += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish
 MOSTLYCLEANFILES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish $(PACKAGE)-user-env.shell
-EXTRA_DIST += README.md AUTHORS gnuscripts/generate_user_env.awk gnuscripts/reproducible-date
 
 $(PACKAGE)-user-env.shell: Makefile $(srcdir)/gnuscripts/generate_user_env.awk
 	$(AM_V_GEN)if echo "$(user_environment)" | $(AWK) -f $(srcdir)/gnuscripts/generate_user_env.awk >$@; then \
@@ -20,6 +23,8 @@ installcheck-local: $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-us
 	@test ! -x /bin/bash || /bin/bash -c '. ./$(PACKAGE)-user-env.sh'
 	@test ! -x /usr/bin/tcsh || /usr/bin/tcsh -c 'source ./$(PACKAGE)-user-env.csh'
 	@test ! -x /usr/bin/fish || /usr/bin/fish -c '. ./$(PACKAGE)-user-env.fish'
+
+endif
 
 .PHONY: print-build-success
 all-local: print-build-success

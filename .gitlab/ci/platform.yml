@@ -11,8 +11,6 @@
 
 .platform-test:
   stage: platform tests
-  extends:
-    - .make-distcheck
   rules:
     - !reference [.ci-platform, rules]
     - !reference [.ci-merge-build, rules]
@@ -20,11 +18,13 @@
 platform:debian:bookworm:
   extends:
     - .platform-test
+    - .make-distcheck-deb
   image: quay.io/igwn/lalsuite-dev:bookworm
 
 .platform-test:conda:
   extends:
     - .platform-test
+    - .make-distcheck
   variables:
     CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
     ENVIRONMENT_FILE: "./conda-dev-env.yml"
@@ -32,12 +32,6 @@ platform:debian:bookworm:
     - !reference [.build-init]
     # configure conda
     - !reference [.conda-init]
-    # install the dev environment for the default python version
-    - sed -i.tmp "s/- python$/- python=${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
-    # https://github.com/conda-forge/texlive-core-feedstock/issues/59
-    - if [[ "${CI_JOB_NAME}" == *"arm64"* ]]; then
-          sed -i.tmp "/texlive-core/d" ${ENVIRONMENT_FILE};
-      fi
     # activate conda LALSuite development environment
     - !reference [.conda-lalsuite-dev]
 

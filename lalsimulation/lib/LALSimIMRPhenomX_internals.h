@@ -249,6 +249,7 @@ typedef struct tagIMRPhenomX_UsefulPowers
 {
 	REAL8 seven_sixths;
 	REAL8 one_sixth;
+	REAL8 ten_thirds;
 	REAL8 eight_thirds;
 	REAL8 seven_thirds;
 	REAL8 five_thirds;
@@ -274,6 +275,7 @@ typedef struct tagIMRPhenomX_UsefulPowers
 	REAL8 m_five_thirds;
 	REAL8 m_seven_thirds;
 	REAL8 m_eight_thirds;
+	REAL8 m_ten_thirds;
 	REAL8 m_one_sixth;
 	REAL8 m_seven_sixths;
 

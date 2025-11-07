@@ -163,7 +163,7 @@ except ValueError:
 else:
 	raise ValueError("%s contains a sim_burst table.  this program isn't smart enough to deal with that." % options.time_slide_xml)
 
-sim_burst_tbl = xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.SimBurstTable, ["process:process_id", "simulation_id", "time_slide:time_slide_id", "waveform", "waveform_number", "ra", "dec", "psi", "time_geocent_gps", "time_geocent_gps_ns", "duration", "frequency", "bandwidth", "egw_over_rsquared", "pol_ellipse_angle", "pol_ellipse_e"]))
+sim_burst_tbl = xmldoc.childNodes[-1].appendChild(lsctables.SimBurstTable.new(["process:process_id", "simulation_id", "time_slide:time_slide_id", "waveform", "waveform_number", "ra", "dec", "psi", "time_geocent_gps", "time_geocent_gps_ns", "duration", "frequency", "bandwidth", "egw_over_rsquared", "pol_ellipse_angle", "pol_ellipse_e"]))
 
 
 #

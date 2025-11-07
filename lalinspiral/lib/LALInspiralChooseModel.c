@@ -1028,7 +1028,7 @@ XLALInspiralChooseModel(
             Ft2(v,ak)/FtN, Ft3(v,ak)/FtN, Ft4(v,ak)/FtN, Ft5(v,ak)/FtN,
             Ft6(v,ak)/FtN, Ft7(v,ak)/FtN);
          }
-         exit(0);
+         abort();
          */
          break;
       case BCV:

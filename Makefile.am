@@ -43,12 +43,16 @@ user_environment = \
 	`for dir in @subdirs@; do printf 'source %s; ' "$(sysconfdir)/$${dir}-user-env"; done` \
 	$(END_OF_LIST)
 
+if !SYSCONFDIR_IS_ETC
+
 BUILT_SOURCES += $(PACKAGE)rc
 sysconf_DATA += $(PACKAGE)rc
 MOSTLYCLEANFILES += $(PACKAGE)rc
 $(PACKAGE)rc: Makefile
 	$(AM_V_GEN)echo "# source this file to access $(PACKAGE_NAME) from Bourne or C shells" >$@; \
 	echo "expr \"X\$$0\" : '^X.*csh' >/dev/null && source $(sysconfdir)/$(PACKAGE)-user-env.csh || . $(sysconfdir)/$(PACKAGE)-user-env.sh" >>$@
+
+endif
 
 if DOXYGEN
 

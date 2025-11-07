@@ -25,8 +25,8 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
-const char LALInferenceHDF5PosteriorSamplesDatasetName[] = "posterior_samples";
-const char LALInferenceHDF5NestedSamplesDatasetName[] = "nested_samples";
+const char *const LALInferenceHDF5PosteriorSamplesDatasetName = "posterior_samples";
+const char *const LALInferenceHDF5NestedSamplesDatasetName = "nested_samples";
 
 
 int LALInferencePrintCheckpointFileInfo(char *filename)
