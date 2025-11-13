@@ -893,6 +893,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
         yedat = NULL;
         cs2dat = NULL;
 
+
     }
     else if (ncol < 2)
     {
@@ -981,8 +982,6 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     eos->number_of_parts = number_eos;
     eos->pmin = pdat[0];
     eos->pmax = pdat[ndat-1];
-    eos->hmin = hdat[0];
-    eos->hmax = hdat[ndat-1];
 
     /* Allocate each piece of the equation of state separated by a phase transition */
     eos->eos_part = (LALSimNeutronStarEOS **) XLALMalloc(sizeof(LALSimNeutronStarEOS *) * (number_eos));
@@ -992,7 +991,9 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
         eos->eos_part[i] = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
         bottom_index = indices_phase_transition[i+1] + 1;
     }
-    eos->hMinAcausal = eosMultiParts_min_acausal_pseudo_enthalpy_tabular(hdat[ndat-1], eos);
+
+    eos->hmin = XLALSimNeutronStarEOSMinEnthalpy(eos->eos_part[0]);
+    eos->hmax = XLALSimNeutronStarEOSMinEnthalpy(eos->eos_part[eos->number_of_parts-1]);    eos->hMinAcausal = eosMultiParts_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
 
     char name[LALNameLength] = "unknown_eos_name";
     snprintf(eos->name, sizeof(eos->name), "%s", name);
