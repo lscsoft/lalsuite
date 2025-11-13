@@ -547,6 +547,13 @@ int main( int argc, char *argv[] )
 
   ////////// Set up lattice tilings //////////
 
+  // Check seach sky parameter space is consistent with the type of metric.
+  const BOOLEAN metric_is_directed = ( strcmp( setup.metric_type, "directed" ) == 0 );
+  const BOOLEAN sky_is_a_point = ( uvar->alpha[0] == uvar->alpha[1] && uvar->delta[0] == uvar->delta[1] );
+  XLALUserVarCheck( &should_exit,
+                    !metric_is_directed || sky_is_a_point,
+                    "The 'directed' metric type can only be used with a zero-area sky patch (i.e., --alpha and --delta must specify a single point)" );
+
   // Check interpolation/maximum mismatch options are consistent with the type of search being performed
   if ( nsegments == 1 ) {
     XLALUserVarCheck( &should_exit,

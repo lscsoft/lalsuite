@@ -81,7 +81,7 @@ typedef struct tagSuperskyMetrics {
 /// Compute the supersky metrics, which are returned in a \c SuperskyMetrics struct.
 ///
 SuperskyMetrics *XLALComputeSuperskyMetrics(
-  const SuperskyMetricType type,                ///< [in] Type of supersky metric to compute
+  const SuperskyMetricType metric_type,         ///< [in] Type of supersky metric to compute
   const size_t spindowns,                       ///< [in] Number of frequency+spindown coordinates
   const LIGOTimeGPS *ref_time,                  ///< [in] Reference time for the metrics
   const LALSegList *segments,                   ///< [in] List of segments to compute metrics over

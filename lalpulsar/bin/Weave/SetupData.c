@@ -42,6 +42,7 @@ void XLALWeaveSetupDataClear(
 )
 {
   if ( setup != NULL ) {
+    XLALFree( setup->metric_type );
     XLALDestroyStringVector( setup->detectors );
     XLALSegListFree( setup->segments );
     XLALDestroySuperskyMetrics( setup->metrics );
@@ -65,6 +66,9 @@ int XLALWeaveSetupDataWrite(
   XLAL_CHECK( setup->segments != NULL, XLAL_EFAULT );
   XLAL_CHECK( setup->metrics != NULL, XLAL_EFAULT );
   XLAL_CHECK( setup->ephemerides != NULL, XLAL_EFAULT );
+
+  // Write metric type
+  XLAL_CHECK( XLALFITSHeaderWriteString( file, "metric-type", setup->metric_type, "metric type (for all-sky/directed searches)" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write reference time
   XLAL_CHECK( XLALFITSHeaderWriteGPSTime( file, "date-obs", &setup->ref_time, "reference time" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -100,6 +104,9 @@ int XLALWeaveSetupDataRead(
 
   // Erase memory
   XLAL_INIT_MEM( *setup );
+
+  // Read metric type
+  XLAL_CHECK( XLALFITSHeaderReadString( file, "metric-type", &setup->metric_type ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Read reference time
   XLAL_CHECK( XLALFITSHeaderReadGPSTime( file, "date-obs", &setup->ref_time ) == XLAL_SUCCESS, XLAL_EFUNC );
