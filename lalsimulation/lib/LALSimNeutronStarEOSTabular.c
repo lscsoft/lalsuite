@@ -807,10 +807,12 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
  * the baryon chemical potential in MeV, the electron chemical potential in MeV,
  * the pseudo-enthalpy, the lepton fraction and the square of the speed of sound
  * normalized to light velocity.
+ *
  * Every line beginning with the character '#' is ignored.
  * If the path is an absolute path then this specific file is opened;
  * otherwise, search for the file in paths given in the environment variable
  * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
+ *
  * This function can build the EOSMultiParts structure from equation of state
  * data that include a first order phase transition. The equation of state data
  * is tested for phase transitions (defined by a pressure plateau associated to
@@ -919,6 +921,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
  * to create the EOSMultiParts equation of state structure.
  * @details The arrays read contain each ndat lines of neutron star
  * equation of state data in the "new" LAL EoS format.
+ *
  * Mandatory input quantities required to be non-NULL or non-zero
  * are the pressure (pdat) and the energy density (edat). All other
  * arrays can be set to NULL if not available to the user. The quantities
@@ -930,6 +933,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
  * is set and the pseudo-enthalpy is recalculated with the first law of thermodynamics,
  * as this is fundamental quantity necessary to solve neutron star's
  * astrophysical parameters.
+ *
  * This function can build the EOSMultiParts structure from equation of state
  * data that include a first order phase transition. The equation of state data
  * is tested for phase transitions (defined by a pressure plateau associated to
@@ -971,7 +975,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
                 if (hdat != NULL ) {
                     eos_correct_phase_transition(edat, pdat, hdat, indices_phase_transition[i]) ;
                 } else {
-                    printf("\t The dirty phase transition cannot be cleaned (enthalpy not provided).\n");
+                    printf("\t The dirty phase transition will be cleaned (with a simple method) after the enthalpy is recalculated.\n");
                 }
             }
         }
@@ -997,39 +1001,58 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     // at the point of piece N-1. The entire EoS object for the piece is then
     // recalculated assuming new LAL format.
     if (hdat == NULL && number_pt > 0){
+        double *hdat_recal = XLALMalloc(ndat * sizeof(*hdat_recal));
+        double *nbdat_recal  = XLALMalloc(ndat * sizeof(*nbdat_recal));
+        double *mubdat_recal = XLALMalloc(ndat * sizeof(*mubdat_recal));
+        double *muedat_recal = XLALMalloc(ndat * sizeof(*muedat_recal));
+        double *yedat_recal  = XLALMalloc(ndat * sizeof(*yedat_recal));
+        double *cs2dat_recal = XLALMalloc(ndat * sizeof(*cs2dat_recal));
+        memset(nbdat_recal,  0.0, ndat * sizeof(double));
+        memset(mubdat_recal, 0.0, ndat * sizeof(double));
+        memset(muedat_recal, 0.0, ndat * sizeof(double));
+        memset(yedat_recal,  0.0, ndat * sizeof(double));
+        memset(cs2dat_recal, 0.0, ndat * sizeof(double));
+        double *edat_recal = XLALMalloc(ndat * sizeof(*edat_recal));
+        double *pdat_recal = XLALMalloc(ndat * sizeof(*pdat_recal));
+        size_t ndat_total = 0;
         for (int i = 0; i <= number_pt; i++){
-            int ndat_piece = eos->eos_part[i]->data.tabular->ndat;
-            if (i != 0){
-                double *nbdat_recal  = malloc(ndat_piece * sizeof(double));
-                double *mubdat_recal = malloc(ndat_piece * sizeof(double));
-                double *muedat_recal = malloc(ndat_piece * sizeof(double));
-                double *yedat_recal  = malloc(ndat_piece * sizeof(double));
-                double *cs2dat_recal = malloc(ndat_piece * sizeof(double));
-                memset(nbdat_recal,  0.0, ndat_piece * sizeof(double));
-                memset(mubdat_recal, 0.0, ndat_piece * sizeof(double));
-                memset(muedat_recal, 0.0, ndat_piece * sizeof(double));
-                memset(yedat_recal,  0.0, ndat_piece * sizeof(double));
-                memset(cs2dat_recal, 0.0, ndat_piece * sizeof(double));
-                double *hdat_recal = malloc(ndat_piece * sizeof(double));
-                double *edat_recal = malloc(ndat_piece * sizeof(double));
-                double *pdat_recal = malloc(ndat_piece * sizeof(double));
-                for (int j = 0; j < ndat_piece; j++){
-                    if (j == 0) hdat_recal[j] = exp(eos->eos_part[i-1]->data.tabular->log_hdat[eos->eos_part[i-1]->data.tabular->ndat - 1]);
-                    else hdat_recal[j] = exp(eos->eos_part[i]->data.tabular->log_hdat[j]) - exp(eos->eos_part[i]->data.tabular->log_hdat[0]) + hdat_recal[0];
-                    edat_recal[j] = exp(eos->eos_part[i]->data.tabular->log_edat[j]);
-                    pdat_recal[j] = exp(eos->eos_part[i]->data.tabular->log_pdat[j]);
+            size_t ndat_piece = eos->eos_part[i]->data.tabular->ndat;
+            if (i == 0){
+                for (size_t j = 0 ; j < ndat_piece; j++){
+                    hdat_recal[ndat_total] =  exp(eos->eos_part[i]->data.tabular->log_hdat[j]);
+                    edat_recal[ndat_total] =  exp(eos->eos_part[i]->data.tabular->log_edat[j]);
+                    pdat_recal[ndat_total] =  exp(eos->eos_part[i]->data.tabular->log_pdat[j]);
+                    ndat_total += 1;
                 }
-                eos->eos_part[i] = eos_alloc_tabular(nbdat_recal, edat_recal, pdat_recal, mubdat_recal, muedat_recal, hdat_recal, yedat_recal, cs2dat_recal, ndat_piece, 9);
-                free(nbdat_recal);
-                free(mubdat_recal);
-                free(muedat_recal);
-                free(yedat_recal);
-                free(cs2dat_recal);
-                free(hdat_recal);
-                free(edat_recal);
-                free(pdat_recal);
+            } else {
+                for (size_t j = 0 ; j < ndat_piece; j++){
+                    if (j == 0) {
+                        hdat_recal[ndat_total] = exp(eos->eos_part[i-1]->data.tabular->log_hdat[eos->eos_part[i-1]->data.tabular->ndat - 1]);
+                        pdat_recal[ndat_total] = exp(eos->eos_part[i-1]->data.tabular->log_pdat[eos->eos_part[i-1]->data.tabular->ndat - 1]);
+                    } else {
+                        hdat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_hdat[j]) - exp(eos->eos_part[i]->data.tabular->log_hdat[0]) + exp(eos->eos_part[i-1]->data.tabular->log_hdat[eos->eos_part[i-1]->data.tabular->ndat - 1]);
+                        pdat_recal[ndat_total] =  exp(eos->eos_part[i]->data.tabular->log_pdat[j]);
+                    }
+                    edat_recal[ndat_total] =  exp(eos->eos_part[i]->data.tabular->log_edat[j]);
+                    ndat_total += 1;
+                }
             }
         }
+        // Refill the EOS structure
+        bottom_index = 0, upper_index = 0;
+        for (int i = 0; i <= number_pt; i++){
+            upper_index = indices_phase_transition[i+1];
+            eos->eos_part[i] = eos_piece_alloc_tabular(nbdat_recal, edat_recal, pdat_recal, mubdat_recal, muedat_recal, hdat_recal, yedat_recal, cs2dat_recal, bottom_index, upper_index);
+            bottom_index = indices_phase_transition[i+1] + 1;
+        }
+        XLALFree(edat_recal);
+        XLALFree(pdat_recal);
+        XLALFree(hdat_recal);
+        XLALFree(nbdat_recal);
+        XLALFree(mubdat_recal);
+        XLALFree(muedat_recal);
+        XLALFree(yedat_recal);
+        XLALFree(cs2dat_recal);
     }
 
     eos->hmin = XLALSimNeutronStarEOSMinEnthalpy(eos->eos_part[0]);
