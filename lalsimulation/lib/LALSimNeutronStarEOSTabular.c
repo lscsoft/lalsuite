@@ -796,32 +796,29 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
 
 
 /**
- * @brief Reads a data file containing tabulated neutron star
- * equation of state data to create the EOSMultiParts equation
- * of state structure.
+ * @brief Reads a data file containing tabulated equation of state data
+ * to create the EOSMultiParts equation of state structure.
  * @details Read a data file specified by a path fname that contains either
- * i) Two whitespace separated columns of equation of state data with
- * the pressure in Pa (first column) and the energy density in J/m^3 (second column);
- * this is the "old" LAL EoS format.
- * ii) 9 whitespace separated columns of equation of state data; this format contains
- * (in order of the columns) the table index, the baryon density in /fm^3,
- * the energy density in g/cm^3, the pressure in dyn/cm^2, the baryon chemical potential in MeV,
- * the electron chemical potential in MeV, the log-enthalpy, the lepton fraction
- * and the square of the speed of sound normalized to light velocity;
- * this is the "new" LAL EoS format.
+ * i) Two whitespace separated columns of equation of state data ("old" LAL EoS format)
+ * with the pressure in Pa (first column) and the energy density in J/m^3 (second column).
+ * ii) 9 whitespace separated columns of equation of state data ("new" LAL EoS format).
+ * This file follows the following format (in order of the columns): the table index,
+ * the baryon density in /fm^3, the energy density in g/cm^3, the pressure in dyn/cm^2,
+ * the baryon chemical potential in MeV, the electron chemical potential in MeV,
+ * the pseudo-enthalpy, the lepton fraction and the square of the speed of sound
+ * normalized to light velocity.
  * Every line beginning with the character '#' is ignored.
  * If the path is an absolute path then this specific file is opened;
  * otherwise, search for the file in paths given in the environment variable
  * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
- * This function tests if the equation of state data includes phase transitions.
- * If N phase transitions are found (defined by a pressure plateau
- * associated to a jump in energy density), EOSMultiParts contains N+1
- * LALSimNeutronStarEOS equation of state piece, each accessible with the function
- * XLALSimNeutronStarEOSPart.
- * This function can handle "clean" phase transitions (Delta P = 0) in both
- * the old and the new format. This function can also correct "dirty"
- * phase transitions (Delta P != 0 but numerically close to zero),
- * in which case the data must include the enthalpy (only for "new" LAL format).
+ * This function can build the EOSMultiParts structure from equation of state
+ * data that include a first order phase transition. The equation of state data
+ * is tested for phase transitions (defined by a pressure plateau associated to
+ * a jump in energy density): if N phase transitions are found, EOSMultiParts
+ * contains N+1 LALSimNeutronStarEOS equation of state pieces. "Clean" phase
+ * transitions (Delta P = 0) can be handled in both the old and new LAL formats;
+ * "dirty" phase transitions (Delta P != 0 but numerically close to zero) can be
+ * corrected if the pseudo-enthalpy was provided.
  * @param[in] fname The path of the file to open.
  * @return A pointer to neutron star equation of state structure (EOSMultiParts).
  */
@@ -921,29 +918,32 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
  * @brief Reads 9 arrays of neutron star equation of state data
  * to create the EOSMultiParts equation of state structure.
  * @details The arrays read contain each ndat lines of neutron star
- * equation of state data in the "new" LAL EoS format. Mandatory
- * quantities required to be non NULL or non zero are the pressure and
- * the energy density, all other arrays set to zero or NULL will not
- * lead to an error. If the log-enthalpy array is set to NULL,
- * the "old" EoS format is set (assuming input for edat in J/m^3
- * and pdat in Pa) and the enthalpy is recalculated with the
- * first law of thermodynamics; otherwise the units of the new LAL format
- * (see detail in units of the parameters) are assumed. //TODO check this
- * This function tests if the equation of state data includes phase transitions.
- * If N phase transitions are found (defined by a pressure plateau
- * associated to a jump in energy density), EOSMultiParts contains N+1
- * LALSimNeutronStarEOS equation of state piece, each accessible with the function
- * XLALSimNeutronStarEOSPart.
- * This function can handle "clean" phase transitions (Delta P = 0) in both
- * the old and the new format. This function can also correct "dirty"
- * phase transitions (Delta P != 0 but numerically close to zero),
- * in which case the data must include the enthalpy (only for "new" LAL format).
- * @param nbdat Array for the baryon density in 1/fm^3.
- * @param edat Array for the energy density in g/cm^3.
- * @param pdat Array for the pressure in dyn/cm^2.
- * @param mubdat Array for the baryon chemical potential in MeV.
- * @param muedat Array for the electron chemical potential in MeV.
- * @param hdat Array for the log of enthalpy (dimensionless).
+ * equation of state data in the "new" LAL EoS format.
+ * Mandatory input quantities required to be non-NULL or non-zero
+ * are the pressure (pdat) and the energy density (edat). All other
+ * arrays can be set to NULL if not available to the user. The quantities
+ * nbdat, mubdat, muedat and yedat are not used in any functions of
+ * LALSimulation; cs2dat must be provided in the new LAL format if the user
+ * wished to calculate the speed of sound but is not needed to solve
+ * neutron star's astrophysical parameters nor to construct the EOS object.
+ * If the pseudo-enthalpy array hdat is set to NULL, the "old" LAL EoS format
+ * is set and the pseudo-enthalpy is recalculated with the first law of thermodynamics,
+ * as this is fundamental quantity necessary to solve neutron star's
+ * astrophysical parameters.
+ * This function can build the EOSMultiParts structure from equation of state
+ * data that include a first order phase transition. The equation of state data
+ * is tested for phase transitions (defined by a pressure plateau associated to
+ * a jump in energy density): if N phase transitions are found, EOSMultiParts
+ * contains N+1 LALSimNeutronStarEOS equation of state pieces. "Clean" phase
+ * transitions (Delta P = 0) can be handled in both the old and new LAL formats;
+ * "dirty" phase transitions (Delta P != 0 but numerically close to zero) can be
+ * corrected if the pseudo-enthalpy was provided.
+ * @param nbdat Array for the baryon density (in /fm^3).
+ * @param edat Array for the energy density (in km^-2).
+ * @param pdat Array for the pressure in (in km^-2).
+ * @param mubdat Array for the baryon chemical potential (in MeV).
+ * @param muedat Array for the electron chemical potential (in MeV).
+ * @param hdat Array for the pseudo enthalpy (dimensionless).
  * @param yedat Array for the lepton fration (dimensionless).
  * @param cs2dat Array for the sound speed squared normalized
  * to the speed of light (dimensionless).
@@ -990,6 +990,46 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
         upper_index = indices_phase_transition[i+1];
         eos->eos_part[i] = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
         bottom_index = indices_phase_transition[i+1] + 1;
+    }
+
+    // If the enthalpy was not provided and the EoS has a Phase Transition,
+    // we substract the value h[0] in the piece and also add the enthalpy
+    // at the point of piece N-1. The entire EoS object for the piece is then
+    // recalculated assuming new LAL format.
+    if (hdat == NULL && number_pt > 0){
+        for (int i = 0; i <= number_pt; i++){
+            int ndat_piece = eos->eos_part[i]->data.tabular->ndat;
+            if (i != 0){
+                double *nbdat_recal  = malloc(ndat_piece * sizeof(double));
+                double *mubdat_recal = malloc(ndat_piece * sizeof(double));
+                double *muedat_recal = malloc(ndat_piece * sizeof(double));
+                double *yedat_recal  = malloc(ndat_piece * sizeof(double));
+                double *cs2dat_recal = malloc(ndat_piece * sizeof(double));
+                memset(nbdat_recal,  0.0, ndat_piece * sizeof(double));
+                memset(mubdat_recal, 0.0, ndat_piece * sizeof(double));
+                memset(muedat_recal, 0.0, ndat_piece * sizeof(double));
+                memset(yedat_recal,  0.0, ndat_piece * sizeof(double));
+                memset(cs2dat_recal, 0.0, ndat_piece * sizeof(double));
+                double *hdat_recal = malloc(ndat_piece * sizeof(double));
+                double *edat_recal = malloc(ndat_piece * sizeof(double));
+                double *pdat_recal = malloc(ndat_piece * sizeof(double));
+                for (int j = 0; j < ndat_piece; j++){
+                    if (j == 0) hdat_recal[j] = exp(eos->eos_part[i-1]->data.tabular->log_hdat[eos->eos_part[i-1]->data.tabular->ndat - 1]);
+                    else hdat_recal[j] = exp(eos->eos_part[i]->data.tabular->log_hdat[j]) - exp(eos->eos_part[i]->data.tabular->log_hdat[0]) + hdat_recal[0];
+                    edat_recal[j] = exp(eos->eos_part[i]->data.tabular->log_edat[j]);
+                    pdat_recal[j] = exp(eos->eos_part[i]->data.tabular->log_pdat[j]);
+                }
+                eos->eos_part[i] = eos_alloc_tabular(nbdat_recal, edat_recal, pdat_recal, mubdat_recal, muedat_recal, hdat_recal, yedat_recal, cs2dat_recal, ndat_piece, 9);
+                free(nbdat_recal);
+                free(mubdat_recal);
+                free(muedat_recal);
+                free(yedat_recal);
+                free(cs2dat_recal);
+                free(hdat_recal);
+                free(edat_recal);
+                free(pdat_recal);
+            }
+        }
     }
 
     eos->hmin = XLALSimNeutronStarEOSMinEnthalpy(eos->eos_part[0]);
