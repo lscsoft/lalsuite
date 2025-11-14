@@ -26,6 +26,7 @@
 
 #include <lal/LALInitBarycenter.h>
 #include <lal/FITSPulsarIO.h>
+#include <lal/LogPrintf.h>
 
 ///
 /// \name Internal functions
@@ -106,7 +107,16 @@ int XLALWeaveSetupDataRead(
   XLAL_INIT_MEM( *setup );
 
   // Read metric type
-  XLAL_CHECK( XLALFITSHeaderReadString( file, "metric-type", &setup->metric_type ) == XLAL_SUCCESS, XLAL_EFUNC );
+  int read_status;
+  read_status = XLALFITSHeaderReadString( file, "metric-type", &setup->metric_type );
+  if ( read_status != XLAL_SUCCESS ) {
+    // If not found, set it to 'all-sky'
+    XLALClearErrno();
+    LogPrintf( LOG_NORMAL, "Setup file does not contain 'metric-type'. Defaulting to 'all-sky'\n" );
+    setup->metric_type = XLALStringDuplicate( "all-sky" );
+    // Check that the string duplication was successful
+    XLAL_CHECK( setup->metric_type != NULL, XLAL_ENOMEM );
+  }
 
   // Read reference time
   XLAL_CHECK( XLALFITSHeaderReadGPSTime( file, "date-obs", &setup->ref_time ) == XLAL_SUCCESS, XLAL_EFUNC );

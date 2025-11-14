@@ -548,6 +548,7 @@ int main( int argc, char *argv[] )
   ////////// Set up lattice tilings //////////
 
   // Check seach sky parameter space is consistent with the type of metric.
+  LogPrintf( LOG_NORMAL, "Using metric for %s search\n", setup.metric_type );
   const BOOLEAN metric_is_directed = ( strcmp( setup.metric_type, "directed" ) == 0 );
   const BOOLEAN sky_is_a_point = ( uvar->alpha[0] == uvar->alpha[1] && uvar->delta[0] == uvar->delta[1] );
   XLALUserVarCheck( &should_exit,
