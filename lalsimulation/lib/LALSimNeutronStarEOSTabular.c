@@ -823,22 +823,22 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
  * We define a "dirty" phase transition by an intended first order phase
  * transition that is not numerically so: at the upper (+) and lower (-)
  * boundaries of the phase transition (pt), the user input equation of
- * state data has P_pt^+ - P_pt^- > 0.
+ * state data has pressure P(pt,+) - P(pt,-) > 0.
  * If a "dirty" phase transition is detected, it is corrected as follows:
- *    - For the "new" LAL format: a linear extrapolation is used to correct
+ * - For the "new" LAL format: a linear extrapolation is used to correct
  * the two points in the equation of state data grid involved with the
- * phase transition and define a clean phase transition. The pseudo-enthalpy
- * and pressure at the boundary of the phase transition are recomputed such
- * that h_pt^- = h_pt^+ and P_pt^- = P_pt^+; the corresponding energy density
+ * phase transition and define a clean phase transition. The pseudo-enthalpy h
+ * and pressure P at the boundary of the phase transition are recomputed such
+ * that h_pt(pt,-) = h(pt,+) and P(pt,-) = P(pt,+); the corresponding energy density
  * at the upper and lower boundaries of the newly defined clean phase transition
  * are computed also with a linear extrapolation.
- *   - For the "old" LAL format: as the pseudo-enthalpy is calculated, its value
- * at the boundaries of the phase transition is corrected as h_pt^+ -> h_pt^-.
- * The pressure is also corrected such that P_pt^+ -> P_pt^- and the energy
- * density points at the boundary of the phase transition are kept intact.
+ * - For the "old" LAL format: as the pseudo-enthalpy is calculated, its value
+ * at the boundaries of the phase transition is corrected as h(pt,+) -> h(pt,-).
+ * The pressure is also corrected such that P(pt,+) -> P(pt,-) and the energy
+ * density (eps) points at the boundary of the phase transition are kept intact.
  * The existing points of the equation of state data provided by the user
  * have been modified to obtain a clean phase transition: this implies that
- * P_pt^+ and eps_pt^+ are not thermodynamically coherent together. The user is
+ * P(pt,+) and eps(pt,+) are not thermodynamically coherent together. The user is
  * advised to provide equations of state containing phase transition in the
  * "new" LAL format.
  * In the event that the user does not wish for the phase transition to be
@@ -982,22 +982,22 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
  * We define a "dirty" phase transition by an intended first order phase
  * transition that is not numerically so: at the upper (+) and lower (-)
  * boundaries of the phase transition (pt), the user input equation of
- * state data has P_pt^+ - P_pt^- > 0.
+ * state data has P(pt,+)- P(pt,-) > 0.
  * If a "dirty" phase transition is detected, it is corrected as follows:
- *    - If hdat is provided: a linear extrapolation is used to correct
+ * - If hdat is provided: a linear extrapolation is used to correct
  * the two points in the equation of state data grid involved with the
  * phase transition and define a clean phase transition. The pseudo-enthalpy
  * and pressure at the boundary of the phase transition are recomputed such
- * that h_pt^- = h_pt^+ and P_pt^- = P_pt^+; the corresponding energy density
+ * that h(pt,-) = h(pt,+) and P(pt,-) = P(pt,+); the corresponding energy density
  * at the upper and lower boundaries of the newly defined clean phase transition
  * are computed also with a linear extrapolation.
- *   - If hdat is NULL: as the pseudo-enthalpy is calculated, its value
- * at the boundaries of the phase transition is corrected as h_pt^+ -> h_pt^-.
- * The pressure is also corrected such that P_pt^+ -> P_pt^- and the energy
+ * - If hdat is NULL: as the pseudo-enthalpy is calculated, its value
+ * at the boundaries of the phase transition is corrected as h(pt,+) -> h(pt,-).
+ * The pressure is also corrected such that P(pt,+) -> P(pt,-) and the energy
  * density points at the boundary of the phase transition are kept intact.
  * The existing points of the equation of state data provided by the user
  * have been modified to obtain a clean phase transition: this implies that
- * P_pt^+ and eps_pt^+ are not thermodynamically coherent together.
+ * P(pt,+) and eps(pt,+) are not thermodynamically coherent together.
  * In the event that the user does not wish for the phase transition to be
  * corrected, use the LALSimNeutronStarEOS structure and the corresponding
  * XLALSimNeutronStarEOSFromTabData function; note that it cannot be used in the
