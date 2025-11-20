@@ -119,8 +119,8 @@ static int find_eos_piece_enthalpy(double h, EOSMultiParts *eos)
     int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
     int item_piece = 0;
     for (int j = 0 ; j < number_pieces; j++){
-        double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(eos, j);
-        double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxEnthalpy(eos, j);
+        double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, j);
+        double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, j);
         if (h >= hmin && h <= hmax) {
             item_piece = j;
             break;
@@ -138,8 +138,8 @@ static int find_eos_piece_rest_mass_density(double rho, EOSMultiParts *eos)
     int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
     int item_piece = 0;
     for (int j = 0 ; j < number_pieces; j++){
-        double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(eos, j);
-        double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxEnthalpy(eos, j);
+        double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, j);
+        double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, j);
         double rhomin = XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeometerized(hmin, eos, j);
         double rhomax = XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeometerized(hmax, eos, j);
         if (rho >= rhomin && rho <= rhomax) {
@@ -158,8 +158,8 @@ static int find_eos_piece_energy_density(double e, EOSMultiParts *eos)
     int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
     int item_piece = 0;
     for (int j = 0 ; j < number_pieces; j++){
-        double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(eos, j);
-        double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxEnthalpy(eos, j);
+        double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, j);
+        double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, j);
         double emin = XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometerized(hmin, eos, j);
         double emax = XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometerized(hmax, eos, j);
         if (e >= emin && e <= emax) {
@@ -320,7 +320,7 @@ double XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(LALSimNeutronStarEOS *
  * @param eos Pointer to the EOS structure.
  * @return The minimum pseudo-enthalpy of the EOS.
  */
-double XLALSimNeutronStarEOSMinEnthalpy(LALSimNeutronStarEOS *
+double XLALSimNeutronStarEOSMinPseudoEnthalpy(LALSimNeutronStarEOS *
     eos)
 {
     return eos->hmin;
@@ -423,7 +423,7 @@ double XLALSimNeutronStarEOSMultiPartsMinPressure(EOSMultiParts * eos)
  * @param eos Pointer to the equation of state EOSMultiParts structure.
  * @return The minimum pseudo-enthalpy of the equation of state.
  */
-double XLALSimNeutronStarEOSMultiPartsMinEnthalpy(EOSMultiParts * eos)
+double XLALSimNeutronStarEOSMultiPartsMinPseudoEnthalpy(EOSMultiParts * eos)
 {
     return eos->hmin;
 }
@@ -433,7 +433,7 @@ double XLALSimNeutronStarEOSMultiPartsMinEnthalpy(EOSMultiParts * eos)
  * @param eos Pointer to the equation of state EOSMultiParts structure.
  * @return The maximum pseudo-enthalpy of the equation of state (dimensionless).
  */
-double XLALSimNeutronStarEOSMultiPartsMaxEnthalpy(EOSMultiParts * eos)
+double XLALSimNeutronStarEOSMultiPartsMaxPseudoEnthalpy(EOSMultiParts * eos)
 {
     return eos->hmax;
 }
@@ -484,7 +484,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometerized(EOSMultiParts
 double XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometerized(EOSMultiParts * eos, int piece_id)
 {
     if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    double hmin = XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(eos, piece_id);
+    double hmin = XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id);
     return XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpyGeometerized(hmin, eos, piece_id);
 }
 
@@ -523,7 +523,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMaxPressure(EOSMultiParts * eos, int 
 double XLALSimNeutronStarEOSMultiPartsPieceMinPressure(EOSMultiParts * eos, int piece_id)
 {
     if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    double hmin = XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(eos, piece_id);
+    double hmin = XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id);
     double pmin;
     pmin = XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpyGeometerized(hmin, eos, piece_id);
     pmin /= LAL_G_C4_SI;
@@ -541,10 +541,10 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinPressure(EOSMultiParts * eos, int 
  * @param piece_id Integer to the equation of state piece ID number.
  * @return The minimum pseudo-enthalpy of the equation of state piece.
  */
-double XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(EOSMultiParts * eos, int piece_id){
+double XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(EOSMultiParts * eos, int piece_id){
     if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMinEnthalpy(eos_part);
+    return XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_part);
 }
 
 /**
@@ -558,7 +558,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(EOSMultiParts * eos, int 
  * @param piece_id Integer to the equation of state piece ID number.
  * @return The maximum pseudo-enthalpy of the equation of state piece.
  */
-double XLALSimNeutronStarEOSMultiPartsPieceMaxEnthalpy(EOSMultiParts * eos, int piece_id){
+double XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(EOSMultiParts * eos, int piece_id){
     if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
     return XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos_part);

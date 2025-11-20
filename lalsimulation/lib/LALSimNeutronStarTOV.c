@@ -799,7 +799,7 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     for(int j = central_piece; j >= 0; j--) {
         LALSimNeutronStarEOS * eos_part_1 = XLALSimNeutronStarEOSPart(eos,j);
         params = eos_part_1;
-        double hmin = XLALSimNeutronStarEOSMinEnthalpy(eos_part_1);
+        double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_part_1);
 
         while (h > hmin) {
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
@@ -921,7 +921,7 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
     for(int j = central_piece; j >= 0; j--) {
         LALSimNeutronStarEOS * eos_part_1 = XLALSimNeutronStarEOSPart(eos,j);
         params = eos_part_1;
-        double hmin = XLALSimNeutronStarEOSMinEnthalpy(eos_part_1);
+        double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_part_1);
 
         while (h > hmin) {
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);

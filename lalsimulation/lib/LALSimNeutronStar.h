@@ -70,7 +70,7 @@ double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMaxPressure(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMaxPseudoEnthalpy(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(LALSimNeutronStarEOS * eos);
-double XLALSimNeutronStarEOSMinEnthalpy(LALSimNeutronStarEOS * eos);
+double XLALSimNeutronStarEOSMinPseudoEnthalpy(LALSimNeutronStarEOS * eos);
 
 void XLALDestroySimNeutronStarEOSMultiParts(EOSMultiParts * eos);
 char *XLALSimNeutronStarEOSMultiPartsName(EOSMultiParts * eos);
@@ -80,16 +80,16 @@ double XLALSimNeutronStarEOSMultiPartsMaxPressureGeometerized(EOSMultiParts * eo
 double XLALSimNeutronStarEOSMultiPartsMinPressureGeometerized(EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsMaxPressure(EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsMinPressure(EOSMultiParts * eos);
-double XLALSimNeutronStarEOSMultiPartsMinEnthalpy(EOSMultiParts * eos);
-double XLALSimNeutronStarEOSMultiPartsMaxEnthalpy(EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsMinPseudoEnthalpy(EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsMaxPseudoEnthalpy(EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsMinAcausalPseudoEnthalpy(EOSMultiParts * eos);
 
 double XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometerized(EOSMultiParts * eos, int piece_id);
 double XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometerized(EOSMultiParts * eos, int piece_id);
 double XLALSimNeutronStarEOSMultiPartsPieceMaxPressure(EOSMultiParts * eos, int piece_id);
 double XLALSimNeutronStarEOSMultiPartsPieceMinPressure(EOSMultiParts * eos, int piece_id);
-double XLALSimNeutronStarEOSMultiPartsPieceMinEnthalpy(EOSMultiParts * eos, int piece_id);
-double XLALSimNeutronStarEOSMultiPartsPieceMaxEnthalpy(EOSMultiParts * eos, int piece_id);
+double XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(EOSMultiParts * eos, int piece_id);
+double XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(EOSMultiParts * eos, int piece_id);
 double XLALSimNeutronStarEOSMultiPartsPieceMinAcausalPseudoEnthalpy(EOSMultiParts * eos, int piece_id);
 
 /* FUNCTIONS FOR INTERPOLATED EOS VALUES WITH GEOMETERIZED UNITS */
