@@ -1118,7 +1118,8 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     }
 
     eos->hmin = XLALSimNeutronStarEOSMinEnthalpy(eos->eos_part[0]);
-    eos->hmax = XLALSimNeutronStarEOSMinEnthalpy(eos->eos_part[eos->number_of_parts-1]);    eos->hMinAcausal = eosMultiParts_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
+    eos->hmax = XLALSimNeutronStarEOSMaxEnthalpy(eos->eos_part[eos->number_of_parts-1]);
+    eos->hMinAcausal = eosMultiParts_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
 
     char name[LALNameLength] = "unknown_eos_name";
     snprintf(eos->name, sizeof(eos->name), "%s", name);
