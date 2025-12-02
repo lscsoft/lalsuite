@@ -23,10 +23,10 @@ from gwpy.timeseries import TimeSeries
 import astropy.units as u
 import astropy.constants as ac
 
-from gwsignal.core.waveform import CompactBinaryCoalescenceGenerator
-import gwsignal.core.gw as gw
-from gwsignal.core.utils import add_params_units
-from gwsignal.core.eccentricity_utils import eccentric_anomaly_from_mean, true_anomaly_from_eccentric
+from ..core.waveform import CompactBinaryCoalescenceGenerator
+from ..core.gw import GravitationalWaveModes
+from ..core.utils import add_params_units
+from ..core.eccentricity_utils import eccentric_anomaly_from_mean, true_anomaly_from_eccentric
 
 
 def modes_to_k(modes: list[tuple[int, int]]) -> list[int]:
@@ -120,7 +120,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
             t,
         )
 
-        return gw.GravitationalWaveModes(hlm_reindexed)
+        return GravitationalWaveModes(hlm_reindexed)
 
     def generate_td_waveform(self, **parameters):
         theta, phi = parameters["inclination"], parameters["phi_ref"]
