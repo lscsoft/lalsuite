@@ -50,6 +50,8 @@ struct tagWeaveSetupData {
   SuperskyMetrics *metrics;
   /// Ephemeris data over time-span of segments
   EphemerisData *ephemerides;
+  /// Metric type (all-sky or directed)
+  CHAR *metric_type;
 };
 
 void XLALWeaveSetupDataClear(
