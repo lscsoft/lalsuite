@@ -2537,7 +2537,7 @@ double min_mass_kg = XLALSimNeutronStarFamMinimumMass(fam);
 double max_mass_kg = XLALSimNeutronStarMaximumMass(fam);
 double pmax = XLALSimNeutronStarCentralPressure(max_mass_kg, fam);
 double hmax = XLALSimNeutronStarEOSPseudoEnthalpyOfPressure(pmax, eos);
-double vsmax = XLALSimNeutronStarEOSSpeedOfSoundGeometerized(hmax, eos);
+double vsmax = XLALSimNeutronStarEOSSpeedOfSoundGeometrized(hmax, eos);
 
 // Read in max observed NS mass, which eos must support
 REAL8 ns_max_mass = 0.;
