@@ -818,7 +818,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeomet
  * @details If the equation of state contains N phase transitions,
  * the EOSMultiParts structure contains N+1 pieces with ID number
  * from 0 to N-1, and the function returns the gradient of the energy density
- * interpolated at a given pseudo-enthalpy h, for the equation of state piece number piece_id.
+ * interpolated at a given pressure, for the equation of state piece number piece_id.
  * @param p Pressure in geometrized units (m^-2).
  * @param eos Pointer to the equation of state EOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -1001,7 +1001,7 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressureGeometrized(do
 
 /**
  * @brief Returns the speed of sound in geometrized units (dimensionless)
- * at a given value of the pressure in geometrized units (m^-2).
+ * at a given value of the pseudo-enthalpy.
  * @details If the equation of state contains N phase transitions,
  * the EOSMultiParts structure contains N+1 pieces with ID number
  * from 0 to N-1. This function finds automatically which equation of state

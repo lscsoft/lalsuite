@@ -207,7 +207,7 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
     eos->data.tabular->log_hdat, eos->data.tabular->log_cs2dat, log_h,
     eos->data.tabular->log_cs2_of_log_h_acc);
 
-    return pow(exp(log_cs2), -0.5);
+    return pow(exp(log_cs2), 0.5);
 }
 
 //static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS *eos)
@@ -569,7 +569,6 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
                 double delP_im2 = pdat[i-1] - pdat[i-2];
                 double delP_im3 = pdat[i-2] - pdat[i-3];
                 if (delP_im2 /delP_im3 < 3.0){ // avoids idenfying pressure jumps around the PT that could false flag
-                    printf("jjj %li %.6e %.6e %.16e\n", i, gradient, old_gradient,delP_im2 /delP_im3);
                     number_phase_transition += 1;
                     pt_occurence[i] = true;
                 }
