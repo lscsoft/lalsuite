@@ -671,7 +671,7 @@ static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *ed
  * equation of state structure.
  * @details Read a data file specified by a path fname that contains either
  * i) 2 whitespace separated columns of equation of state data ("old" LAL EoS format)
- * with the pressure in Pa (first column) and the energy density in J/m^3 (second column).
+ * with the pressure in /km^2 (first column) and the energy density in /km^2 (second column).
  * ii) 9 whitespace separated columns of equation of state data ("new" LAL EoS format)
  * with the table index, the baryon density in /fm^3, the energy density in g/cm^3,
  * the pressure in dyn/cm^2, the baryon chemical potential in MeV, the electron
@@ -827,7 +827,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
  * equations of state with phase transitions.
  * @details Read a data file specified by a path fname that contains either
  * i) 2 whitespace separated columns of equation of state data ("old" LAL EoS format)
- * with the pressure in Pa (first column) and the energy density in J/m^3 (second column).
+ * with the pressure in /km^2 (first column) and the energy density in /km^2 (second column).
  * ii) 9 whitespace separated columns of equation of state data ("new" LAL EoS format)
  * with the table index, the baryon density in /fm^3, the energy density in g/cm^3,
  * the pressure in dyn/cm^2, the baryon chemical potential in MeV, the electron
