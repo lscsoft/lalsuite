@@ -27,13 +27,9 @@ def extrinsic(draw):
     gps_time = draw(
         st.floats(min_value=4e8, max_value=3786480018.0),  # 1992 to 2100
     )
-    theta_jn = draw(
-        st.floats(min_value=0., max_value=np.pi)
-    )
-    phase = draw(
-        st.floats(min_value=0., max_value=2*np.pi)
-    )
-    
+    theta_jn = draw(st.floats(min_value=0.0, max_value=np.pi))
+    phase = draw(st.floats(min_value=0.0, max_value=2 * np.pi))
+
     return right_ascension, declination, polarization, gps_time, theta_jn, phase
 
 
@@ -54,13 +50,11 @@ def test_modes_gen(gen, parameters):
     assert isinstance(hlm[(2, 2)], TimeSeries)
 
 
-
 @pytest.fixture
 def hphc_native_vs_gwsignal(gen, parameters):
-    
-    if gen.__class__.__name__ != 'TEOBResumSDALI':
+    if gen.__class__.__name__ != "TEOBResumSDALI":
         pytest.skip()
-    
+
     hp_gwsignal, hc_gwsignal = wfm.GenerateTDWaveform(parameters, gen)
 
     unitless_parameters = gen._strip_units(parameters)
@@ -83,17 +77,17 @@ def test_hphc_gen(hphc_native_vs_gwsignal):
 
 def test_plotting_hp(plot, hphc_native_vs_gwsignal):
     t, hp, hp_gwsignal, hc, hc_gwsignal = hphc_native_vs_gwsignal
-    
+
     if plot:
         import matplotlib.pyplot as plt
 
-        
-        plt.plot(hp_gwsignal.times, hp_gwsignal.real, label="$h_+$ reconstructed by gwsignal")
+        plt.plot(
+            hp_gwsignal.times, hp_gwsignal.real, label="$h_+$ reconstructed by gwsignal"
+        )
         plt.plot(t, hp, label="$h_+$ from TEOBResumS")
         plt.xlabel("$t$ [s]")
         plt.legend()
         plt.show()
-
 
 
 def test_plotting_hc(plot, hphc_native_vs_gwsignal):
@@ -102,7 +96,11 @@ def test_plotting_hc(plot, hphc_native_vs_gwsignal):
     if plot:
         import matplotlib.pyplot as plt
 
-        plt.plot(hc_gwsignal.times, hc_gwsignal.real, label="$h_\\times$ reconstructed by gwsignal")
+        plt.plot(
+            hc_gwsignal.times,
+            hc_gwsignal.real,
+            label="$h_\\times$ reconstructed by gwsignal",
+        )
         plt.plot(t, hc, label="$h_\\times$ from model")
         plt.xlabel("$t$ [s]")
         plt.legend()
@@ -111,13 +109,12 @@ def test_plotting_hc(plot, hphc_native_vs_gwsignal):
 
 def test_plotting_modes(plot, gen, parameters):
     hlm = wfm.GenerateTDModes(parameters, gen)
-    
+
     if plot:
-        import matplotlib.pyplot as plt 
+        import matplotlib.pyplot as plt
 
         plt.plot(hlm[(2, 2)].times, hlm[(2, 2)].real, label="$\\Re(h_{22})$")
         plt.plot(hlm[(3, 3)].times, hlm[(3, 3)].real, label="$\\Re(h_{32})$")
         plt.legend()
         plt.xlabel("$t$ [s]")
         plt.show()
-

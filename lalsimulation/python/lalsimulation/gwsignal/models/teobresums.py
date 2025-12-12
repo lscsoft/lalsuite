@@ -26,7 +26,10 @@ import astropy.constants as ac
 from ..core.waveform import CompactBinaryCoalescenceGenerator
 from ..core.gw import GravitationalWaveModes
 from ..core.utils import add_params_units
-from ..core.eccentricity_utils import eccentric_anomaly_from_mean, true_anomaly_from_eccentric
+from ..core.eccentricity_utils import (
+    eccentric_anomaly_from_mean,
+    true_anomaly_from_eccentric,
+)
 
 
 def modes_to_k(modes: list[tuple[int, int]]) -> list[int]:
@@ -36,29 +39,27 @@ def modes_to_k(modes: list[tuple[int, int]]) -> list[int]:
     """
     return [int(x[0] * (x[0] - 1) / 2 + x[1] - 2) for x in modes]
 
+
 # co-precessing modes allowed, assumes m>0
-TEOB_DALI_MODES_CP = [(2,2),(2,1),(3,3),(4,4)]
+TEOB_DALI_MODES_CP = [(2, 2), (2, 1), (3, 3), (4, 4)]
 
 # reversed dictionary to back-reference the modes
 # extended for precession
 TEOB_DALI_MODES_FROM_K = {}
 for mode in TEOB_DALI_MODES_CP:
     ell, emm = mode
-    TEOB_DALI_MODES_FROM_K[str(modes_to_k([mode])[0])]     = mode
-    TEOB_DALI_MODES_FROM_K['-'+str(modes_to_k([mode])[0])] = (ell, -emm)
-    TEOB_DALI_MODES_FROM_K[f'{ell}0']                      = (ell, 0)
+    TEOB_DALI_MODES_FROM_K[str(modes_to_k([mode])[0])] = mode
+    TEOB_DALI_MODES_FROM_K["-" + str(modes_to_k([mode])[0])] = (ell, -emm)
+    TEOB_DALI_MODES_FROM_K[f"{ell}0"] = (ell, 0)
+
 
 class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
-
     """
     Implements a wrapper for the eccentric, time domain
     EOB model TEOBResumS-DALI.
     """
 
-    def __init__(   self, 
-                    **kwargs
-                ):
-
+    def __init__(self, **kwargs):
         super().__init__()
 
         self.available_modes = TEOB_DALI_MODES_CP
@@ -77,8 +78,12 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
             "implementation": "C",
             "condition": False,
             "conditioning_routines": "gwsignal",
-            "extra_parameters": {"true_anomaly": u.rad}, # extra physical parameters (e.g., true anomaly, spin-induced multipoles etc)
-            "optional_parameters" : ['ModeArray']        # optional parameters for the generator (ModeArray, ...)
+            "extra_parameters": {
+                "true_anomaly": u.rad
+            },  # extra physical parameters (e.g., true anomaly, spin-induced multipoles etc)
+            "optional_parameters": [
+                "ModeArray"
+            ],  # optional parameters for the generator (ModeArray, ...)
         }
         return metadata
 
@@ -87,24 +92,27 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
         return modes_to_k(self.available_modes)
 
     def generate_td_modes(self, **parameters):
-        
         # remove fixed and model-dependent pars from parameters
         fixed_pars = {}
-        for key in self.metadata['optional_parameters']:
+        for key in self.metadata["optional_parameters"]:
             val = parameters.pop(key, None)
             if val is not None:
                 fixed_pars[key] = val
 
-        self.parameter_check(units_sys="Cosmo", extra_parameters=self.metadata['extra_parameters'], **parameters)
+        self.parameter_check(
+            units_sys="Cosmo",
+            extra_parameters=self.metadata["extra_parameters"],
+            **parameters,
+        )
         self.waveform_dict = self._strip_units(self.waveform_dict)
         self.waveform_dict.update(**fixed_pars)
         parameters = convert_parameters_to_teob(self.waveform_dict)
 
-        if 'ModeArray' in fixed_pars:
-            for mode in fixed_pars['ModeArray']: 
+        if "ModeArray" in fixed_pars:
+            for mode in fixed_pars["ModeArray"]:
                 if tuple(mode) not in TEOB_DALI_MODES_CP:
-                    raise ValueError(f'Available modes are {TEOB_DALI_MODES_CP}')
-            self.available_modes = fixed_pars['ModeArray']
+                    raise ValueError(f"Available modes are {TEOB_DALI_MODES_CP}")
+            self.available_modes = fixed_pars["ModeArray"]
 
         parameters["use_mode_lm"] = self._available_modes_teob_convention
 
@@ -112,9 +120,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
         hlm_reindexed = self._to_gwpy_series(
             {
-                TEOB_DALI_MODES_FROM_K[ind]:
-                mode_wf[0]
-                * np.exp(-1j * mode_wf[1])
+                TEOB_DALI_MODES_FROM_K[ind]: mode_wf[0] * np.exp(-1j * mode_wf[1])
                 for ind, mode_wf in htlm.items()
             },
             t,
@@ -124,25 +130,25 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
     def generate_td_waveform(self, **parameters):
         theta, phi = parameters["inclination"], parameters["phi_ref"]
-        hlm        = self.generate_td_modes(**parameters)
+        hlm = self.generate_td_modes(**parameters)
         hp, hc = hlm(theta, phi)
-        
+
         nu = compute_symmetric_mass_ratio(self.waveform_dict)
-        
+
         distance_rescaling = (
             (
                 nu
                 * (parameters["mass1"] + parameters["mass2"])
                 / parameters["distance"]
                 * ac.G
-                / ac.c ** 2
+                / ac.c**2
             )
             .to(u.dimensionless_unscaled)
             .value
         )
 
-        hp = - hp * distance_rescaling
-        hc = - hc * distance_rescaling
+        hp = -hp * distance_rescaling
+        hc = -hc * distance_rescaling
 
         hp, hc = TimeSeries(hp, name="hplus"), TimeSeries(hc, name="hcross")
         return hp, hc
@@ -175,19 +181,19 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
 
 def convert_parameters_to_teob(parameter_dict):
-
     fmin, dt = parameter_dict["f22_start"], parameter_dict["deltaT"]
     m1, m2 = parameter_dict["mass1"], parameter_dict["mass2"]
 
     if "true_anomaly" in parameter_dict:
-        if parameter_dict["meanPerAno"] != 0.:
+        if parameter_dict["meanPerAno"] != 0.0:
             raise ValueError("Please give only one of 'true_anomaly' or 'meanPerAno'")
         true_anomaly = parameter_dict["true_anomaly"]
     else:
         true_anomaly = true_anomaly_from_eccentric(
             eccentric_anomaly_from_mean(
                 parameter_dict["meanPerAno"], parameter_dict["eccentricity"]
-            ), parameter_dict["eccentricity"]
+            ),
+            parameter_dict["eccentricity"],
         )
 
     q = m1 / m2
