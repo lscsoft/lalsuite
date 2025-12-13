@@ -208,7 +208,7 @@ def resize_gwpy_timeseries(hp, start_id, new_length):
 
 def taper_gwpy_timeseries(h, taper_kind):
     """
-    Routine for tapering, following the XLALSimInspiralREAL8WaveTaper 
+    Routine for tapering, following the XLALSimInspiralREAL8WaveTaper
     routine from LALSuite. Tapering will not be performed if the waveform
     is shorter than 3 points.
 
@@ -216,19 +216,19 @@ def taper_gwpy_timeseries(h, taper_kind):
     ----------
     h: gwpy.TimeSeries
         TimeSeries object to be tapered
-    
+
     taper_kind: str
         Kind of taper to be applied. Choose from 'start', 'end', 'startend', 'none'
-    
+
     Returns
     -------
     h: gwpy.TimeSeries
         Tapered TimeSeries object
     """
-    
+
     safe = True                       # Flag to check if tapering is 'safe' (= long enough waveform)
     LALSIMULATION_RINGING_EXTENT = 19 # Harcoded value from LALSuite
-    
+
     if taper_kind not in ['start', 'end', 'startend', 'none']:
         raise ValueError("Taper kind not understood. Please choose from 'start', 'end', 'startend', 'none'")
 
@@ -245,12 +245,12 @@ def taper_gwpy_timeseries(h, taper_kind):
     if start == -1:
         warnings.warn("No signal found in the vector. Cannot taper.")
         return h
-    
+
     # look for last non-zero sample
     end = -1
     for idx, val in enumerate(h.value[::-1]):
         if val != 0:
-            end = len(h) - 1 - idx 
+            end = len(h) - 1 - idx
             break
     # if waveform is less than 3 points, print warning & set safe = 0
     if (end - start) <= 1:
@@ -277,7 +277,7 @@ def taper_gwpy_timeseries(h, taper_kind):
 
         if 'end' in taper_kind:
             pks,_  = find_peaks(abs(h[mid:end]))
-            
+
             # remove peaks before LALSIMULATION_RINGING_EXTENT
             pks = pks[end - mid - pks > LALSIMULATION_RINGING_EXTENT]
             # are there fewer than 2 peaks before the middle?

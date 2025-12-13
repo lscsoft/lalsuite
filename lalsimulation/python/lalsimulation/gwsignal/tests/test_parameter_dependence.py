@@ -251,10 +251,10 @@ def test_orbital_phase(gen, parameters, plot):
         import matplotlib.pyplot as plt
 
         plt.plot(hp.times, hp)
-        plt.plot(hp1.times, hp1, label="Shift by $1\pi/4$")
-        plt.plot(hp2.times, hp2, label="Shift by $2\pi/4$")
-        plt.plot(hp3.times, hp3, label="Shift by $3\pi/4$")
-        plt.plot(hp4.times, hp4, label="Shift by $4\pi/4$")
+        plt.plot(hp1.times, hp1, label=r"Shift by $1\pi/4$")
+        plt.plot(hp2.times, hp2, label=r"Shift by $2\pi/4$")
+        plt.plot(hp3.times, hp3, label=r"Shift by $3\pi/4$")
+        plt.plot(hp4.times, hp4, label=r"Shift by $4\pi/4$")
         plt.legend()
         plt.show()
 

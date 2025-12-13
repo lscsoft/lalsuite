@@ -14,7 +14,7 @@ def pytest_addoption(parser):
         "--plot",
         action="store_true",
         default=False,
-        help="""Produce plots for the tests that support them. 
+        help="""Produce plots for the tests that support them.
         """,
     )
 
@@ -25,7 +25,7 @@ def pytest_addoption(parser):
         action="append",
         default=[],
         help=f"""
-        Model to test. 
+        Model to test.
         If no model is specified, all available models are tested.
         Options: {available_models_str}.
         It is possible to specify multiple models, e.g. --model=TEOBResumSDALI --model=SEOBNRv5HM""",
