@@ -16,4 +16,5 @@ lalsimulation/gwsignal/core/teobresums
 lalsimulation/gwsignal/docs/source/conf
 lalsimulation/gwsignal/models
 lalsimulation/gwsignal/models/pyseobnr_model
+lalsimulation/gwsignal/models/teobresums
 lalsimulation/gwsignal/tests
