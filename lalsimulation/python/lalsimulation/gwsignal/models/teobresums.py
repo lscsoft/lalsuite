@@ -7,7 +7,6 @@
     inside the TEOBResumS repo
 """
 
-from __future__ import annotations
 import warnings
 from typing import Optional
 
@@ -32,10 +31,12 @@ from ..core.eccentricity_utils import (
 )
 
 
-def modes_to_k(modes: list[tuple[int, int]]) -> list[int]:
+def modes_to_k(modes):
     """TEOBResumS-specific function for converting
     a list of modes expressed as (l, m) into a list of single
     integers k.
+
+    Call signature: list[tuple[int, int]] -> list[int]
     """
     return [int(x[0] * (x[0] - 1) / 2 + x[1] - 2) for x in modes]
 
