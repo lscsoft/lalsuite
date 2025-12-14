@@ -9,28 +9,6 @@ import astropy.units as u
 import numpy as np
 from gwpy.timeseries import TimeSeries
 
-from hypothesis import strategies as st
-from hypothesis import given, settings, example, HealthCheck
-
-
-@st.composite
-def extrinsic(draw):
-    right_ascension = draw(
-        st.floats(min_value=0, max_value=2 * np.pi),
-    )
-    declination = draw(
-        st.floats(min_value=0, max_value=np.pi),
-    )
-    polarization = draw(
-        st.floats(min_value=0, max_value=2 * np.pi),
-    )
-    gps_time = draw(
-        st.floats(min_value=4e8, max_value=3786480018.0),  # 1992 to 2100
-    )
-    theta_jn = draw(st.floats(min_value=0.0, max_value=np.pi))
-    phase = draw(st.floats(min_value=0.0, max_value=2 * np.pi))
-
-    return right_ascension, declination, polarization, gps_time, theta_jn, phase
 
 
 def test_modes_dictionary():
