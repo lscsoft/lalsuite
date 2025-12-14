@@ -1,6 +1,6 @@
 import pytest
-from gwsignal.models import teobresums
-from gwsignal.models import pyseobnr_model
+from ..models import teobresums
+from ..models import pyseobnr_model
 import astropy.units as u
 
 ALL_MODELS = {

@@ -1,7 +1,7 @@
 import pytest
 
-from gwsignal.core import waveform as wfm
-from gwsignal.models import teobresums
+from ..core import waveform as wfm
+from ..models import teobresums
 
 import astropy.units as u
 import numpy as np

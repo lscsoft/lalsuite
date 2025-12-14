@@ -1,5 +1,5 @@
-from gwsignal.core import waveform as wfm
-from gwsignal.core import eccentricity_utils as ecc
+from ..core import waveform as wfm
+from ..core import eccentricity_utils as ecc
 import astropy.units as u
 from gw_eccentricity import measure_eccentricity
 from pycbc.filter import match, optimized_match
