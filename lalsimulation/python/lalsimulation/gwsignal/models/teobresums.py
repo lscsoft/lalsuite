@@ -121,7 +121,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
         hlm_reindexed = self._to_gwpy_series(
             {
-                TEOB_DALI_MODES_FROM_K[ind]: mode_wf[0] * np.exp(-1j * mode_wf[1])
+                TEOB_DALI_MODES_FROM_K[ind]: - mode_wf[0] * np.exp(-1j * mode_wf[1])
                 for ind, mode_wf in htlm.items()
             },
             t,
@@ -148,8 +148,8 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
             .value
         )
 
-        hp = -hp * distance_rescaling
-        hc = -hc * distance_rescaling
+        hp = hp * distance_rescaling
+        hc = hc * distance_rescaling
 
         hp, hc = TimeSeries(hp, name="hplus"), TimeSeries(hc, name="hcross")
         return hp, hc
