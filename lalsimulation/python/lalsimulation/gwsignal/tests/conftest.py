@@ -1,12 +1,4 @@
 import pytest
-from ..models import teobresums
-from ..models import pyseobnr_model
-import astropy.units as u
-
-ALL_MODELS = {
-    "TEOBResumSDALI": teobresums.TEOBResumSDALI,
-    "SEOBNRv5HM": pyseobnr_model.SEOBNRv5HM,
-}
 
 
 def pytest_addoption(parser):
@@ -18,8 +10,6 @@ def pytest_addoption(parser):
         """,
     )
 
-    available_models_str = ", ".join(list(ALL_MODELS.keys()))
-
     parser.addoption(
         "--model",
         action="append",
@@ -27,7 +17,6 @@ def pytest_addoption(parser):
         help=f"""
         Model to test.
         If no model is specified, all available models are tested.
-        Options: {available_models_str}.
         It is possible to specify multiple models, e.g. --model=TEOBResumSDALI --model=SEOBNRv5HM""",
     )
 
@@ -38,6 +27,14 @@ def plot(request):
 
 
 def pytest_generate_tests(metafunc):
+    from ..models import teobresums
+    from ..models import pyseobnr_model
+
+    ALL_MODELS = {
+        "TEOBResumSDALI": teobresums.TEOBResumSDALI,
+        "SEOBNRv5HM": pyseobnr_model.SEOBNRv5HM,
+    }
+
     if "gen" in metafunc.fixturenames:
         models = metafunc.config.getoption("model")
 
@@ -62,6 +59,8 @@ def gen(request):
 
 @pytest.fixture
 def parameters():
+    import astropy.units as u
+
     return {
         "mass1": 60.0 * u.solMass,
         "mass2": 50.0 * u.solMass,

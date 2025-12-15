@@ -1,28 +1,28 @@
 import pytest
 
-from ...core import waveform as wfm
-from ...models import teobresums
-
-import EOBRun_module
-
-import astropy.units as u
-import numpy as np
-from gwpy.timeseries import TimeSeries
 
 
-
+@pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_modes_dictionary():
+    from ...models import teobresums
+
     assert len(teobresums.TEOB_DALI_MODES) == len(teobresums.TEOB_DALI_MODES_FROM_K)
 
-
+@pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_modes_dictionary_backreference():
+    from ...models import teobresums
+
     for mode in teobresums.TEOB_DALI_MODES:
         assert (
             teobresums.TEOB_DALI_MODES_FROM_K[teobresums.modes_to_k([mode])[0]] == mode
         )
 
-
+@pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_modes_gen(gen, parameters):
+
+    from ...core import waveform as wfm
+    from gwpy.timeseries import TimeSeries
+
     hlm = wfm.GenerateTDModes(parameters, gen)
 
     assert isinstance(hlm[(2, 2)], TimeSeries)
@@ -30,6 +30,11 @@ def test_modes_gen(gen, parameters):
 
 @pytest.fixture
 def hphc_native_vs_gwsignal(gen, parameters):
+
+    from ...core import waveform as wfm
+    from ...models import teobresums
+    import EOBRun_module
+
     if gen.__class__.__name__ != "TEOBResumSDALI":
         pytest.skip()
 
@@ -45,7 +50,9 @@ def hphc_native_vs_gwsignal(gen, parameters):
     return t, hp, hp_gwsignal, hc, hc_gwsignal
 
 
+@pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_hphc_gen(hphc_native_vs_gwsignal):
+    import numpy as np
     t, hp, hp_gwsignal, hc, hc_gwsignal = hphc_native_vs_gwsignal
 
     assert np.allclose(hp, hp_gwsignal, atol=1e-30)
@@ -53,6 +60,7 @@ def test_hphc_gen(hphc_native_vs_gwsignal):
     assert np.allclose(t, hp_gwsignal.times.value)
 
 
+@pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_plotting_hp(plot, hphc_native_vs_gwsignal):
     t, hp, hp_gwsignal, hc, hc_gwsignal = hphc_native_vs_gwsignal
 
@@ -68,6 +76,7 @@ def test_plotting_hp(plot, hphc_native_vs_gwsignal):
         plt.show()
 
 
+@pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_plotting_hc(plot, hphc_native_vs_gwsignal):
     t, hp, hp_gwsignal, hc, hc_gwsignal = hphc_native_vs_gwsignal
 
@@ -84,8 +93,10 @@ def test_plotting_hc(plot, hphc_native_vs_gwsignal):
         plt.legend()
         plt.show()
 
-
+@pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_plotting_modes(plot, gen, parameters):
+    from ...core import waveform as wfm
+
     hlm = wfm.GenerateTDModes(parameters, gen)
 
     if plot:
