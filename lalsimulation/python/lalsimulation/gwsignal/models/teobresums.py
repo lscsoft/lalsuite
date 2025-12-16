@@ -1,10 +1,9 @@
-"""Notes on TEOBResumS installation (TEMPORARY):
+"""Notes on TEOBResumS installation:
 
-- clone it from https://git.ligo.org/rossella.gamba/teobresums
-- checkout the branch `dev/DALI`
-- within the `Python` folder, run `make`
-- export the `PYTHONPATH` environment variable to the `Python` folder
-    inside the TEOBResumS repo
+- Clone the repository from https://git.ligo.org/waveforms/software/teobresums/
+- Checkout the branch LVK-Dali
+- Within the Python folder, run pip install .
+
 """
 
 import warnings
