@@ -131,7 +131,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
     def generate_td_waveform(self, **parameters):
         theta, phi = parameters["inclination"], parameters["phi_ref"]
         hlm = self.generate_td_modes(**parameters)
-        hp, hc = hlm(theta, np.pi/2. - phi)
+        hp, hc = hlm(theta, np.pi / 2. * u.rad - phi)
 
         nu = compute_symmetric_mass_ratio(self.waveform_dict)
 
