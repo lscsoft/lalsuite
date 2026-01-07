@@ -1107,21 +1107,21 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
             size_t ndat_piece = eos->eos_part[i]->data.tabular->ndat;
             if (i == 0){
                 for (size_t j = 0 ; j < ndat_piece; j++){
-                    hdat_recal[ndat_total] =  exp(eos->eos_part[i]->data.tabular->log_hdat[j]);
-                    edat_recal[ndat_total] =  exp(eos->eos_part[i]->data.tabular->log_edat[j]);
-                    pdat_recal[ndat_total] =  exp(eos->eos_part[i]->data.tabular->log_pdat[j]);
+                    hdat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_hdat[j]);
+                    edat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_edat[j]);
+                    pdat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_pdat[j]);
                     ndat_total += 1;
                 }
             } else {
                 for (size_t j = 0 ; j < ndat_piece; j++){
                     if (j == 0) {
-                        hdat_recal[ndat_total] = exp(eos->eos_part[i-1]->data.tabular->log_hdat[eos->eos_part[i-1]->data.tabular->ndat - 1]);
+                        hdat_recal[ndat_total] = hdat_recal[ndat_total-j-1];
                         pdat_recal[ndat_total] = exp(eos->eos_part[i-1]->data.tabular->log_pdat[eos->eos_part[i-1]->data.tabular->ndat - 1]);
                     } else {
-                        hdat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_hdat[j]) - exp(eos->eos_part[i]->data.tabular->log_hdat[0]) + exp(eos->eos_part[i-1]->data.tabular->log_hdat[eos->eos_part[i-1]->data.tabular->ndat - 1]);
-                        pdat_recal[ndat_total] =  exp(eos->eos_part[i]->data.tabular->log_pdat[j]);
+                        hdat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_hdat[j]) - exp(eos->eos_part[i]->data.tabular->log_hdat[0]) + hdat_recal[ndat_total-j-1];
+                        pdat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_pdat[j]);
                     }
-                    edat_recal[ndat_total] =  exp(eos->eos_part[i]->data.tabular->log_edat[j]);
+                    edat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_edat[j]);
                     ndat_total += 1;
                 }
             }
