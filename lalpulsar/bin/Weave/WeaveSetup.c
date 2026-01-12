@@ -39,14 +39,14 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    CHAR *metric_type_str, *segment_list, *sft_files, *detector_motion, *ephem_earth, *ephem_sun, *output_file;
+    CHAR *search_type, *segment_list, *sft_files, *detector_motion, *ephem_earth, *ephem_sun, *output_file;
     LALStringVector *detectors;
     LIGOTimeGPS ref_time;
     LIGOTimeGPSRange first_segment;
     REAL8 segment_gap;
     UINT4 segment_count, spindowns;
   } uvar_struct = {
-    .metric_type_str = XLALStringDuplicate( "all-sky" ),
+    .search_type = XLALStringDuplicate( "all-sky" ),
     .detector_motion = XLALStringDuplicate( "spin+orbit" ),
     .ephem_earth = XLALStringDuplicate( "earth00-40-DE405.dat.gz" ),
     .ephem_sun = XLALStringDuplicate( "sun00-40-DE405.dat.gz" ),
@@ -97,8 +97,8 @@ int main( int argc, char *argv[] )
   //
   lalUserVarHelpOptionSubsection = "Parameter-space metric computation";
   XLALRegisterUvarMember(
-    metric_type_str, STRING, 'T', OPTIONAL,
-    "The type of metrics to be computed (all-sky/directed search)."
+    search_type, STRING, 'T', OPTIONAL,
+    "The type of search metrics to be computed (all-sky/directed search)."
   );
   XLALRegisterUvarMember(
     ref_time, EPOCH, 'r', NODEFAULT,
@@ -167,8 +167,8 @@ int main( int argc, char *argv[] )
                     uvar->spindowns > 0,
                     UVAR_STR( spindowns ) " must be strictly positive" );
   XLALUserVarCheck( &should_exit,
-                    strcmp( uvar->metric_type_str, "all-sky" ) || strcmp( uvar->metric_type_str, "directed" ),
-                    UVAR_STR( metric_type_str ) " must be 'all-sky' or 'directed'" );
+                    strcmp( uvar->search_type, "all-sky" ) == 0 || strcmp( uvar->search_type, "directed" ) == 0,
+                    UVAR_STR( search_type ) " must be 'all-sky' or 'directed'" );
 
   // Exit if required
   if ( should_exit ) {
@@ -182,7 +182,7 @@ int main( int argc, char *argv[] )
   WeaveSetupData XLAL_INIT_DECL( setup );
 
   // Copy metric type
-  setup.metric_type = XLALStringDuplicate( uvar->metric_type_str );
+  setup.metric_type = XLALStringDuplicate( uvar->search_type );
   XLAL_CHECK_MAIN( setup.metric_type != NULL, XLAL_ENOMEM );
 
   // Copy and sort list of detector names
@@ -298,8 +298,12 @@ int main( int argc, char *argv[] )
   //   metrics can later be rescaled by search code
   LogPrintf( LOG_NORMAL, "Computing reduced supersky metrics ...\n" );
   const double fiducial_freq = 100.0;
+
   /// Metric type for all-sky/directed search)
-  const SuperskyMetricType metric_type = ( strcmp( uvar->metric_type_str, "all-sky" ) == 0 ) ? SUPERSKY_METRIC_TYPE : SUPERSKY_DIRECTED_METRIC_TYPE;
+  SuperskyMetricType metric_type;
+  metric_type = ( strcmp( uvar->search_type, "all-sky" ) == 0 ) ? SUPERSKY_METRIC_TYPE : SUPERSKY_DIRECTED_METRIC_TYPE;
+  LogPrintf( LOG_NORMAL, "Search type: '%s'\n", uvar->search_type );
+
   setup.metrics = XLALComputeSuperskyMetrics( metric_type, uvar->spindowns, &setup.ref_time, setup.segments, fiducial_freq, &detector_info, NULL, detector_motion, setup.ephemerides );
   XLAL_CHECK_MAIN( setup.metrics != NULL, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Finished computing reduced supersky metrics\n" );
