@@ -57,10 +57,10 @@ int main( int argc, char *argv[] )
     BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, mean2F_hgrm, segment_info, simulate_search, time_search, cache_all_gc, strict_spindown_bounds;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_sqrtSX, *injections, *Fstat_assume_sqrtSX, *lrs_oLGX;
-    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
+    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_fraction, lrs_Fstar0sc, nc_2Fth;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     REAL8Vector *random_injection;
-    UINT4 sky_patch_count, sky_patch_index, freq_partitions, f1dot_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size;
+    UINT4 sky_patch_count, sky_patch_index, freq_partitions, f1dot_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size, ckpt_output_exit_code;
     int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics, recalc_statistics;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
@@ -315,10 +315,14 @@ int main( int argc, char *argv[] )
     "Write checkpoints of output results after this time period (in seconds) has elapsed. "
   );
   XLALRegisterUvarMember(
-    ckpt_output_exit, REAL8, 0, DEVELOPER,
-    "Write a checkpoint of output results after this fraction of the search has been completed, then exit. "
+    ckpt_output_fraction, REAL8, 0, DEVELOPER,
+    "Write a checkpoint of output results after this fraction of the search has been completed. "
     "Arguments to this option must be in the range [0,1]. "
     "(This option is only really useful for testing the checkpointing feature.) "
+  );
+  XLALRegisterUvarMember(
+    ckpt_output_exit_code, UINT4, 'Q', DEVELOPER,
+    "If >0, exit with this code immediately after writing first checkpoint of output results. "
   );
   //
   // - Esoterica
@@ -441,14 +445,14 @@ int main( int argc, char *argv[] )
   // - Checkpointing
   //
   XLALUserVarCheck( &should_exit,
-                    !UVAR_ALLSET2( ckpt_output_period, ckpt_output_exit ),
-                    UVAR_STR2AND( ckpt_output_period, ckpt_output_exit ) " are mutually exclusive" );
+                    !UVAR_ALLSET2( ckpt_output_period, ckpt_output_fraction ),
+                    UVAR_STR2AND( ckpt_output_period, ckpt_output_fraction ) " are mutually exclusive" );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( ckpt_output_period ) || uvar->ckpt_output_period > 0,
                     UVAR_STR( ckpt_output_period ) " must be strictly positive" );
   XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( ckpt_output_exit ) || ( 0 <= uvar->ckpt_output_exit && uvar->ckpt_output_exit <= 1 ),
-                    UVAR_STR( ckpt_output_exit ) " must be in range [0,1]" );
+                    !UVAR_SET( ckpt_output_fraction ) || ( 0 <= uvar->ckpt_output_fraction && uvar->ckpt_output_fraction <= 1 ),
+                    UVAR_STR( ckpt_output_fraction ) " must be in range [0,1]" );
   //
   // - Esoterica
   //
@@ -977,6 +981,9 @@ int main( int argc, char *argv[] )
   BOOLEAN wall_prog_remain_print = 0;
   double wall_prog_total_prev = 0;
 
+  // Exit code
+  int exit_code = EXIT_SUCCESS;
+
   // Print initial progress
   LogPrintf( LOG_NORMAL, "Starting main loop at %.3g%% complete, peak memory %.1fMB\n", XLALWeaveSearchIteratorProgress( main_loop_itr ), XLALGetPeakHeapUsageMB() );
 
@@ -1130,8 +1137,8 @@ int main( int argc, char *argv[] )
 
       // Decide whether to checkpoint output results
       const BOOLEAN do_ckpt_output_period = UVAR_SET( ckpt_output_period ) && wall_elapsed - wall_ckpt_elapsed >= uvar->ckpt_output_period;
-      const BOOLEAN do_ckpt_output_exit = UVAR_SET( ckpt_output_exit ) && prog_per_cent >= 100.0 * uvar->ckpt_output_exit;
-      if ( do_ckpt_output_period || do_ckpt_output_exit ) {
+      const BOOLEAN do_ckpt_output_fraction = UVAR_SET( ckpt_output_fraction ) && prog_per_cent >= 100.0 * uvar->ckpt_output_fraction;
+      if ( do_ckpt_output_period || do_ckpt_output_fraction ) {
 
         // Open output checkpoint file
         FITSFile *file = XLALFITSFileOpenWrite( uvar->ckpt_output_file );
@@ -1155,8 +1162,9 @@ int main( int argc, char *argv[] )
         // Print progress
         LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' at %.3g%% complete, elapsed %.1f sec\n", uvar->ckpt_output_file, prog_per_cent, wall_elapsed );
 
-        // Exit main loop, if checkpointing was triggered by 'do_ckpt_output_exit'
-        if ( do_ckpt_output_exit ) {
+        // Exit main loop, if requested
+        if ( uvar->ckpt_output_exit_code > 0 ) {
+          exit_code = uvar->ckpt_output_exit_code;
           LogPrintf( LOG_NORMAL, "Exiting main seach loop after writing output checkpoint\n" );
           XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_CKPT, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );
           break;
@@ -1358,7 +1366,7 @@ int main( int argc, char *argv[] )
     LogPrintf( LOG_NORMAL, "Finished but search not completed!\n" );
   }
 
-  return EXIT_SUCCESS;
+  return exit_code;
 
 }
 
