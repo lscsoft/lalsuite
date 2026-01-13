@@ -87,7 +87,7 @@ struct tagEOSMultiParts{
   double hmax;
   double hmin;
   double hMinAcausal;
-  LALSimNeutronStarEOS ** eos_part;
+  LALSimNeutronStarEOS ** eos_piece;
   void (*free) (EOSMultiParts * myself);
 };
 
@@ -280,6 +280,19 @@ double XLALSimNeutronStarEOSMaxPressureGeometrized(LALSimNeutronStarEOS *
 }
 
 /**
+ * @brief Returns the minimum pressure of the EOS in geometrized units m^-2.
+ * @param eos Pointer to the EOS structure.
+ * @return The minimum pressure of the EOS in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMinPressureGeometrized(LALSimNeutronStarEOS * eos)
+{
+    double pmin;
+    double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos);
+    pmin = eos->p_of_h(hmin, eos);
+    return pmin;
+}
+
+/**
  * @brief Returns the maximum pressure of the EOS in Pa.
  * @param eos Pointer to the EOS structure.
  * @return The maximum pressure of the EOS in Pa.
@@ -290,6 +303,21 @@ double XLALSimNeutronStarEOSMaxPressure(LALSimNeutronStarEOS * eos)
     pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos);
     pmax /= LAL_G_C4_SI;
     return pmax;
+}
+
+
+/**
+ * @brief Returns the minimum pressure of the EOS in Pa.
+ * @param eos Pointer to the EOS structure.
+ * @return The minimum pressure of the EOS in Pa.
+ */
+double XLALSimNeutronStarEOSMinPressure(LALSimNeutronStarEOS * eos)
+{
+    double pmin;
+    double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos);
+    pmin = eos->p_of_h(hmin, eos);
+    pmin /= LAL_G_C4_SI;
+    return pmin;
 }
 
 /**
@@ -326,6 +354,64 @@ double XLALSimNeutronStarEOSMinPseudoEnthalpy(LALSimNeutronStarEOS *
     return eos->hmin;
 }
 
+
+/**
+ * @brief Returns the maximum energy density of the EOS in geometrized units m^-2.
+ * @param eos Pointer to the EOS structure.
+ * @return The maximum energy density of the EOS in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMaxEnergyDensityGeometrized(LALSimNeutronStarEOS *
+    eos)
+{
+    double pmax;
+    pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos);
+    double e = eos->e_of_p(pmax, eos);
+    return e;
+}
+
+
+/**
+ * @brief Returns the minimum energy density of the EOS in geometrized units m^-2.
+ * @param eos Pointer to the EOS structure.
+ * @return The minimum energy density of the EOS in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMinEnergyDensityGeometrized(LALSimNeutronStarEOS *
+    eos)
+{
+    double pmin;
+    pmin = XLALSimNeutronStarEOSMinPressureGeometrized(eos);
+    double e = eos->e_of_p(pmin, eos);
+    return e;
+}
+
+/**
+ * @brief Returns the maximum rest-mass density of the EOS in geometrized units m^-2.
+ * @param eos Pointer to the EOS structure.
+ * @return The maximum rest-mass density of the EOS in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMaxRestMassDensityGeometrized(LALSimNeutronStarEOS *
+    eos)
+{
+    double rho;
+    double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos);
+    rho = eos->rho_of_h(hmax, eos);
+    return rho;
+}
+
+
+/**
+ * @brief Returns the minimum rest-mass density of the EOS in geometrized units m^-2.
+ * @param eos Pointer to the EOS structure.
+ * @return The minimum rest-mass density of the EOS in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMinRestMassDensityGeometrized(LALSimNeutronStarEOS *
+    eos)
+{
+    double rho;
+    double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos);
+    rho = eos->rho_of_h(hmin, eos);
+    return rho;
+}
 
 /**
  * @brief The name of the equation of state.
@@ -366,9 +452,12 @@ int XLALSimNeutronStarEOSMultiPartsNumber(EOSMultiParts * eos)
  */
 LALSimNeutronStarEOS * XLALSimNeutronStarEOSPart(EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id < 0 || piece_id >= eos->number_of_parts) XLAL_ERROR_NULL(XLAL_EDOM);
-    LALSimNeutronStarEOS * eos_part = eos->eos_part[piece_id];
-    return eos_part;
+    if (piece_id < 0 || piece_id >= eos->number_of_parts) {
+        XLAL_ERROR_NULL(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
+    LALSimNeutronStarEOS * eos_piece = eos->eos_piece[piece_id];
+    return eos_piece;
 }
 
 
@@ -451,6 +540,65 @@ double XLALSimNeutronStarEOSMultiPartsMinAcausalPseudoEnthalpy(EOSMultiParts * e
 }
 
 /**
+ * @brief Returns the maximum energy density of the equation of state in geometrized units m^-2.
+ * @param eos Pointer to the equation of state EOSMultiParts structure.
+ * @return The maximum energy density of the equation of state in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMultiPartsMaxEnergyDensityGeometrized(EOSMultiParts * eos)
+{
+    double e;
+    int max_id_piece = XLALSimNeutronStarEOSMultiPartsNumber(eos) - 1 ;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, max_id_piece);
+    double pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos_piece);
+    e = eos_piece->e_of_p(pmax, eos_piece);
+    return e;
+}
+
+/**
+ * @brief Returns the minimum energy density of the equation of state in geometrized units m^-2.
+ * @param eos Pointer to the equation of state EOSMultiParts structure.
+ * @return The minimum energy density of the equation of state in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMultiPartsMinEnergyDensityGeometrized(EOSMultiParts * eos)
+{
+    double e;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, 0);
+    double pmin =XLALSimNeutronStarEOSMinPressureGeometrized(eos_piece);
+    e = eos_piece->e_of_p(pmin, eos_piece);
+    return e;
+}
+
+/**
+ * @brief Returns the maximum rest-mass density of the equation of state in geometrized units m^-2.
+ * @param eos Pointer to the equation of state EOSMultiParts structure.
+ * @return The maximum rest-mass of the equation of state in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMultiPartsMaxRestMassDensityGeometrized(EOSMultiParts * eos)
+{
+    double rho;
+    int max_id_piece = XLALSimNeutronStarEOSMultiPartsNumber(eos) - 1 ;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, max_id_piece);
+    double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos_piece);
+    rho = eos_piece->rho_of_h(hmax, eos_piece);
+    return rho;
+}
+
+/**
+ * @brief Returns the minimum rest-mass of the equation of state in geometrized units m^-2.
+ * @param eos Pointer to the equation of state EOSMultiParts structure.
+ * @return The minimum rest-mass of the equation of state in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMultiPartsMinRestMassDensityGeometrized(EOSMultiParts * eos)
+{
+    double rho;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, 0);
+    double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_piece);
+    rho = eos_piece->rho_of_h(hmin, eos_piece);
+    return rho;
+}
+
+
+/**
  * @brief Returns the maximum pressure of the ith equation of state piece
  * of EOSMultiParts structure in geometrized units m^-2.
  * @details If the equation of state contains N phase transitions,
@@ -464,9 +612,12 @@ double XLALSimNeutronStarEOSMultiPartsMinAcausalPseudoEnthalpy(EOSMultiParts * e
  */
 double XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMaxPressureGeometrized(eos_part);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    return XLALSimNeutronStarEOSMaxPressureGeometrized(eos_piece);
 }
 
 /**
@@ -483,7 +634,10 @@ double XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(EOSMultiParts 
  */
 double XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
     double hmin = XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id);
     return XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpyGeometrized(hmin, eos, piece_id);
 }
@@ -501,10 +655,13 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(EOSMultiParts 
  */
 double XLALSimNeutronStarEOSMultiPartsPieceMaxPressure(EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
     double pmax;
-    pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos_part);
+    pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos_piece);
     pmax /= LAL_G_C4_SI;
     return pmax;
 }
@@ -522,7 +679,10 @@ double XLALSimNeutronStarEOSMultiPartsPieceMaxPressure(EOSMultiParts * eos, int 
  */
 double XLALSimNeutronStarEOSMultiPartsPieceMinPressure(EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
     double hmin = XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id);
     double pmin;
     pmin = XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpyGeometrized(hmin, eos, piece_id);
@@ -542,9 +702,12 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinPressure(EOSMultiParts * eos, int 
  * @return The minimum pseudo-enthalpy of the equation of state piece.
  */
 double XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(EOSMultiParts * eos, int piece_id){
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_part);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    return XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_piece);
 }
 
 /**
@@ -559,9 +722,12 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(EOSMultiParts * eos
  * @return The maximum pseudo-enthalpy of the equation of state piece.
  */
 double XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(EOSMultiParts * eos, int piece_id){
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos_part);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    return XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos_piece);
 }
 
 /**
@@ -576,12 +742,105 @@ double XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(EOSMultiParts * eos
  * @return The minimum acausal pseudo-enthalpy of the equation of state piece.
  */
 double XLALSimNeutronStarEOSMultiPartsPieceMinAcausalPseudoEnthalpy(EOSMultiParts * eos, int piece_id){
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(eos_part);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    return XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(eos_piece);
 }
 
+/**
+ * @brief Returns the maximum energy density of the ith equation of sstate piece
+ * of EOSMultiParts structure in geometrized units.
+ * @details If the equation of state contains N phase transitions,
+ * the EOSMultiParts structure contains N+1 pieces with ID number
+ * from 0 to N-1, and the function returns the maximum pressure (Pa)
+ * for the equation of state piece number piece_id.
+ * @param eos Pointer to the equation of state EOSMultiParts structure.
+ * @param piece_id Integer to the equation of state piece ID number.
+ * @return The maximum energy density of the equation of state piece in geometrized units.
+ */
+double XLALSimNeutronStarEOSMultiPartsPieceMaxEnergyDensityGeometrized(EOSMultiParts * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
+    double emax;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    emax = XLALSimNeutronStarEOSMaxEnergyDensityGeometrized(eos_piece);
+    return emax;
+}
 
+/**
+ * @brief Returns the minimum energy density of the ith equation of sstate piece
+ * of EOSMultiParts structure in geometrized units.
+ * @details If the equation of state contains N phase transitions,
+ * the EOSMultiParts structure contains N+1 pieces with ID number
+ * from 0 to N-1, and the function returns the maximum pressure (Pa)
+ * for the equation of state piece number piece_id.
+ * @param eos Pointer to the equation of state EOSMultiParts structure.
+ * @param piece_id Integer to the equation of state piece ID number.
+ * @return The minimum energy density of the equation of state piece in geometrized units.
+ */
+double XLALSimNeutronStarEOSMultiPartsPieceMinEnergyDensityGeometrized(EOSMultiParts * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
+    double emin;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    emin = XLALSimNeutronStarEOSMinEnergyDensityGeometrized(eos_piece);
+    return emin;
+}
+
+/**
+ * @brief Returns the maximum rest-mass density of the ith equation of sstate piece
+ * of EOSMultiParts structure in geometrized units.
+ * @details If the equation of state contains N phase transitions,
+ * the EOSMultiParts structure contains N+1 pieces with ID number
+ * from 0 to N-1, and the function returns the maximum pressure (Pa)
+ * for the equation of state piece number piece_id.
+ * @param eos Pointer to the equation of state EOSMultiParts structure.
+ * @param piece_id Integer to the equation of state piece ID number.
+ * @return The maximum rest-mass density of the equation of state piece in geometrized units.
+ */
+double XLALSimNeutronStarEOSMultiPartsPieceMaxRestMassDensityGeometrized(EOSMultiParts * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
+    double rhomax;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    rhomax = XLALSimNeutronStarEOSMaxRestMassDensityGeometrized(eos_piece);
+    return rhomax;
+}
+
+/**
+ * @brief Returns the minimum rest-mass density of the ith equation of sstate piece
+ * of EOSMultiParts structure in geometrized units.
+ * @details If the equation of state contains N phase transitions,
+ * the EOSMultiParts structure contains N+1 pieces with ID number
+ * from 0 to N-1, and the function returns the maximum pressure (Pa)
+ * for the equation of state piece number piece_id.
+ * @param eos Pointer to the equation of state EOSMultiParts structure.
+ * @param piece_id Integer to the equation of state piece ID number.
+ * @return The minimum rest-mass density of the equation of state piece in geometrized units.
+ */
+double XLALSimNeutronStarEOSMultiPartsPieceMinRestMassDensityGeometrized(EOSMultiParts * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    }
+    double rhomin;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    rhomin = XLALSimNeutronStarEOSMinRestMassDensityGeometrized(eos_piece);
+    return rhomin;
+}
 /* FUNCTIONS FOR INTERPOLATED EOS VALUES WITH GEOMETRIZED UNITS */
 
 /**
@@ -713,10 +972,17 @@ double XLALSimNeutronStarEOSSpeedOfSoundGeometrized(double h,
 double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPressureGeometrized(double p,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS piece interpolation range.\n");
+    }
     double e;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    e = eos_part->e_of_p(p, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    e = eos_piece->e_of_p(p, eos_piece);
     return e;
 }
 
@@ -735,10 +1001,17 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPressureGeometrized(do
 double XLALSimNeutronStarEOSMultiPartsPiecePseudoEnthalpyOfPressureGeometrized(double p,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS piece interpolation range.\n");
+    }
     double h;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    h = eos_part->h_of_p(p, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    h = eos_piece->h_of_p(p, eos_piece);
     return h;
 }
 
@@ -758,10 +1031,17 @@ double XLALSimNeutronStarEOSMultiPartsPiecePseudoEnthalpyOfPressureGeometrized(d
 double XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpyGeometrized(double h,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS piece interpolation range.\n");
+    }
     double p;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    p = eos_part->p_of_h(h, eos_part); // TODO put some safeguards if interpolatino cannot be made ??
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    p = eos_piece->p_of_h(h, eos_piece); // TODO put some safeguards if interpolatino cannot be made ??
     return p;
 }
 
@@ -780,10 +1060,17 @@ double XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpyGeometrized(d
 double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometrized(double
     h, EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS piece interpolation range.\n");
+    }
     double e;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    e = eos_part->e_of_h(h, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    e = eos_piece->e_of_h(h, eos_piece);
     return e;
 }
 
@@ -803,10 +1090,17 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometri
 double XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeometrized(double
     h, EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS piece interpolation range.\n");
+    }
     double rho;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    rho = eos_part->rho_of_h(h, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    rho = eos_piece->rho_of_h(h, eos_piece);
     return rho;
 }
 
@@ -828,10 +1122,17 @@ double XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeomet
 double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityDerivOfPressureGeometrized(double p,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS piece interpolation range.\n");
+    }
     double dedp;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    dedp = eos_part->dedp_of_p(p, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    dedp = eos_piece->dedp_of_p(p, eos_piece);
     return dedp;
 }
 
@@ -852,10 +1153,17 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityDerivOfPressureGeometriz
 double XLALSimNeutronStarEOSMultiPartsPieceSpeedOfSoundGeometrized(double h,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS piece interpolation range.\n");
+    }
     double v;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    v = eos_part->v_of_h(h, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    v = eos_piece->v_of_h(h, eos_piece);
     return v;
 }
 
@@ -876,9 +1184,14 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPressureGeometrized(double 
     EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_pressure(p, eos);
+    if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, item_piece) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, item_piece)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS interpolation range.\n");
+    }
     double e;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    e = eos_part->e_of_p(p, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    e = eos_piece->e_of_p(p, eos_piece);
     return e;
 }
 
@@ -897,9 +1210,14 @@ double XLALSimNeutronStarEOSMultiPartsPseudoEnthalpyOfPressureGeometrized(double
     EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_pressure(p, eos);
+    if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, item_piece) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, item_piece)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS interpolation range.\n");
+    }
     double h;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    h = eos_part->h_of_p(p, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    h = eos_piece->h_of_p(p, eos_piece);
     return h;
 }
 
@@ -920,9 +1238,14 @@ double XLALSimNeutronStarEOSMultiPartsPressureOfPseudoEnthalpyGeometrized(double
     EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_enthalpy(h, eos);
+    if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, item_piece) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, item_piece)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS interpolation range.\n");
+    }
     double p;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    p = eos_part->p_of_h(h, eos_part); // TODO put some safeguards if interpolatino cannot be made ??
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    p = eos_piece->p_of_h(h, eos_piece); // TODO put some safeguards if interpolatino cannot be made ??
     return p;
 }
 
@@ -942,9 +1265,14 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPseudoEnthalpyGeometrized(d
     h, EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_enthalpy(h, eos);
+    if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, item_piece) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, item_piece)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS interpolation range.\n");
+    }
     double e;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    e = eos_part->e_of_h(h, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    e = eos_piece->e_of_h(h, eos_piece);
     return e;
 }
 
@@ -966,9 +1294,14 @@ double XLALSimNeutronStarEOSMultiPartsRestMassDensityOfPseudoEnthalpyGeometrized
     h, EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_enthalpy(h, eos);
+    if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, item_piece) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, item_piece)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS interpolation range.\n");
+    }
     double rho;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    rho = eos_part->rho_of_h(h, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    rho = eos_piece->rho_of_h(h, eos_piece);
     return rho;
 }
 
@@ -992,9 +1325,14 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressureGeometrized(do
     EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_pressure(p, eos);
+    if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, item_piece) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, item_piece)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS interpolation range.\n");
+    }
     double dedp;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    dedp = eos_part->dedp_of_p(p, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    dedp = eos_piece->dedp_of_p(p, eos_piece);
     return dedp;
 }
 
@@ -1016,9 +1354,14 @@ double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundGeometrized(double h,
     EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_enthalpy(h, eos);
+    if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, item_piece) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, item_piece)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS interpolation range.\n");
+    }
     double v;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    v = eos_part->v_of_h(h, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    v = eos_piece->v_of_h(h, eos_piece);
     return v;
 }
 
@@ -1193,11 +1536,18 @@ double XLALSimNeutronStarEOSPressureOfRestMassDensity(double rho,
 double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPressure(double p,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    double e;
     p *= LAL_G_C4_SI;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    e = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos_part);
+    if (piece_id >= eos->number_of_parts || piece_id < 0){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS piece interpolation range.\n");
+    }
+    double e;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    e = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos_piece);
     e /= LAL_G_C4_SI;
     return e;
 }
@@ -1218,11 +1568,18 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPressure(double p,
 double XLALSimNeutronStarEOSMultiPartsPiecePseudoEnthalpyOfPressure(double p,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    double h;
     p *= LAL_G_C4_SI;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    h = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(p, eos_part);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS piece interpolation range.\n");
+    }
+    double h;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    h = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(p, eos_piece);
     return h;
 }
 
@@ -1242,10 +1599,17 @@ double XLALSimNeutronStarEOSMultiPartsPiecePseudoEnthalpyOfPressure(double p,
 double XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpy(double h,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS piece interpolation range.\n");
+    }
     double p;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos_piece);
     p /= LAL_G_C4_SI;
     return p;
 }
@@ -1266,11 +1630,18 @@ double XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpy(double h,
 double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpy(double h,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS piece interpolation range.\n");
+    }
     double e;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
     e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h,
-        eos_part);
+        eos_piece);
     e /= LAL_G_C4_SI;
     return e;
 }
@@ -1292,12 +1663,19 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpy(double 
 double XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpy(double h,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS piece interpolation range.\n");
+    }
     double rho;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
     rho =
         XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(h,
-        eos_part);
+        eos_piece);
     rho /= LAL_G_C2_SI;
     return rho;
 }
@@ -1320,12 +1698,19 @@ double XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpy(doubl
 double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityDerivOfPressure(double p,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    double dedp;
     p *= LAL_G_C4_SI;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
+    if (piece_id >= eos->number_of_parts || piece_id < 0){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS piece interpolation range.\n");
+    }
+    double dedp;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
     dedp =
-        XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos_part);
+        XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos_piece);
     return dedp;
 }
 
@@ -1343,12 +1728,20 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityDerivOfPressure(double p
  * @param piece_id Integer to the equation of state piece ID number.
  * @return The speed of sound (m s^-1).
  */
-double XLALSimNeutronStarEOSMultiPartsPieceSpeedOfSound(double h, EOSMultiParts * eos, int piece_id)
+double XLALSimNeutronStarEOSMultiPartsPieceSpeedOfSound(double h,
+    EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
+    if (piece_id >= eos->number_of_parts || piece_id < 0){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS piece interpolation range.\n");
+    }
     double v;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    v = XLALSimNeutronStarEOSSpeedOfSoundGeometrized(h, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    v = XLALSimNeutronStarEOSSpeedOfSoundGeometrized(h, eos_piece);
     v *= LAL_C_SI;
     return v;
 }
@@ -1371,11 +1764,18 @@ double XLALSimNeutronStarEOSMultiPartsPieceSpeedOfSound(double h, EOSMultiParts 
 double XLALSimNeutronStarEOSMultiPartsPiecePressureOfEnergyDensity(double e,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    double p;
     e *= LAL_G_C4_SI;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    p = eos_part->p_of_e(e, eos_part);
+    if (piece_id >= eos->number_of_parts || piece_id < 0){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (e < XLALSimNeutronStarEOSMultiPartsPieceMinEnergyDensityGeometrized(eos, piece_id) ||
+                    e > XLALSimNeutronStarEOSMultiPartsPieceMaxEnergyDensityGeometrized(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS piece interpolation range.\n");
+    }
+    double p;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    p = eos_piece->p_of_e(e, eos_piece);
     p /= LAL_G_C4_SI;
     return p;
 }
@@ -1397,11 +1797,18 @@ double XLALSimNeutronStarEOSMultiPartsPiecePressureOfEnergyDensity(double e,
 double XLALSimNeutronStarEOSMultiPartsPiecePressureOfRestMassDensity(double rho,
     EOSMultiParts * eos, int piece_id)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) XLAL_ERROR_REAL8(XLAL_EDOM);
-    double p;
     rho *= LAL_G_C2_SI;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, piece_id);
-    p = eos_part->p_of_rho(rho, eos_part);
+    if (piece_id >= eos->number_of_parts || piece_id < 0){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The ID piece number of EOSMultiParts structure is incorrect.\n");
+    } else if (rho < XLALSimNeutronStarEOSMultiPartsPieceMinRestMassDensityGeometrized(eos, piece_id) ||
+                    rho > XLALSimNeutronStarEOSMultiPartsPieceMaxRestMassDensityGeometrized(eos, piece_id)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS piece interpolation range.\n");
+    }
+    double p;
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
+    p = eos_piece->p_of_rho(rho, eos_piece);
     p /= LAL_G_C4_SI;
     return p;
 }
@@ -1423,9 +1830,14 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPressure(double p,
 {
     p *= LAL_G_C4_SI;
     int item_piece = find_eos_piece_pressure(p, eos);
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
+    if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, item_piece) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, item_piece)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS interpolation range.\n");
+    }
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
     double e;
-    e = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos_part);
+    e = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos_piece);
     e /= LAL_G_C4_SI;
     return e;
 }
@@ -1446,9 +1858,14 @@ double XLALSimNeutronStarEOSMultiPartsPseudoEnthalpyOfPressure(double p,
 {
     p *= LAL_G_C4_SI;
     int item_piece = find_eos_piece_pressure(p, eos);
+    if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, item_piece) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, item_piece)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS interpolation range.\n");
+    }
     double h;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    h = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(p, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    h = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(p, eos_piece);
     return h;
 }
 
@@ -1469,9 +1886,14 @@ double XLALSimNeutronStarEOSMultiPartsPressureOfPseudoEnthalpy(double h,
     EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_enthalpy(h, eos);
+    if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, item_piece ) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, item_piece )){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS interpolation range.\n");
+    }
     double p;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos_piece);
     p /= LAL_G_C4_SI;
     return p;
 }
@@ -1492,10 +1914,15 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPseudoEnthalpy(double h,
     EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_enthalpy(h, eos);
+    if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, item_piece ) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, item_piece )){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS interpolation range.\n");
+    }
     double e;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
     e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h,
-        eos_part);
+        eos_piece);
     e /= LAL_G_C4_SI;
     return e;
 }
@@ -1519,11 +1946,16 @@ double XLALSimNeutronStarEOSMultiPartsRestMassDensityOfPseudoEnthalpy(double h,
     EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_enthalpy(h, eos);
+    if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, item_piece ) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, item_piece )){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS interpolation range.\n");
+    }
     double rho;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
     rho =
         XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(h,
-        eos_part);
+        eos_piece);
     rho /= LAL_G_C2_SI;
     return rho;
 }
@@ -1548,10 +1980,15 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressure(double p,
 {
     p *= LAL_G_C4_SI;
     int item_piece = find_eos_piece_pressure(p, eos);
+    if (p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, item_piece) ||
+                    p > XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, item_piece)){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pressure value is outside the EOS interpolation range.\n");
+    }
     double dedp;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
     dedp =
-        XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos_part);
+        XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos_piece);
     return dedp;
 }
 
@@ -1572,9 +2009,14 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressure(double p,
 double XLALSimNeutronStarEOSMultiPartsSpeedOfSound(double h, EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_enthalpy(h, eos);
+    if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, item_piece ) ||
+                    h > XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, item_piece )){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS interpolation range.\n");
+    }
     double v;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    v = XLALSimNeutronStarEOSSpeedOfSoundGeometrized(h, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    v = XLALSimNeutronStarEOSSpeedOfSoundGeometrized(h, eos_piece);
     v *= LAL_C_SI;
     return v;
 }
@@ -1598,9 +2040,14 @@ double XLALSimNeutronStarEOSMultiPartsPressureOfEnergyDensity(double e,
 {
     e *= LAL_G_C4_SI;
     int item_piece = find_eos_piece_energy_density(e, eos);
+    if (e < XLALSimNeutronStarEOSMultiPartsPieceMinEnergyDensityGeometrized(eos, item_piece ) ||
+                    e > XLALSimNeutronStarEOSMultiPartsPieceMaxEnergyDensityGeometrized(eos, item_piece )){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS interpolation range.\n");
+    }
     double p;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    p = eos_part->p_of_e(e, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    p = eos_piece->p_of_e(e, eos_piece);
     p /= LAL_G_C4_SI;
     return p;
 }
@@ -1624,9 +2071,14 @@ double XLALSimNeutronStarEOSMultiPartsPressureOfRestMassDensity(double rho,
 {
     rho *= LAL_G_C2_SI;
     int item_piece = find_eos_piece_rest_mass_density(rho, eos);
+    if (rho < XLALSimNeutronStarEOSMultiPartsPieceMinRestMassDensityGeometrized(eos, item_piece ) ||
+                    rho > XLALSimNeutronStarEOSMultiPartsPieceMaxRestMassDensityGeometrized(eos, item_piece )){
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+        printf("The input pseudo-enthalpy value is outside the EOS interpolation range.\n");
+    }
     double p;
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, item_piece);
-    p = eos_part->p_of_rho(rho, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
+    p = eos_piece->p_of_rho(rho, eos_piece);
     p /= LAL_G_C4_SI;
     return p;
 }

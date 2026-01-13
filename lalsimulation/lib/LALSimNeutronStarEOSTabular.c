@@ -461,8 +461,8 @@ static void eos_multi_part_free_tabular(EOSMultiParts * eos)
 {
     if (eos) {
 	for (int i = 0; i < eos->number_of_parts; i++){
-	    LALSimNeutronStarEOS * eos_parts = eos->eos_part[i];
-            eos_free_tabular_data(eos_parts->data.tabular);
+	    LALSimNeutronStarEOS * eos_piece = eos->eos_piece[i];
+            eos_free_tabular_data(eos_piece->data.tabular);
 	}
         LALFree(eos);
     }
@@ -480,12 +480,12 @@ static double eosMultiParts_min_acausal_pseudo_enthalpy_tabular(double hmax,
     double m;   /* slope for linear interpolation */
     double hMinAcausal = hmax;  /* default large number for EOS that is always causal */
     int number_of_parts = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, number_of_parts-1);
-    h_im1 = exp(eos_part ->data.tabular->log_hdat[0]);
-    v_im1 = eos_v_of_h_tabular(h_im1, eos_part);
-    for (i = 1; i < eos_part ->data.tabular->ndat; i++) {
-        h_i = exp(eos_part ->data.tabular->log_hdat[i]);
-        v_i = eos_v_of_h_tabular(h_i, eos_part);
+    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, number_of_parts-1);
+    h_im1 = exp(eos_piece ->data.tabular->log_hdat[0]);
+    v_im1 = eos_v_of_h_tabular(h_im1, eos_piece);
+    for (i = 1; i < eos_piece ->data.tabular->ndat; i++) {
+        h_i = exp(eos_piece ->data.tabular->log_hdat[i]);
+        v_i = eos_v_of_h_tabular(h_i, eos_piece);
         if (v_i > 1.0) {
             /* solve vsound(h) = 1 */
             m = (v_i - v_im1) / (h_i - h_im1);
@@ -1076,11 +1076,11 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     eos->pmax = pdat[ndat-1];
 
     /* Allocate each piece of the equation of state separated by a phase transition */
-    eos->eos_part = (LALSimNeutronStarEOS **) XLALMalloc(sizeof(LALSimNeutronStarEOS *) * (number_eos));
+    eos->eos_piece = (LALSimNeutronStarEOS **) XLALMalloc(sizeof(LALSimNeutronStarEOS *) * (number_eos));
 
     for (int i = 0; i <= number_pt; i++){
         upper_index = indices_phase_transition[i+1];
-        eos->eos_part[i] = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
+        eos->eos_piece[i] = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
         bottom_index = indices_phase_transition[i+1] + 1;
     }
 
@@ -1104,24 +1104,24 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
         double *pdat_recal = XLALMalloc(ndat * sizeof(*pdat_recal));
         size_t ndat_total = 0;
         for (int i = 0; i <= number_pt; i++){
-            size_t ndat_piece = eos->eos_part[i]->data.tabular->ndat;
+            size_t ndat_piece = eos->eos_piece[i]->data.tabular->ndat;
             if (i == 0){
                 for (size_t j = 0 ; j < ndat_piece; j++){
-                    hdat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_hdat[j]);
-                    edat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_edat[j]);
-                    pdat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_pdat[j]);
+                    hdat_recal[ndat_total] = exp(eos->eos_piece[i]->data.tabular->log_hdat[j]);
+                    edat_recal[ndat_total] = exp(eos->eos_piece[i]->data.tabular->log_edat[j]);
+                    pdat_recal[ndat_total] = exp(eos->eos_piece[i]->data.tabular->log_pdat[j]);
                     ndat_total += 1;
                 }
             } else {
                 for (size_t j = 0 ; j < ndat_piece; j++){
                     if (j == 0) {
                         hdat_recal[ndat_total] = hdat_recal[ndat_total-j-1];
-                        pdat_recal[ndat_total] = exp(eos->eos_part[i-1]->data.tabular->log_pdat[eos->eos_part[i-1]->data.tabular->ndat - 1]);
+                        pdat_recal[ndat_total] = exp(eos->eos_piece[i-1]->data.tabular->log_pdat[eos->eos_piece[i-1]->data.tabular->ndat - 1]);
                     } else {
-                        hdat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_hdat[j]) - exp(eos->eos_part[i]->data.tabular->log_hdat[0]) + hdat_recal[ndat_total-j-1];
-                        pdat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_pdat[j]);
+                        hdat_recal[ndat_total] = exp(eos->eos_piece[i]->data.tabular->log_hdat[j]) - exp(eos->eos_piece[i]->data.tabular->log_hdat[0]) + hdat_recal[ndat_total-j-1];
+                        pdat_recal[ndat_total] = exp(eos->eos_piece[i]->data.tabular->log_pdat[j]);
                     }
-                    edat_recal[ndat_total] = exp(eos->eos_part[i]->data.tabular->log_edat[j]);
+                    edat_recal[ndat_total] = exp(eos->eos_piece[i]->data.tabular->log_edat[j]);
                     ndat_total += 1;
                 }
             }
@@ -1130,7 +1130,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
         bottom_index = 0, upper_index = 0;
         for (int i = 0; i <= number_pt; i++){
             upper_index = indices_phase_transition[i+1];
-            eos->eos_part[i] = eos_piece_alloc_tabular(nbdat_recal, edat_recal, pdat_recal, mubdat_recal, muedat_recal, hdat_recal, yedat_recal, cs2dat_recal, bottom_index, upper_index);
+            eos->eos_piece[i] = eos_piece_alloc_tabular(nbdat_recal, edat_recal, pdat_recal, mubdat_recal, muedat_recal, hdat_recal, yedat_recal, cs2dat_recal, bottom_index, upper_index);
             bottom_index = indices_phase_transition[i+1] + 1;
         }
         XLALFree(edat_recal);
@@ -1143,8 +1143,8 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
         XLALFree(cs2dat_recal);
     }
 
-    eos->hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos->eos_part[0]);
-    eos->hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos->eos_part[eos->number_of_parts-1]);
+    eos->hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos->eos_piece[0]);
+    eos->hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos->eos_piece[eos->number_of_parts-1]);
     eos->hMinAcausal = eosMultiParts_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
 
     char name[LALNameLength] = "unknown_eos_name";

@@ -67,10 +67,16 @@ typedef struct tagFamMultiParts FamMultiParts;
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
 char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMaxPressureGeometrized(LALSimNeutronStarEOS * eos);
+double XLALSimNeutronStarEOSMinPressureGeometrized(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMaxPressure(LALSimNeutronStarEOS * eos);
+double XLALSimNeutronStarEOSMinPressure(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMaxPseudoEnthalpy(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMinPseudoEnthalpy(LALSimNeutronStarEOS * eos);
+double XLALSimNeutronStarEOSMaxEnergyDensityGeometrized(LALSimNeutronStarEOS * eos);
+double XLALSimNeutronStarEOSMinEnergyDensityGeometrized(LALSimNeutronStarEOS * eos);
+double XLALSimNeutronStarEOSMaxRestMassDensityGeometrized(LALSimNeutronStarEOS * eos);
+double XLALSimNeutronStarEOSMinRestMassDensityGeometrized(LALSimNeutronStarEOS * eos);
 
 void XLALDestroySimNeutronStarEOSMultiParts(EOSMultiParts * eos);
 char *XLALSimNeutronStarEOSMultiPartsName(EOSMultiParts * eos);
@@ -78,11 +84,19 @@ int XLALSimNeutronStarEOSMultiPartsNumber(EOSMultiParts * eos);
 LALSimNeutronStarEOS * XLALSimNeutronStarEOSPart(EOSMultiParts * eos, int piece_id);
 double XLALSimNeutronStarEOSMultiPartsMaxPressureGeometrized(EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsMinPressureGeometrized(EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsMaxEnergyDensityGeometrized(EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsMinEnergyDensityGeometrized(EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsMaxRestMassDensityGeometrized(EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsMinRestMassDensityGeometrized(EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsMaxPressure(EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsMinPressure(EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsMinPseudoEnthalpy(EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsMaxPseudoEnthalpy(EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsMinAcausalPseudoEnthalpy(EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsMaxEnergyDensity(EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsMinEnergyDensity(EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsMaxRestMassDensity(EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsMinRestMassDensity(EOSMultiParts * eos);
 
 double XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(EOSMultiParts * eos, int piece_id);
 double XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(EOSMultiParts * eos, int piece_id);
@@ -91,6 +105,10 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinPressure(EOSMultiParts * eos, int 
 double XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(EOSMultiParts * eos, int piece_id);
 double XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(EOSMultiParts * eos, int piece_id);
 double XLALSimNeutronStarEOSMultiPartsPieceMinAcausalPseudoEnthalpy(EOSMultiParts * eos, int piece_id);
+double XLALSimNeutronStarEOSMultiPartsPieceMaxEnergyDensityGeometrized(EOSMultiParts * eos, int piece_id);
+double XLALSimNeutronStarEOSMultiPartsPieceMinEnergyDensityGeometrized(EOSMultiParts * eos, int piece_id);
+double XLALSimNeutronStarEOSMultiPartsPieceMaxRestMassDensityGeometrized(EOSMultiParts * eos, int piece_id);
+double XLALSimNeutronStarEOSMultiPartsPieceMinRestMassDensityGeometrized(EOSMultiParts * eos, int piece_id);
 
 /* FUNCTIONS FOR INTERPOLATED EOS VALUES WITH GEOMETRIZED UNITS */
 
