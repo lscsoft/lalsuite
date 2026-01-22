@@ -35,7 +35,7 @@ import lal.series
 @pytest.mark.parametrize(
     "encoding,assert_array_equal",
     [
-        ["Text", np.testing.assert_array_almost_equal],
+        pytest.param("Text", np.testing.assert_array_almost_equal, marks=pytest.mark.skip("Awaiting container updates; see https://git.ligo.org/computing/sccb/-/issues/1923#note_1642815")),
         ["base64", np.testing.assert_array_equal]
     ]
 )
