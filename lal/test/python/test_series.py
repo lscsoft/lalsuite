@@ -35,7 +35,7 @@ import lal.series
 @pytest.mark.parametrize(
     "encoding,assert_array_equal",
     [
-        ["Text", np.testing.assert_array_almost_equal],
+        pytest.param("Text", np.testing.assert_array_almost_equal, marks=pytest.mark.skip("Awaiting container updates; see https://git.ligo.org/computing/sccb/-/issues/1923#note_1642815")),
         ["base64", np.testing.assert_array_equal]
     ]
 )
@@ -56,7 +56,10 @@ def test_build_series(scalar_type, domain, encoding, assert_array_equal):
     igwn_ligolw.utils.write_fileobj(xmldoc, fileobj)
     print(fileobj.getvalue())
     xml_str = fileobj.getvalue().decode()
-    assert f'Encoding="{encoding}' in xml_str
+    if encoding == igwn_ligolw.ligolw.Encoding.enc(igwn_ligolw.ligolw.Stream.Encoding.default):
+        assert 'Encoding=' not in xml_str
+    else:
+        assert f'Encoding="{encoding}' in xml_str
     assert "This is a comment" in xml_str
 
     fileobj.seek(0)
