@@ -35,7 +35,7 @@
       - "*/*.tar.*"
       # since tarball build jobs do not check out the
       # Git repo, need to also include the CI scripts
-      - common/gitlab-ci-scripts/
+      - common/scripts/
     # there are no reports for tarball jobs
     reports:
       junit: []

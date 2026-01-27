@@ -91,9 +91,9 @@ lint:pre-commit:
       fi
     # generate code quality report
     - pre-commit run -a --hook-stage manual
-    - ./common/gitlab-ci-scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
+    - ./common/scripts/git_diff_to_code_quality_report "pre-commit fixes" > code-quality-pre-commit.json
     # check/concatenate code quality reports
-    - ./common/gitlab-ci-scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
+    - ./common/scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
   artifacts:
     reports:
       codequality: code-quality.json
@@ -124,9 +124,9 @@ lint:gitignore:
         echo "------------------------------------------------------------------------"
       fi
     # generate code quality report
-    - ./common/gitlab-ci-scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
+    - ./common/scripts/git_diff_to_code_quality_report "missing .gitignore entries" > code-quality-gitignore.json
     # check/concatenate code quality reports
-    - ./common/gitlab-ci-scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
+    - ./common/scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
   artifacts:
     reports:
       codequality: code-quality.json
@@ -139,7 +139,7 @@ lint:depends:
     - .build-job
     - .lint
   script:
-    - ./common/gitlab-ci-scripts/check_library_dependencies
+    - ./common/scripts/check_library_dependencies
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
@@ -187,7 +187,7 @@ lint:api-dump-master:
     # build LALSuite
     - !reference [.lint-api-build-lalsuite]
     # dump API
-    - ./common/gitlab-ci-scripts/check_library_api dump
+    - ./common/scripts/check_library_api dump
           --bin-dir=_inst/bin
           --lib-dir=_inst/lib
           --pub-header-dir=_inst/include/lal
@@ -216,7 +216,7 @@ lint:api-dump-release:
     # build LALSuite
     - !reference [.lint-api-build-lalsuite]
     # dump API
-    - ./common/gitlab-ci-scripts/check_library_api dump
+    - ./common/scripts/check_library_api dump
           --bin-dir=_inst/bin
           --lib-dir=_inst/lib
           --pub-header-dir=_inst/include/lal
@@ -242,12 +242,12 @@ lint:api-cmp-merge-diff:
     - .lint-api-cmp-job
   script:
     # download and unpack API dump of the main branch at lscsoft/lalsuite
-    - retry ./common/gitlab-ci-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite ${CI_DEFAULT_BRANCH} -v 2
+    - retry ./common/scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite ${CI_DEFAULT_BRANCH} -v 2
     - tar -xvf api-dump-master-v${API_DUMP_VERSION}.tar.bz2
     # build LALSuite
     - !reference [.lint-api-build-lalsuite]
     # dump API
-    - ./common/gitlab-ci-scripts/check_library_api dump
+    - ./common/scripts/check_library_api dump
           --bin-dir=_inst/bin
           --lib-dir=_inst/lib
           --pub-header-dir=_inst/include/lal
@@ -259,7 +259,7 @@ lint:api-cmp-merge-diff:
     # create tarball of API dumps
     - tar -jchvf api-dump-head-v${API_DUMP_VERSION}.tar.bz2 api-dump-head/
     # compare APIs
-    - ./common/gitlab-ci-scripts/check_library_api compare
+    - ./common/scripts/check_library_api compare
           --old-dump-dir=api-dump-master/
           --new-dump-dir=api-dump-head/
           --table-title="API Changes From Merge Request"
@@ -281,12 +281,12 @@ lint:api-cmp-last-release:
     - .lint-api-cmp-job
   script:
     # download and unpack API dump of the main branch at lscsoft/lalsuite
-    - retry ./common/gitlab-ci-scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite release -v 2
+    - retry ./common/scripts/get_api_artifacts $CI_SERVER_URL lscsoft/lalsuite release -v 2
     - tar -xvf api-dump-release-v${API_DUMP_VERSION}.tar.bz2
     # build LALSuite
     - !reference [.lint-api-build-lalsuite]
     # dump API
-    - ./common/gitlab-ci-scripts/check_library_api dump
+    - ./common/scripts/check_library_api dump
           --bin-dir=_inst/bin
           --lib-dir=_inst/lib
           --pub-header-dir=_inst/include/lal
@@ -298,7 +298,7 @@ lint:api-cmp-last-release:
     # create tarball of API dumps
     - tar -jchvf api-dump-head-v${API_DUMP_VERSION}.tar.bz2 api-dump-head/
     # compare APIs
-    - ./common/gitlab-ci-scripts/check_library_api compare
+    - ./common/scripts/check_library_api compare
           --old-dump-dir=api-dump-release/
           --new-dump-dir=api-dump-head/
           --table-title="API Changes Since Last Release"
@@ -328,7 +328,7 @@ lint:api-cmp-debug:
     - tar -xvf api-dump-master-v${API_DUMP_VERSION}.tar.bz2
     - tar -xvf api-dump-release-v${API_DUMP_VERSION}.tar.bz2
     # compare APIs - for debugging
-    - ./common/gitlab-ci-scripts/check_library_api compare
+    - ./common/scripts/check_library_api compare
           --old-dump-dir=api-dump-release/
           --new-dump-dir=api-dump-master/
           --table-title="Test API Comparison"
