@@ -64,6 +64,17 @@ struct tagLALSimNeutronStarEOSDataTabular {
     gsl_interp_accel *log_cs2_of_log_h_acc;
 };
 
+/* Clamping function. */
+static inline double clamp_to_range_tol(double x, double xmin, double xmax, double tol)
+{
+    if (x < xmin && xmin-x < tol )
+        return xmin;
+    else if (x > xmax && x-xmax < tol)
+        return xmax;
+    else
+        return x;
+}
+
 static double eos_p_of_e_tabular(double e, LALSimNeutronStarEOS * eos)
 {
 	double log_e;
@@ -135,6 +146,9 @@ static double eos_p_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 	if (h == 0.0)
 		return 0.0;
  	log_h = log(h);
+	// Clamp
+        log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
+                    eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
 	if (log_h < eos->data.tabular->log_hdat[0])
 		/* use non-relativistic degenerate gas, p = K * h**(5./2.) */
 		return exp(eos->data.tabular->log_pdat[0] + 2.5 * (log_h - eos->data.tabular->log_hdat[0]));
@@ -203,6 +217,9 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
         return pow(dedp, -0.5);
     }
     log_h = log(h);
+    // Clamp
+    log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
+                    eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
     log_cs2 = gsl_interp_eval(eos->data.tabular->log_cs2_of_log_h_interp,
     eos->data.tabular->log_hdat, eos->data.tabular->log_cs2dat, log_h,
     eos->data.tabular->log_cs2_of_log_h_acc);

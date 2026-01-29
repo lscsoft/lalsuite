@@ -205,7 +205,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
 
     /* compute data tables */
     logpmax = log(XLALSimNeutronStarEOSMaxPressure(eos));
-    dlogp = (logpmax - logpmin) / ndat;
+    dlogp = (logpmax - logpmin) / (ndat-1);
     for (i = 0; i < ndat; ++i) {
         fam->pdat[i] = exp(logpmin + i * dlogp);
         XLALSimNeutronStarTOVODEIntegrate(&fam->rdat[i], &fam->mdat[i],
@@ -307,7 +307,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
     fam->pmin = exp(logpmin);
     fam->pmax = XLALSimNeutronStarEOSMultiPartsMaxPressure(eos);
     double logpmax = log(fam->pmax);
-    double dlogp = (logpmax - logpmin) / ndat; // in Pascal
+    double dlogp = (logpmax - logpmin) / (ndat-1); // in Pascal
     fam->mtov = 0;
 
     double *pdat, *rdat, *mdat, *mbdat, *k2dat, *k3dat, *k4dat;
@@ -326,7 +326,10 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
     int index_begin_stable_branch[100] = { [ 0 ... 99 ] = 0};
     int index_end_stable_branch[100] = { [ 0 ... 99 ] = 0};
     for (int j = 0; j < ndat; ++j) {
-        pdat[j] = exp(logpmin + j * dlogp); // pressure in Pascal
+        // find pdat being careful with first and last sample
+    	if(j==0) pdat[j] = fam->pmin; // exact min
+	else if(j==ndat-1) pdat[j] = fam->pmax; // exact max
+	else pdat[j] = exp(logpmin + j * dlogp); // pressure in Pascal
         // Solve TOV+Love number ODEs
         if(min_fam==1){
             XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(
@@ -363,7 +366,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
     fam->number_of_branches = nb_stable_branches;
     fam->mtov = 0;
     if (nb_stable_branches != 0) {
-        // if the last branch is stable, append the index for the end of the stable branch as the last index of TOV data
+  	// if the last branch is stable, append the index for the end of the stable branch as the last index of TOV data
         if (flag_stable == 1) index_end_stable_branch[nb_stable_branches-1] = ndat-1;
         fam->fam_branch = (LALSimNeutronStarFamily **) LALMalloc(sizeof(LALSimNeutronStarFamily *) * nb_stable_branches);
         int *ndat_branch;
@@ -508,9 +511,6 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
     LALFree(k2dat);
     LALFree(k3dat);
     LALFree(k4dat);
-
-
-
 
     return fam;
 }
