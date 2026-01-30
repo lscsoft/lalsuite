@@ -319,7 +319,6 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
     k3dat = LALMalloc(ndat * sizeof(*k3dat));
     k4dat = LALMalloc(ndat * sizeof(*k4dat));
 
-
     int nb_stable_branches = 0;
     int flag_unstable = 0;
     int flag_stable = 0;
@@ -372,7 +371,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
         int *ndat_branch;
         ndat_branch = LALMalloc(nb_stable_branches * sizeof(*ndat_branch));
         for (int b = 0; b < nb_stable_branches; b++){
-            ndat_branch[b] = index_end_stable_branch[b] - index_begin_stable_branch[b];
+            ndat_branch[b] = index_end_stable_branch[b] - index_begin_stable_branch[b] + 1;
             LALSimNeutronStarFamily * fam_branch_i = LALMalloc(sizeof(LALSimNeutronStarFamily));
             if(min_fam==1){
                 fam_branch_i->mbdat = NULL;
