@@ -528,7 +528,7 @@ int XLALSimNeutronStarFamNumberOfBranches(FamMultiParts *fam)
 /**
  * @brief Returns the mass for the last stable configuration Mtov of a neutron star family.
  * @param fam Pointer to the neutron star family structure.
- * @return The TOV mass limit of a neutron star family, NAN if none was found.
+ * @return The TOV mass limit of a neutron star family, zero if none was found.
  */
 double XLALSimNeutronStarFamMassTOVLimit(FamMultiParts *fam)
 {
