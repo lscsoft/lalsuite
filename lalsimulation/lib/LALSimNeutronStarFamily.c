@@ -546,10 +546,10 @@ double XLALSimNeutronStarFamMassTOVLimit(FamMultiParts *fam)
 }
 
 /**
- * @brief Returns the ith branch of a neutron star family.
+ * @brief Returns the minimum mass of the ith branch of a neutron star family.
  * @param branch Integer for the branch number.
  * @param fam Pointer to the neutron star family structure.
- * @return The branch for a given neutron star family.
+ * @return The minimum mass of the ith branch for a given neutron star family.
  */
 double XLALSimNeutronStarFamBranchMinMass(int branch, FamMultiParts *fam)
 {
@@ -593,7 +593,7 @@ double XLALSimNeutronStarFamBranchMinCentralPressure(int branch, FamMultiParts *
  * @brief Returns the maximum central central pressure for a given branch of a neutron star family.
  * @param branch Integer for the branch number.
  * @param fam Pointer to the neutron star family structure.
- * @return The minimum central pressure for a given branch of a neutron star family.
+ * @return The maximum central pressure for a given branch of a neutron star family.
  */
 double XLALSimNeutronStarFamBranchMaxCentralPressure(int branch, FamMultiParts *fam)
 {
