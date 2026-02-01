@@ -87,14 +87,10 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.7.0"
-MIN_LALFRAME_VERSION="3.0.0"
-MIN_LALSIMULATION_VERSION="6.2.0"
-MIN_LALINFERENCE_VERSION="4.1.0"
-AC_SUBST([MIN_LAL_VERSION])
-AC_SUBST([MIN_LALFRAME_VERSION])
-AC_SUBST([MIN_LALSIMULATION_VERSION])
-AC_SUBST([MIN_LALINFERENCE_VERSION])
+AC_SUBST([MIN_LAL_VERSION],["7.7.0"])
+AC_SUBST([MIN_LALFRAME_VERSION],["3.0.0"])
+AC_SUBST([MIN_LALSIMULATION_VERSION],["6.2.0"])
+AC_SUBST([MIN_LALINFERENCE_VERSION],["4.1.0"])
 
 AC_CANONICAL_HOST
 
@@ -239,18 +235,18 @@ LALSUITE_USE_CUDA
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALPulsar library
-AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblalpulsar.la"])
+AC_SUBST([LDADD],["\$(top_builddir)/lib/liblalpulsar.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-I\$(top_builddir)/include ${AM_CPPFLAGS}"
 
 # force headers to be installed in ${includedir}/lal, ignoring library name
-AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
+AC_SUBST([pkgincludedir],["\${includedir}/lal"])
 
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
-AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+AC_SUBST([pkgpythondir],["\${pkgpyexecdir}"])
 
 # make sure local library module is in python path
 LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"

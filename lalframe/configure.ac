@@ -68,12 +68,9 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.7.0"
-MIN_FRAMECPPC_VERSION="2.5.5"
-MIN_FRAMEL_VERSION="8.42.2"
-AC_SUBST([MIN_LAL_VERSION])
-AC_SUBST([MIN_FRAMECPPC_VERSION])
-AC_SUBST([MIN_FRAMEL_VERSION])
+AC_SUBST([MIN_LAL_VERSION],["7.7.0"])
+AC_SUBST([MIN_FRAMECPPC_VERSION],["2.5.5"])
+AC_SUBST([MIN_FRAMEL_VERSION],["8.42.2"])
 
 AC_CANONICAL_HOST
 
@@ -204,18 +201,18 @@ LALSUITE_USE_DOXYGEN
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALFrame library
-AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblalframe.la"])
+AC_SUBST([LDADD],["\$(top_builddir)/lib/liblalframe.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-I\$(top_builddir)/include ${AM_CPPFLAGS}"
 
 # force headers to be installed in ${includedir}/lal, ignoring library name
-AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
+AC_SUBST([pkgincludedir],["\${includedir}/lal"])
 
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
-AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+AC_SUBST([pkgpythondir],["\${pkgpyexecdir}"])
 
 # make sure local library module is in python path
 LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"
