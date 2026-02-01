@@ -1,3 +1,9 @@
+lalburst (2.0.8-1) unstable; urgency=low
+
+  * Update for 2.0.8
+
+ -- Karl Wette <karl.wette@ligo.org>  Sun, 01 Feb 2026 16:49:30 -0000
+
 lalburst (2.0.7-1) unstable; urgency=low
 
   * Update 2.0.7
