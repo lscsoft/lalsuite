@@ -1,4 +1,5 @@
 coloredlogs
+gitpython
 natsort
 py-api-dumper>=4.0
 python-debian
