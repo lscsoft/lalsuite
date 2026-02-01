@@ -1,3 +1,9 @@
+lalinference (4.1.10-1) unstable; urgency=low
+
+  * Update for 4.1.10
+
+ -- Karl Wette <karl.wette@ligo.org>  Sun, 01 Feb 2026 16:49:30 -0000
+
 lalinference (4.1.9-1) unstable; urgency=low
 
   * Update fro 4.1.9
