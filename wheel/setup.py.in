@@ -133,7 +133,7 @@ class build_scripts(_build_scripts):
 setup(
     # metadata
     name='lalsuite',
-    license='GPL-2+',
+    license='GPL-2.0-or-later',
     version=VERSION,
     description=__doc__.strip().split('\n')[0],
     long_description='\n'.join(__doc__.strip().split('\n')[1:]).strip(),
@@ -150,8 +150,6 @@ setup(
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: '
-        'GNU General Public License v2 or later (GPLv2+)',
         'Operating System :: POSIX',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
@@ -215,6 +213,8 @@ setup(
             'scipy',
         ],
         'lalpulsar': [
+            'gwdatafind',
+            'gwpy',
             'solar_system_ephemerides',
         ],
         'test': [

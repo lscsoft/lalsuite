@@ -1092,7 +1092,7 @@ static double IMRPhenomXHM_Inspiral_Phase_AnsatzInt(double Mf, IMRPhenomX_Useful
 {
     //compute the orbital phase by laoding the rescaled phenX coefficients
     double philm=0.;
-    double freqs[N_MAX_COEFFICIENTS_PHASE_INS]={powers_of_Mf->m_five_thirds,powers_of_Mf->m_four_thirds,powers_of_Mf->m_one,powers_of_Mf->m_two_thirds,powers_of_Mf->m_one_third,1.,powers_of_Mf->one_third,powers_of_Mf->two_thirds, Mf, powers_of_Mf->four_thirds, powers_of_Mf->five_thirds, powers_of_Mf->two,powers_of_Mf->seven_thirds};
+    double freqs[N_MAX_COEFFICIENTS_PHASE_INS]={powers_of_Mf->m_seven_thirds,powers_of_Mf->m_two,powers_of_Mf->m_five_thirds,powers_of_Mf->m_four_thirds,powers_of_Mf->m_one,powers_of_Mf->m_two_thirds,powers_of_Mf->m_one_third,1.,powers_of_Mf->one_third,powers_of_Mf->two_thirds, Mf, powers_of_Mf->four_thirds, powers_of_Mf->five_thirds, powers_of_Mf->two,powers_of_Mf->seven_thirds};
     double logMf=powers_of_Mf->log;
     for(int i=0; i<N_MAX_COEFFICIENTS_PHASE_INS; i++)
         philm+=(pPhase->phi[i]+pPhase->phiL[i]*(logMf))*freqs[i];
@@ -1103,10 +1103,9 @@ static double IMRPhenomXHM_Inspiral_Phase_Ansatz(double Mf, IMRPhenomX_UsefulPow
 {
     //compute the orbital phase by laoding the rescaled phenX coefficients
     double dphilm=0.;
-    double coeffs[N_MAX_COEFFICIENTS_PHASE_INS]={-5./3,-4./3,-1.,-2./3,-1./3,0.,1./3, 2./3, 1., 4./3, 5./3, 2., 7./3};
-    double freqs[N_MAX_COEFFICIENTS_PHASE_INS]={powers_of_Mf->m_eight_thirds,powers_of_Mf->m_seven_thirds,powers_of_Mf->m_two,powers_of_Mf->m_five_thirds,powers_of_Mf->m_four_thirds,powers_of_Mf->m_one,powers_of_Mf->m_two_thirds,powers_of_Mf->m_one_third,1.,powers_of_Mf->one_third, powers_of_Mf->two_thirds, Mf,powers_of_Mf->four_thirds};
+    double coeffs[N_MAX_COEFFICIENTS_PHASE_INS]={-7/3,-2.,-5./3,-4./3,-1.,-2./3,-1./3,0.,1./3, 2./3, 1., 4./3, 5./3, 2., 7./3};
+    double freqs[N_MAX_COEFFICIENTS_PHASE_INS]={powers_of_Mf->m_ten_thirds,powers_of_Mf->m_three,powers_of_Mf->m_eight_thirds,powers_of_Mf->m_seven_thirds,powers_of_Mf->m_two,powers_of_Mf->m_five_thirds,powers_of_Mf->m_four_thirds,powers_of_Mf->m_one,powers_of_Mf->m_two_thirds,powers_of_Mf->m_one_third,1.,powers_of_Mf->one_third, powers_of_Mf->two_thirds, Mf,powers_of_Mf->four_thirds};
     double logMf=powers_of_Mf->log;
-
     for(int i=0; i<N_MAX_COEFFICIENTS_PHASE_INS; i++)
         dphilm+=((pPhase->phi[i]+pPhase->phiL[i]*(logMf))*coeffs[i]+pPhase->phiL[i])*freqs[i];
     return dphilm;

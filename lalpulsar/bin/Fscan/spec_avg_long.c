@@ -183,18 +183,17 @@ int main( int argc, char **argv )
 
     //Extract one SFT at a time from the catalog
     //we do this by using a catalog timeslice to get just the current SFT
-    SFTVector *sft_vect = NULL;
-    XLAL_CHECK_MAIN( ( sft_vect = extract_one_sft( catalog, catalog->data[j].header.epoch, f_min, f_max ) ) != NULL, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( sft_vect->length == 1, XLAL_EINVAL, "Extracted zero SFTs but should have extracted one" );
+    SFTtype *sft = NULL;
+    XLAL_CHECK_MAIN( ( sft = extract_one_sft( catalog, catalog->data[j].header.epoch, f_min, f_max ) ) != NULL, XLAL_EFUNC );
 
     //Make sure the SFTs are the same length as what we're expecting from user input
-    XLAL_CHECK_MAIN( fabs( timebaseline * sft_vect->data->deltaF - 1.0 ) <= 10.*LAL_REAL8_EPS, XLAL_EINVAL, "Expected SFTs with length %f but got %f", timebaseline, 1 / sft_vect->data->deltaF );
+    XLAL_CHECK_MAIN( fabs( timebaseline * sft->deltaF - 1.0 ) <= 10.*LAL_REAL8_EPS, XLAL_EINVAL, "Expected SFTs with length %f but got %f", timebaseline, 1 / sft->deltaF );
 
     //For the first time through the loop, we allocate some vectors
     if ( j == 0 ) {
-      UINT4 numBins = sft_vect->data->data->length;
-      f0 = sft_vect->data->f0;
-      deltaF = sft_vect->data->deltaF;
+      UINT4 numBins = sft->data->length;
+      f0 = sft->f0;
+      deltaF = sft->deltaF;
       printf( "numBins=%d, f0=%f, deltaF=%f\n", numBins, f0, deltaF );
 
       if ( line_freq != NULL ) {
@@ -222,14 +221,14 @@ int main( int argc, char **argv )
     }
 
     //Loop over the SFT bins
-    for ( UINT4 i = 0; i < sft_vect->data->data->length; i++ ) {
-      REAL8 thispower = POWER( sft_vect->data[0].data->data[i] );
+    for ( UINT4 i = 0; i < sft->data->length; i++ ) {
+      REAL8 thispower = POWER( sft->data->data[i] );
       REAL8 thisavepower = 0.;
       UINT4 count = 0;
       for ( INT4 ii = -nside; ii <= nside; ii++ ) {
         //Only add to the cumulative average power if the variables are in range
-        if ( ( INT4 )i + ii >= 0 && ( INT4 )i + ii < ( INT4 )sft_vect->data->data->length ) {
-          thisavepower += POWER( sft_vect->data[0].data->data[i + ii] );
+        if ( ( INT4 )i + ii >= 0 && ( INT4 )i + ii < ( INT4 )sft->data->length ) {
+          thisavepower += POWER( sft->data->data[i + ii] );
           count++;
         }
       }
@@ -251,7 +250,7 @@ int main( int argc, char **argv )
 
         // Only accumulate in the epoch average if this SFT is within the current epoch
         // Otherwise put the values in the new epoch average and weight vector.
-        if ( ( epoch_index < ( epoch_gps_times->length - 1 ) && XLALGPSCmp( &sft_vect->data->epoch, &epoch_gps_times->data[epoch_index] ) >= 0 && XLALGPSCmp( &sft_vect->data->epoch, &epoch_gps_times->data[epoch_index + 1] ) < 0 ) || epoch_index == ( epoch_gps_times->length - 1 ) ) {
+        if ( ( epoch_index < ( epoch_gps_times->length - 1 ) && XLALGPSCmp( &sft->epoch, &epoch_gps_times->data[epoch_index] ) >= 0 && XLALGPSCmp( &sft->epoch, &epoch_gps_times->data[epoch_index + 1] ) < 0 ) || epoch_index == ( epoch_gps_times->length - 1 ) ) {
           this_epoch_avg->data[i] += thispower * weight;
           this_epoch_avg_wt->data[i] += weight;
         } else {
@@ -290,8 +289,8 @@ int main( int argc, char **argv )
     }
 
     // Destroys current SFT Vector
-    XLALDestroySFTVector( sft_vect );
-    sft_vect = NULL;
+    XLALDestroySFT( sft );
+    sft = NULL;
   } // end loop over all SFTs
 
   XLALDestroyREAL8Vector( this_epoch_avg_wt );

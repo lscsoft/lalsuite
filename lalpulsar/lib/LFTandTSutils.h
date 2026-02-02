@@ -50,6 +50,9 @@ extern "C" {
 
 /** Multi-IFO container for COMPLEX8 resampled timeseries */
 typedef struct tagMultiCOMPLEX8TimeSeries {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( MultiCOMPLEX8TimeSeries, COMPLEX8TimeSeries *, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4 length;                         /**< number of IFOs */
   COMPLEX8TimeSeries **data;            /**< array of COMPLEX8TimeSeries (pointers) */
 } MultiCOMPLEX8TimeSeries;

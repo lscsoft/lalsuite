@@ -11,6 +11,8 @@ seg2_tend=`echo "${seg2_tstart} + 1.5*${Tsft}" | bc | xargs printf '%0.0f'`
 seg2_sft1_half_overlap="${seg2_tstart}"
 seg2_sft2_half_overlap=`echo "${seg2_tstart} + 0.5*${Tsft}" | bc | xargs printf '%0.0f'`
 seg2_sft1_no_overlap=`echo "${seg2_tstart} + 0.25*${Tsft}" | bc | xargs printf '%0.0f'`
+frame_dur=4096
+frame2_tstart=`echo "${seg1_tstart} + 4096" | bc`
 fmin=10
 Band=1990
 chan1="H1:GDS-CALIB_STRAIN_CLEAN"
@@ -18,7 +20,7 @@ chan2="H1:GDS-CALIB_STRAIN"
 acctgtag="ligo.sim.o4.cw.explore.test"
 acctgusr="albert.einstein"
 MSFTpath="/tmp/path/to"
-cachepath="/tmp/path/to.cache"
+cachepath="${PWD}/frames.cache"
 
 ## channels names in SFT names
 chan1sft=`echo "${chan1}" | sed 's/^H1://;s/[-_]//g'`
@@ -28,6 +30,13 @@ chan2sft=`echo "${chan2}" | sed 's/^H1://;s/[-_]//g'`
 segs="${PWD}/segs"
 echo "${seg1_tstart} ${seg1_tend}" > ${segs}
 echo "${seg2_tstart} ${seg2_tend}" >> ${segs}
+
+## common cache file
+echo -e "H\tH1_HOFT_C00\t${seg1_tstart}\t${frame_dur}\tH-H1_HOFT_C00-${seg1_tstart}-${frame_dur}.gwf" > ${cachepath}
+echo -e "H\tH1_HOFT_C00\t${frame2_tstart}\t${frame_dur}\tH-H1_HOFT_C00-${frame2_tstart}-${frame_dur}.gwf" >> ${cachepath}
+
+## variable for to silence gwdatafind error
+export GWDATAFIND_SERVER=TEST
 
 ## common unit test function
 unittest() {
@@ -47,9 +56,17 @@ unittest() {
     mkdir ${testdir}
     cd ${testdir}
     echo "Running lalpulsar_MakeSFTDAG..."
-    if ! ../lalpulsar_MakeSFTDAG "$@"; then
-        echo "ERROR: something failed when running 'lalpulsar_MakeSFTDAG $@'"
-        exit 1
+    ../lalpulsar_MakeSFTDAG "$@"
+    output_code=$?
+    echo "Output code of lalpulsar_MakeSFTDAG $@ is: $output_code"
+    if [[ $output_code -ne 0 ]]; then
+        if [[ $output_code -ne 77 ]]; then
+            echo "ERROR: something failed when running 'lalpulsar_MakeSFTDAG $@'"
+            exit 1
+        else
+            echo "Skipping test - no gwpy installed"
+            return 77
+        fi
     fi
     cd ..
     echo
@@ -115,10 +132,13 @@ unittest public_SFTs \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
-greptest public_SFTs \
-    "-O 4 -K DEV -R 1" \
-    "-w hann -P 0.5"
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
+    -e ${cachepath}
+if [[ $? -ne 77 ]]; then
+    greptest public_SFTs \
+         "-O 4 -K DEV -R 1" \
+         "-w hann -P 0.5"
+fi
 
 ## two SFTs per job
 unittest two_SFTs_per_job \
@@ -126,10 +146,13 @@ unittest two_SFTs_per_job \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 2 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
-greptest two_SFTs_per_job \
-    "-O 4 -K DEV -R 1" \
-    "-w hann -P 0.5"
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
+    -e ${cachepath}
+if [[ $? -ne 77 ]]; then
+    greptest two_SFTs_per_job \
+         "-O 4 -K DEV -R 1" \
+         "-w hann -P 0.5"
+fi
 
 ## two channels
 unittest two_channels \
@@ -137,10 +160,13 @@ unittest two_channels \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p dir1 dir2 \
     -N ${chan1} ${chan2} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
-greptest two_channels \
-    "-O 4 -K DEV -R 1" \
-    "-w hann -P 0.5"
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
+    -e ${cachepath}
+if [[ $? -ne 77 ]]; then
+    greptest two_channels \
+         "-O 4 -K DEV -R 1" \
+         "-w hann -P 0.5"
+fi
 
 ## private SFTs
 unittest private_SFTs \
@@ -148,22 +174,13 @@ unittest private_SFTs \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
-greptest private_SFTs \
-    "-O 0 -X private" \
-    "-w hann -P 0.5"
-
-## frame cache file
-unittest frame_cache_file \
-    -O 0 -X private \
-    -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
-    -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
-    -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath}  --movesfts-path=${MSFTpath} \
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
     -e ${cachepath}
-greptest frame_cache_file \
-    "-O 0 -X private" \
-    "-w hann -P 0.5"
+if [[ $? -ne 77 ]]; then
+    greptest private_SFTs \
+        "-O 0 -X private" \
+        "-w hann -P 0.5"
+fi
 
 ## default window
 unittest default_window \
@@ -171,10 +188,13 @@ unittest default_window \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
-greptest default_window \
-    "-O 4 -K DEV -R 1" \
-    "-w tukey -r 0.001"
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
+    -e ${cachepath}
+if [[ $? -ne 77 ]]; then
+    greptest default_window \
+        "-O 4 -K DEV -R 1" \
+        "-w tukey -r 0.001"
+fi
 
 ## Tukey window with parameter 0.001
 unittest Tukey_window \
@@ -182,10 +202,13 @@ unittest Tukey_window \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w tukey:0.001 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
-greptest Tukey_window \
-    "-O 4 -K DEV -R 1" \
-    "-w tukey -r 0.001"
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
+    -e ${cachepath}
+if [[ $? -ne 77 ]]; then
+    greptest Tukey_window \
+        "-O 4 -K DEV -R 1" \
+        "-w tukey -r 0.001"
+fi
 
 ## Tukey window with parameter 0.5
 unittest Tukey_window_2 \
@@ -193,10 +216,13 @@ unittest Tukey_window_2 \
     -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
     -N ${chan1} -F ${fmin} -B ${Band} -w tukey:0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
-    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath}
-greptest Tukey_window_2 \
-    "-O 4 -K DEV -R 1" \
-    "-w tukey -r 0.5"
+    -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
+    -e ${cachepath}
+if [[ $? -ne 77 ]]; then
+    greptest Tukey_window_2 \
+         "-O 4 -K DEV -R 1" \
+         "-w tukey -r 0.5"
+fi
 
 if test -f testMakeSFTDAG.tar.gz; then
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
