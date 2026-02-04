@@ -21,7 +21,6 @@ Makefile.in
 bin/lal_cache
 bin/lal_fftw*_wisdom
 bin/lal_path2cache
-bin/lal_searchsum2cache
 bin/lal_simd_detect
 bin/lal_tconvert
 bin/lal_version

@@ -226,7 +226,6 @@ outputs:
         - lal_fftw_wisdom --help  # [fft_impl == "fftw"]
         - lal_fftwf_wisdom --help  # [fft_impl == "fftw"]
         - lal_path2cache <<< A-B-0-1.gwf
-        - lal_searchsum2cache --help  # [not migrating]
         - lal_simd_detect
         - lal_version --verbose
         - test "$(lal_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"  # [unix]
