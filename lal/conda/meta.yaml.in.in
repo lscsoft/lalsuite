@@ -163,7 +163,6 @@ outputs:
     test:
       requires:
         - freezegun
-        - igwn-ligolw  # [not migrating]
         - lscsoft-glue
         - pytest >=4.0.0a0
       source_files:
@@ -215,7 +214,6 @@ outputs:
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
       run:
         - fftw  # [fft_impl == "fftw"]
-        - igwn-ligolw  # [not migrating]
         - {{ pin_subpackage('liblal', exact=True) }}
         - igwn-segments
         - numpy
