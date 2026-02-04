@@ -9,7 +9,6 @@
 # @antoni.ramos-buades = Antoni Ramos-Buades
 # @bfarr               = Ben Farr
 # @cjhaster            = Carl-Johan Haster
-# @daichi.tsuna        = Daichi Tsuna
 # @david-keitel        = David Keitel
 # @duncanmmacleod      = Duncan Macleod
 # @ed-maros            = Ed Maros
@@ -53,7 +52,7 @@ lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/lalapps/            @adam-mercer @duncanmmacleod @jolien-creighton
 lalapps/src/power/              @adam-mercer @kipp @soichiro.kuwahara
 lalapps/src/ring/               @francesco-pannarale @ian-harry @jolien-creighton
-lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp
+lalapps/src/string/             @adam-mercer @florent-robinet @kipp
 
 # build / packaging / support files
 *.md                            @adam-mercer @duncanmmacleod @karl-wette
