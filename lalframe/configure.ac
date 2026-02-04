@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALFrame],[3.0.7.1],[lal-discuss@ligo.org])
+AC_INIT([LALFrame],[3.0.8.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([lib/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[14])
-AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBREVISION],[4])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -68,12 +68,9 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.7.0"
-MIN_FRAMECPPC_VERSION="2.5.5"
-MIN_FRAMEL_VERSION="8.42.2"
-AC_SUBST([MIN_LAL_VERSION])
-AC_SUBST([MIN_FRAMECPPC_VERSION])
-AC_SUBST([MIN_FRAMEL_VERSION])
+AC_SUBST([MIN_LAL_VERSION],["7.7.0"])
+AC_SUBST([MIN_FRAMECPPC_VERSION],["2.5.5"])
+AC_SUBST([MIN_FRAMEL_VERSION],["8.42.2"])
 
 AC_CANONICAL_HOST
 
@@ -204,18 +201,18 @@ LALSUITE_USE_DOXYGEN
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALFrame library
-AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblalframe.la"])
+AC_SUBST([LDADD],["\$(top_builddir)/lib/liblalframe.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-I\$(top_builddir)/include ${AM_CPPFLAGS}"
 
 # force headers to be installed in ${includedir}/lal, ignoring library name
-AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
+AC_SUBST([pkgincludedir],["\${includedir}/lal"])
 
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
-AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+AC_SUBST([pkgpythondir],["\${pkgpyexecdir}"])
 
 # make sure local library module is in python path
 LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"

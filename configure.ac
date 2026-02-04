@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[7.26.2],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[7.26.3],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -58,12 +58,13 @@ LALSUITE_BUILD="true"
 export LALSUITE_BUILD
 
 # list of LALSuite packages being built
-LALSUITE_PACKAGES=
+AC_SUBST([LALSUITE_PACKAGES],[])
 export LALSUITE_PACKAGES
 
 # configure a lalsuite package
 lalsuite_libs=
-lalsuite_package_configure_deps=
+AC_SUBST([lalsuite_package_configure_deps],[])
+AC_SUBST([lalsuite_package_AUTHORS_deps],[])
 AC_DEFUN([lalsuite_config_subdir],[
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
@@ -181,10 +182,7 @@ DOXYGEN_INSTALL_DIRMAP=`echo "${DOXYGEN_INSTALL_DIRMAP}" | ${SED} 's|\$(abs_top_
 # do not install user environment scripts into /etc
 AM_CONDITIONAL([SYSCONFDIR_IS_ETC],[test "x${sysconfdir}" = "x/etc"])
 
-AC_SUBST([LALSUITE_PACKAGES])
 AC_SUBST([ac_configure_args])
-AC_SUBST([lalsuite_package_configure_deps])
-AC_SUBST([lalsuite_package_AUTHORS_deps])
 AC_OUTPUT
 AC_MSG_NOTICE([
 ==================================================

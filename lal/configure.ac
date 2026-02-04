@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[7.7.0.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[7.7.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALConfig.h])
 AC_CONFIG_SRCDIR([lib/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[25])
-AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[5])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -43,7 +43,7 @@ AS_CASE([${host_os}],
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT_SUPPORT],[18])
-AC_SUBST([LIBREVISION_SUPPORT],[0])
+AC_SUBST([LIBREVISION_SUPPORT],[1])
 AC_SUBST([LIBAGE_SUPPORT],[4])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
 AS_CASE([${host_os}],
@@ -123,8 +123,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_PYTHON_IGWN_LIGOLW_VERSION="2.1.0"
-AC_SUBST([MIN_PYTHON_IGWN_LIGOLW_VERSION])
+AC_SUBST([MIN_PYTHON_IGWN_LIGOLW_VERSION],["2.1.0"])
 
 AC_CANONICAL_HOST
 
@@ -345,7 +344,7 @@ LALSUITE_USE_CUDA
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LAL and LALSupport libraries
-AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblal.la \$(top_builddir)/lib/support/liblalsupport.la"])
+AC_SUBST([LDADD],["\$(top_builddir)/lib/liblal.la \$(top_builddir)/lib/support/liblalsupport.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-I\$(top_builddir)/include -I\$(top_srcdir)/lib ${AM_CPPFLAGS}"
@@ -353,7 +352,7 @@ AM_CPPFLAGS="-I\$(top_builddir)/include -I\$(top_srcdir)/lib ${AM_CPPFLAGS}"
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
-AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+AC_SUBST([pkgpythondir],["\${pkgpyexecdir}"])
 
 # make sure local library module is in python path
 LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"

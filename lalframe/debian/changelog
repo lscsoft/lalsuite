@@ -1,3 +1,9 @@
+lalframe (3.0.8-1) unstable; urgency=low
+
+  * Update for 3.0.8
+
+ -- Karl Wette <karl.wette@ligo.org>  Sun, 01 Feb 2026 16:49:30 -0000
+
 lalframe (3.0.7-1) unstable; urgency=low
 
   * Update for 3.0.7
