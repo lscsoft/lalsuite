@@ -17,7 +17,6 @@ test_scripts += \
 	test_cache.py \
 	test_gpstime.py \
 	test_iterutils.py \
-	test_rate.py \
 	test_series.py \
 	utils_cache_verify.py \
 	$(END_OF_LIST)

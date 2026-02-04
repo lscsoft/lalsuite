@@ -67,7 +67,7 @@ import igwn_segments as segments
 from igwn_ligolw import ligolw
 from igwn_ligolw import types as ligolw_types
 import lal
-from . import iterutils
+from lal import iterutils
 from . import git_version
 
 
@@ -1118,7 +1118,7 @@ class NDBins(tuple):
 		>>> x[10:12, 1]
 		(slice(1, 2, None), 0)
 		>>> type(x[1])
-		<class 'lal.rate.LogarithmicBins'>
+		<class 'lalburst.rate.LogarithmicBins'>
 
 		Note that if the argument is to be interpreted as a
 		co-ordinate it must be a tuple even if it is only a

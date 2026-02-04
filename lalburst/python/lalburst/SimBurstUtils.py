@@ -29,7 +29,7 @@ import sys
 
 
 import lal
-from lal import rate
+from lalburst import rate
 
 
 from . import SnglBurstUtils
