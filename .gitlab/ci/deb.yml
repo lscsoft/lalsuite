@@ -42,7 +42,7 @@
     - tar -xf ${TARBALL}
     - cd ${PACKAGE}-*/
     # update changelog
-    - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
+    - dch -v "${VERSION}-1+local" -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
     - retry mk-build-deps
           --tool "apt-get -y -q -o Debug::pkgProblemResolver=yes --no-install-recommends"
