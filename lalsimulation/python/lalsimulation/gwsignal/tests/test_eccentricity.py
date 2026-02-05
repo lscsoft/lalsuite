@@ -6,10 +6,10 @@ from .test_utilities import compute_match
 
 @pytest.mark.skip(reason='Additional modules are not available in CI yet')
 @pytest.mark.parametrize("eccentricity", np.linspace(0, 0.9, num=10))
+@pytest.mark.parametrize("mean_anomaly", np.linspace(0, 2*np.pi, num=10))
 def test_circular_conversion(eccentricity):
 
     from ..core import eccentricity_utils as ecc
-    mean_anomaly = np.linspace(0, 2 * np.pi, num=100)
 
     recomputed_mean = ecc.mean_anomaly_from_true(
         ecc.true_anomaly_from_eccentric(
@@ -18,7 +18,7 @@ def test_circular_conversion(eccentricity):
         eccentricity,
     )
 
-    assert np.allclose(mean_anomaly, recomputed_mean)
+    assert np.is_close(mean_anomaly, recomputed_mean)
 
 
 @pytest.mark.skip(
