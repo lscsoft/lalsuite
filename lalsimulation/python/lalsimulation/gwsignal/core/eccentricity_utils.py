@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.optimize import fsolve
-
+import lalpulsar
 
 def mean_anomaly_from_true(true_anomaly, eccentricity):
     return (
@@ -17,8 +17,7 @@ def mean_anomaly_from_true(true_anomaly, eccentricity):
 
 
 def eccentric_anomaly_from_mean(mean_anomaly, eccentricity):
-    func = lambda E: E - eccentricity * np.sin(E) - mean_anomaly
-    return fsolve(func, x0=mean_anomaly)
+    return lalpulsar.ComputeEccentricAnomaly(mean_anomaly, eccentricity)
 
 
 def true_anomaly_from_eccentric(eccentric_anomaly, eccentricity):
