@@ -32,10 +32,6 @@ endif
 endif
 endif
 
-if LALPULSAR
-SUBDIRS += pulsar
-endif
-
 if LALFRAME
 if LALMETAIO
 if LALINSPIRAL
