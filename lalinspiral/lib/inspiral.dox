@@ -129,15 +129,13 @@ Taylor coefficients of the flux
 PN expansion of the GW phase
 \f$\phi_{T_n}(v) =  \phi_\textrm{ref} + \phi^v_N (v)\sum_{k=0}^{n} {\phi}^v_k v^k,\f$
 explicit time-domain phasing formula
-\f$\phi_{T_n}(t) = \phi_\textrm{ref}+\phi_N^t \sum_{k=0}^{n}
-{\phi}^t_k\theta^k,\f$
+\f$\phi_{T_n}(t) = \phi_\textrm{ref}+\phi_N^t \sum_{k=0}^{n} {\phi}^t_k\theta^k,\f$
 PN expansion of time \f$t_{T_n}(v) = t_\textrm{ref} +t^v_N(v) \sum_{k=0}^{n} {t}^v_k v^k,\f$
 explicit time-domain PN expansion of GW frequency,
 \f$F_{T_n}(t) =  F_N^t \sum_{k=0}^{n} {F}^t_k \theta^k,\f$
 and frequency-domain phase function obtained in the stationary phase approximation
 to the chirp,
-\f$\psi(f) = 2 \pi f t_\textrm{ref} - \phi_\textrm{ref} +
-\tau_N \sum_{k=0}^5 {\tau}_k (\pi m f)^{(k-5)/3}.\f$
+\f$\psi(f) = 2 \pi f t_\textrm{ref} - \phi_\textrm{ref} + \tau_N \sum_{k=0}^5 {\tau}_k (\pi m f)^{(k-5)/3}.\f$
 Here \f$N\f$ denotes the "Newtonian value" and
 \f$\theta=[\eta (t_\textrm{lso}-t)/(5m)]^{-1/8}.\f$ In all cases the \f$k=0\f$ coefficient
 is 1 and the  \f$k=1\f$ coefficient is zero. In certain cases
