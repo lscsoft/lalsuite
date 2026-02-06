@@ -23,7 +23,6 @@ AC_CONFIG_FILES([\
   src/lalapps/Makefile \
   src/lalapps/version2.c \
   src/power/Makefile \
-  src/pulsar/Makefile \
   src/ring/Makefile \
   src/string/Makefile \
 ])
