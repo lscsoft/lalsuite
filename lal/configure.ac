@@ -122,9 +122,6 @@ AM_INIT_AUTOMAKE([ \
   no-dist-gzip \
 ])
 
-# version requirements
-AC_SUBST([MIN_PYTHON_IGWN_LIGOLW_VERSION],["2.1.0"])
-
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR

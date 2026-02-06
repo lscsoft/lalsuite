@@ -34,6 +34,7 @@ BuildRequires: swig >= @MIN_SWIG_VERSION@
 # python3x
 BuildRequires: python3-devel
 BuildRequires: python3-lal >= @MIN_LAL_VERSION@
+BuildRequires: python3dist(igwn-ligolw) >= @MIN_PYTHON_IGWN_LIGOLW_VERSION@
 BuildRequires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 BuildRequires: python3dist(pytest)
 
@@ -81,6 +82,7 @@ Summary: Python %{python3_version} Bindings for LALMetaIO
 Requires: lib%{name} = %{version}-%{release}
 Requires: python3
 Requires: python3-lal >= @MIN_LAL_VERSION@
+Requires: python3dist(igwn-ligolw)
 Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 %description -n python3-%{name}
 The LVK Algorithm Library for gravitational wave data analysis.

@@ -20,6 +20,7 @@
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set metaio_version = "@MIN_METAIO_VERSION@" %}
+{% set python_ligo_lw_version = "@MIN_PYTHON_IGWN_LIGOLW_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
@@ -123,6 +124,7 @@ outputs:
         - python-lal >={{ lal_version }}
       run:
         - {{ pin_subpackage('liblalmetaio', exact=True) }}
+        - igwn-ligolw >={{ python_ligo_lw_version }}
         - numpy
         - python
         - python-lal >={{ lal_version }}

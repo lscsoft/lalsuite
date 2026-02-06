@@ -26,6 +26,7 @@ bin/lalburst_power_final
 bin/lalburst_power_meas_likelihood
 bin/lalburst_power_plot_binj
 bin/lalburst_power_plot_binjtf
+bin/lalburst_searchsum2cache
 bin/lalburst_version
 bin/version.c
 config.lt

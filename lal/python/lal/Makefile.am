@@ -21,8 +21,6 @@ pymodule_PYTHON = \
 	gpstime.py \
 	iterutils.py \
 	pipeline.py \
-	rate.py \
-	series.py \
 	$(END_OF_LIST)
 
 endif
