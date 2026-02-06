@@ -670,8 +670,9 @@ double XLALSimNeutronStarFamBranchBaryonicMass(double m, int branch, FamMultiPar
 {
     if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    /* In case user used mini solver */
     if (b == NULL || b->mb_of_m_interp == NULL)
-        XLAL_ERROR_REAL8(XLAL_EINVAL);
+        XLAL_ERROR_REAL8(XLAL_EINVAL,"branch does not exist or mb never evaluated");
     double mb;
     mb = gsl_interp_eval(b->mb_of_m_interp, b->mdat, b->mbdat, m,
         b->mb_of_m_acc);
@@ -708,8 +709,9 @@ double XLALSimNeutronStarFamBranchLoveNumberK3(double m, int branch, FamMultiPar
 {
     if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    /* In case user used mini solver */
     if (b == NULL || b->k3_of_m_interp == NULL)
-        XLAL_ERROR_REAL8(XLAL_EINVAL);
+	XLAL_ERROR_REAL8(XLAL_EINVAL,"branch does not exist or k3 never evaluated");
     double k3;
     k3 = gsl_interp_eval(b->k3_of_m_interp, b->mdat, b->k3dat, m,
         b->k3_of_m_acc);
@@ -728,8 +730,9 @@ double XLALSimNeutronStarFamBranchLoveNumberK4(double m, int branch, FamMultiPar
 {
     if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    /* In case user used mini solver */
     if (b == NULL || b->k4_of_m_interp == NULL)
-        XLAL_ERROR_REAL8(XLAL_EINVAL);
+        XLAL_ERROR_REAL8(XLAL_EINVAL,"branch does not exist or k4 never evaluated");
     double k4;
     k4 = gsl_interp_eval(b->k4_of_m_interp, b->mdat, b->k4dat, m,
         b->k4_of_m_acc);
