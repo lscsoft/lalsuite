@@ -155,6 +155,5 @@ lalapps:pkg:
     - lalmetaio:pkg
     - lalsimulation:pkg
     - lalburst:pkg
-    - lalpulsar:pkg
     - lalinspiral:pkg
     - lalinference:pkg

@@ -211,4 +211,3 @@ lalapps:rpm-el8:
     - lalburst:rpm-el8
     - lalinspiral:rpm-el8
     - lalinference:rpm-el8
-    - lalpulsar:rpm-el8
