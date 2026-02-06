@@ -58,13 +58,13 @@ LALSUITE_BUILD="true"
 export LALSUITE_BUILD
 
 # list of LALSuite packages being built
-AC_SUBST([LALSUITE_PACKAGES],[])
+AC_SUBST([LALSUITE_PACKAGES],[""])
 export LALSUITE_PACKAGES
 
 # configure a lalsuite package
 lalsuite_libs=
-AC_SUBST([lalsuite_package_configure_deps],[])
-AC_SUBST([lalsuite_package_AUTHORS_deps],[])
+AC_SUBST([lalsuite_package_configure_deps],[""])
+AC_SUBST([lalsuite_package_AUTHORS_deps],[""])
 AC_DEFUN([lalsuite_config_subdir],[
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))

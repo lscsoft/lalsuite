@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 187
+# serial 188
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1275,8 +1275,8 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
 
     # build some substituted variables from list of configured LAL libraries
     AC_SUBST([DOXYGEN_ENABLED_SECTIONS])
-    AC_SUBST([DOXYGEN_TAGFILES],[])
-    AC_SUBST([DOXYGEN_INSTALL_DIRMAP],[])
+    AC_SUBST([DOXYGEN_TAGFILES],[""])
+    AC_SUBST([DOXYGEN_INSTALL_DIRMAP],[""])
     AC_SUBST([DOXYGEN_NAVIGATION_TABS])
     for arg in ${lalsuite_libs}; do
       AS_CASE([${arg}],
@@ -1473,8 +1473,8 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
       pager="less -F -R -S -X more"
     ]
   )
-  AC_SUBST([PAGER],[])
-  AC_SUBST([PAGER_CPPFLAGS],[])
+  AC_SUBST([PAGER],[""])
+  AC_SUBST([PAGER_CPPFLAGS],[""])
   AS_IF([test "x${pager}" != xfalse],[
     for pager_arg in ${pager}; do
       AS_CASE([${pager_arg}],
