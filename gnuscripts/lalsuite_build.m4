@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 188
+# serial 189
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1223,6 +1223,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
 
     # configure Doxygen files
     AC_CONFIG_FILES([doxygen/doxygen.cfg])
+    AC_CONFIG_FILES([doxygen/layout.xml])
     AC_CONFIG_FILES([doxygen/filter],[chmod +x doxygen/filter])
     AC_CONFIG_FILES([doxygen/make_autogen_dox],[chmod +x doxygen/make_autogen_dox])
 
@@ -1271,6 +1272,14 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
         # https://bugzilla.gnome.org/show_bug.cgi?id=743605
         DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: explicit link request/d'"]
       ])
+    ])
+
+    # configure layout
+    LALSUITE_VERSION_COMPARE([${doxygen_version}],[>=],[1.9.8],[
+      # https://github.com/doxygen/doxygen/issues/10562
+      AC_SUBST([DOXYGEN_LAYOUT_DOCS_TAB_TYPE],["topics"])
+    ],[
+      AC_SUBST([DOXYGEN_LAYOUT_DOCS_TAB_TYPE],["modules"])
     ])
 
     # build some substituted variables from list of configured LAL libraries

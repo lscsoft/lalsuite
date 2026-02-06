@@ -3,7 +3,7 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
-    <tab type="modules" visible="yes" title="Documentation" intro=""/>
+    <tab type="@DOXYGEN_LAYOUT_DOCS_TAB_TYPE@" visible="yes" title="Documentation" intro=""/>
     <tab type="filelist" visible="yes" title="File List" intro=""/>
     <tab type="namespacelist" visible="yes" title="Namespace List" intro=""/>
     <tab type="classlist" visible="yes" title="Data Structure List" intro=""/>
