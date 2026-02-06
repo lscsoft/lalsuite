@@ -77,14 +77,17 @@ static inline double clamp_to_range_tol(double x, double xmin, double xmax, doub
 
 static double eos_p_of_e_tabular(double e, LALSimNeutronStarEOS * eos)
 {
-	double log_e;
+    double log_e;
     double log_p;
     if (e == 0.0)
-		return 0.0;
-	log_e = log(e);
-	if (log_e < eos->data.tabular->log_edat[0])
-		/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
-		return exp(eos->data.tabular->log_pdat[0] + (5.0 / 3.0) * (log_e - eos->data.tabular->log_edat[0]));
+	return 0.0;
+    log_e = log(e);
+    // Clamp
+    log_e = clamp_to_range_tol(log_e, eos->data.tabular->log_edat[0],
+        eos->data.tabular->log_edat[eos->data.tabular->ndat-1], 1e-12);
+    if (log_e < eos->data.tabular->log_edat[0])
+	/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
+	return exp(eos->data.tabular->log_pdat[0] + (5.0 / 3.0) * (log_e - eos->data.tabular->log_edat[0]));
     log_p = gsl_interp_eval(eos->data.tabular->log_p_of_log_e_interp,
         eos->data.tabular->log_edat, eos->data.tabular->log_pdat, log_e,
         eos->data.tabular->log_p_of_log_e_acc);
@@ -93,14 +96,17 @@ static double eos_p_of_e_tabular(double e, LALSimNeutronStarEOS * eos)
 
 static double eos_p_of_rho_tabular(double rho, LALSimNeutronStarEOS * eos)
 {
-	double log_rho;
+    double log_rho;
     double log_p;
-	if (rho == 0.0)
-		return 0.0;
-	log_rho = log(rho);
-	if (log_rho < eos->data.tabular->log_rhodat[0])
-		/* use non-relativistic degenerate gas, p = K * rho**(5./3.) */
-		return exp(eos->data.tabular->log_pdat[0] + (5.0 / 3.0) * (log_rho - eos->data.tabular->log_rhodat[0]));
+    if (rho == 0.0)
+	return 0.0;
+    log_rho = log(rho);
+    // Clamp
+    log_rho = clamp_to_range_tol(log_rho, eos->data.tabular->log_rhodat[0],
+        eos->data.tabular->log_rhodat[eos->data.tabular->ndat-1], 1e-12);
+    if (log_rho < eos->data.tabular->log_rhodat[0])
+	/* use non-relativistic degenerate gas, p = K * rho**(5./3.) */
+	return exp(eos->data.tabular->log_pdat[0] + (5.0 / 3.0) * (log_rho - eos->data.tabular->log_rhodat[0]));
     log_p = gsl_interp_eval(eos->data.tabular->log_p_of_log_rho_interp,
         eos->data.tabular->log_rhodat, eos->data.tabular->log_pdat, log_rho,
         eos->data.tabular->log_p_of_log_rho_acc);
@@ -109,14 +115,17 @@ static double eos_p_of_rho_tabular(double rho, LALSimNeutronStarEOS * eos)
 
 static double eos_e_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
 {
-	double log_p;
+    double log_p;
     double log_e;
-	if (p == 0.0)
-		return 0.0;
-	log_p = log(p);
-	if (log_p < eos->data.tabular->log_pdat[0])
-		/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
-		return exp(eos->data.tabular->log_edat[0] + (3.0 / 5.0) * (log_p - eos->data.tabular->log_pdat[0]));
+    if (p == 0.0)
+	return 0.0;
+    log_p = log(p);
+    // Clamp
+    log_p = clamp_to_range_tol(log_p, eos->data.tabular->log_pdat[0],
+        eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], 1e-12);
+    if (log_p < eos->data.tabular->log_pdat[0])
+	/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
+	return exp(eos->data.tabular->log_edat[0] + (3.0 / 5.0) * (log_p - eos->data.tabular->log_pdat[0]));
     log_e = gsl_interp_eval(eos->data.tabular->log_e_of_log_p_interp,
         eos->data.tabular->log_pdat, eos->data.tabular->log_edat, log_p,
         eos->data.tabular->log_e_of_log_p_acc);
@@ -125,14 +134,17 @@ static double eos_e_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
 
 static double eos_e_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 {
-	double log_h;
+    double log_h;
     double log_e;
-	if (h == 0.0)
-		return 0.0;
- 	log_h = log(h);
-	if (log_h < eos->data.tabular->log_hdat[0])
-		/* use non-relativistic degenerate gas, e = K * h**(3./2.) */
-		return exp(eos->data.tabular->log_edat[0] + 1.5 * (log_h - eos->data.tabular->log_hdat[0]));
+    if (h == 0.0)
+	return 0.0;
+    log_h = log(h);
+    // Clamp
+    log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
+        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
+    if (log_h < eos->data.tabular->log_hdat[0])
+	/* use non-relativistic degenerate gas, e = K * h**(3./2.) */
+	return exp(eos->data.tabular->log_edat[0] + 1.5 * (log_h - eos->data.tabular->log_hdat[0]));
     log_e = gsl_interp_eval(eos->data.tabular->log_e_of_log_h_interp,
         eos->data.tabular->log_hdat, eos->data.tabular->log_edat, log_h,
         eos->data.tabular->log_e_of_log_h_acc);
@@ -141,17 +153,17 @@ static double eos_e_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 
 static double eos_p_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 {
-	double log_h;
+    double log_h;
     double log_p;
-	if (h == 0.0)
-		return 0.0;
- 	log_h = log(h);
-	// Clamp
-        log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
-                    eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
-	if (log_h < eos->data.tabular->log_hdat[0])
-		/* use non-relativistic degenerate gas, p = K * h**(5./2.) */
-		return exp(eos->data.tabular->log_pdat[0] + 2.5 * (log_h - eos->data.tabular->log_hdat[0]));
+    if (h == 0.0)
+	return 0.0;
+    log_h = log(h);
+    // Clamp
+    log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
+        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
+    if (log_h < eos->data.tabular->log_hdat[0])
+	/* use non-relativistic degenerate gas, p = K * h**(5./2.) */
+	return exp(eos->data.tabular->log_pdat[0] + 2.5 * (log_h - eos->data.tabular->log_hdat[0]));
     log_p = gsl_interp_eval(eos->data.tabular->log_p_of_log_h_interp,
         eos->data.tabular->log_hdat, eos->data.tabular->log_pdat, log_h,
         eos->data.tabular->log_p_of_log_h_acc);
@@ -160,14 +172,17 @@ static double eos_p_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 
 static double eos_rho_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 {
-	double log_h;
+    double log_h;
     double log_rho;
-	if (h == 0.0)
-		return 0.0;
- 	log_h = log(h);
-	if (log_h < eos->data.tabular->log_hdat[0])
-		/* use non-relativistic degenerate gas, rho = K * h**(3./2.) */
-		return exp(eos->data.tabular->log_rhodat[0] + 1.5 * (log_h - eos->data.tabular->log_hdat[0]));
+    if (h == 0.0)
+	return 0.0;
+    log_h = log(h);
+    // Clamp
+    log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
+        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
+    if (log_h < eos->data.tabular->log_hdat[0])
+	/* use non-relativistic degenerate gas, rho = K * h**(3./2.) */
+	return exp(eos->data.tabular->log_rhodat[0] + 1.5 * (log_h - eos->data.tabular->log_hdat[0]));
     log_rho = gsl_interp_eval(eos->data.tabular->log_rho_of_log_h_interp,
         eos->data.tabular->log_hdat, eos->data.tabular->log_rhodat, log_h,
         eos->data.tabular->log_rho_of_log_h_acc);
@@ -176,14 +191,17 @@ static double eos_rho_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 
 static double eos_h_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
 {
-	double log_p;
+    double log_p;
     double log_h;
-	if (p == 0)
-		return 0.0;
- 	log_p = log(p);
-	if (log_p < eos->data.tabular->log_pdat[0])
-		/* use non-relativistic degenerate gas, h = K * p**(2./5.) */
-		return exp(eos->data.tabular->log_hdat[0] + 0.4 * (log_p - eos->data.tabular->log_pdat[0]));
+    if (p == 0)
+	return 0.0;
+    log_p = log(p);
+    // Clamp
+    log_p = clamp_to_range_tol(log_p, eos->data.tabular->log_pdat[0],
+        eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], 1e-12);
+    if (log_p < eos->data.tabular->log_pdat[0])
+	/* use non-relativistic degenerate gas, h = K * p**(2./5.) */
+	return exp(eos->data.tabular->log_hdat[0] + 0.4 * (log_p - eos->data.tabular->log_pdat[0]));
     log_h = gsl_interp_eval(eos->data.tabular->log_h_of_log_p_interp,
         eos->data.tabular->log_pdat, eos->data.tabular->log_hdat, log_p,
         eos->data.tabular->log_h_of_log_p_acc);
@@ -195,9 +213,12 @@ static double eos_dedp_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
     double log_p;
     double log_e;
     double d_log_e_d_log_p;
-	if (p == 0 || (log_p = log(p)) < eos->data.tabular->log_pdat[0])
-		/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
-		return (3.0 / 5.0) * exp(eos->data.tabular->log_edat[0] - eos->data.tabular->log_pdat[0]);
+    if (p == 0 || (log_p = log(p)) < eos->data.tabular->log_pdat[0])
+	/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
+	return (3.0 / 5.0) * exp(eos->data.tabular->log_edat[0] - eos->data.tabular->log_pdat[0]);
+    // Clamp
+    log_p = clamp_to_range_tol(log_p, eos->data.tabular->log_pdat[0],
+        eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], 1e-12);
     log_e = gsl_interp_eval(eos->data.tabular->log_e_of_log_p_interp,
         eos->data.tabular->log_pdat, eos->data.tabular->log_edat, log_p,
         eos->data.tabular->log_e_of_log_p_acc);
@@ -219,7 +240,7 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
     log_h = log(h);
     // Clamp
     log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
-                    eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
+        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
     log_cs2 = gsl_interp_eval(eos->data.tabular->log_cs2_of_log_h_interp,
     eos->data.tabular->log_hdat, eos->data.tabular->log_cs2dat, log_h,
     eos->data.tabular->log_cs2_of_log_h_acc);
