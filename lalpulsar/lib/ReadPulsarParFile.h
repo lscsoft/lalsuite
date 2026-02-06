@@ -18,20 +18,31 @@
 */
 
 /**
+ * \defgroup ReadPulsarParFile_h Header ReadPulsarParFile.h
+ * \ingroup lalpulsar_general
  * \author Matt Pitkin
  * \date 2013
- * \file
- * \ingroup lalpulsar_general
- * \brief Functions to read TEMPO pulsar parameter files
+ * \brief Functions to read <tt>TEMPO(2)</tt> pulsar parameter files
  *
- * Here we define a function to read in pulsar parameters from a standard <tt>TEMPO(2)</tt> parameter
- * (.par) file - <tt>XLALReadTEMPOParFile</tt>.
+ * Radio astronomers fit pulsar parameters using <tt>TEMPO(2)</tt> which will output
+ * the parameters in a <tt>.par</tt> file. The values allowed in this file can be
+ * found in the TEMPO documentation.
  *
- * We also define a structure for holding pulsar parameters. This is a linked list of structures containing
- * the parameter name (which is always converted to an uppercase string), the parameter value (which can be any
- * data type) and the parameter uncertainty/error (a \c REAL8 value) if given.
+ * The function XLALReadTEMPOParFile() reads the parameters into a linked list
+ * #PulsarParameters structure, from which the parameters can be accessed
+ * using the appropriate access function. These use a hash table to quick
+ * look-up.  The parameters are assigned names, which are used as the hash table
+ * keys, which are fully uppercase versions of the TEMPO parameter names.
  *
- */
+ * All parameters read in are converted into SI units.
+ *
+ * Functions are is also included which converts a string containing the right ascension or
+ * declination in the format <tt>ddd/hh:mm:ss.s</tt> or <tt>ddd/hhmmss.s</tt>
+ * (as is given in the <tt>.par</tt> file) into a \c REAL8 value in
+ * radians.
+ *
+*/
+/** @{ */
 
 #ifndef _READPULSARPARFILE_H
 #define _READPULSARPARFILE_H
@@ -101,10 +112,10 @@ typedef struct tagPulsarParam {
  *
  * This is implemented as a linked list of PulsarParam structures and should
  * only be accessed using the accessor functions below. This is intended as a replacement to the
- * \c BinaryPulsarParams structure.
+ * #BinaryPulsarParams structure.
  */
 typedef struct tagPulsarParameters {
-  PulsarParam       *head;                              /**< A linked list of \c PulsarParam structures */
+  PulsarParam       *head;                              /**< A linked list of #PulsarParam structures */
   INT4              nparams;                            /**< The total number of parameters in the structure */
   LALHashTbl        *hash_table;                        /**< Hash table of parameters */
 } PulsarParameters;
@@ -367,27 +378,27 @@ typedef struct tagBinaryPulsarParams {
 
 
 /* DEFINE FUNCTIONS */
-/** \brief Get the required parameter value from the \c PulsarParameters structure
+/** \brief Get the required parameter value from the #PulsarParameters structure
  *
  * This function will return a void pointer to the parameter value. This should be cast into the required
  * variable type once returned.
  */
 void *PulsarGetParam( const PulsarParameters *pars, const CHAR *name );
 
-/** \brief Get the required parameter error value from the \c PulsarParameters structure
+/** \brief Get the required parameter error value from the #PulsarParameters structure
  *
  * This function will return a void pointer to the parameter error value. The parameter error will be either
  * a \c REAL8 or a \c REAL8Vector and should be cast accordingly once returned.
  */
 void *PulsarGetParamErr( const PulsarParameters *pars, const CHAR *name );
 
-/** \brief Get the fit flag array for a given parameter from the \c PulsarParameters structure
+/** \brief Get the fit flag array for a given parameter from the #PulsarParameters structure
  *
  * This function will return a \c UINT4 array to the parameter fit flag.
  */
 const UINT4 *PulsarGetParamFitFlag( const PulsarParameters *pars, const CHAR *name );
 
-/** \brief Get the fit flag array for a given parameter from the \c PulsarParameters structure
+/** \brief Get the fit flag array for a given parameter from the #PulsarParameters structure
  *
  * This function will return a \c UINT4Vector array to the parameter fit flag.
  */
@@ -396,19 +407,19 @@ const UINT4Vector *PulsarGetParamFitFlagAsVector( const PulsarParameters *pars, 
 
 /** \brief Return a \c REAL8 parameter error value
  *
- * This function will call \c PulsarGetParamErr for a \c REAL8 parameter and properly cast it for returning.
+ * This function will call PulsarGetParamErr() for a \c REAL8 parameter and properly cast it for returning.
  */
 REAL8 PulsarGetREAL8ParamErr( const PulsarParameters *pars, const CHAR *name );
 
 /** \brief Return a \c REAL8Vector parameter error value
  *
- * This function will call \c PulsarGetParamErr for a \c REAL8Vector parameter and properly cast it for returning.
+ * This function will call PulsarGetParamErr() for a \c REAL8Vector parameter and properly cast it for returning.
  */
 const REAL8Vector *PulsarGetREAL8VectorParamErr( const PulsarParameters *pars, const CHAR *name );
 
 /** \brief Return an individual \c REAL8 value from a \c REAL8Vector parameter
  *
- * This function will call \c PulsarGetParam for a \c REAL8Vector parameter's errors and then return a specific
+ * This function will call PulsarGetParam() for a \c REAL8Vector parameter's errors and then return a specific
  * value from within the vector. The input \c name must be of the form e.g. \c FB1, which will get the \c REAL8Vector
  * for the \c FB parameter and return the value from the \c 1 index.
  */
@@ -420,7 +431,7 @@ PulsarParamType PulsarGetParamType( const PulsarParameters *pars, const char *na
 
 /** \brief Return a \c REAL8 parameter
  *
- * This function will call \c PulsarGetParam for a \c REAL8 parameter and properly cast it for returning.
+ * This function will call PulsarGetParam() for a \c REAL8 parameter and properly cast it for returning.
  */
 REAL8 PulsarGetREAL8Param( const PulsarParameters *pars, const CHAR *name );
 
@@ -430,7 +441,7 @@ REAL8 PulsarGetREAL8ParamOrZero( const PulsarParameters *pars, const CHAR *name 
 
 /** \brief Return a \c UINT4 parameter
  *
- * This function will call \c PulsarGetParam for a \c UINT4 parameter and properly cast it for returning.
+ * This function will call PulsarGetParam() for a \c UINT4 parameter and properly cast it for returning.
  */
 UINT4 PulsarGetUINT4Param( const PulsarParameters *pars, const CHAR *name );
 
@@ -444,14 +455,14 @@ SWIGLAL( OWNS_THIS_ARG( const CHAR *, value ) );
 
 /** \brief Return a string parameter
  *
- * This function will call \c PulsarGetParam for a string parameter and properly cast it for returning.
+ * This function will call PulsarGetParam() for a string parameter and properly cast it for returning.
  * The return value should be copied e.g. with
  * CHAR *str = XLALStringDuplicate( PulsarGetStringParam(pars, "NAME") );
  * It also needs to be freed afterwards.
  */
 const CHAR *PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name );
 
-/** \brief Add a string parameter to the \c PulsarParameters structure */
+/** \brief Add a string parameter to the #PulsarParameters structure */
 void PulsarAddStringParam( PulsarParameters *pars, const CHAR *name, const CHAR *value );
 
 #ifdef SWIG   /* SWIG interface directives */
@@ -464,11 +475,11 @@ SWIGLAL( OWNS_THIS_ARG( const REAL8Vector *, value ) );
 
 /** \brief Return a \c REAL8Vector parameter
  *
- * This function will call \c PulsarGetParam for a \c REAL8Vector parameter and properly cast it for returning.
+ * This function will call PulsarGetParam() for a \c REAL8Vector parameter and properly cast it for returning.
  */
 const REAL8Vector *PulsarGetREAL8VectorParam( const PulsarParameters *pars, const CHAR *name );
 
-/** \brief Add a \c REAL8Vector parameter to the \c PulsarParameters structure */
+/** \brief Add a \c REAL8Vector parameter to the #PulsarParameters structure */
 void PulsarAddREAL8VectorParam( PulsarParameters *pars, const CHAR *name, const REAL8Vector *value );
 
 #ifdef SWIG   /* SWIG interface directives */
@@ -477,44 +488,44 @@ SWIGLAL_CLEAR( OWNS_THIS_ARG( const REAL8Vector *, value ) );
 
 /** \brief Return an individual \c REAL8 value from a \c REAL8Vector parameter
  *
- * This function will call \c PulsarGetParam for a \c REAL8Vector parameter and then return a specific value
+ * This function will call PulsarGetParam() for a \c REAL8Vector parameter and then return a specific value
  * from within the vector. The input \c name must be of the form e.g. \c FB1, which will get the \c REAL8Vector
  * for the \c FB parameter and return the value from the \c 1 index.
  */
 REAL8 PulsarGetREAL8VectorParamIndividual( const PulsarParameters *pars, const CHAR *name );
 
-/** \brief Add a parameter and value to the \c PulsarParameters structure
+/** \brief Add a parameter and value to the #PulsarParameters structure
  *
- * This function adds a new parameter, and associated value to the \c PulsarParameters structure. If the parameter
+ * This function adds a new parameter, and associated value to the #PulsarParameters structure. If the parameter
  * already exists then the old value is replaced with the new value.
  */
 void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, PulsarParamType type );
 
-/** \brief Add a \c REAL8 parameter to the \c PulsarParameters structure */
+/** \brief Add a \c REAL8 parameter to the #PulsarParameters structure */
 void PulsarAddREAL8Param( PulsarParameters *pars, const CHAR *name, REAL8 value );
 
-/** \brief Add a \c UINT4 parameter to the \c PulsarParameters structure */
+/** \brief Add a \c UINT4 parameter to the #PulsarParameters structure */
 void PulsarAddUINT4Param( PulsarParameters *pars, const CHAR *name, UINT4 value );
 
-/** \brief Free all the parameters from a \c PulsarParameters structure */
+/** \brief Free all the parameters from a #PulsarParameters structure */
 void PulsarClearParams( PulsarParameters *pars );
 
-/** \brief Remove a given parameter from a \c PulsarParameters structure */
+/** \brief Remove a given parameter from a #PulsarParameters structure */
 void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name );
 
-/** \brief Set the value of a parameter in the \c PulsarParameters structure
+/** \brief Set the value of a parameter in the #PulsarParameters structure
  *
- * Set the value of the parameter given by \c name in the \c PulsarParameters structure. The parameter must already
- * exist in the structure, otherwise it should be added using \c PulsarAddParam().
+ * Set the value of the parameter given by \c name in the #PulsarParameters structure. The parameter must already
+ * exist in the structure, otherwise it should be added using PulsarAddParam().
  */
 void PulsarSetParam( PulsarParameters *pars, const CHAR *name, const void *value );
 
-/** \brief Set the value of the error of a parameter in the \c PulsarParameters structure
+/** \brief Set the value of the error of a parameter in the #PulsarParameters structure
  *
- * Set the value of the error on the parameter given by \c name in the \c PulsarParameters structure.
- * The parameter must already exist in the structure, otherwise it should be added using \c PulsarAddParam().
+ * Set the value of the error on the parameter given by \c name in the #PulsarParameters structure.
+ * The parameter must already exist in the structure, otherwise it should be added using PulsarAddParam().
  * If the .par file contains a 1 before the error value (because that parameter has been included in the
- * TEMPO(2) fitting procedure) then that must be input as the fit flag (this can be a vector for e.g. FB
+ * <tt>TEMPO(2)</tt> fitting procedure) then that must be input as the fit flag (this can be a vector for e.g. FB
  * values with multiple parameters, in which case \c nfits will be the number of values in that vector).
  */
 void PulsarSetParamErr( PulsarParameters *pars, const CHAR *name, void *value, const UINT4 *fitFlag, UINT4 len );
@@ -525,13 +536,13 @@ void PulsarSetREAL8ParamErr( PulsarParameters *pars, const CHAR *name, REAL8 val
 /** \brief Set the error values for a \c REAL8Vector parameter */
 void PulsarSetREAL8VectorParamErr( PulsarParameters *pars, const CHAR *name, const REAL8Vector *value, const UINT4 *fitFlag );
 
-/** \brief Check for the existence of the parameter \c name in the \c PulsarParameters structure */
+/** \brief Check for the existence of the parameter \c name in the #PulsarParameters structure */
 int PulsarCheckParam( const PulsarParameters *pars, const CHAR *name );
 
 /** \brief Function to free memory from pulsar parameters */
 void PulsarFreeParams( PulsarParameters *par );
 
-/** \brief Function to copy a \c PulsarParameters structure */
+/** \brief Function to copy a #PulsarParameters structure */
 void PulsarCopyParams( PulsarParameters *origin, PulsarParameters *target );
 
 /** Conversion functions from units used in TEMPO parameter files into SI units */
@@ -578,21 +589,14 @@ void ParConvDecToRads( const CHAR *in, void *out );
 void ParConvMicrosecToSec( const CHAR *in, void *out );
 
 
-/** \brief Read in the parameters from a TEMPO(2) parameter file into a \c PulsarParameters structure
+/** \brief Read in the parameters from a <tt>TEMPO(2)</tt> parameter file into a #PulsarParameters structure
  *
- * This function will read in a TEMPO(2) parameter file into a \c PulsarParameters structure. The structure of this
- * function is similar to those in the TEMPO2 code \c readParfile.C and this supersedes the
- * \c XLALReadTEMPOParFileOrig function.
+ * This function will read in a <tt>TEMPO(2)</tt> parameter file into a #PulsarParameters structure. The structure of this
+ * function is similar to those in the <tt>TEMPO2</tt> code \c readParfile.C.
  *
  * \param pulsarAndPath [in] The path to the pulsar parameter file
  */
 PulsarParameters *XLALReadTEMPOParFile( const CHAR *pulsarAndPath );
-
-/** function to read in a TEMPO parameter file
- */
-void
-XLALReadTEMPOParFileOrig( BinaryPulsarParams    *output,
-                          CHAR                  *pulsarAndPath );
 
 /** \brief This function will read in a TEMPO-style parameter correlation matrix
  *
@@ -639,6 +643,8 @@ XLALTDBMJDtoGPS( REAL8 MJD );
 
 REAL8
 XLALTCBMJDtoGPS( REAL8 MJD );
+/** @} */
+
 /** @} */
 
 #ifdef __cplusplus
