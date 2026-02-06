@@ -66,8 +66,6 @@ new_exec_name_regex = ' \
 	s|^lalapps_run_pulsar_crosscorr_v2$$|lalpulsar_run_crosscorr_v2|; \
 	s|^lalapps_|lalpulsar_|'
 
-EXTRA_DIST = old_exec_name_stubs.dox
-
 CLEANFILES = \
 	CreateEphemeris/lalapps_create_time_correction_ephemeris \
 	CrossCorr/lalapps_combine_crosscorr_toplists \
