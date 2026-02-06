@@ -102,6 +102,7 @@ doxygen/doxygen_objdb_*.tmp
 doxygen/doxygen_sqlite3.db
 doxygen/filter
 doxygen/in/
+doxygen/layout.xml
 doxygen/make_autogen_dox
 doxygen/out/
 doxygen/test_doxygen.*
