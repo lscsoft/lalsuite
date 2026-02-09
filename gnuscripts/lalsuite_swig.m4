@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 126
+# serial 127
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -206,7 +206,7 @@ SWIG support can be disabled by using the --disable-swig configure option]])
     rm -f conftest-swig.i conftest-swig.deps conftest-swig.xml
 
     # extract -I and -D flags from LALSuite library preprocessor flags
-    AC_SUBST([SWIG_CPPFLAGS],[])
+    AC_SUBST([SWIG_CPPFLAGS],[""])
     for flag in ${CPPFLAGS}; do
       AS_CASE([${flag}],
         [-I*|-D*],[SWIG_CPPFLAGS="${SWIG_CPPFLAGS} ${flag}"]
@@ -214,7 +214,7 @@ SWIG support can be disabled by using the --disable-swig configure option]])
     done
 
     # extract -L flags from LALSuite library linker flags
-    AC_SUBST([SWIG_LDFLAGS],[])
+    AC_SUBST([SWIG_LDFLAGS],[""])
     for flag in ${LDFLAGS}; do
       AS_CASE([${flag}],
         [-L*],[SWIG_LDFLAGS="${SWIG_LDFLAGS} ${flag}"]
@@ -227,7 +227,7 @@ SWIG support can be disabled by using the --disable-swig configure option]])
 
     # substitute list of LALSuite bindings that these bindings depend on
     AC_MSG_CHECKING([for LALSuite binding dependencies])
-    AC_SUBST([SWIG_DEPENDENCIES],[])
+    AC_SUBST([SWIG_DEPENDENCIES],[""])
     for arg in ${lalsuite_libs}; do
       AS_CASE([${arg}],
         [lalsupport],[:],
@@ -466,7 +466,7 @@ EOF
 
     # determine Octave preprocessor flags
     AC_SUBST([SWIG_OCTAVE_CPPFLAGS],["-ULAL_STRICT_DEFS_ENABLED ${abiflag}"])
-    AC_SUBST([SWIG_OCTAVE_CPPFLAGS_IOCTAVE],[])
+    AC_SUBST([SWIG_OCTAVE_CPPFLAGS_IOCTAVE],[""])
     for arg in CPPFLAGS INCFLAGS; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
         AS_CASE([${flag}],
@@ -477,7 +477,7 @@ EOF
     done
 
     # determine Octave compiler flags
-    AC_SUBST([SWIG_OCTAVE_CXXFLAGS],[])
+    AC_SUBST([SWIG_OCTAVE_CXXFLAGS],[""])
     swig_octave_cxxflags=
     for arg in CXX CXXPICFLAG ALL_CXXFLAGS; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
@@ -506,7 +506,7 @@ EOF
     )
 
     # determine Octave linker flags
-    AC_SUBST([SWIG_OCTAVE_LDFLAGS],[])
+    AC_SUBST([SWIG_OCTAVE_LDFLAGS],[""])
     swig_octave_ldflags=
     for arg in OCTLIBDIR; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
@@ -616,7 +616,7 @@ EOD`]
     done
 
     # determine Python compiler flags
-    AC_SUBST([SWIG_PYTHON_CFLAGS],[])
+    AC_SUBST([SWIG_PYTHON_CFLAGS],[""])
     python_out=[`${PYTHON} - 2>/dev/null <<EOD
 import sysconfig
 cflags = sysconfig.get_config_var('CFLAGS').split()
@@ -646,7 +646,7 @@ EOD`]
     )
 
     # determine Python linker flags
-    AC_SUBST([SWIG_PYTHON_LDFLAGS],[])
+    AC_SUBST([SWIG_PYTHON_LDFLAGS],[""])
     python_out=[`${PYTHON} - 2>/dev/null <<EOD
 try:
     from distutils import sysconfig
