@@ -564,12 +564,9 @@ def compare(args, tmp_dir):
         json.dump(api_ch_json, f)
         f.write("\n")
 
-    # Output text files with overall API changes
-    for api_ch_txt_filename, api_ch_txt_contents in (
-        ("api_changes_overall.txt", api_ch_json["lalsuite"]["overall"]),
-        ("api_changes_overall_label.txt", "api::" + api_ch_json["lalsuite"]["overall"]),
-    ):
-        (args.output_dir / api_ch_txt_filename).write_text(api_ch_txt_contents + "\n")
+    # Output text file with overall API changes
+    api_ch_txt_file = args.output_dir / "api_changes_overall.txt"
+    api_ch_txt_file.write_text(api_ch_json["lalsuite"]["overall"] + "\n")
 
     return 0
 
