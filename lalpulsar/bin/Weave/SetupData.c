@@ -36,6 +36,15 @@
 /// @}
 
 ///
+/// Definitions of search type choices
+///
+const UserChoices WeaveMetricTypeChoices = {
+  { SUPERSKY_METRIC_TYPE,          "all-sky" },
+  { SUPERSKY_DIRECTED_METRIC_TYPE, "directed" },
+  { 0, NULL }
+};
+
+///
 /// Free contents of setup data
 ///
 void XLALWeaveSetupDataClear(
@@ -111,9 +120,11 @@ int XLALWeaveSetupDataRead(
   read_status = XLALFITSHeaderReadString( file, "metric-type", &setup->metric_type );
   if ( read_status != XLAL_SUCCESS ) {
     // If not found, set it to 'all-sky'
+    const char *default_type = WeaveMetricTypeChoices[0].name; // "all-sky"
     XLALClearErrno();
-    LogPrintf( LOG_NORMAL, "Setup file does not contain 'metric-type'. Defaulting to 'all-sky'\n" );
-    setup->metric_type = XLALStringDuplicate( "all-sky" );
+    LogPrintf( LOG_NORMAL, "Setup file does not contain 'metric-type'. Defaulting to '%s'\n", default_type );
+    setup->metric_type = XLALStringDuplicate( default_type );
+
     // Check that the string duplication was successful
     XLAL_CHECK( setup->metric_type != NULL, XLAL_ENOMEM );
   }
