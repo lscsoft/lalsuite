@@ -48,12 +48,26 @@ workflow:
 
     # --- CI build for merge requests
 
-    # - runs if the trigger is opening a merge request
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    # - runs if the trigger is opening a merge request AND the pipeline is a merged results pipeline
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA != ""'
       when: always
       variables:
         PIPELINE_NAME: "MR pipeline ($CI_MERGE_REQUEST_IID)"
         PIPELINE_TYPE: merge-pre
+
+    # - runs if the trigger is opening a merge request to lscsoft/lalsuite AND the pipeline is not a merged results pipeline
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_PROJECT_PATH  == "lscsoft/lalsuite" && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == ""'
+      when: always
+      variables:
+        PIPELINE_NAME: "MR pipeline error"
+        PIPELINE_TYPE: pipeline-error
+        PIPELINE_ERROR_MESSAGE: |
+          ------------------------------------------------------------------------\n
+          This merge request cannot run the CI pipeline of the target repository  \n
+          $CI_MERGE_REQUEST_PROJECT_URL                                           \n
+          The most likely reason is you do not have Developer access permissions. \n
+          Please request to be added as a Developer to this repository.           \n
+          ------------------------------------------------------------------------\n
 
     # - runs if the trigger is a commit push AND the branch is the main branch at lscsoft/lalsuite
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
@@ -87,6 +101,18 @@ workflow:
     # --- otherwise do not run CI pipeline
 
     - when: never
+
+# -- CI job for pipeline errors
+
+pipeline-error:
+  stage: pipeline error
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - echo -e $PIPELINE_ERROR_MESSAGE
+    - exit 1
+  rules:
+    - if: '$PIPELINE_TYPE == "pipeline-error"'
 
 # -- rules to include CI jobs in CI pipelines
 
