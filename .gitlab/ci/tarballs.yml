@@ -39,6 +39,10 @@
     # there are no reports for tarball jobs
     reports:
       junit: []
+  rules:
+    - !reference [.ci-nightly-deploy, rules]
+    - !reference [.ci-push-build, rules]
+    - !reference [.ci-merge-build, rules]
 
 # make tarballs for _all_ packages
 tarballs:
