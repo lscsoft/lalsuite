@@ -24,13 +24,11 @@ CONFIGURE_ARGS="
 "
 
 # customisation for LALSuite development CI
-if [[ "${GITLAB_CI}" == "true" ]] && [[ "x${CI_COMMIT_TAG}" == x ]]; then
+if [[ "${GITLAB_CI}" == "true" ]]; then
   # declare nightly builds
-  if [ ! -z "${ENABLE_NIGHTLY}" ]; then
-    CONFIGURE_ARGS="${CONFIGURE_ARGS} --enable-nightly"
-  fi
-# production builds ignore GCC warnings
+  CONFIGURE_ARGS="${CONFIGURE_ARGS} ${ENABLE_NIGHTLY}"
 else
+  # production builds ignore GCC warnings
   CONFIGURE_ARGS="${CONFIGURE_ARGS} --disable-gcc-flags"
 fi
 

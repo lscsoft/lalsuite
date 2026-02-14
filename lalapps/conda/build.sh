@@ -7,14 +7,12 @@ mkdir -p _build
 cd _build
 
 # customisation for LALSuite development CI
-if [[ "${GITLAB_CI}" == "true" ]] && [[ "x${CI_COMMIT_TAG}" == x ]]; then
-	# declare nightly builds
-	if [ "${CI_PIPELINE_SOURCE}" = "schedule" ] || [ "${CI_PIPELINE_SOURCE}" = "web" ]; then
-		CONFIGURE_ARGS="${CONFIGURE_ARGS} --enable-nightly"
-	fi
-# production builds ignore GCC warnings
+if [[ "${GITLAB_CI}" == "true" ]]; then
+  # declare nightly builds
+  CONFIGURE_ARGS="${CONFIGURE_ARGS} ${ENABLE_NIGHTLY}"
 else
-	CONFIGURE_ARGS="${CONFIGURE_ARGS} --disable-gcc-flags"
+  # production builds ignore GCC warnings
+  CONFIGURE_ARGS="${CONFIGURE_ARGS} --disable-gcc-flags"
 fi
 
 # handle cross compiling

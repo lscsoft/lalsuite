@@ -37,9 +37,7 @@ build:
   error_overlinking: true
   number: 9999
   script_env:
-    - CI_COMMIT_TAG
-    - CI_PIPELINE_SOURCE
-    - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
+    - ENABLE_NIGHTLY
     - GITLAB_CI
   skip: true  # [win]
 
@@ -117,9 +115,7 @@ outputs:
         # we don't actually use lalburst, but need it to ./configure
         - liblalburst
       script_env:
-        - CI_COMMIT_TAG
-        - CI_PIPELINE_SOURCE
-        - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
+        - ENABLE_NIGHTLY
         - GITLAB_CI
       # no python-lalburst on Python 3.9
       # (astropy (for python-lalsimulation) is incompatible with numpy 2)
