@@ -105,8 +105,6 @@
       elif [ -z "${ENABLE_NIGHTLY}" ] && [[ ! "${CONDA_CONFIG}" =~ ${_CONDA_CONFIG_PYTHON_REGEX} ]]; then
         CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
       fi
-    # ensure $CI_COMMIT_TAG is set for script_env
-    - export CI_COMMIT_TAG=${CI_COMMIT_TAG:-}
     # loop over chosen configurations and build packages
     # NOTE: we use eval here because CONDA_BUILD_ARGS contains multiple spaces
     - |

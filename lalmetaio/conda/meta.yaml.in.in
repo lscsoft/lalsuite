@@ -34,9 +34,7 @@ build:
   error_overlinking: true
   number: 9999
   script_env:
-    - CI_COMMIT_TAG
-    - CI_PIPELINE_SOURCE
-    - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
+    - ENABLE_NIGHTLY
     - GITLAB_CI
   skip: true  # [win]
 
@@ -99,9 +97,7 @@ outputs:
     build:
       error_overlinking: true
       script_env:
-        - CI_COMMIT_TAG
-        - CI_PIPELINE_SOURCE
-        - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
+        - ENABLE_NIGHTLY
         - GITLAB_CI
     requirements:
       build:

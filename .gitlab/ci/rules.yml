@@ -44,7 +44,6 @@ workflow:
         PIPELINE_NAME: "Push pipeline with LALSuite tag config"
         PIPELINE_TYPE: lalsuite-tag
         EXECUTE_DEPLOY_ACTIONS: "no"
-        CI_COMMIT_TAG: "dummy-lalsuite-tag"
 
     # --- CI build for merge requests
 

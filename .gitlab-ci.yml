@@ -94,6 +94,9 @@ variables:
   # run autoreconf in pedantic and loud mode
   AUTORECONF: "autoreconf --verbose --warnings=error"
 
+  # enable nightly build
+  ENABLE_NIGHTLY: ""
+
   # version of python to use for builds
   LALSUITE_PYTHON_VERSION: "3.12"
 
