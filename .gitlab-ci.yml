@@ -8,6 +8,8 @@
 # -- setup --------------------------------------
 
 stages:
+  # pipeline errors
+  - pipeline error
   # make tarballs for each subpackage
   - tarballs
   # build packages for each subpackage
