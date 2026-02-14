@@ -7,80 +7,119 @@
 workflow:
   name: "$PIPELINE_NAME"
   rules:
-    # environment variables for nightly deployment build (keep rules in sync with [.ci-nightly-deploy, rules]):
-    # - if the trigger is a scheduled pipeline AND the branch is the main branch at lscsoft/lalsuite, set ENABLE_NIGHTLY, EXECUTE_DEPLOY_ACTIONS
-    # - if the trigger is a commit push AND the commit message contains the text "[ci nightly]", set ENABLE_NIGHTLY
+
+    # --- CI nightly deployment build
+
+    # runs if the trigger is a scheduled pipeline AND the branch is the main branch at lscsoft/lalsuite
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
       variables:
         PIPELINE_NAME: "Nightly build"
+        PIPELINE_TYPE: nightly
         ENABLE_NIGHTLY: "--enable-nightly"
         EXECUTE_DEPLOY_ACTIONS: "yes"
+
+    # runs if the trigger is a commit push AND the commit message contains the text "[ci nightly]"
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE =~ /\[ci nightly\]/'
       when: always
       variables:
         PIPELINE_NAME: "Push pipeline with nightly config"
+        PIPELINE_TYPE: nightly
         ENABLE_NIGHTLY: "--enable-nightly"
-    # environment variables for "lalsuite" tag builds (keep rules in sync with [.ci-lalsuite-tag-build, rules])
-    # - if the commit has been tagged AND the tag name begins with "lalsuite-v" AND the repository is lscsoft/lalsuite, set EXECUTE_DEPLOY_ACTIONS
+
+    # --- CI build for "lalsuite" tags
+
+    # - runs if the commit has been tagged AND the tag name begins with "lalsuite-v" AND the repository is lscsoft/lalsuite
     - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG =~ /^lalsuite-v/'
       when: always
       variables:
-        PIPELINE_NAME: "LALSuite Tag pipeline"
+        PIPELINE_NAME: "LALSuite tag build"
+        PIPELINE_TYPE: lalsuite-tag
         EXECUTE_DEPLOY_ACTIONS: "yes"
-    # merge request pipeline
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      variables:
-        PIPELINE_NAME: "MR pipeline ($CI_MERGE_REQUEST_IID)"
-    # run push pipelines only when there is no open merge request
-    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS == null'
-      when: always
-    # otherwise do not run push pipelines
-    - when: never
 
-# -- CI pipelines
-
-# CI build for pushes:
-# - runs if ALL of the following criteria are satisfied:
-#   - the trigger is a commit push
-#   - the commit message does NOT contain the text "[ci full]"
-#   - the branch is NOT the main branch at lscsoft/lalsuite
-.ci-push-build:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE !~ /\[ci full\]/ && ($CI_PROJECT_PATH != "lscsoft/lalsuite" || $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH)'
-
-# CI build for merge requests:
-# - runs if EITHER of the following criteria are satisfied:
-#   - the trigger is opening a merge request
-#   - the trigger is running a pipeline manually from the web interface
-#   - the commit message contains the text "[ci full]"
-#   - the trigger is a commit push AND the branch is the main branch at lscsoft/lalsuite
-.ci-merge-build:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web" || $CI_COMMIT_MESSAGE =~ /\[ci full\]/'
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-
-# CI build for "lalsuite" tags:
-# - runs if EITHER of the following criteria are satisfied:
-#   - the commit has been tagged AND the tag name begins with "lalsuite-v" AND the repository is lscsoft/lalsuite
-#   - the trigger is a commit push AND the commit message contains the text "[ci tags]"
-.ci-lalsuite-tag-build:
-  rules:
-    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG =~ /^lalsuite-v/'
+    # - runs if the trigger is a commit push AND the commit message contains the text "[ci tags]"
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE =~ /\[ci tags\]/'
+      when: always
       variables:
+        PIPELINE_NAME: "Push pipeline with LALSuite tag config"
+        PIPELINE_TYPE: lalsuite-tag
+        EXECUTE_DEPLOY_ACTIONS: "no"
         CI_COMMIT_TAG: "dummy-lalsuite-tag"
 
-# CI nightly deployment build:
-# - runs if EITHER of the following criteria are satisfied:
-#   - the trigger is a scheduled pipeline AND the branch is the main branch at lscsoft/lalsuite
-#   - the trigger is a commit push AND the commit message contains the text "[ci nightly]"
+    # --- CI build for merge requests
+
+    # - runs if the trigger is opening a merge request
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: always
+      variables:
+        PIPELINE_NAME: "MR pipeline ($CI_MERGE_REQUEST_IID)"
+        PIPELINE_TYPE: merge-pre
+
+    # - runs if the trigger is a commit push AND the branch is the main branch at lscsoft/lalsuite
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      when: always
+      variables:
+        PIPELINE_NAME: "Push pipeline on $CI_PROJECT_PATH:$CI_COMMIT_REF_NAME"
+        PIPELINE_TYPE: merge-post
+
+    # - runs if the trigger is pipeline manually from the web interface
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
+      variables:
+        PIPELINE_NAME: "Manual web pipeline with MR config"
+        PIPELINE_TYPE: merge
+
+    # - runs if the trigger is a commit push AND the commit message contains the text "[ci full]"
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE =~ /\[ci full\]/'
+      when: always
+      variables:
+        PIPELINE_NAME: "Push pipeline with MR config"
+        PIPELINE_TYPE: merge
+
+    # --- CI build for pushes
+
+    # - runs if the trigger is a commit push AND there are no open merge requests for this branch
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH != "" && $CI_OPEN_MERGE_REQUESTS == null'
+      when: always
+      variables:
+        PIPELINE_TYPE: push
+
+    # --- otherwise do not run CI pipeline
+
+    - when: never
+
+# -- rules to include CI jobs in CI pipelines
+
 .ci-nightly-deploy:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE =~ /\[ci nightly\]/'
+    - if: '$PIPELINE_TYPE == "nightly"'
 
-# -- include CI jobs using commit message or branch name
+.ci-nightly-deploy-always:
+  rules:
+    - if: '$PIPELINE_TYPE == "nightly"'
+      when: always
+
+.ci-lalsuite-tag-build:
+  rules:
+    - if: '$PIPELINE_TYPE == "lalsuite-tag"'
+
+.ci-merge-build:
+  rules:
+    - if: '$PIPELINE_TYPE =~ /^merge/'
+
+.ci-merge-pre-build-only:
+  rules:
+    - if: '$PIPELINE_TYPE == "merge-pre"'
+
+.ci-merge-post-build-only:
+  rules:
+    - if: '$PIPELINE_TYPE == "merge-post"'
+
+.ci-push-build:
+  rules:
+    - if: '$PIPELINE_TYPE == "push"'
+
+# -- rules to include CI jobs using commit message or branch name
 
 .ci-compiler:
   rules:
