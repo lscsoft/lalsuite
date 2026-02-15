@@ -1,0 +1,274 @@
+#!/usr/bin/env python3
+# Author: Karl Wette, 2026
+
+"""Tag a LALSuite release"""
+
+# TODO:
+# - check whether a release of a particular library is actually needed
+#   (i.e. if there have been any non-trivial changes under lal.../)
+# - logic for minor/major API changes has not been tested yet
+
+import sys
+import json
+import git
+import argparse
+import logging
+from datetime import datetime, timezone
+from pathlib import Path
+from lalsuite_build_config import LALLibraryBuildConfig
+
+from debian import changelog
+
+# configure logging
+LOGGER = logging.getLogger(__name__.rsplit(".", 1)[-1])
+try:
+    from coloredlogs import ColoredFormatter as _Formatter
+except ImportError:
+    _Formatter = logging.Formatter
+if not LOGGER.hasHandlers():
+    _LOG_HANDLER = logging.StreamHandler()
+    _LOG_HANDLER.setFormatter(
+        _Formatter(
+            fmt="[%(asctime)s] %(levelname)+8s: %(message)s",
+        )
+    )
+    LOGGER.addHandler(_LOG_HANDLER)
+LOGGER.setLevel(logging.DEBUG)
+
+
+def parse_command_line():
+    """Parse command line"""
+
+    # Create parser
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--api-changes-json",
+        type=Path,
+        required=True,
+        help="JSON file with API changes",
+    )
+    parser.add_argument("libraries", nargs="+", help="List of LALSuite libraries")
+
+    # Parse command line
+    args = parser.parse_args()
+
+    return args
+
+
+def git_user_name_email(repo):
+    """Get Git user name and email"""
+
+    repo_cfg = repo.config_reader()
+    user_name = repo_cfg.get_value("user", "name")
+    user_email = repo_cfg.get_value("user", "email")
+
+    return (user_name, user_email)
+
+
+def library_version_with_zero_patch(version):
+    """Return library version number with zero patch"""
+
+    major, minor, patch = (int(v) for v in version.split(".")[0:3])
+    patch = 0
+    return f"{major}.{minor}.{patch}"
+
+
+def update_library_version(version, api_changes):
+    """Update library version numbers"""
+
+    major, minor, patch = (int(v) for v in version.split(".")[0:3])
+    if api_changes == "none":
+        patch += 1
+    if api_changes == "minor":
+        minor += 1
+        patch = 0
+    if api_changes == "major":
+        major += 1
+        minor = 0
+        patch = 0
+    return f"{major}.{minor}.{patch}"
+
+
+def update_c_lib_version(lib_current, lib_revision, lib_age, api_changes):
+    """Update C library version numbers"""
+
+    # Set library API info guide, taken from LAL library ./configure.ac files
+
+    # 1. start with version information of "0:0:0" for each libtool library
+    # 2. update the version information only immediately before a public
+    #    release of your software. More frequent updates are unnecessary,
+    #    and only guarantee that the current interface number gets larger
+    #    faster.
+
+    # 3. if the library source code has changed at all since the last
+    #    update, then increment revision ("c:r:a" becomes "c:r+1:a").
+    lib_revision += 1
+
+    # 4. if any interfaces have been added, removed, or changed since the
+    #    last update, increment current, and set revision to 0.
+    if api_changes == "minor" or api_changes == "major":
+        lib_current += 1
+        lib_revision = 0
+
+    # 5. if any interfaces have been added since the last public release,
+    #    then increment age.
+    if api_changes == "minor":
+        lib_age += 1
+
+    # 6. if any interfaces have been removed since the last public release,
+    #    then set age to 0.
+    if api_changes == "major":
+        lib_age = 0
+
+    return (lib_current, lib_revision, lib_age)
+
+
+def main():
+    """Main program"""
+
+    # Current date/time
+    now = datetime.now(timezone.utc)
+
+    # Parse command line
+    args = parse_command_line()
+    libraries_with_lalsuite = args.libraries + ["lalsuite"]
+
+    # Get Git user name and email
+    lalsuite_repo = git.Repo(".")
+    git_user_name, git_user_email = git_user_name_email(lalsuite_repo)
+
+    # Load JSON file with API changes
+    LOGGER.info(f"-- loading API changes from {args.api_changes_json}")
+    with args.api_changes_json.open("r") as f:
+        api_changes = json.load(f)
+
+    # Parse library configurations
+    library_cfg = {}
+    for library in libraries_with_lalsuite:
+        LOGGER.info(f"-- {library} - parsing build configuration")
+        library_cfg[library] = LALLibraryBuildConfig(library)
+
+    # Update version numbers
+    min_library_version = {}
+    for library in libraries_with_lalsuite:
+        library_api_ch = api_changes[library]["overall"]
+        assert library_api_ch in ("none", "minor", "major")
+
+        # Update library version numbers
+        old_version = library_cfg[library].version
+        new_version = update_library_version(old_version, library_api_ch)
+        library_cfg[library].version = new_version
+        min_library_version["MIN_{}_VERSION".format(library.upper())] = '"{}"'.format(
+            library_version_with_zero_patch(new_version)
+        )
+        LOGGER.info(f"-- {library} - version {old_version} => {new_version}")
+
+        # Update C library version numbers
+        if library == "lal":
+            lib_names = (("lal", ""), ("lalsupport", "_SUPPORT"))
+        elif library in ("lalapps", "lalsuite"):
+            lib_names = ()
+        else:
+            lib_names = ((library, ""),)
+        for lib_name, var_suffix in lib_names:
+            old_lib_current = int(library_cfg[library]["LIBCURRENT" + var_suffix])
+            old_lib_revision = int(library_cfg[library]["LIBREVISION" + var_suffix])
+            old_lib_age = int(library_cfg[library]["LIBAGE" + var_suffix])
+            old_lib_version = f"{old_lib_current}:{old_lib_revision}:{old_lib_age}"
+            new_lib_current, new_lib_revision, new_lib_age = update_c_lib_version(
+                old_lib_current, old_lib_revision, old_lib_age, library_api_ch
+            )
+            library_cfg[library]["LIBCURRENT" + var_suffix] = new_lib_current
+            library_cfg[library]["LIBREVISION" + var_suffix] = new_lib_revision
+            library_cfg[library]["LIBAGE" + var_suffix] = new_lib_age
+            new_lib_version = f"{new_lib_current}:{new_lib_revision}:{new_lib_age}"
+            LOGGER.info(
+                f"-- {library} - lib{lib_name} - version {old_lib_version} => {new_lib_version}"
+            )
+
+    # Update minimum library version numbers
+    for library in args.libraries:
+        for min_version_key, min_version in min_library_version.items():
+            if min_version_key in library_cfg[library]:
+                library_cfg[library][min_version_key] = min_version
+
+    # Write library configurations
+    for library in libraries_with_lalsuite:
+        LOGGER.info(f"-- {library} - writing build configuration")
+        library_cfg[library].write()
+
+    # Update Debian changelogs
+    deb_changelog_date = changelog.format_date(
+        timestamp=now.timestamp(), localtime=False
+    )
+    for library in args.libraries:
+        LOGGER.info(f"-- {library} - writing Debian changelog")
+        version = library_cfg[library].version
+        deb_changelog_file = Path.cwd() / library / "debian" / "changelog"
+        with deb_changelog_file.open("r", encoding="utf-8") as f:
+            deb_changelog = changelog.Changelog(f)
+        deb_changelog.new_block(
+            package=library,
+            version=f"{version}-1",
+            distributions="unstable",
+            urgency="low",
+            author=f"{git_user_name} <{git_user_email}>",
+            date=deb_changelog_date,
+        )
+        deb_changelog.add_change("")
+        deb_changelog.add_change(f"  * Update for {version}")
+        deb_changelog.add_change("")
+        with deb_changelog_file.open("w", encoding="utf-8") as f:
+            deb_changelog.write_to_open_file(f)
+
+    # Update RPM spec
+    rpm_spec_date = now.strftime("%a %b %d %Y")
+    for library in args.libraries:
+        LOGGER.info(f"-- {library} - writing RPM specfile changelog")
+        version = library_cfg[library].version
+        rpm_spec_file = Path.cwd() / library / f"{library}.spec.in"
+        rpm_spec_lines = []
+        with rpm_spec_file.open("r", encoding="utf-8") as f:
+            for line in f:
+                rpm_spec_lines.append(line.rstrip())
+        with rpm_spec_file.open("w", encoding="utf-8") as f:
+            for line in rpm_spec_lines:
+                print(line, file=f)
+                if line == "%changelog":
+                    print(
+                        f"* {rpm_spec_date} {git_user_name} <{git_user_email}> {version}-1",
+                        file=f,
+                    )
+                    print(f"- Update for {version}", file=f)
+                    print("", file=f)
+
+    # Commit new versions to Git repository
+    for library in libraries_with_lalsuite:
+        LOGGER.info(f"-- {library} - committing new version to Git repository")
+        name = library_cfg[library].name
+        version = library_cfg[library].version
+        if library == "lalsuite":
+            lalsuite_repo.git.add(".")
+        else:
+            lalsuite_repo.git.add(library)
+        lalsuite_repo.git.commit("-m", f"{name}: version {version}")
+        lalsuite_repo.git.tag(
+            "-f", "-s", f"{library}-v{version}", "-m", f"{name} {version}"
+        )
+
+    # Commit development versions to Git repository
+    for library in args.libraries:
+        LOGGER.info(f"-- {library} - committing development version to Git repository")
+        name = library_cfg[library].name
+        version = library_cfg[library].version
+        version += ".1"
+        library_cfg[library].version = version
+        library_cfg[library].write()
+        lalsuite_repo.git.add(library)
+        lalsuite_repo.git.commit("-m", f"{name}: development version {version}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -11,6 +11,7 @@ Build-Depends:
  libmetaio-dev (>= @MIN_METAIO_VERSION@),
  pkg-config (>= 0.18.0),
  python3-all-dev,
+ python3-igwn-ligolw (>= @MIN_PYTHON_IGWN_LIGOLW_VERSION@),
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-pytest,
  rsync,
@@ -67,6 +68,7 @@ Depends:
  ${shlibs:Depends},
  liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
  python3-lal (>= @MIN_LAL_VERSION@~),
+ python3-igwn-ligolw,
 Description: Python 3 bindings for LALMetaIO
  The LVK Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL MetaIO library.

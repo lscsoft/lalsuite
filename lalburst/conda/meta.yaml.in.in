@@ -219,6 +219,7 @@ outputs:
         - lalburst_power_meas_likelihood --help
         - lalburst_power_plot_binj --help
         - lalburst_power_plot_binjtf --help
+        - lalburst_searchsum2cache --help
         - lalburst_version --verbose
       imports:
         - lalburst

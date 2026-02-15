@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Tests for lal.series"""
+"""Tests for lalmetaio.series"""
 
 import io
 import sys
@@ -25,7 +25,7 @@ import igwn_ligolw.utils
 import numpy as np
 import pytest
 
-import lal.series
+import lalmetaio.series
 
 
 @pytest.mark.parametrize(
@@ -41,8 +41,8 @@ import lal.series
 )
 def test_build_series(scalar_type, domain, encoding, assert_array_equal):
     class_name = f"{scalar_type}{domain}Series"
-    build_series = getattr(lal.series, f"build_{class_name}")
-    parse_series = getattr(lal.series, f"parse_{class_name}")
+    build_series = getattr(lalmetaio.series, f"build_{class_name}")
+    parse_series = getattr(lalmetaio.series, f"parse_{class_name}")
     create_series = getattr(lal, f"Create{class_name}")
 
     series = create_series(
@@ -56,7 +56,10 @@ def test_build_series(scalar_type, domain, encoding, assert_array_equal):
     igwn_ligolw.utils.write_fileobj(xmldoc, fileobj)
     print(fileobj.getvalue())
     xml_str = fileobj.getvalue().decode()
-    assert f'Encoding="{encoding}' in xml_str
+    if encoding == igwn_ligolw.ligolw.Encoding.enc(igwn_ligolw.ligolw.Stream.Encoding.default):
+        assert 'Encoding=' not in xml_str
+    else:
+        assert f'Encoding="{encoding}' in xml_str
     assert "This is a comment" in xml_str
 
     fileobj.seek(0)

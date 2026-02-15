@@ -85,7 +85,7 @@
         ${CI_PROJECT_DIR}/code-quality-rpmlint.json
     # check/concatenate code quality reports
     - cd ${CI_PROJECT_DIR}
-    - ./common/gitlab-ci-scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
+    - ./common/scripts/check_code_quality_reports -o code-quality.json code-quality-*.json
   artifacts:
     expire_in: 18h
     paths:

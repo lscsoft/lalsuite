@@ -23,13 +23,10 @@ The build is controlled by the automake file `gnuscripts/lalsuite_doxygen.am`,
 customisations for each subpackage can be added in
 `<package>/doxygen/Makefile.am`.
 
-## `common/gitlab-ci-scripts`: Code quality scripts
+## `common/scripts`: Scripts for code quality, maintenance, etc.
 
-This directory contains various scripts used in the GitLab CI pipelines.
-
-## `common/maintainer-scripts`: Maintainer scripts
-
-This directory contains miscellaneous scripts useful for maintenance.
+This directory contains various scripts used in the GitLab CI pipelines, as well
+as miscellaneous scripts useful for maintenance.
 
 ## `common/swig`: LALSuite SWIG Bindings
 

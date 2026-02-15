@@ -43,7 +43,7 @@ int main( int argc, char **argv )
   int fopenerr = 0;
 
   SFTCatalog *catalog = NULL;
-  SFTVector *sft_vect = NULL;
+  SFTtype *sft = NULL;
   UINT4 NumBinsAvg = 1;
   SFTConstraints XLAL_INIT_DECL( constraints );
   LIGOTimeGPS XLAL_INIT_DECL( startTime );
@@ -166,40 +166,39 @@ int main( int argc, char **argv )
 
     //Extract one SFT at a time from the catalog
     //we do this by using a catalog timeslice to get just the current SFT
-    XLAL_CHECK_MAIN( ( sft_vect = extract_one_sft( catalog, catalog->data[j].header.epoch, f_min, f_max ) ) != NULL, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( sft_vect->length == 1, XLAL_EINVAL, "Extracted zero SFTs but should have extracted one" );
+    XLAL_CHECK_MAIN( ( sft = extract_one_sft( catalog, catalog->data[j].header.epoch, f_min, f_max ) ) != NULL, XLAL_EFUNC );
 
     //Make sure the SFTs are the same length as what we're expecting from user input
-    XLAL_CHECK_MAIN( fabs( timebaseline * sft_vect->data->deltaF - 1.0 ) <= 10.*LAL_REAL8_EPS, XLAL_EINVAL, "Expected SFTs with length %f but got %f", timebaseline, 1 / sft_vect->data->deltaF );
+    XLAL_CHECK_MAIN( fabs( timebaseline * sft->deltaF - 1.0 ) <= 10.*LAL_REAL8_EPS, XLAL_EINVAL, "Expected SFTs with length %f but got %f", timebaseline, 1 / sft->deltaF );
 
     // first time through the loop need to allocate timeavg, rngmed
     // save some scalar values
     if ( j == 0 ) {
       // Allocate the vector for the normalized data to be averaged together
-      XLAL_CHECK_MAIN( ( timeavg = XLALCreateREAL4Vector( sft_vect->data->data->length ) ) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( ( timeavg = XLALCreateREAL4Vector( sft->data->length ) ) != NULL, XLAL_EFUNC );
       memset( timeavg->data, 0, sizeof( REAL4 )*timeavg->length );
 
       // Compute the number of bins in an average; at minimum this should be 1 bin
       // It produces the same frequency resolution as specified in the arguments passed to
       // fscanDriver.py
-      REAL8 spectrogram_blocksize = round( freqres * sft_vect->data->data->length / ( f_max - f_min ) );
+      REAL8 spectrogram_blocksize = round( freqres * sft->data->length / ( f_max - f_min ) );
       if ( spectrogram_blocksize < 1.0 ) {
         NumBinsAvg = 1;
       } else {
         NumBinsAvg = ( UINT4 )spectrogram_blocksize;
       }
 
-      f0 = sft_vect->data->f0;
-      deltaF = sft_vect->data->deltaF;
+      f0 = sft->f0;
+      deltaF = sft->deltaF;
 
       // Allocate frequency series for XLALNormalizeSFT; meta data doesn't matter
-      XLAL_CHECK_MAIN( ( rngmed = XLALCreateREAL8FrequencySeries( sft_vect->data->name, &catalog->data[j].header.epoch, f0, deltaF, &sft_vect->data->sampleUnits, sft_vect->data->data->length ) ) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( ( rngmed = XLALCreateREAL8FrequencySeries( sft->name, &catalog->data[j].header.epoch, f0, deltaF, &sft->sampleUnits, sft->data->length ) ) != NULL, XLAL_EFUNC );
 
-      fprintf( stderr, "SFTs = %d\tSFT bins = %d\tf0 = %f\n", catalog->length, sft_vect->data->data->length, sft_vect->data->f0 );
+      fprintf( stderr, "SFTs = %d\tSFT bins = %d\tf0 = %f\n", catalog->length, sft->data->length, sft->f0 );
     }
 
     // GPS time of the current SFT and print to file
-    cur_epoch = sft_vect->data->epoch.gpsSeconds;
+    cur_epoch = sft->epoch.gpsSeconds;
     fprintf( fp2, "%d\t%d\n", timestamps->length, cur_epoch );
 
     // Get the current UTC time from the GPS seconds of the current SFT and print to file
@@ -216,11 +215,11 @@ int main( int argc, char **argv )
     // output numeric, in case that matters.
     if ( j == 0 ) {
       UINT4 step = 0;
-      for ( UINT4 i = NumBinsAvg - 1; i < sft_vect->data->data->length; i += NumBinsAvg ) {
+      for ( UINT4 i = NumBinsAvg - 1; i < sft->data->length; i += NumBinsAvg ) {
         if ( step == 0 ) {
           fprintf( fp, "0\t" );
         }
-        fprintf( fp, "%.6f\t", sft_vect->data->f0 + NumBinsAvg * sft_vect->data->deltaF * step );
+        fprintf( fp, "%.6f\t", sft->f0 + NumBinsAvg * sft->deltaF * step );
         step++;
       }
       fprintf( fp, "\n" );
@@ -228,15 +227,15 @@ int main( int argc, char **argv )
 
     // Loop over the number of bins in each SFT, jumping by the average number
     // Start at the highest bin index and average down. This avoids running off the end of the SFT
-    for ( UINT4 i = NumBinsAvg - 1; i < sft_vect->data->data->length; i += NumBinsAvg ) {
+    for ( UINT4 i = NumBinsAvg - 1; i < sft->data->length; i += NumBinsAvg ) {
       // First value in each row is the GPS time
       if ( i == NumBinsAvg - 1 ) {
-        fprintf( fp, "%i\t", sft_vect->data->epoch.gpsSeconds );
+        fprintf( fp, "%i\t", sft->epoch.gpsSeconds );
       }
       REAL8 avg = 0.0;
       for ( UINT4 k = 0; k < NumBinsAvg; k++ ) {
-        const REAL8 re = ( REAL8 )crealf( sft_vect->data->data->data[i - k] );
-        const REAL8 im = ( REAL8 )cimagf( sft_vect->data->data->data[i - k] );
+        const REAL8 re = ( REAL8 )crealf( sft->data->data[i - k] );
+        const REAL8 im = ( REAL8 )cimagf( sft->data->data[i - k] );
         avg += 2.0 * ( re * re + im * im ) / ( REAL8 )timebaseline;
       }
       fprintf( fp, "%e\t", sqrt( avg / ( REAL8 )NumBinsAvg ) ); /* 06/15/2017 gam; then take sqrt here. */
@@ -255,7 +254,7 @@ int main( int argc, char **argv )
         XLAL_CHECK_MAIN( XLALResizeINT4Vector( timestamps, timestamps->length + 1 ) != NULL, XLAL_EFUNC );
         timestamps->data[timestamps->length - 1] = cur_epoch;
 
-        for ( UINT4 i = NumBinsAvg - 1; i < sft_vect->data->data->length; i += NumBinsAvg ) {
+        for ( UINT4 i = NumBinsAvg - 1; i < sft->data->length; i += NumBinsAvg ) {
           // First value in each row is the GPS time
           if ( i == NumBinsAvg - 1 ) {
             fprintf( fp, "%i\t", cur_epoch );
@@ -270,18 +269,18 @@ int main( int argc, char **argv )
 
     /* Normalized, averaged spectra */
     // Normalize the SFT
-    XLAL_CHECK_MAIN( XLALNormalizeSFT( rngmed, sft_vect->data, blocksRngMed, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALNormalizeSFT( rngmed, sft, blocksRngMed, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Loop over the frequency bins in the SFT
-    for ( UINT4 i = 0; i < sft_vect->data->data->length; i++ ) {
-      const REAL8 re = ( REAL8 )crealf( sft_vect->data->data->data[i] );
-      const REAL8 im = ( REAL8 )cimagf( sft_vect->data->data->data[i] );
+    for ( UINT4 i = 0; i < sft->data->length; i++ ) {
+      const REAL8 re = ( REAL8 )crealf( sft->data->data[i] );
+      const REAL8 im = ( REAL8 )cimagf( sft->data->data[i] );
       timeavg->data[i] += re * re + im * im;
     }
 
     // Destroys current SFT Vector
-    XLALDestroySFTVector( sft_vect );
-    sft_vect = NULL;
+    XLALDestroySFT( sft );
+    sft = NULL;
   }
   fprintf( stderr, "finished checking for missing sfts, l=%d\n", timestamps->length );
 

@@ -530,7 +530,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
       (end_time): trigtime for this event. Will be used a part of the PSD file name
     """
     try:
-        from lal import series as lalseries
+        from lalmetaio import series as lalseries
     except ImportError:
         print("ERROR, cannot import lal.series in bppu/get_xml_psds()\n")
         raise
@@ -1079,7 +1079,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 threshold_snr=self.config.getfloat('input','threshold-snr')
 
             # get coinc object and psd object
-            from lal import series as lalseries
+            from lalmetaio import series as lalseries
             psd_file_obj = None
             if self.config.has_option('input', 'gid'):
                 from ligo.gracedb.rest import GraceDb, HTTPError

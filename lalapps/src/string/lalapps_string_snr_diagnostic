@@ -34,7 +34,7 @@ import sys
 
 
 import lal
-from lal import rate
+from lalburst import rate
 from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import ligolw_burca2

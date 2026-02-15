@@ -23,6 +23,7 @@ pymodule_PYTHON = \
 	offsetvector.py \
 	packing.py \
 	power.py \
+	rate.py \
 	SimBurstUtils.py \
 	SnglBurstUtils.py \
 	snglcluster.py \

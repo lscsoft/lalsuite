@@ -1,6 +1,7 @@
 coloredlogs
+gitpython
 natsort
-py-api-dumper>=3.0
+py-api-dumper>=4.0
 python-debian
 python-gitlab>=5.6.0
 python-rpm-spec

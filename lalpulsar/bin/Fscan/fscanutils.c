@@ -27,8 +27,8 @@
 
 #include "fscanutils.h"
 
-/* Extract a single SFT from an SFTCatalog: the SFT indicated by GPS start time with band f_min to f_max*/
-SFTVector *extract_one_sft( const SFTCatalog *full_catalog, const LIGOTimeGPS starttime, const REAL8 f_min, const REAL8 f_max )
+/* Extract a single SFT from an SFTCatalog: the SFT indicated by GPS start time with band f_min to f_max */
+SFTtype *extract_one_sft( const SFTCatalog *full_catalog, const LIGOTimeGPS starttime, const REAL8 f_min, const REAL8 f_max )
 {
   // Initialize an SFTCatalog
   SFTCatalog XLAL_INIT_DECL( catalogSlice );
@@ -48,8 +48,16 @@ SFTVector *extract_one_sft( const SFTCatalog *full_catalog, const LIGOTimeGPS st
   SFTVector *sft_vect = NULL;
   XLAL_CHECK_NULL( ( sft_vect = XLALLoadSFTs( &catalogSlice, f_min, f_max ) ) != NULL, XLAL_EFUNC );
 
-  //Check we got only zero or one SFT; no more
+  //Check we got only one SFT; no more, no less
   XLAL_CHECK_NULL( sft_vect->length == 1, XLAL_EBADLEN, "SFT in catalog could not cover [%.2f, %.2f) Hz", f_min, f_max );
 
-  return sft_vect;
+  //Initialize the output SFT and copy data
+  SFTtype *sft = NULL;
+  XLAL_CHECK_NULL( ( sft = XLALCreateSFT( 0 ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL( ( XLALCopySFT( sft, &sft_vect->data[0] ) ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  //Destroy the SFT vector
+  XLALDestroySFTVector( sft_vect );
+
+  return sft;
 }

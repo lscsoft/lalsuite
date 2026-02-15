@@ -518,17 +518,17 @@ XLALInitMakefakedata( ConfigVars_t *cfg, UserVariables_t *uvar )
   XLAL_CHECK( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALVCSInfoString failed.\n" );
 
   BOOLEAN have_parfile = XLALUserVarWasSet( &uvar->parfile );
-  BinaryPulsarParams pulparams;
+  PulsarParameters *pulparams = NULL;
 
   char *window_type_from_noiseSFTs = NULL;
   REAL8 window_param_from_noiseSFTs = 0;
 
   /* read in par file parameters if given */
   if ( have_parfile ) {
-    XLALReadTEMPOParFileOrig( &pulparams, uvar->parfile );
-    XLAL_CHECK( xlalErrno == XLAL_SUCCESS, XLAL_EFUNC, "XLALReadTEMPOParFileOrig() failed for parfile = '%s', xlalErrno = %d\n", uvar->parfile, xlalErrno );
-    XLAL_CHECK( pulparams.f0 > 0, XLAL_EINVAL, "Invalid .par file values, need f0 > 0!\n" );
-    XLAL_CHECK( ( pulparams.pepoch > 0 ) || ( pulparams.posepoch > 0 ), XLAL_EINVAL, "Invalid .par file values, need PEPOCH or POSEPOCH!\n" );
+    pulparams = XLALReadTEMPOParFile( uvar->parfile );
+    XLAL_CHECK( pulparams != NULL, XLAL_EFUNC, "XLALReadTEMPOParFile() failed for parfile = '%s'\n", uvar->parfile );
+    XLAL_CHECK( PulsarGetREAL8ParamOrZero( pulparams, "f0" ) > 0, XLAL_EINVAL, "Invalid .par file values, need f0 > 0!\n" );
+    XLAL_CHECK( ( PulsarGetREAL8ParamOrZero( pulparams, "pepoch" ) > 0 ) || ( PulsarGetREAL8ParamOrZero( pulparams, "posepoch" ) > 0 ), XLAL_EINVAL, "Invalid .par file values, need PEPOCH or POSEPOCH!\n" );
   }
 
   /* if requested, log all user-input and code-versions */
@@ -546,24 +546,24 @@ XLALInitMakefakedata( ConfigVars_t *cfg, UserVariables_t *uvar )
 
     /*check .par file for gw parameters*/
     if ( have_parfile ) {
-      if ( pulparams.h0 != 0 ) {
-        uvar->h0 = pulparams.h0;
-        uvar->cosi = pulparams.cosiota;
-        uvar->phi0 = pulparams.phi0;
-        uvar->psi = pulparams.psi;
+      if ( PulsarGetREAL8ParamOrZero( pulparams, "h0" ) != 0 ) {
+        uvar->h0 = PulsarGetREAL8ParamOrZero( pulparams, "h0" );
+        uvar->cosi = PulsarGetREAL8ParamOrZero( pulparams, "cosiota" );
+        uvar->phi0 = PulsarGetREAL8ParamOrZero( pulparams, "phi0" );
+        uvar->psi = PulsarGetREAL8ParamOrZero( pulparams, "psi" );
         have_h0 = 1; /*Set to TRUE as uvar->h0 not declared on command line -- same for rest*/
         have_cosi = 1;
       } else {
-        uvar->aPlus = pulparams.Aplus;
-        uvar->aCross = pulparams.Across;
-        uvar->phi0 = pulparams.phi0;
-        uvar->psi = pulparams.psi;
+        uvar->aPlus = PulsarGetREAL8ParamOrZero( pulparams, "Aplus" );
+        uvar->aCross = PulsarGetREAL8ParamOrZero( pulparams, "Across" );
+        uvar->phi0 = PulsarGetREAL8ParamOrZero( pulparams, "phi0" );
+        uvar->psi = PulsarGetREAL8ParamOrZero( pulparams, "psi" );
         have_aPlus = 1;
         have_aCross = 1;
       }
-      uvar->Freq = 2.*pulparams.f0;
-      uvar->Alpha = pulparams.ra;
-      uvar->Delta = pulparams.dec;
+      uvar->Freq = 2.*PulsarGetREAL8VectorParamIndividual( pulparams, "f0" );
+      uvar->Alpha = PulsarGetREAL8ParamOrZero( pulparams, "ra" );
+      uvar->Delta = PulsarGetREAL8ParamOrZero( pulparams, "dec" );
       have_Alpha = 1;
       have_Delta = 1;
     }
@@ -611,9 +611,11 @@ XLALInitMakefakedata( ConfigVars_t *cfg, UserVariables_t *uvar )
   {
     UINT4 msp = 0;      /* number of spindown-parameters */
     if ( have_parfile ) {
-      uvar->f1dot = 2.*pulparams.f1;
-      uvar->f2dot = 2.*pulparams.f2;
-      uvar->f3dot = 2.*pulparams.f3;
+      const REAL8Vector *fs = PulsarGetREAL8VectorParam( pulparams, "f" );
+
+      uvar->f1dot = ( fs->length > 1 ) ? 2.0 * fs->data[1] : 0.0;
+      uvar->f2dot = ( fs->length > 2 ) ? 2.0 * fs->data[2] : 0.0;
+      uvar->f3dot = ( fs->length > 3 ) ? 2.0 * fs->data[3] : 0.0;
     }
     cfg->pulsar.Doppler.fkdot[1] = uvar->f1dot;
     cfg->pulsar.Doppler.fkdot[2] = uvar->f2dot;
@@ -930,30 +932,32 @@ XLALInitMakefakedata( ConfigVars_t *cfg, UserVariables_t *uvar )
   /* Consistency check: if any orbital parameters specified, we need all of them (except for nano-seconds)! */
   {
     if ( have_parfile ) {
-      if ( pulparams.model != NULL ) {
-        uvar->orbitasini = pulparams.x;
-        uvar->orbitPeriod = pulparams.Pb * 86400;
-        if ( strstr( pulparams.model, "ELL1" ) != NULL ) {
+      if ( PulsarCheckParam( pulparams, "model" ) ) {
+        uvar->orbitasini = PulsarGetREAL8ParamOrZero( pulparams, "a1" );
+        uvar->orbitPeriod = PulsarGetREAL8ParamOrZero( pulparams, "Pb" ) * 86400;
+        if ( strstr( PulsarGetStringParam( pulparams, "model" ), "ELL1" ) != NULL ) {
           REAL8 w, e, eps1, eps2;
-          eps1 = pulparams.eps1;
-          eps2 = pulparams.eps2;
+          eps1 = PulsarGetREAL8ParamOrZero( pulparams, "eps1" );
+          eps2 = PulsarGetREAL8ParamOrZero( pulparams, "eps2" );
           w = atan2( eps1, eps2 );
           e = sqrt( eps1 * eps1 + eps2 * eps2 );
           uvar->orbitArgp = w;
           uvar->orbitEcc = e;
         } else {
-          uvar->orbitArgp = pulparams.w0;
-          uvar->orbitEcc = pulparams.e;
+          uvar->orbitArgp = PulsarGetREAL8ParamOrZero( pulparams, "om" );
+          uvar->orbitEcc = PulsarGetREAL8ParamOrZero( pulparams, "ecc" );
         }
-        if ( strstr( pulparams.model, "ELL1" ) != NULL ) {
-          REAL8 fe, uasc, Dt;
+        if ( strstr( PulsarGetStringParam( pulparams, "model" ), "ELL1" ) != NULL ) {
+          REAL8 fe, uasc, Dt, tasc, T0;
           fe = sqrt( ( 1.0 - uvar->orbitEcc ) / ( 1.0 + uvar->orbitEcc ) );
           uasc = 2.0 * atan( fe * tan( uvar->orbitArgp / 2.0 ) );
           Dt = ( uvar->orbitPeriod / LAL_TWOPI ) * ( uasc - uvar->orbitEcc * sin( uasc ) );
-          pulparams.T0 = pulparams.Tasc + Dt;
+          tasc = PulsarGetREAL8ParamOrZero( pulparams, "Tasc" );
+          T0 = tasc + Dt;
+          PulsarAddParam( pulparams, "T0", &T0, PULSARTYPE_REAL8_t );
         }
-        uvar->orbitTp.gpsSeconds = ( UINT4 )floor( pulparams.T0 );
-        uvar->orbitTp.gpsNanoSeconds = ( UINT4 )floor( ( pulparams.T0 - uvar->orbitTp.gpsSeconds ) * 1e9 );
+        uvar->orbitTp.gpsSeconds = ( UINT4 )floor( PulsarGetREAL8ParamOrZero( pulparams, "T0" ) );
+        uvar->orbitTp.gpsNanoSeconds = ( UINT4 )floor( ( PulsarGetREAL8ParamOrZero( pulparams, "T0" ) - uvar->orbitTp.gpsSeconds ) * 1e9 );
       }
     }
     BOOLEAN set1 = XLALUserVarWasSet( &uvar->orbitasini );
@@ -991,8 +995,8 @@ XLALInitMakefakedata( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
   if ( XLALUserVarWasSet( &uvar->parfile ) ) {
-    XLALGPSSetREAL8( &( uvar->refTime ), pulparams.pepoch ); /*XLALReadTEMPOParFileOrig converted pepoch to REAL8 */
-    XLALGPSSetREAL8( &( cfg->pulsar.Doppler.refTime ), pulparams.pepoch );
+    XLALGPSSetREAL8( &( uvar->refTime ), PulsarGetREAL8ParamOrZero( pulparams, "pepoch" ) ); /*XLALReadTEMPOParFile converted pepoch to REAL8 */
+    XLALGPSSetREAL8( &( cfg->pulsar.Doppler.refTime ), PulsarGetREAL8ParamOrZero( pulparams, "pepoch" ) );
   } else if ( XLALUserVarWasSet( &uvar->refTime ) ) {
     cfg->pulsar.Doppler.refTime = uvar->refTime;
   } else {
@@ -1027,6 +1031,7 @@ XLALInitMakefakedata( ConfigVars_t *cfg, UserVariables_t *uvar )
   cfg->transientWindow.tau  = uvar->transientTauDays * 86400;
 
   /* free memory */
+  PulsarFreeParams( pulparams );
   XLALFree( window_type_from_noiseSFTs );
 
   return XLAL_SUCCESS;

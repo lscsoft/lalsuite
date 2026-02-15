@@ -163,13 +163,12 @@ outputs:
     test:
       requires:
         - freezegun
-        - igwn-ligolw  # [not migrating]
         - lscsoft-glue
         - pytest >=4.0.0a0
       source_files:
         - test/python
       commands:
-        - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python {% if migrating -%} --ignore test/python/test_rate.py -k 'not lal.rate and not lal.series' {%- endif %}
+        - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
@@ -215,7 +214,6 @@ outputs:
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
       run:
         - fftw  # [fft_impl == "fftw"]
-        - igwn-ligolw  # [not migrating]
         - {{ pin_subpackage('liblal', exact=True) }}
         - igwn-segments
         - numpy
@@ -226,7 +224,6 @@ outputs:
         - lal_fftw_wisdom --help  # [fft_impl == "fftw"]
         - lal_fftwf_wisdom --help  # [fft_impl == "fftw"]
         - lal_path2cache <<< A-B-0-1.gwf
-        - lal_searchsum2cache --help  # [not migrating]
         - lal_simd_detect
         - lal_version --verbose
         - test "$(lal_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"  # [unix]

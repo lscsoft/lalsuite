@@ -67,7 +67,7 @@ extern "C" {
  * filter function <tt>FindChirpFilterSegment()</tt> is prototyped in
  * this header file.
  * Full documentation of the filtering algorithm used can be found in the
- * documentation of the module \ref FindChirpFilter.c.</li>
+ * documentation of the module \c FindChirpFilter.c.</li>
  * </ol>
  *
  * The goal of all the filtering functions is to determine if the

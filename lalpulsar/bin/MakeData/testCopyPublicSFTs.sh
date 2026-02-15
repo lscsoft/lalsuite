@@ -39,8 +39,8 @@ lalpulsar_CopyPublicSFTs ./src-good ./dest-good
 ## check good SFTs were copied to the right place
 for i in 1 2 3; do
     src_SFT="H-1_H1_1800SFT_O4DEV+V1+Choft+WRECT-100020030${i}-1800.sft"
-    cmp "./src-good/${src_SFT}" "./dest-good/H1_1800SFT_O4DEV+V1+Choft+WRECT_BROADBAND/GPS1000M/${src_SFT}"
-    echo "OK: ./src-good/${src_SFT} ->  ./dest-good/H1_1800SFT_O4DEV+V1+Choft+WRECT_BROADBAND/GPS1000M/${src_SFT}"
+    cmp "./src-good/${src_SFT}" "./dest-good/H1_1800SFT_O4DEV+V1+Choft+WRECT_BROADBAND-1000/${src_SFT}"
+    echo "OK: ./src-good/${src_SFT} ->  ./dest-good/H1_1800SFT_O4DEV+V1+Choft+WRECT_BROADBAND-1000/${src_SFT}"
 done
 
 ## rename a bad SFT

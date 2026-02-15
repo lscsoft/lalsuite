@@ -21,7 +21,6 @@ Makefile.in
 bin/lal_cache
 bin/lal_fftw*_wisdom
 bin/lal_path2cache
-bin/lal_searchsum2cache
 bin/lal_simd_detect
 bin/lal_tconvert
 bin/lal_version
@@ -36,6 +35,7 @@ doxygen/doxygen_objdb_*.tmp
 doxygen/doxygen_sqlite3.db
 doxygen/filter
 doxygen/in/
+doxygen/layout.xml
 doxygen/make_autogen_dox
 doxygen/out/
 doxygen/test_doxygen.*

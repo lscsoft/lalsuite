@@ -26,6 +26,7 @@
 
 #include <lal/LALInitBarycenter.h>
 #include <lal/FITSPulsarIO.h>
+#include <lal/LogPrintf.h>
 
 ///
 /// \name Internal functions
@@ -35,6 +36,15 @@
 /// @}
 
 ///
+/// Definitions of search type choices
+///
+const UserChoices WeaveMetricTypeChoices = {
+  { SUPERSKY_METRIC_TYPE,          "all-sky" },
+  { SUPERSKY_DIRECTED_METRIC_TYPE, "directed" },
+  { 0, NULL }
+};
+
+///
 /// Free contents of setup data
 ///
 void XLALWeaveSetupDataClear(
@@ -42,6 +52,7 @@ void XLALWeaveSetupDataClear(
 )
 {
   if ( setup != NULL ) {
+    XLALFree( setup->metric_type );
     XLALDestroyStringVector( setup->detectors );
     XLALSegListFree( setup->segments );
     XLALDestroySuperskyMetrics( setup->metrics );
@@ -65,6 +76,9 @@ int XLALWeaveSetupDataWrite(
   XLAL_CHECK( setup->segments != NULL, XLAL_EFAULT );
   XLAL_CHECK( setup->metrics != NULL, XLAL_EFAULT );
   XLAL_CHECK( setup->ephemerides != NULL, XLAL_EFAULT );
+
+  // Write metric type
+  XLAL_CHECK( XLALFITSHeaderWriteString( file, "metric-type", setup->metric_type, "metric type (for all-sky/directed searches)" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write reference time
   XLAL_CHECK( XLALFITSHeaderWriteGPSTime( file, "date-obs", &setup->ref_time, "reference time" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -100,6 +114,20 @@ int XLALWeaveSetupDataRead(
 
   // Erase memory
   XLAL_INIT_MEM( *setup );
+
+  // Read metric type
+  int read_status;
+  read_status = XLALFITSHeaderReadString( file, "metric-type", &setup->metric_type );
+  if ( read_status != XLAL_SUCCESS ) {
+    // If not found, set it to 'all-sky'
+    const char *default_type = WeaveMetricTypeChoices[0].name; // "all-sky"
+    XLALClearErrno();
+    LogPrintf( LOG_NORMAL, "Setup file does not contain 'metric-type'. Defaulting to '%s'\n", default_type );
+    setup->metric_type = XLALStringDuplicate( default_type );
+
+    // Check that the string duplication was successful
+    XLAL_CHECK( setup->metric_type != NULL, XLAL_ENOMEM );
+  }
 
   // Read reference time
   XLAL_CHECK( XLALFITSHeaderReadGPSTime( file, "date-obs", &setup->ref_time ) == XLAL_SUCCESS, XLAL_EFUNC );
