@@ -154,9 +154,10 @@ int main(int argc, char *argv[])
     }
 
     /* determine the end of the output stream */
-    if (dt > 0.0)       /* use value provide by user */
-        XLALGPSSetREAL8(&end, t0 + dt);
-    else {      /* use end of input stream */
+    if (dt > 0.0) {     /* use value provide by user */
+        end = start;
+        XLALGPSAdd(&end, dt);
+    } else {      /* use end of input stream */
         int mode = XLALFrStreamGetMode(stream);
         /* we're seeking to the end, so don't complain! */
         XLALFrStreamSetMode(stream,
@@ -303,16 +304,18 @@ int usage(const char *program)
 #define DEFINE_OUTPUT_FUNCTION(laltype, format, ...) \
 void output_ ## laltype (LALFrStream *stream, const char *channame, LIGOTimeGPS *start, LIGOTimeGPS *end) \
 { \
-    double remaining; \
     laltype ## TimeSeries *series; \
     /* create zero-length time series */ \
     series = XLALCreate ## laltype ## TimeSeries(channame, start, 0.0, 0.0, &lalDimensionlessUnit, 0); \
-    XLALFrStreamGet ## laltype ## TimeSeriesMetadata(series, stream); \
-    while ((remaining = XLALGPSDiff(end, start)) > series->deltaT) { \
+    /* get metadata including time of next sample and sample interval */ \
+    XLALFrStreamGet ## laltype ## TimeSeries(series, stream); \
+    while (XLALGPSCmp(&series->epoch, end) < 0) { \
+        double remaining; \
         size_t length; \
         size_t i; \
+        remaining = XLALGPSDiff(end, &series->epoch); \
         remaining = (remaining > MAXDUR ? MAXDUR : remaining); \
-        length = (size_t)floor(remaining / series->deltaT); \
+        length = (size_t)ceil(remaining / series->deltaT); \
         length = (length > MAXLEN ? MAXLEN : length); \
         if (series->data->length != length) \
             XLALResize ## laltype ## TimeSeries(series, 0, length); \
@@ -327,7 +330,7 @@ void output_ ## laltype (LALFrStream *stream, const char *channame, LIGOTimeGPS 
             fprintf(stdout, format, __VA_ARGS__); \
             fputs(RS, stdout); \
         } \
-        XLALGPSAdd(start, series->data->length * series->deltaT); \
+        XLALFrStreamTell(&series->epoch, stream); \
     } \
     XLALDestroy ## laltype ## TimeSeries(series); \
 }
