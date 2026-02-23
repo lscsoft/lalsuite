@@ -151,7 +151,7 @@ double XLALSimNeutronStarEOSMultiPartsRestMassDensityOfPseudoEnthalpyGeometrized
     h, EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressureGeometrized(double p,
     EOSMultiParts * eos);
-double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundGeometrized(double h,
+double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundGeometrizedOfPseudoEnthalpy(double h,
     EOSMultiParts * eos);
 
 
@@ -209,7 +209,7 @@ double XLALSimNeutronStarEOSMultiPartsRestMassDensityOfPseudoEnthalpy(double h,
     EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressure(double p,
     EOSMultiParts * eos);
-double XLALSimNeutronStarEOSMultiPartsSpeedOfSound(double h, EOSMultiParts * eos);
+double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundOfPseudoEnthalpy(double h, EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsPressureOfEnergyDensity(double e,
     EOSMultiParts * eos);
 double XLALSimNeutronStarEOSMultiPartsPressureOfRestMassDensity(double rho,

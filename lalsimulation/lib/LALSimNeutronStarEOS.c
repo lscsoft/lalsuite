@@ -1350,7 +1350,7 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressureGeometrized(do
  * @param eos Pointer to the equation of state EOSMultiParts structure.
  * @return The speed of sound in geometrized units (dimensionless).
 */
-double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundGeometrized(double h,
+double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundGeometrizedOfPseudoEnthalpy(double h,
     EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_enthalpy(h, eos);
@@ -2006,7 +2006,7 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressure(double p,
  * @param eos Pointer to the equation of state EOSMultiParts structure.
  * @return The speed of sound (m s^-1).
  */
-double XLALSimNeutronStarEOSMultiPartsSpeedOfSound(double h, EOSMultiParts * eos)
+double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundOfPseudoEnthalpy(double h, EOSMultiParts * eos)
 {
     int item_piece = find_eos_piece_enthalpy(h, eos);
     if (h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, item_piece ) ||

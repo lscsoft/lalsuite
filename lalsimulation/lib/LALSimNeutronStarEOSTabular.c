@@ -29,6 +29,7 @@
 #include <lal/LALSimReadData.h>
 #include <gsl/gsl_interp.h>
 #include <lal/LALSimNeutronStar.h>
+GSL_VAR const gsl_interp_type * lal_gsl_interp_steffen;
 
 /** @cond */
 
@@ -444,7 +445,7 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
 
         /* these can be set up only using the new eos tables; so they are set up here */
         data->log_cs2_of_log_h_acc = gsl_interp_accel_alloc();
-        data->log_cs2_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+        data->log_cs2_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
         gsl_interp_init(data->log_cs2_of_log_h_interp, data->log_hdat, data->log_cs2dat, ndat);
     }
 
@@ -466,13 +467,13 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
     data->log_p_of_log_e_acc = gsl_interp_accel_alloc();
     data->log_p_of_log_rho_acc = gsl_interp_accel_alloc();
 
-    data->log_e_of_log_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_h_of_log_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_e_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_p_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_rho_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_p_of_log_e_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->log_p_of_log_rho_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_e_of_log_p_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_h_of_log_p_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_e_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_p_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_rho_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_p_of_log_e_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_p_of_log_rho_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
 
     gsl_interp_init(data->log_e_of_log_p_interp, data->log_pdat, data->log_edat, ndat);
     gsl_interp_init(data->log_h_of_log_p_interp, data->log_pdat, data->log_hdat, ndat);
@@ -709,7 +710,7 @@ static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *ed
  * equation of state structure.
  * @details Read a data file specified by a path fname that contains either
  * i) 2 whitespace separated columns of equation of state data ("old" LAL EoS format)
- * with the pressure in /km^2 (first column) and the energy density in /km^2 (second column).
+ * with the pressure in /m^2 (first column) and the energy density in /m^2 (second column).
  * ii) 9 whitespace separated columns of equation of state data ("new" LAL EoS format)
  * with the table index, the baryon density in /fm^3, the energy density in g/cm^3,
  * the pressure in dyn/cm^2, the baryon chemical potential in MeV, the electron
@@ -837,8 +838,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
  * the speed of sound in LALSimulation will result in errors. This is similar to
  * providing an equation of state in the "new" LAL file format, although units are different.
  * @param nbdat Array for the baryon density (in /fm^3).
- * @param edat Array for the energy density (in km^-2).
- * @param pdat Array for the pressure in (in km^-2).
+ * @param edat Array for the energy density (in m^-2).
+ * @param pdat Array for the pressure in (in m^-2).
  * @param mubdat Array for the baryon chemical potential (in MeV).
  * @param muedat Array for the electron chemical potential (in MeV).
  * @param hdat Array for the pseudo enthalpy (dimensionless).
@@ -865,7 +866,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
  * equations of state with phase transitions.
  * @details Read a data file specified by a path fname that contains either
  * i) 2 whitespace separated columns of equation of state data ("old" LAL EoS format)
- * with the pressure in /km^2 (first column) and the energy density in /km^2 (second column).
+ * with the pressure in /m^2 (first column) and the energy density in /m^2 (second column).
  * ii) 9 whitespace separated columns of equation of state data ("new" LAL EoS format)
  * with the table index, the baryon density in /fm^3, the energy density in g/cm^3,
  * the pressure in dyn/cm^2, the baryon chemical potential in MeV, the electron
@@ -1069,8 +1070,8 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
  * necessary phase transition corrections.
  *
  * @param nbdat Array for the baryon density (in /fm^3).
- * @param edat Array for the energy density (in km^-2).
- * @param pdat Array for the pressure in (in km^-2).
+ * @param edat Array for the energy density (in m^-2).
+ * @param pdat Array for the pressure in (in m^-2).
  * @param mubdat Array for the baryon chemical potential (in MeV).
  * @param muedat Array for the electron chemical potential (in MeV).
  * @param hdat Array for the pseudo enthalpy (dimensionless).
