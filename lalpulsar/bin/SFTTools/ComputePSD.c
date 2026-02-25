@@ -351,16 +351,21 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
 
   XLALRegisterUvarMember( blocksRngMed,     INT4, 'w', OPTIONAL, "Running Median window size" );
 
-  XLALRegisterUvarAuxDataMember( PSDmthopSFTs,     UserEnum, &MathOpTypeChoices, 'S', OPTIONAL, "For PSD, type of math. operation over SFTs, can be given by string names:\n"
-                                 "    arithsum: sum(data)\n"
-                                 "    arithmean: sum(data) / length\n"
-                                 "    arithmedian: middle element of sorted data\n"
-                                 "    harmsum: 1 / sum(1 / data)\n"
-                                 "    harmmean: length / sum(1 / data)\n"
-                                 "    powerminus2sum: sqrt(1 / sum(1 / (data * data)))\n"
-                                 "    powerminus2mean: sqrt(length / sum(1 / (data * data)))\n"
-                                 "    min: first element of sorted data\n"
-                                 "    max: last element of sorted data" );
+  XLALRegisterUvarAuxDataMember( PSDmthopSFTs,     UserEnum, &MathOpTypeChoices, 'S', OPTIONAL,
+                                 "For PSD, type of math. operation over SFTs, can be given by string names:\n"
+                                 "    operation name  | mathematical description              | obsolete option value\n"
+                                 "    --------------- | ------------------------------------- | ---------------------\n"
+                                 "    arithmean       | sum(data) / length                    | 1 \n"
+                                 "    arithmedian     | middle element of sorted data         | 2 \n"
+                                 "    arithsum        | sum(data)                             | 0 \n"
+                                 "    harmmean        | length / sum(1 / data)                | 4 \n"
+                                 "    harmsum         | 1 / sum(1 / data)                     | 3 \n"
+                                 "    max             | last element of sorted data           | 8 \n"
+                                 "    min             | first element of sorted data          | 7 \n"
+                                 "    powerminus2mean | sqrt(length / sum(1 / (data * data))) | 6 \n"
+                                 "    powerminus2sum  | sqrt(1 / sum(1 / (data * data)))      | 5 \n"
+                               );
+
   XLALRegisterUvarAuxDataMember( PSDmthopIFOs,     UserEnum, &MathOpTypeChoices, 'I', OPTIONAL, "For PSD, type of math. op. over IFOs: "
                                  "see --PSDmthopSFTs" );
   XLALRegisterUvarMember( PSDnormByTotalNumSFTs,    BOOLEAN, 'T', OPTIONAL, "For harmsum/powerminus2sum, apply normalization factor from total number of SFTs over all IFOs (mimics harmmean/powerminus2mean over a combined set of all SFTs)" );
