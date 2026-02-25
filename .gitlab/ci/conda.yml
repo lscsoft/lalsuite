@@ -276,6 +276,5 @@ lalapps:conda:
     - lalburst:conda
     - lalinspiral:conda
     - lalinference:conda
-    - lalpulsar:conda
   variables:
     CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.*cpython"

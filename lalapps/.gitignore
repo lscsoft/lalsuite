@@ -152,7 +152,7 @@ src/power/lalapps_power_plot_burstrate
 src/power/lalapps_power_plot_detresponse
 src/power/lalapps_simburst_to_frame
 src/power/lalapps_xml_plotlalseries
-src/pulsar/lalapps_*
+src/pulsar/
 src/ring/lalapps_coh_PTF_inspiral
 src/ring/lalapps_coh_PTF_testing
 src/ring/lalapps_coincringread

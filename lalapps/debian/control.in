@@ -16,7 +16,6 @@ Build-Depends:
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
- liblalpulsar-dev (>= @MIN_LALPULSAR_VERSION@~),
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
  liblalburst-dev (>= @MIN_LALBURST_VERSION@~),
  liblalinspiral-dev (>= @MIN_LALINSPIRAL_VERSION@~),
@@ -30,7 +29,6 @@ Build-Depends:
  python3-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
  python3-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
- python3-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
 X-Python3-Version: >= @LALSUITE_DEFAULT_MIN_PYTHON_VERSION@
 Standards-Version: 3.9.8
@@ -48,7 +46,6 @@ Depends:
  lalinference (>= @MIN_LALINFERENCE_VERSION@~),
  lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
  lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
- lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
  lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  libframel8 (>= 8.0),
  python3-h5py,
@@ -57,7 +54,6 @@ Depends:
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
- python3-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  python3-lalburst (>= @MIN_LALBURST_VERSION@~),
  python3-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
