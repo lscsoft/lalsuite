@@ -99,10 +99,11 @@ typedef struct {
 
   INT4 PSDmthopSFTs;     /**< for PSD, type of math. operation over SFTs */
   INT4 PSDmthopIFOs;     /**< for PSD, type of math. operation over IFOs */
+  BOOLEAN PSDnormByTotalNumSFTs; /**< apply normalization factor from total number of SFTs over all IFOs */
+
   BOOLEAN outputNormSFT; /**< output normalised SFT power? */
   INT4 nSFTmthopSFTs;    /**< for norm. SFT, type of math. operation over SFTs */
   INT4 nSFTmthopIFOs;    /**< for norm. SFT, type of math. operation over IFOs */
-  BOOLEAN normalizeByTotalNumSFTs; /**< apply normalization factor from total number of SFTs over all IFOs */
 
   REAL8 binSizeHz;       /**< output PSD bin size in Hz */
   INT4  binSize;         /**< output PSD bin size in no. of bins */
@@ -206,7 +207,7 @@ main( int argc, char *argv[] )
                    uvar.PSDmthopIFOs,
                    uvar.nSFTmthopSFTs,
                    uvar.nSFTmthopIFOs,
-                   uvar.normalizeByTotalNumSFTs,
+                   uvar.PSDnormByTotalNumSFTs,
                    cfg.FreqMin,
                    cfg.FreqBand,
                    TRUE // normalizeSFTsInPlace
@@ -317,13 +318,12 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
   uvar->outputNormSFT = FALSE;
   uvar->outFreqBinEnd = FALSE;
 
-  uvar->PSDmthopSFTs = MATH_OP_HARMONIC_MEAN;
+  uvar->PSDmthopSFTs = MATH_OP_HARMONIC_SUM;
   uvar->PSDmthopIFOs = MATH_OP_HARMONIC_SUM;
+  uvar->PSDnormByTotalNumSFTs = TRUE;
 
-  uvar->nSFTmthopSFTs = MATH_OP_ARITHMETIC_MEAN;
-  uvar->nSFTmthopIFOs = MATH_OP_MAXIMUM;
-
-  uvar->normalizeByTotalNumSFTs = FALSE;
+  uvar->nSFTmthopSFTs = -1;
+  uvar->nSFTmthopIFOs = -1;
 
   uvar->dumpMultiPSDVector = FALSE;
 
@@ -351,20 +351,25 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
 
   XLALRegisterUvarMember( blocksRngMed,     INT4, 'w', OPTIONAL, "Running Median window size" );
 
-  XLALRegisterUvarAuxDataMember( PSDmthopSFTs,     UserEnum, &MathOpTypeChoices, 'S', OPTIONAL, "For PSD, type of math. operation over SFTs, can be given by string names (preferred) or legacy numbers: \n"
-                                 "arithsum (0), arithmean (1), arithmedian (2), "
-                                 "harmsum (3), harmmean (4), "
-                                 "powerminus2sum (5), powerminus2mean (6), "
-                                 "min (7), max (8)" );
+  XLALRegisterUvarAuxDataMember( PSDmthopSFTs,     UserEnum, &MathOpTypeChoices, 'S', OPTIONAL, "For PSD, type of math. operation over SFTs, can be given by string names:\n"
+                                 "    arithsum: sum(data)\n"
+                                 "    arithmean: sum(data) / length\n"
+                                 "    arithmedian: middle element of sorted data\n"
+                                 "    harmsum: 1 / sum(1 / data)\n"
+                                 "    harmmean: length / sum(1 / data)\n"
+                                 "    powerminus2sum: sqrt(1 / sum(1 / (data * data)))\n"
+                                 "    powerminus2mean: sqrt(length / sum(1 / (data * data)))\n"
+                                 "    min: first element of sorted data\n"
+                                 "    max: last element of sorted data" );
   XLALRegisterUvarAuxDataMember( PSDmthopIFOs,     UserEnum, &MathOpTypeChoices, 'I', OPTIONAL, "For PSD, type of math. op. over IFOs: "
                                  "see --PSDmthopSFTs" );
-  XLALRegisterUvarMember( outputNormSFT,    BOOLEAN, 'n', OPTIONAL, "Output normalised SFT power to PSD file" );
-  XLALRegisterUvarAuxDataMember( nSFTmthopSFTs,    UserEnum, &MathOpTypeChoices, 'N', OPTIONAL, "For norm. SFT, type of math. op. over SFTs: "
-                                 "see --PSDmthopSFTs" );
-  XLALRegisterUvarAuxDataMember( nSFTmthopIFOs,    UserEnum, &MathOpTypeChoices, 'J', OPTIONAL, "For norm. SFT, type of math. op. over IFOs: "
-                                 "see --PSDmthopSFTs" );
+  XLALRegisterUvarMember( PSDnormByTotalNumSFTs,    BOOLEAN, 'T', OPTIONAL, "For harmsum/powerminus2sum, apply normalization factor from total number of SFTs over all IFOs (mimics harmmean/powerminus2mean over a combined set of all SFTs)" );
 
-  XLALRegisterUvarMember( normalizeByTotalNumSFTs,    BOOLEAN, 0, OPTIONAL, "For harmsum/powerminus2sum, apply normalization factor from total number of SFTs over all IFOs (mimics harmmean/powerminus2mean over a combined set of all SFTs)" );
+  XLALRegisterUvarMember( outputNormSFT,    BOOLEAN, 'n', OPTIONAL, "Output normalised SFT power to PSD file" );
+  XLALRegisterUvarAuxDataMember( nSFTmthopSFTs,    UserEnum, &MathOpTypeChoices, 'N', NODEFAULT, "For norm. SFT, type of math. op. over SFTs: "
+                                 "see --PSDmthopSFTs" );
+  XLALRegisterUvarAuxDataMember( nSFTmthopIFOs,    UserEnum, &MathOpTypeChoices, 'J', NODEFAULT, "For norm. SFT, type of math. op. over IFOs: "
+                                 "see --PSDmthopSFTs" );
 
   XLALRegisterUvarMember( binSize,          INT4, 'z', OPTIONAL, "Bin the output into bins of size (in number of bins)" );
   XLALRegisterUvarMember( binSizeHz,        REAL8, 'Z', OPTIONAL, "Bin the output into bins of size (in Hz)" );
@@ -397,52 +402,50 @@ initUserVars( int argc, char *argv[], UserVariables_t *uvar )
   }
 
   /* check user-input consistency */
-  if ( XLALUserVarWasSet( &( uvar->PSDmthopSFTs ) ) && !( 0 <= uvar->PSDmthopSFTs && uvar->PSDmthopSFTs < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --PSDmthopSFTs(-S) must be between 0 and %i", MATH_OP_LAST - 1 );
+  if ( UVAR_ANYSET3( PSDmthopSFTs, PSDmthopIFOs, PSDnormByTotalNumSFTs ) && !UVAR_ALLSET3( PSDmthopSFTs, PSDmthopIFOs, PSDnormByTotalNumSFTs ) ) {
+    XLALPrintError( "ERROR: --PSDmthopSFTs(-S), --PSDmthopIFOs(-I), and --PSDnormByTotalNumSFTs(-T) must all be set\n" );
     return XLAL_FAILURE;
   }
-  if ( XLALUserVarWasSet( &( uvar->PSDmthopIFOs ) ) && !( 0 <= uvar->PSDmthopIFOs && uvar->PSDmthopIFOs < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --PSDmthopIFOs(-I) must be between 0 and %i", MATH_OP_LAST - 1 );
+  if ( uvar->PSDnormByTotalNumSFTs && !( ( uvar->PSDmthopSFTs == MATH_OP_HARMONIC_SUM || uvar->PSDmthopSFTs == MATH_OP_POWERMINUS2_SUM ) && uvar->PSDmthopIFOs == uvar->PSDmthopSFTs ) ) {
+    const char *PSDmthopSFTs_str = "???";
+    const char *PSDmthopIFOs_str = "???";
+    for ( size_t i = 0; i < MATH_OP_LAST; ++i ) {
+      if ( MathOpTypeChoices[i].val == uvar->PSDmthopSFTs ) {
+        PSDmthopSFTs_str = MathOpTypeChoices[i].name;
+      }
+      if ( MathOpTypeChoices[i].val == uvar->PSDmthopIFOs ) {
+        PSDmthopIFOs_str = MathOpTypeChoices[i].name;
+      }
+    }
+    XLALPrintError( "ERROR: invalid values for --PSDmthopSFTs(-S)=%s, --PSDmthopIFOs(-I)=%s when --PSDnormByTotalNumSFTs(-T) is true\n", PSDmthopSFTs_str, PSDmthopIFOs_str );
     return XLAL_FAILURE;
   }
-  if ( XLALUserVarWasSet( &( uvar->nSFTmthopSFTs ) ) && !( 0 <= uvar->nSFTmthopSFTs && uvar->nSFTmthopSFTs < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --nSFTmthopSFTs(-N) must be between 0 and %i", MATH_OP_LAST - 1 );
-    return XLAL_FAILURE;
-  }
-  if ( XLALUserVarWasSet( &( uvar->nSFTmthopIFOs ) ) && !( 0 <= uvar->nSFTmthopIFOs && uvar->nSFTmthopIFOs < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --nSFTmthopIFOs(-J) must be between 0 and %i", MATH_OP_LAST - 1 );
-    return XLAL_FAILURE;
-  }
-  if ( XLALUserVarWasSet( &( uvar->PSDmthopBins ) ) && !( 0 <= uvar->PSDmthopBins && uvar->PSDmthopBins < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --PSDmthopBins(-A) must be between 0 and %i", MATH_OP_LAST - 1 );
-    return XLAL_FAILURE;
-  }
-  if ( XLALUserVarWasSet( &( uvar->nSFTmthopBins ) ) && !( 0 <= uvar->nSFTmthopBins && uvar->nSFTmthopBins < MATH_OP_LAST ) ) {
-    XLALPrintError( "ERROR: --nSFTmthopBins(-B) must be between 0 and %i", MATH_OP_LAST - 1 );
+  if ( uvar->outputNormSFT && !UVAR_ALLSET2( nSFTmthopSFTs, nSFTmthopIFOs ) ) {
+    XLALPrintError( "ERROR: --nSFTmthopSFTs(-N), --nSFTmthopIFOs(-J) must all be set if --outputNormSFT(-n) is true\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binSize ) ) && XLALUserVarWasSet( &( uvar->binSizeHz ) ) ) {
-    XLALPrintError( "ERROR: --binSize(-z) and --binSizeHz(-Z) are mutually exclusive" );
+    XLALPrintError( "ERROR: --binSize(-z) and --binSizeHz(-Z) are mutually exclusive\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binSize ) ) && uvar->binSize <= 0 ) {
-    XLALPrintError( "ERROR: --binSize(-z) must be strictly positive" );
+    XLALPrintError( "ERROR: --binSize(-z) must be strictly positive\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binSizeHz ) ) && uvar->binSizeHz <= 0.0 ) {
-    XLALPrintError( "ERROR: --binSizeHz(-Z) must be strictly positive" );
+    XLALPrintError( "ERROR: --binSizeHz(-Z) must be strictly positive\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binStep ) ) && XLALUserVarWasSet( &( uvar->binStepHz ) ) ) {
-    XLALPrintError( "ERROR: --binStep(-p) and --binStepHz(-P) are mutually exclusive" );
+    XLALPrintError( "ERROR: --binStep(-p) and --binStepHz(-P) are mutually exclusive\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binStep ) ) && uvar->binStep <= 0 ) {
-    XLALPrintError( "ERROR: --binStep(-p) must be strictly positive" );
+    XLALPrintError( "ERROR: --binStep(-p) must be strictly positive\n" );
     return XLAL_FAILURE;
   }
   if ( XLALUserVarWasSet( &( uvar->binStepHz ) ) && uvar->binStepHz <= 0.0 ) {
-    XLALPrintError( "ERROR: --binStepHz(-P) must be strictly positive" );
+    XLALPrintError( "ERROR: --binStepHz(-P) must be strictly positive\n" );
     return XLAL_FAILURE;
   }
   BOOLEAN have_fStart   = XLALUserVarWasSet( &uvar->fStart );
@@ -587,7 +590,7 @@ XLALReadSFTs( ConfigVariables_t *cfg,           /**< [out] return derived config
     XLAL_ERROR_NULL( XLAL_EINVAL );
   }
   if ( !cfg ) {
-    XLALPrintError( "%s: invalid NULL input 'cfg'", __func__ );
+    XLALPrintError( "%s: invalid NULL input 'cfg'\n", __func__ );
     XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 

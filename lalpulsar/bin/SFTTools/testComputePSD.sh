@@ -42,8 +42,33 @@ fi
 outPSD_full="./psd_fullsft.dat"
 outPSD_band="./psd_freqband.dat"
 
+## ----- run computePSD with invalid command lines to check option parsing
+badargs=(
+    # --PSDmthop{SFT|IFO}s, --PSDnormByTotalNumSFTs must be set if any are set
+    "--PSDmthopSFTs=harmmean"
+    "--PSDmthopIFOs=harmsum"
+    "--PSDmthopSFTs=arithmedian --PSDmthopIFOs=min"
+    "--PSDnormByTotalNumSFTs=no"
+    # check for invalid values of --PSDmthop{SFT|IFO}s when --PSDnormByTotalNumSFTs is true
+    "--PSDmthopSFTs=harmmean --PSDmthopIFOs=harmsum --PSDnormByTotalNumSFTs=yes"
+    "--PSDmthopSFTs=harmmean --PSDmthopIFOs=harmmean --PSDnormByTotalNumSFTs=yes"
+    "--PSDmthopSFTs=powerminus2mean --PSDmthopIFOs=powerminus2sum --PSDnormByTotalNumSFTs=yes"
+    "--PSDmthopSFTs=powerminus2mean --PSDmthopIFOs=powerminus2mean --PSDnormByTotalNumSFTs=yes"
+    # --nSFTmthop{SFT|IFO}s must be set if --outputNormSFT is true
+    "--outputNormSFT=yes"
+    "--outputNormSFT=yes --nSFTmthopSFTs=arithmean"
+    "--outputNormSFT=yes --nSFTmthopIFOs=max"
+)
+for badarg in "${badargs[@]}"; do
+    cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_full --blocksRngMed=$blocksRngMed $badarg"
+    if eval $cmdline >/dev/null 2>&1; then
+        echo "Error.. '$cmdline' should have failed but didn't, check option parsing..."
+        exit 1
+    fi
+done
+
 ## ----- run computePSD once for full SFT
-cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_full --blocksRngMed=$blocksRngMed --outputNormSFT=1"
+cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_full --blocksRngMed=$blocksRngMed --outputNormSFT=yes --nSFTmthopSFTs=arithmean --nSFTmthopIFOs=max"
 
 echo $cmdline;
 if ! eval $cmdline; then
@@ -52,7 +77,7 @@ if ! eval $cmdline; then
 fi
 
 ## ----- run computePSD for a second time, with restricted band
-cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_band --blocksRngMed=$blocksRngMed --outputNormSFT=1  --Freq=50.03 --FreqBand=0.04"
+cmdline="${psd_code} --inputData=$outSFT --outputPSD=$outPSD_band --blocksRngMed=$blocksRngMed --outputNormSFT=yes --nSFTmthopSFTs=arithmean --nSFTmthopIFOs=max  --Freq=50.03 --FreqBand=0.04"
 
 echo $cmdline;
 if ! eval $cmdline; then
@@ -136,7 +161,7 @@ get_psd () { # expected argument order: mthop IFO startTime endTime extrArgs
     else
         IFObit=""
     fi
-    cmdline="${psd_code} ${IFObit} --inputData=${outSFTbname}* --outputPSD=$psdfile --blocksRngMed=$blocksRngMed --outputNormSFT=1 --startTime=$3 --endTime=$4 --PSDmthopSFTs=$1 --PSDmthopIFOs=$1 $5"
+    cmdline="${psd_code} ${IFObit} --inputData=${outSFTbname}* --outputPSD=$psdfile --blocksRngMed=$blocksRngMed --outputNormSFT=yes --nSFTmthopSFTs=arithmean --nSFTmthopIFOs=max --startTime=$3 --endTime=$4 --PSDmthopSFTs=$1 --PSDmthopIFOs=$1 $5"
     echo $cmdline;
     if ! eval $cmdline; then
         echo "Error.. something failed when running '$psd_code' ..."
@@ -151,6 +176,16 @@ get_psd () { # expected argument order: mthop IFO startTime endTime extrArgs
 
 ## ----- test the various mthops - for simplicity, use the same over SFTs and IFOs
 # use the same ordering as the MathOpType enum:
+mthops_loop=('arithsum' # ARITHMETIC_SUM
+             'arithmean' # ARITHMETIC_MEAN
+             'arithmedian' # ARITHMETIC_MEDIAN
+             'harmsum' # HARMONIC_SUM
+             'harmmean' # HARMONIC_MEAN
+             'powerminus2sum' # POWERMINUS2_SUM
+             'powerminus2mean' # POWERMINUS2_MEAN
+             'min' # MINIMUM
+             'max' # MAXIMUM
+           )
 mthops_awk=('{printf "%.6e", $1+$2}' # ARITHMETIC_SUM
             '{printf "%.6e", 0.5*($1+$2)}' # ARITHMETIC_MEAN
             '{printf "%.6e", 0.5*($1+$2)}' # ARITHMETIC_MEDIAN - note for 2 elements this falls back to mean!
@@ -161,16 +196,16 @@ mthops_awk=('{printf "%.6e", $1+$2}' # ARITHMETIC_SUM
             '{printf "%.6e", ($1<$2) ? $1 : $2}' # MINIMUM
             '{printf "%.6e", ($1>$2) ? $1 : $2}' # MAXIMUM
            )
-for mthop in 0 1 2 3 4 5 6 7 8; do
+for mthopidx in 0 1 2 3 4 5 6 7 8; do
     startTime2=$(echo "$startTime + $TSFT" | bc)
     endTime1=$(echo "$startTime + 1" | bc)
     endTime2=$(echo "$startTime2 + 1" | bc)
-    echo "Running ComputePSD with PSDmthopSFTs=PSDmthopIFOs=$mthop..."
+    echo "Running ComputePSD with PSDmthopSFTs=PSDmthopIFOs=${mthops_loop[$mthopidx]}..."
     for IFO in "H1" "L1" "H1L1"; do
         for minT in $startTime $startTime2; do
             for maxT in $endTime1 $endTime2; do
                 if (( $maxT > $minT )); then
-                    get_psd $mthop $IFO $minT $maxT
+                    get_psd ${mthops_loop[$mthopidx]} $IFO $minT $maxT "--PSDnormByTotalNumSFTs=no"
                     # storing the results in dynamically named variables
                     # so they can be accessed again outside the loop
                     psdvar="psd_${IFO}_${minT}_${maxT}"
@@ -182,7 +217,7 @@ for mthop in 0 1 2 3 4 5 6 7 8; do
         done
     done
 
-    echo "--------- Compare results (PSDmthopSFTs=PSDmthopIFOs=$mthop) ----------------------------------------------------------------------------------------"
+    echo "--------- Compare results (PSDmthopSFTs=PSDmthopIFOs=${mthops_loop[$mthopidx]}) ----------------------------------------------------------------------------------------"
     echo "                	[T0,T1]		[T1,T2]		[T0,T2]		awk		(reldev) [Tolerance=$tolerance_rel]"
     failed=0
     # first check the over-SFTs mathop for each IFO (and multi-IFO)
@@ -190,7 +225,7 @@ for mthop in 0 1 2 3 4 5 6 7 8; do
         psd1=$(eval "echo \$"$(echo "psd_${IFO}_${startTime}_${endTime1}")"")
         psd2=$(eval "echo \$"$(echo "psd_${IFO}_${startTime2}_${endTime2}")"")
         psd12=$(eval "echo \$"$(echo "psd_${IFO}_${startTime}_${endTime2}")"")
-        psdawk=$(echo $psd1 $psd2 | awk "${mthops_awk[$mthop]}")
+        psdawk=$(echo $psd1 $psd2 | awk "${mthops_awk[$mthopidx]}")
         psd_reldev=$(echo $psd12 $psdawk | awk "$awk_reldev")
         nonpos_psd1=$(echo $psd1 | awk "$awk_nonpos")
         nonpos_psd2=$(echo $psd2 | awk "$awk_nonpos")
@@ -209,7 +244,7 @@ for mthop in 0 1 2 3 4 5 6 7 8; do
     psdH1=$(eval "echo \$"$(echo "psd_H1_${startTime}_${endTime2}")"")
     psdL1=$(eval "echo \$"$(echo "psd_L1_${startTime}_${endTime2}")"")
     psdH1L1=$(eval "echo \$"$(echo "psd_H1L1_${startTime}_${endTime2}")"")
-    psdawk=$(echo $psdH1 $psdL1 | awk "${mthops_awk[$mthop]}")
+    psdawk=$(echo $psdH1 $psdL1 | awk "${mthops_awk[$mthopidx]}")
     psd_reldev=$(echo $psdH1L1 $psdawk | awk "$awk_reldev")
     nonpos_psdH1L1=$(echo $psdH1L1 | awk "$awk_nonpos")
     failed_tolerance=$(echo $psd_reldev $tolerance_rel | awk "$awk_isgtr")
@@ -237,9 +272,9 @@ echo "----------------------------------------------------------------------"
 echo
 
 
-## ----- test the special normalizeByTotalNumSFTs mode
-mthops_loop=('harmsum' # together with --normalizeByTotalNumSFTs should emulate harmmean
-             'powerminus2sum' # together with --normalizeByTotalNumSFTs should emulate powerminus2mean
+## ----- test the special PSDnormByTotalNumSFTs mode
+mthops_loop=('harmsum' # together with --PSDnormByTotalNumSFTs should emulate harmmean
+             'powerminus2sum' # together with --PSDnormByTotalNumSFTs should emulate powerminus2mean
             )
 mthops_awk=('{printf "%.6e", 4./(1./$1+1./$2+1./$3+1./$4)}' # harmonic mean over 4 inputs
             '{printf "%.6e", sqrt(4.)/sqrt((1./($1*$1)+1./($2*$2)+1./($3*$3)+1./($4*$4)))}' # power-minus-2 mean over 4 inputs
@@ -248,12 +283,12 @@ for mthopidx in 0 1; do
     startTime2=$(echo "$startTime + $TSFT" | bc)
     endTime1=$(echo "$startTime + 1" | bc)
     endTime2=$(echo "$startTime2 + 1" | bc)
-    echo "Running ComputePSD with PSDmthopSFTs=PSDmthopIFOs=${mthops_loop[$mthopidx]} and --normalizeByTotalNumSFTs..."
+    echo "Running ComputePSD with PSDmthopSFTs=PSDmthopIFOs=${mthops_loop[$mthopidx]} and --PSDnormByTotalNumSFTs..."
     for IFO in "H1" "L1" "H1L1"; do
         for minT in $startTime $startTime2; do
             for maxT in $endTime1 $endTime2; do
                 if (( $maxT > $minT )); then
-                    get_psd ${mthops_loop[$mthopidx]} $IFO $minT $maxT "--normalizeByTotalNumSFTs"
+                    get_psd ${mthops_loop[$mthopidx]} $IFO $minT $maxT "--PSDnormByTotalNumSFTs"
                     # storing the results in dynamically named variables
                     # so they can be accessed again outside the loop
                     psdvar="psd_${IFO}_${minT}_${maxT}"
@@ -265,7 +300,7 @@ for mthopidx in 0 1; do
         done
     done
 
-    echo "--------- Compare results (PSDmthopSFTs=PSDmthopIFOs=${mthops_loop[$mthopidx]} --normalizeByTotalNumSFTs) ----------------------------------------------------------------------------------------"
+    echo "--------- Compare results (PSDmthopSFTs=PSDmthopIFOs=${mthops_loop[$mthopidx]} --PSDnormByTotalNumSFTs) ----------------------------------------------------------------------------------------"
     echo "                	[T0,T1]		[T1,T2]		[T0,T2]		awk		(reldev) [Tolerance=$tolerance_rel]"
     for IFO in "H1" "L1" "H1L1"; do
         psd1=$(eval "echo \$"$(echo "psd_${IFO}_${startTime}_${endTime1}")"")
