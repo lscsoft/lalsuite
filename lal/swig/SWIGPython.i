@@ -474,6 +474,80 @@ SWIGINTERN int swiglal_SWIG_AsVal_COMPLEX16(PyObject *obj, COMPLEX16* val) {
 }
 
 //
+// Runtime data
+//
+
+%fragment("SWIG_AsCharPtrAndSize");
+%fragment("SWIG_FromCharPtr");
+%init %{
+
+// Get a pointer to an internal module to store runtime data.
+PyObject* swiglal_runtime_data_module = NULL;
+{
+  const char *const module_name = "swiglal_runtime_data";
+#if PY_VERSION_HEX >= 0x03000000
+  swiglal_runtime_data_module = PyImport_AddModule(module_name);
+#else
+  swiglal_runtime_data_module = Py_InitModule(module_name, NULL);
+#endif
+  assert(swiglal_runtime_data_module != NULL);
+}
+
+// Check for consistent SWIG runtime version number between SWIGLAL wrappers.
+{
+  const char *const swig_runtime_version_name = "swig_runtime_version";
+  const char* const last_swiglal_wrapper_name = "last_swiglal_wrapper";
+  PyObject *swig_runtime_version = NULL;
+  PyObject *last_swiglal_wrapper = NULL;
+  if (PyObject_HasAttrString(swiglal_runtime_data_module, swig_runtime_version_name)) {
+    swig_runtime_version = PyObject_GetAttrString(swiglal_runtime_data_module, swig_runtime_version_name);
+    char *swig_runtime_version_str = NULL;
+    int alloc = 0;
+    int res = SWIG_AsCharPtrAndSize(swig_runtime_version, &swig_runtime_version_str, NULL, &alloc);
+    assert(SWIG_IsOK(res));
+    last_swiglal_wrapper = PyObject_GetAttrString(swiglal_runtime_data_module, last_swiglal_wrapper_name);
+    char *last_swiglal_wrapper_str = NULL;
+    int alloc2 = 0;
+    int res2 = SWIG_AsCharPtrAndSize(last_swiglal_wrapper, &last_swiglal_wrapper_str, NULL, &alloc2);
+    assert(SWIG_IsOK(res2));
+    if (strcmp(swig_runtime_version_str, SWIG_RUNTIME_VERSION) != 0) {
+      PyErr_Format(
+	PyExc_RuntimeError,
+	"Mismatch in SWIG runtime versions: %s is version %s, but %s has already been loaded with version %s",
+	SWIGLAL_PACKAGE, SWIG_RUNTIME_VERSION, last_swiglal_wrapper_str, swig_runtime_version_str
+	);
+      if (alloc) {
+	free(swig_runtime_version_str);
+      }
+      if (alloc2) {
+	free(last_swiglal_wrapper_str);
+      }
+#if SWIG_VERSION >= 0x040400            // int SWIG_mod_exec()
+      return 0;
+#elif PY_VERSION_HEX >= 0x03000000      // PyObject* SWIG_init()
+      return NULL;
+#else                                   // void SWIG_init()
+      return;
+#endif
+    }
+    if (alloc) {
+      free(swig_runtime_version_str);
+    }
+    if (alloc2) {
+      free(last_swiglal_wrapper_str);
+    }
+    Py_DECREF(swig_runtime_version);
+  } else {
+    swig_runtime_version = SWIG_FromCharPtr(SWIG_RUNTIME_VERSION);
+    PyObject_SetAttrString(swiglal_runtime_data_module, swig_runtime_version_name, swig_runtime_version);
+  }
+  last_swiglal_wrapper = SWIG_FromCharPtr(SWIGLAL_PACKAGE);
+  PyObject_SetAttrString(swiglal_runtime_data_module, last_swiglal_wrapper_name, last_swiglal_wrapper);
+}
+
+%} // %init
+
+//
 // Interface code to track object parents
 //
 
@@ -567,28 +641,20 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %} // %header
 %init %{
 
-// Get a pointer to the internal parent map. Look for an attribute 'parent_map' of an internal
-// module 'swiglal_runtime_data'; if it does not exist, create a new map and assign the module
-// attribute, otherwise store the attribute's value. In this way each wrapping module gets a pointer
-// to the same map.
+// Get a pointer to the internal parent map. Look for an attribute 'parent_map' of the runtime
+// data module; if it does not exist, create a new map and assign the module attribute,
+// otherwise store the attribute's value. In this way each wrapping module gets a pointer to
+// the same map.
 {
-  const char *const module_name = "swiglal_runtime_data";
   const char *const parent_map_name = "parent_map";
-#if PY_VERSION_HEX >= 0x03000000
-  PyObject* module = PyImport_AddModule(module_name);
-#else
-  PyObject* module = Py_InitModule(module_name, NULL);
-#endif
-  assert(module != NULL);
-  if (PyObject_HasAttrString(module, parent_map_name)) {
-    parent_map = PyObject_GetAttrString(module, parent_map_name);
+  if (PyObject_HasAttrString(swiglal_runtime_data_module, parent_map_name)) {
+    parent_map = PyObject_GetAttrString(swiglal_runtime_data_module, parent_map_name);
   }
   else {
     parent_map = PyDict_New();
-    PyObject_SetAttrString(module, parent_map_name, parent_map);
+    PyObject_SetAttrString(swiglal_runtime_data_module, parent_map_name, parent_map);
   }
   assert(parent_map != NULL);
-  Py_INCREF(parent_map);
 }
 
 %} // %init
