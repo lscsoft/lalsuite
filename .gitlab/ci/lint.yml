@@ -205,7 +205,7 @@ lint:api-dump-master:
       - config.log
   rules:
     # dump API of the main branch at lscsoft/lalsuite
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - !reference [.ci-merge-post-build-only, rules]
     # for debugging
     - !reference [.ci-lint, rules]
 
@@ -271,8 +271,8 @@ lint:api-cmp-merge-diff:
       # for debugging
       - config.log
   rules:
-    # run for merge requests only
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    # run for merge requests only prior to merging
+    - !reference [.ci-merge-pre-build-only, rules]
     # for debugging
     - !reference [.ci-lint, rules]
 
@@ -311,9 +311,9 @@ lint:api-cmp-last-release:
       - config.log
   rules:
     # run on the main branch at lscsoft/lalsuite
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - !reference [.ci-merge-post-build-only, rules]
     # run on release branches
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /^release/'
+    - if: '$PIPELINE_TYPE == "push" && $CI_COMMIT_REF_NAME =~ /^release/'
     # for debugging
     - !reference [.ci-lint, rules]
 

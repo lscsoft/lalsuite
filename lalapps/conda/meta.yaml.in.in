@@ -42,8 +42,7 @@ build:
     - python
   number: 9999
   script_env:
-    - CI_COMMIT_TAG
-    - CI_PIPELINE_SOURCE
+    - ENABLE_NIGHTLY
     - GITLAB_CI
   # python-lalburst is py>=39
   skip: true  # [win or py==39]
