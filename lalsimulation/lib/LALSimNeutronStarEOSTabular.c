@@ -449,7 +449,9 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
         gsl_interp_init(data->log_cs2_of_log_h_interp, data->log_hdat, data->log_cs2dat, ndat);
     }
 
-    // Find rho from e, p, and h: rho = (e+p)/exp(h), definition of the enthalpy for a cold perfect fluid + first law of thermodynamics (see Shapiro & Teukolsky book, chapter 2).
+    // Find rho from e, p, and h: rho = (e+p)/exp(h),
+    // definition of the enthalpy for a cold perfect fluid + first law of thermodynamics,
+    // See Shapiro & Teukolsky book (chapter 2), or Eqs(7-9) in Haensel & Potekhin 2004.
     for (i = 0; i < ndat; i++)
         data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
 
