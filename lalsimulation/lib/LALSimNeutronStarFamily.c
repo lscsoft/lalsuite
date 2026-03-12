@@ -192,8 +192,8 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     size_t ndat = ndatmax;
     size_t i;
 
-    /* allocate memory */
-    fam = LALMalloc(sizeof(*fam));
+    /* allocate memory (calloc zeroes all fields so unused pointers are NULL) */
+    fam = LALCalloc(1, sizeof(*fam));
     if (!fam)
         XLAL_ERROR_NULL(XLAL_ENOMEM);
     fam->pdat = LALMalloc(ndat * sizeof(*fam->pdat));
@@ -299,7 +299,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
     if(min_fam!=0 && min_fam!=1) XLAL_ERROR_NULL(XLAL_EDOM);
 
     FamMultiParts *fam;
-    fam = LALMalloc(sizeof(*fam));
+    fam = LALCalloc(1, sizeof(*fam));
 
     int ndat = 100;
     int min_interp_points = 5; // Minimum number of points required for all gls interpolators
@@ -372,7 +372,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
         ndat_branch = LALMalloc(nb_stable_branches * sizeof(*ndat_branch));
         for (int b = 0; b < nb_stable_branches; b++){
             ndat_branch[b] = index_end_stable_branch[b] - index_begin_stable_branch[b] + 1;
-            LALSimNeutronStarFamily * fam_branch_i = LALMalloc(sizeof(LALSimNeutronStarFamily));
+            LALSimNeutronStarFamily * fam_branch_i = LALCalloc(1, sizeof(LALSimNeutronStarFamily));
             if(min_fam==1){
                 fam_branch_i->mbdat = NULL;
                 fam_branch_i->k3dat = NULL;
