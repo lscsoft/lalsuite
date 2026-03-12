@@ -2384,6 +2384,11 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
         REAL8 db_min=-1;
         REAL8 db_max=1;
         REAL8 tmpVal=0.0;
+	REAL8 damp21_min = -5;
+	REAL8 damp21_max =  5;
+	REAL8 damp33_min = -3;
+	REAL8 damp33_max =  3;
+
         if ((pptb=LALInferenceGetProcParamVal(commandLine,"--LIV_A_sign"))) {
           REAL8 LIV_A_sign;
           LIV_A_sign = atof(pptb->value);
@@ -2467,6 +2472,10 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
         if (checkParamInList(ppt->value,"db2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "db2", tmpVal, db_min, db_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"db3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "db3", tmpVal, db_min, db_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"db4")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "db4", tmpVal, db_min, db_max, LALINFERENCE_PARAM_LINEAR);
+
+	/* Sub-dominant mode amplitude corrections (PhenomXPHM) */
+	if (checkParamInList(ppt->value,"damp21")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "damp21", tmpVal, damp21_min, damp21_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"damp33")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "damp33", tmpVal, damp33_min, damp33_max, LALINFERENCE_PARAM_LINEAR);
 
         if (checkParamInList(ppt->value,"lambda_eff")) {
           if (ppta==NULL) {

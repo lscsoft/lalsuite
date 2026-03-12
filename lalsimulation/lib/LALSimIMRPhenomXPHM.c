@@ -1831,6 +1831,10 @@ static int IMRPhenomXPHMTwistUp(
 
   COMPLEX16 cexp_i_alpha, cexp_i_epsilon = 1;
 
+  /* Extract the testing GR parameters for subdominant mode amplitude variations*/
+  REAL8 damp21 = XLALSimInspiralWaveformParamsLookupNonGRAmp21(pWF->LALparams);
+  REAL8 damp33 = XLALSimInspiralWaveformParamsLookupNonGRAmp33(pWF->LALparams);
+
   if(pPrec->MBandPrecVersion == 0) /* No multibanding for angles */
   {
     if(pPrec->IMRPhenomXPNRUseTunedAngles)
@@ -1999,6 +2003,13 @@ static int IMRPhenomXPHMTwistUp(
   COMPLEX16 hp_sum  = 0;
   COMPLEX16 hc_sum  = 0;
 
+  COMPLEX16 hp_21_sum  = 0;
+  COMPLEX16 hc_21_sum  = 0;
+
+  COMPLEX16 hp_33_sum  = 0;
+  COMPLEX16 hc_33_sum  = 0;
+
+
   /* Sum over l = 2 modes */
   if (l == 2 && mprime == 2){
     /* Sum up contributions to \tilde{h}_+ and \tilde{h}_x */
@@ -2053,9 +2064,16 @@ static int IMRPhenomXPHMTwistUp(
       /* Transfer functions, see eqs. 3.5-3.7 in Precessing paper. */
       COMPLEX16 A2m1emm  = cexp_im_alpha_l2[-m+2]  * d2m1[m+2]  * Y2mA[m+2];
       COMPLEX16 A21emmstar = cexp_im_alpha_l2[m+2] * d21[m+2] *  conj(Y2mA[m+2]);
-      hp_sum +=    A2m1emm + A21emmstar;
-      hc_sum += I*(A2m1emm - A21emmstar);
-     }
+
+      // It is straightforward to just add the amplitude corrections to //
+      // the hp_sum (it factors out over all m); but splitting it in this way for clarity - same for 3,3//
+
+      /* Sum over all m for the (2,1) contribution */
+      hp_21_sum += A2m1emm + A21emmstar;
+      hc_21_sum += I*(A2m1emm - A21emmstar);
+      }
+      hp_sum+= hp_21_sum*(1+damp21);
+      hc_sum+= hc_21_sum*(1+damp21);
 
   }
 
@@ -2084,9 +2102,13 @@ static int IMRPhenomXPHMTwistUp(
       /* Transfer functions */
       COMPLEX16 A3m3emm  = cexp_im_alpha_l3[-m+3]  * d3m3[m+3]  * Y3mA[m+3];
       COMPLEX16 A33emmstar   = cexp_im_alpha_l3[m+3] * d33[m+3] *  conj(Y3mA[m+3]);
-      hp_sum +=    A3m3emm - A33emmstar;
-      hc_sum += I*(A3m3emm + A33emmstar);
+
+      /* Sum over all m for the (3,3) contribution */
+      hp_33_sum += A3m3emm - A33emmstar;
+      hc_33_sum += I*(A3m3emm + A33emmstar);
     }
+    hp_sum+= hp_33_sum*(1+damp33);
+    hc_sum+= hc_33_sum*(1+damp33);
   }
 
   /* Sum over l = 3 modes */
