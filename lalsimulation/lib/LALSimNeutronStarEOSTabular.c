@@ -919,8 +919,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
 EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
 
     EOSMultiParts *eos;
-    eos = LALCalloc(1, sizeof(*eos));
-    eos->free = eos_multi_part_free_tabular;
 
     double *f_dat;
     size_t ncol;
