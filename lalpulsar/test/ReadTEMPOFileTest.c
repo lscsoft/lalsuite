@@ -24,7 +24,7 @@ typedef struct tagParamData {
   const CHAR *fitFlag; /* add a TEMPO-style fitting flag to some parameters */
 } ParamData;
 
-#define NUMPARS 102
+#define NUMPARS 103
 
 /* setup a collection of allowed .par file parameters */
 ParamData p[NUMPARS] = {
@@ -67,6 +67,7 @@ ParamData p[NUMPARS] = {
   /* glitch parameters */
   { "GLEP_1",   "54321.0",      "870652748.81600",  "0.00123",      "106.27200",    " " },
   { "GLEP_2",   "54322.0",      "870739148.81600",  "0.00123",      "106.27200",    " " },
+  { "GLEP_10",  "54323.0",      "870825548.81600",  "0.00123",      "106.27200",    " " },
   { "GLPH_1",   "0.43453",      "0.43453",          "0.00453",      "0.00453",      "1" },
   { "GLPH_2",   "0.93453",      "0.93453",          "0.01453",      "0.01453",      "1" },
   { "GLF0_1",   "2.50000e-8",   "2.50000e-08",      "4.50000e-09",  "4.50000e-09",  " " },

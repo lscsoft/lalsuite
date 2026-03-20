@@ -1166,7 +1166,7 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp )
     INT4 isperiod = ( !strncmp( nname, "P", 1 ) && !strcmp( "P", pc[i].name ) && sscanf( nname + strlen( "P" ), "%d",  &tmpnum ) == 1 );
     INT4 iswave = ( ( !strncmp( nname, "WAVE", 4 ) && ( !strcmp( "WAVESIN", pc[i].name ) || !strcmp( "WAVECOS", pc[i].name ) ) ) && strcmp( "WAVE_OM", nname ) && strcmp( "WAVEEPOCH", nname ) );
     INT4 isfb = ( !strncmp( nname, "FB", 2 ) && !strcmp( "FB", pc[i].name ) );
-    INT4 isgl = ( !strncmp( nname, "GL", 2 ) && strstr( nname, pc[i].name ) && !strncmp( nname, pc[i].name, strlen( nname ) - 2 ) );
+    INT4 isgl = ( !strncmp( nname, "GL", 2 ) && strstr( nname, pc[i].name ) && !strncmp( nname, pc[i].name, strcspn( nname, "_" ) ) );
 
     if ( !strcmp( nname, pc[i].name ) || isfreq || isperiod || iswave || isfb || isgl ) {
       UINT4 num = 0, nsize = 0;
