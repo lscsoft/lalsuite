@@ -38,6 +38,14 @@ repos:
         args: [--exit-zero, --output-file, code-quality-ruff.json, --output-format, gitlab]
         stages: [manual]
 
+  - repo: https://github.com/assorted-pre-commit-hooks/authors
+    rev: v0.1
+    hooks:
+      - id: authors
+        name: check AUTHORS and .mailmap files
+        args: [--prefer, "@ligo[.]org", --avoid, "albert[.]einstein", --author-mail-env, "CI_COMMIT_AUTHOR"]
+        stages: [pre-commit]
+
   - repo: https://git.ligo.org/lscsoft/lalsuite-code-quality.git
     rev: v0.6
     hooks:
@@ -49,9 +57,6 @@ repos:
         stages: [pre-commit]
 
       - id: fix-gitignore-entries
-        stages: [pre-commit]
-
-      - id: fix-mailmap-authors
         stages: [pre-commit]
 
       - id: make-code-pretty
