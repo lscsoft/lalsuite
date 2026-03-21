@@ -119,7 +119,7 @@ class LALLibraryBuildConfig:
 
                 # Write variable assignments, if not already written by AC_SUBST
                 if key == "var":
-                    (var, val) = args
+                    var, val = args
                     if var not in self._ac_subst:
                         print(f"{var}={val}", file=f)
                     continue

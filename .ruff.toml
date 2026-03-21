@@ -1,5 +1,4 @@
-# ideally should match LALSUITE_DEFAULT_MIN_PYTHON_VERSION but ruff only supports py37+
-target-version = "py37"
+target-version = "py310"
 
 [lint]
 select = [

@@ -21,7 +21,7 @@ install_dir, install_dirmap = sys.argv[1:]
 #   Doxygen documentation does not contain absolute paths
 #   and hence is relocatable
 for elem in install_dirmap.split():
-    (from_dir, to_dir) = elem.split(":")
+    from_dir, to_dir = elem.split(":")
     if len(from_dir) == 0:
         fail("from-directory in install directory map is empty")
     if len(to_dir) == 0:

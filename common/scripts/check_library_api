@@ -417,7 +417,7 @@ def compare(args, tmp_dir):
             nf = new_dump_file if new_dump_file.is_file() else old_dump_file
 
             # Run abi-compliance-checker to compare APIs
-            (ov, nv, dump_api_ch["changes"]) = run_abi_compliance_checker(
+            ov, nv, dump_api_ch["changes"] = run_abi_compliance_checker(
                 "lib" + dump_type,
                 args.old_dump_dir / dump_file,
                 args.new_dump_dir / dump_file,

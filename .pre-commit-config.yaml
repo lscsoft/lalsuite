@@ -69,8 +69,18 @@ repos:
         name: check .gitignore files
         stages: [pre-commit]
 
-  - repo: https://git.ligo.org/lscsoft/lalsuite-code-quality.git
-    rev: v0.6
+  - repo: https://github.com/igrr/astyle_py
+    rev: v1.1.0
     hooks:
-      - id: make-code-pretty
+      - id: astyle_py
+        name: prettify C code (astyle)
+        args: [--astyle-version=3.1, --rules=.astyle.yaml]
         stages: [pre-commit]
+
+  - repo: https://github.com/psf/black
+    rev: 26.3.1
+    hooks:
+      - id: black
+        name: prettify Python code (black)
+        args: [--target-version=py310]
+        files: ^common/   ### |^lalpulsar/ TOFIX
