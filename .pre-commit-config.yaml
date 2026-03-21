@@ -26,6 +26,22 @@ repos:
       - id: check-executables-have-shebangs
         stages: [pre-commit]
 
+  - repo: https://github.com/assorted-pre-commit-hooks/one-liners
+    rev: v0.5
+    hooks:
+      - id: regex
+        name: check makefiles use tab indentation
+        args: [--patt, "^ +", --repl, "\t"]
+        files: \.(am|mk)$
+        stages: [pre-commit]
+
+      - id: chmod
+        name: remove executive permissions
+        args: [--ux, --gx, --ox]
+        files: ""
+        exclude: 00boot$|common/|conda/|debian/|gnuscripts/
+        stages: [pre-commit]
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.13
     hooks:
@@ -56,12 +72,5 @@ repos:
   - repo: https://git.ligo.org/lscsoft/lalsuite-code-quality.git
     rev: v0.6
     hooks:
-      - id: remove-executable-bits
-        exclude: 00boot$|common/|conda/|debian/|gnuscripts/
-        stages: [pre-commit]
-
-      - id: fix-makefile-indents
-        stages: [pre-commit]
-
       - id: make-code-pretty
         stages: [pre-commit]
