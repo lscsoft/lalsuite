@@ -49,10 +49,6 @@ bin/lalinference_pp_pipe
 bin/lalinference_review_test
 bin/lalinference_tiger_pipe
 bin/lalinference_version
-bin/mpi/InjSignal.dat
-bin/mpi/PTMCMC.output.*
-bin/mpi/lalinference_kombine
-bin/mpi/lalinference_mcmc
 bin/version.c
 config.lt
 debian/control

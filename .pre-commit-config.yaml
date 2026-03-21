@@ -46,6 +46,13 @@ repos:
         args: [--prefer, "@ligo[.]org", --avoid, "albert[.]einstein", --author-mail-env, "CI_COMMIT_AUTHOR"]
         stages: [pre-commit]
 
+  - repo: https://github.com/assorted-pre-commit-hooks/gitignore
+    rev: v0.1
+    hooks:
+      - id: gitignore
+        name: check .gitignore files
+        stages: [pre-commit]
+
   - repo: https://git.ligo.org/lscsoft/lalsuite-code-quality.git
     rev: v0.6
     hooks:
@@ -54,9 +61,6 @@ repos:
         stages: [pre-commit]
 
       - id: fix-makefile-indents
-        stages: [pre-commit]
-
-      - id: fix-gitignore-entries
         stages: [pre-commit]
 
       - id: make-code-pretty
