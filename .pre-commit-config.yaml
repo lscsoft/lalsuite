@@ -1,7 +1,7 @@
 repos:
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         stages: [pre-commit]
@@ -10,15 +10,18 @@ repos:
         stages: [pre-commit]
 
       - id: check-yaml
-        files: ^\.pre-commit-config.yaml$
+        name: check yaml (top-level config files)
+        files: ^\.[^/]+.yaml$
         stages: [pre-commit]
 
       - id: check-yaml
+        name: check yaml (GitLab CI files)
         args: [--unsafe]
         files: ^\.gitlab.*\.yml$
         stages: [pre-commit]
 
       - id: file-contents-sorter
+        name: sort .gitattributes
         args: [--unique]
         files: \.gitattributes$
         stages: [pre-commit]
@@ -43,9 +46,10 @@ repos:
         stages: [pre-commit]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.13
+    rev: v0.15.7
     hooks:
       - id: ruff-check
+        name: check Python code (ruff)
         args: [--exit-non-zero-on-fix, --fix, --show-fixes]
         stages: [pre-commit]
 
@@ -55,7 +59,7 @@ repos:
         stages: [manual]
 
   - repo: https://github.com/assorted-pre-commit-hooks/authors
-    rev: v0.1
+    rev: v0.2
     hooks:
       - id: authors
         name: check AUTHORS and .mailmap files
