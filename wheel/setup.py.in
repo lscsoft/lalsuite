@@ -67,13 +67,7 @@ subst['exec_prefix'] = Template('@exec_prefix@').substitute(**subst)
 BINDIR = Path(Template('@bindir@').substitute(**subst))
 DATADIR = Path(Template('$prefix/share').substitute(**subst))
 PYTHONDIR = Path(Template('@pythondir@').substitute(**subst))
-BASE_VERSION = '@BASE_VERSION@'
-NIGHTLY_VERSION = '@NIGHTLY_VERSION@'
-
-if NIGHTLY_VERSION:
-    VERSION = BASE_VERSION + '.' + NIGHTLY_VERSION
-else:
-    VERSION = BASE_VERSION
+VERSION = '@VERSION@'
 
 SHLIB_SUFFIX = sysconfig.get_config_var("SHLIB_SUFFIX")
 
