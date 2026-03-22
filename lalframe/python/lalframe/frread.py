@@ -77,36 +77,29 @@ def read_timeseries(source, channel, start=None, duration=None,
 
     Example 1, reading from a frame file:
 
-    \code
     >>> out = read_timeseries('L-R-1061499968-32.gwf', 'L1:PSL-ISS_PDB_OUT_DQ')
     >>> print(type(out))
     <type 'REAL4TimeSeries'>
     >>> print(out.name, float(out.epoch), out.deltaT)
     ('L1:PSL-ISS_PDB_OUT_DQ', 1061499968.0, 3.0517578125e-05)
-    \endcode
 
     Example 2, reading from a cache:
 
-    \code
     >>> import lal
     >>> cache = lal.CacheGlob('/scratch/ER4/L0/L1/L-R-10614', 'L-R-1061499968*')
     >>> out = frread.read_timeseries(cache, 'L1:PSL-ISS_PDB_OUT_DQ')
     >>> print(out.name, float(out.epoch), out.deltaT)
     ('L1:PSL-ISS_PDB_OUT_DQ', 1061499968.0, 3.0517578125e-05)
-    \endcode
 
     Example 3, restricting data input:
 
-    \code
     >>> out = read_timeseries('L-R-1061499968-32.gwf', 'L1:PSL-ISS_PDB_OUT_DQ',
                               start=1061499970, duration=10)
     >>> print(out.name, float(out.epoch), out.data.length)
     ('L1:PSL-ISS_PDB_OUT_DQ', 1061499970.0, 327680)
-    \endcode
 
     Example 4, specifying data type:
 
-    \code
     >>> out = read_timeseries('L-R-1061499968-32.gwf',
                               'L1:PSL-ODC_CHANNEL_OUT_DQ')
     >>> print(type(out), out.data.data[:4])
@@ -116,7 +109,6 @@ def read_timeseries(source, channel, start=None, duration=None,
                               'L1:PSL-ODC_CHANNEL_OUT_DQ', datatype='int8')
     >>> print(type(out), out.data.data[:4])
     (<type 'INT8TimeSeries'>, array([4259839, 4259839, 4259839, 4259839]))
-    \endcode
 
     """
     # parse channels
