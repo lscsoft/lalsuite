@@ -24,7 +24,7 @@
 
 /**
  * \file LALInferenceKombineSampler.h
- * \ingroup lalapps_inspiral
+ * \ingroup lalinference_general
  * \brief Ensemble Markov-Chain Monte Carlo sampler written for LALInference.
  *
  * Ensemble Markov-Chain Monte Carlo sampler.
