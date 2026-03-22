@@ -35,10 +35,8 @@ def get_channels(framefile):
 
     Example:
 
-    \code
     >>> get_channels('H-H1_LDAS_C02_L2-9668/H-H1_LDAS_C02_L2-966802176-128.gwf')
     ['H1:LSC-DATA_QUALITY_VECTOR', 'H1:IFO-SV_STATE_VECTOR', 'H1:LDAS-STRAIN']
-    \endcode
     """
     return sorted(iter_channels(framefile))
 
