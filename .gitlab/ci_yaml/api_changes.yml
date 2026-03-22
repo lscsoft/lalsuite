@@ -1,0 +1,236 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: track API changes
+# ----------------------------------------------------------------------
+
+# dump API job
+.dump-api-job:
+  extends:
+    - .code-quality-job
+  variables:
+    LC_CONFIGURE_FLAGS_API: >-
+      --disable-doxygen --disable-framec --enable-framel
+      CFLAGS='-g -Og -fno-eliminate-unused-debug-types'
+    # version number of API dump tarball
+    API_DUMP_VERSION: 3
+
+# compare API job:
+.cmp-api-job:
+  extends:
+    - .dump-api-job
+  variables:
+    # Library files matching this regular expression are considered to be source
+    # files (as opposed to e.g. build system-related or other auxilliary files).
+    # If any source files in a library have changed, then either a patch, minor,
+    # or major API bump is proposed, depending on the changes. If no source
+    # files in a library have changed, then no API bump is proposed.
+    SOURCE_REGEX: "bin/|include/|lib/|python/|swig/|test/"
+  allow_failure:
+    # returned by ${LCI_SCRIPTS}/gitlab_api get_artifacts if an API dump
+    # tarball with version ${API_DUMP_VERSION} does not exist in the
+    # latest artifacts for the given branch; this will occur when
+    # ${API_DUMP_VERSION} is bumped
+    exit_codes: 77
+
+# run top-level build
+.api-top-level-build:
+    # install build dependencies
+    - source ${LCI_SCRIPTS}/top_builddep_conda.sh
+    # configure
+    - ./00boot
+    - source ${LCI_SCRIPTS}/build_env.sh
+    - eval ./configure "${LCI_CONFIGURE_FLAGS}"
+    # build and install in source directory
+    - make -j${CPU_COUNT} all
+    - make -j${CPU_COUNT} install
+    - source _inst/etc/lalsuite-user-env.sh
+
+dump-master-api:
+  extends:
+    - .dump-api-job
+  script:
+    # run top-level build
+    - !reference [.api-top-level-build]
+    # dump API
+    - ${LCI_SCRIPTS}/check_api_changes dump
+          --bin-dir=_inst/bin
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --add-sha-to-version
+          --output=api-dump-master/
+          ${LCI_PKGLIST}
+    # create tarball of API dumps
+    - tar -jchvf api-dump-master-v${API_DUMP_VERSION}.tar.bz2 api-dump-master/
+  artifacts:
+    paths:
+      - api-dump-master-v${API_DUMP_VERSION}.tar.bz2
+      # for debugging
+      - config.log
+  rules:
+    # dump API of the master branch at lscsoft/lalsuite
+    - if: >
+        $LCI_PIPE_TYPE == "postmerge"
+    # for debugging
+    - if: >
+        $LCI_PIPE_TYPE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci debug api\]/i
+
+dump-release-api:
+  extends:
+    - .dump-api-job
+  script:
+    # run top-level build
+    - !reference [.api-top-level-build]
+    # dump API
+    - ${LCI_SCRIPTS}/check_api_changes dump
+          --bin-dir=_inst/bin
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --output=api-dump-release/
+          ${LCI_PKGLIST}
+    # create tarball of API dumps
+    - tar -jchvf api-dump-release-v${API_DUMP_VERSION}.tar.bz2 api-dump-release/
+  artifacts:
+    paths:
+      - api-dump-release-v${API_DUMP_VERSION}.tar.bz2
+      # for debugging
+      - config.log
+  rules:
+    # dump API of LALSuite releases
+    - if: >
+        $LCI_PIPE_TYPE == "lalsuite-tag"
+    # for debugging
+    - if: >
+        $LCI_PIPE_TYPE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci debug api\]/i
+
+cmp-merge-request-api:
+  extends:
+    - .cmp-api-job
+  script:
+    # download and unpack API dump of the master branch at lscsoft/lalsuite
+    - |
+      ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
+          ${CI_SERVER_URL} lscsoft/lalsuite \
+          get-artifacts master lint:api-dump-master   ### TOFIX ###
+      api_dump_tarball="api-dump-master-v${API_DUMP_VERSION}.tar.bz2"
+      if [ ! -f ${api_dump_tarball} ]; then
+        echo "WARNING: API dump tarball not found: ${api_dump_tarball}"
+        exit 77
+      fi
+      tar -xvf ${api_dump_tarball}
+    # run top-level build
+    - !reference [.api-top-level-build]
+    # dump API
+    - ${LCI_SCRIPTS}/check_api_changes dump
+          --bin-dir=_inst/bin
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --add-sha-to-version
+          --output=api-dump-head/
+          ${LCI_PKGLIST}
+    # create tarball of API dumps
+    - tar -jchvf api-dump-head-v${API_DUMP_VERSION}.tar.bz2 api-dump-head/
+    # compare APIs
+    - ${LCI_SCRIPTS}/check_api_changes compare
+          --old-dump-dir=api-dump-master/
+          --new-dump-dir=api-dump-head/
+          --source-regex="${SOURCE_REGEX}"
+          --table-title="API Changes From Merge Request"
+          --output-dir=api-report/
+  artifacts:
+    paths:
+      - api-dump-head-v${API_DUMP_VERSION}.tar.bz2
+      - api-report/
+      # for debugging
+      - config.log
+  rules:
+    # compare API to the master branch at lscsoft/lalsuite for merge requests
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+    # for debugging
+    - if: >
+        $LCI_PIPE_TYPE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci debug api\]/i
+
+cmp-last-release-api:
+  extends:
+    - .cmp-api-job
+  script:
+    # download and unpack API dump of the latest LALSuite tag at lscsoft/lalsuite
+    - |
+      ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
+          ${CI_SERVER_URL} lscsoft/lalsuite \
+          get-artifacts --latest-tag lalsuite-v lint:api-dump-release   ### TOFIX ###
+      api_dump_tarball="api-dump-release-v${API_DUMP_VERSION}.tar.bz2"
+      if [ ! -f ${api_dump_tarball} ]; then
+        echo "WARNING: API dump tarball not found: ${api_dump_tarball}"
+        exit 77
+      fi
+      tar -xvf ${api_dump_tarball}
+    # run top-level build
+    - !reference [.api-top-level-build]
+    # dump API
+    - ${LCI_SCRIPTS}/check_api_changes dump
+          --bin-dir=_inst/bin
+          --lib-dir=_inst/lib
+          --pub-header-dir=_inst/include/lal
+          --include-path=_inst/include
+          --sha=${CI_COMMIT_SHA}
+          --add-sha-to-version
+          --output=api-dump-head/
+          ${LCI_PKGLIST}
+    # create tarball of API dumps
+    - tar -jchvf api-dump-head-v${API_DUMP_VERSION}.tar.bz2 api-dump-head/
+    # compare APIs
+    - ${LCI_SCRIPTS}/check_api_changes compare
+          --old-dump-dir=api-dump-release/
+          --new-dump-dir=api-dump-head/
+          --source-regex="${SOURCE_REGEX}"
+          --table-title="API Changes Since Last Release"
+          --output-dir=api-report/
+  artifacts:
+    paths:
+      - api-dump-head-v${API_DUMP_VERSION}.tar.bz2
+      - api-report/
+      # for debugging
+      - config.log
+  rules:
+    # compare API to the latest LALSuite tag at lscsoft/lalsuite for release branches
+    - if: >
+        $LCI_PIPE_TYPE == "lalsuite-tag"
+        && $LCI_RELEASE_SIMULATE == "yes"
+    # for debugging
+    - if: >
+        $LCI_PIPE_TYPE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci debug api\]/i
+
+cmp-debug-api:
+  extends:
+    - .cmp-api-job
+  needs:
+    - dump-master-api
+    - dump-release-api
+  script:
+    # unpack API dumps from prerequisite jobs
+    - tar -xvf api-dump-master-v${API_DUMP_VERSION}.tar.bz2
+    - tar -xvf api-dump-release-v${API_DUMP_VERSION}.tar.bz2
+    # compare APIs
+    - ${LCI_SCRIPTS}/check_api_changes compare
+          --old-dump-dir=api-dump-release/
+          --new-dump-dir=api-dump-master/
+          --table-title="Test API Comparison"
+          --output-dir=api-report/
+  artifacts:
+    paths:
+      - api-report/
+  rules:
+    # for debugging
+    - if: >
+        $LCI_PIPE_TYPE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci debug api\]/i

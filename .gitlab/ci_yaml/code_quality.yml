@@ -1,0 +1,221 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: run some quality checks on the source code
+# ----------------------------------------------------------------------
+
+# -- SAST security jobs ------------------------------------------------
+
+include:
+  # https://git.ligo.org/explore/catalog/computing/gitlab/components/sast
+  - component: '${CI_SERVER_FQDN}/computing/gitlab/components/sast/sast@~latest'
+    inputs:
+      stage: Code quality
+      run_advanced_sast: true
+
+gitlab-advanced-sast:
+  needs: []
+  before_script: []
+  variables:
+    # set XDG_CONFIG_HOME (set in global variables) to something that always exists
+    XDG_CONFIG_HOME: "/tmp"
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+
+semgrep-sast:
+  needs: []
+  before_script: []
+  variables:
+    # set XDG_CONFIG_HOME (set in global variables) to something that always exists
+    XDG_CONFIG_HOME: "/tmp"
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+
+# -- code quality jobs -------------------------------------------------
+
+# code quality job
+.code-quality-job:
+  stage: Code quality
+  extends:
+    - .linux-job
+  needs:
+    # make sure the development images are built first
+    - job: dev-image
+      optional: true
+  before_script:
+    - !reference [default, before_script]
+    # initialise Conda environment
+    - source ${LCI_SCRIPTS}/init_conda.sh
+
+# check CI serial
+ci-serial-check:
+  extends:
+    - .code-quality-job
+  script:
+    - echo "TOFIX"
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+
+# run pre-commit hooks
+pre-commit-check:
+  extends:
+    - .code-quality-job
+  variables:
+    # this jobs needs the full Git history to update the authors
+    GIT_STRATEGY: fetch
+  script:
+    # this jobs needs the full Git history to update the authors
+    - git fetch --unshallow --quiet
+    # check that the first commit in LALSuite exists
+    - git log 8150fb34fae54b0cc46e8ef14f906bc5d714a381
+    # install pre-commit hooks
+    - ${LCI_SCRIPTS}/retry pre-commit install-hooks
+    # run pre-commit
+    - |
+      pre-commit run -a || true
+      if ! git diff --quiet; then
+        echo "------------------------------------------------------------------------"
+        echo "The pre-commit hooks have made the following fixes to your code:"
+        echo "------------------------------------------------------------------------"
+        git diff
+        echo "------------------------------------------------------------------------"
+        echo "To reproduce these fixes locally, install pre-commit, then run:"
+        echo "$ pre-commit install"
+        echo "$ pre-commit run -a"
+        echo "See CONTRIBUTING.md for further information."
+        echo "------------------------------------------------------------------------"
+      fi
+    # generate code quality report
+    - pre-commit run -a --hook-stage manual
+    - ${LCI_SCRIPTS}/git_diff_to_code_quality "pre-commit fixes" > code-quality-pre-commit.json
+    # check/concatenate code quality reports
+    - ${LCI_SCRIPTS}/check_code_quality -o concat-code-quality.json $(find -name 'code-quality-*.json')
+  artifacts:
+    reports:
+      codequality: concat-code-quality.json
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "push"
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+
+# check for consistent dependencies between LALSuite libraries
+dependencies-check:
+  extends:
+    - .code-quality-job
+  script:
+    - ${LCI_SCRIPTS}/dependencies_check
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+
+# check that .gitignore files are complete
+gitignore-check:
+  extends:
+    - .code-quality-job
+  script:
+    # install build dependencies
+    - source ${LCI_SCRIPTS}/top_builddep_conda.sh
+    # configure
+    - ./00boot
+    - source ${LCI_SCRIPTS}/build_env.sh
+    - eval ./configure "${LCI_CONFIGURE_FLAGS}"
+    # build in source directory, including tests
+    - make -j${CPU_COUNT} VERBOSE=1 all
+    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
+    # install pre-commit hooks
+    - ${LCI_SCRIPTS}/retry pre-commit install-hooks
+    # check for build files not in .gitignore
+    - |
+      git status --short | sed -n 's|^?? ||p' >> .gitignore
+      pre-commit run -a gitignore || true
+      if ! git diff --quiet; then
+        echo "------------------------------------------------------------------------"
+        echo "The following entries are missing from the .gitignore files:"
+        echo "------------------------------------------------------------------------"
+        git diff
+        echo "------------------------------------------------------------------------"
+      fi
+    # generate code quality report
+    - ${LCI_SCRIPTS}/git_diff_to_code_quality "missing .gitignore entries" > code-quality-gitignore.json
+    # check/concatenate code quality reports
+    - ${LCI_SCRIPTS}/check_code_quality -o concat-code-quality.json $(find -name 'code-quality-*.json')
+  artifacts:
+    reports:
+      codequality: concat-code-quality.json
+    paths:
+      # for debugging failures
+      - Makefile
+      - config.log
+      - lal/Makefile
+      - lal/config.log
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+
+coverage-check:
+  extends:
+    - .code-quality-job
+  variables:
+    COVERAGE_RCFILE: "${CI_PROJECT_DIR}/.coveragerc"
+    COVERAGE_FILE: "${CI_PROJECT_DIR}/.coverage"
+  # Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap
+  script:
+    # install build dependencies
+    - source ${LCI_SCRIPTS}/top_builddep_conda.sh
+    # configure
+    - ./00boot
+    - source ${LCI_SCRIPTS}/build_env.sh
+    - eval ./configure "${LCI_CONFIGURE_FLAGS}"
+    # common configuration for coverage.py
+    - |
+      cat > ${COVERAGE_RCFILE} <<EOF
+      [run]
+      omit =
+          ${LCI_TMPDIR}/*
+          */test/*
+      parallel = True
+      EOF
+    # run unit tests with Python scripts instrumented by coverage.py
+    # - set C flags here to avoid generating coverage for autoconf tests
+    - make -j${CPU_COUNT} check
+          CFLAGS="-O3 --coverage -fprofile-abs-path"
+          PY_LOG_FLAGS="-m coverage run --source \"${PWD}\""
+          PYBIN_SCRIPT_PY_FLAGS="-m coverage run"
+    # output C coverage data in Cobertura format
+    - gcovr -j ${CPU_COUNT}
+          --exclude '(.+/)?swiglal_[a-z]+\.c$'
+          --exclude-directories 'lal([a-z]+/)?test'
+          --gcov-ignore-parse-errors 'suspicious_hits.warn'
+          --xml c-coverage.xml
+    # combine and output Python coverage data in Cobertura format
+    - python3 -m coverage combine
+    - python3 -m coverage xml -o py-coverage.xml
+    # merge coverage reports
+    - ${LCI_SCRIPTS}/merge_coverage_xml
+    # write HTML coverage report and show coverage summary
+    - pycobertura show coverage.xml -f html -o coverage.html
+    - pycobertura show coverage.xml | tail -n 1
+  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
+  artifacts:
+    expose_as: coverage
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      # report
+      - coverage.html
+      # combined coverage
+      - coverage.xml
+      # C coverage
+      - c-coverage.xml
+      # Python coverage
+      - py-coverage.xml
+      # for debugging failures
+      - Makefile
+      - config.log
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "merge"

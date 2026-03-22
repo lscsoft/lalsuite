@@ -1,0 +1,57 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: package-level build matrix
+# ----------------------------------------------------------------------
+
+.pkg-level-matrix:
+  parallel:
+    matrix:
+
+      # --- Plain make -------------------------------------------------
+
+      - LCI_PLAT: "el8"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=rpm"
+        LCI_JOB_TYPE: ["push"]
+
+      # --- RPM packages -----------------------------------------------
+
+      - LCI_PLAT: "el8"
+        LCI_ENV: "LCI_BLD=rpm"
+        LCI_JOB_TYPE: ["merge", "sched-devimg", "sched-snapshot", "lalsuite-tag"]
+
+      # --- Debian packages --------------------------------------------
+
+      - LCI_PLAT: "bookworm"
+        LCI_ENV: "LCI_BLD=deb"
+        LCI_JOB_TYPE: ["merge", "sched-devimg", "sched-snapshot", "lalsuite-tag"]
+
+      # --- CUDA (Ubuntu) packages -------------------------------------
+
+      - LCI_PLAT: "cuda12.8"
+        LCI_ENV: "LCI_BLD=deb LCI_CUDA=yes"
+        LCI_JOB_TYPE: ["merge", "sched-devimg", "sched-snapshot", "lalsuite-tag"]
+
+      # --- Conda packages ---------------------------------------------
+
+      # with FFTW
+
+      - LCI_PLAT: "conda-py313"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_ LCI_CONDA_CFG_lal=linux_64_fft_implfftw"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      - LCI_PLAT: "conda-py312"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_ LCI_CONDA_CFG_lal=linux_64_fft_implfftw"
+        LCI_JOB_TYPE: ["sched-devimg"]
+
+      - LCI_PLAT: "conda-py311"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_ LCI_CONDA_CFG_lal=linux_64_fft_implfftw"
+        LCI_JOB_TYPE: ["sched-devimg"]
+
+      - LCI_PLAT: "conda-py310"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_ LCI_CONDA_CFG_lal=linux_64_fft_implfftw"
+        LCI_JOB_TYPE: ["sched-devimg"]
+
+      # with MKL
+
+      - LCI_PLAT: "conda-py313"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_ LCI_CONDA_CFG_lal=linux_64_fft_implmkl LCL_LAL_ONLY=yes"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]

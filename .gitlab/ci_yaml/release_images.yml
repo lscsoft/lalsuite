@@ -1,0 +1,91 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: build Docker release images
+# ----------------------------------------------------------------------
+
+# -- release image matrix ----------------------------------------------
+
+.release-image-matrix:
+  parallel:
+    matrix:
+
+      # --- Enterprise Linux -------------------------------------------
+
+      - LCI_PLAT: "el8"
+        LCI_ENV: "LCI_BLD=rpm"
+        LCI_PLAT_BASE: "el"
+        LCI_DOCKER_ARGS: "EL_VERSION=el8"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+      # --- Debian -----------------------------------------------------
+
+      - LCI_PLAT: "bookworm"
+        LCI_ENV: "LCI_BLD=deb"
+        LCI_PLAT_BASE: "debian"
+        LCI_DOCKER_ARGS: "DEB_VERSION=bookworm"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+      # --- CUDA (Ubuntu) ----------------------------------------------
+
+      - LCI_PLAT: "cuda12.8"
+        LCI_ENV: "LCI_BLD=deb LCI_CUDA=yes"
+        LCI_PLAT_BASE: "cuda"
+        LCI_DOCKER_ARGS: "CUDA_VERSION=12.8.1 UBU_VERSION=noble UBU_VERSION_N=24.04"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+# -- release image jobs ------------------------------------------------
+
+.release-image-job:
+  extends:
+    - .linux-job
+    - .release-image-matrix
+    - .deploy-job
+    - .docker-image-job
+
+snapshot-image:
+  extends:
+    .release-image-job
+  needs:
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalpulsar
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalapps
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    # push release snapshot images to the "snapshot" tag
+    PLAT_BASE_IMG_PATH: "${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:snapshot"
+    PLAT_IMG_PATH: "${CI_REGISTRY_IMAGE}/${LCI_PLAT}:snapshot"
+  script:
+    # build image and push to registry
+    - |
+      docker_args="--pull"
+      for arg in ${LCI_DOCKER_ARGS}; do
+        docker_args="${docker_args} --build-arg ${arg}"
+      done
+      echo "docker_args=${docker_args}"
+      docker buildx build ${docker_args} --tag ${PLAT_BASE_IMG_PATH} --file ".gitlab/ci_images/release_${LCI_PLAT_BASE}.Dockerfile" .
+    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - docker push ${PLAT_BASE_IMG_PATH}
+    - docker tag ${PLAT_BASE_IMG_PATH} ${PLAT_IMG_PATH}
+    - docker push ${PLAT_IMG_PATH}
+    # test image
+    - docker run --rm ${PLAT_IMG_PATH} lalapps_version
+  rules:
+    # - !reference [.deploy-check-execute, rules]    ### TOFIX ###
+    # only run for building snapshot Docker images
+    - if: >
+        $LCI_PIPE_TYPE != "sched-snapshot"
+      when: never
+    - !reference [.default-matrix-rule, rules]

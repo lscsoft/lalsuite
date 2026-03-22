@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+
+"""Interact with a GitLab server through its API."""
+
+__author__ = "Karl Wette"
+__copyright__ = "Copyright (C) 2025 Karl Wette"
+
+import os
+import sys
+import time
+import argparse
+import logging
+import gitlab
+from zipfile import ZipFile
+from io import BytesIO
+from natsort import natsorted
+
+# configure logging
+LOGGER = logging.getLogger(__name__.rsplit(".", 1)[-1])
+try:
+    from coloredlogs import ColoredFormatter as _Formatter
+except ImportError:
+    _Formatter = logging.Formatter
+if not LOGGER.hasHandlers():
+    _LOG_HANDLER = logging.StreamHandler()
+    _LOG_HANDLER.setFormatter(
+        _Formatter(
+            fmt="[%(asctime)s] %(levelname)+8s: %(message)s",
+        )
+    )
+    LOGGER.addHandler(_LOG_HANDLER)
+LOGGER.setLevel(logging.DEBUG)
+
+
+def parse_command_line():
+    """Parse command line"""
+
+    # Create parser
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--token-env-var",
+        type=str,
+        default=None,
+        help="Environment variable containing GitLab access token, if required",
+    )
+    parser.add_argument(
+        "server",
+        type=str,
+        help="GitLab server",
+    )
+    parser.add_argument(
+        "repo",
+        type=str,
+        help="GitLab repository",
+    )
+    subparsers = parser.add_subparsers(dest="command", help="subcommand help")
+    subparsers.required = True
+    parser_get_artifacts = subparsers.add_parser(
+        "get-artifacts", help="get-artifacts help"
+    )
+    parser_get_artifacts.set_defaults(subcommand=get_artifacts)
+    parser_get_artifacts.add_argument(
+        "ref_name", type=str, help="Get artifacts for this reference name"
+    )
+    parser_get_artifacts.add_argument(
+        "--latest-tag",
+        action="store_true",
+        help="Interpret `ref_name` as a tag prefix, and get artfacts for the most recent tag",
+    )
+    parser_get_artifacts.add_argument(
+        "job_name", type=str, help="Get artifacts from this job name"
+    )
+
+    # Parse command line
+    args = parser.parse_args()
+
+    return args
+
+
+def write_artifact_download_progress(log_message, artifacts_archive):
+    """Write progress messages when downloading artifacts"""
+    n = 0
+    t0 = time.perf_counter()
+
+    def write(b):
+        nonlocal n
+        nonlocal t0
+        n += len(b)
+        t = time.perf_counter()
+        if t - t0 > 10:
+            n_MB = 1e-6 * n
+            LOGGER.info(f"{log_message}: wrote {n_MB:0.1f} MB")
+            t0 = t
+        artifacts_archive.write(b)
+
+    return write
+
+
+def get_artifacts(server, repo, args):
+    """Retrieve artifacts from GitLab project reference and job"""
+
+    # if requested, find latest tag with given prefix
+    if args.latest_tag:
+        tags = repo.tags.list(iterator=True)
+        matching_tags = [t.name for t in tags if t.name.startswith(args.ref_name)]
+        ref_name = natsorted(matching_tags)[-1]
+    else:
+        ref_name = args.ref_name
+
+    # download latest artifacts as ZIP archive
+    log_message = (
+        f"downloading latest artifacts for ref={ref_name}, job={args.job_name}"
+    )
+    LOGGER.info(f"{log_message}: started")
+    artifacts_archive = BytesIO()
+    repo.artifacts.download(
+        ref_name,
+        args.job_name,
+        streamed=True,
+        action=write_artifact_download_progress(log_message, artifacts_archive),
+    )
+    LOGGER.info(f"{log_message}: done")
+
+    # extract artifacts from ZIP file
+    with ZipFile(artifacts_archive) as zf:
+        zf.extractall()
+
+
+def main():
+    """Main program"""
+
+    # parse command line
+    args = parse_command_line()
+
+    # interface to GitLab repository
+    if args.token_env_var:
+        server = gitlab.Gitlab(
+            args.server, private_token=os.environ[args.token_env_var]
+        )
+        server.auth()
+    else:
+        server = gitlab.Gitlab(args.server)
+    repo = server.projects.get(args.repo)
+    LOGGER.info(f"authenticated to {args.server}/{args.repo}")
+
+    # execute subcommand
+    args.subcommand(server, repo, args)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

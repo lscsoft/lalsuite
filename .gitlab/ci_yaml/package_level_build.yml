@@ -1,0 +1,311 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: package-level build jobs
+# ----------------------------------------------------------------------
+
+.pkg-level-job:
+  stage: Package-level builds
+  image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
+  extends:
+    - .linux-job
+    - .tarball-build-job
+  variables:
+    PACKAGE_ROOT_DIR: "${CI_PROJECT_DIR}/packages"
+    PACKAGE_DIR: "${PACKAGE_ROOT_DIR}/${PACKAGE}"
+  script:
+    # set up builder environment
+    - eval export "${LCI_ENV}"
+    - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
+    - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
+    - mkdir -p ${PACKAGE_DIR}
+    # unpack tarball
+    - mkdir -p build/
+    - cd build/
+    - export TARBALL=$(ls -1 ${CI_PROJECT_DIR}/tarballs/${PACKAGE}-*.tar.*)
+    - tar xf ${TARBALL}
+    - cd ${PACKAGE}-*/
+    # run package-level build
+    - source ${LCI_SCRIPTS}/pkg_build_${LCI_BLD}.sh
+    # check/concatenate code quality reports
+    - cd ${CI_PROJECT_DIR}
+    - ${LCI_SCRIPTS}/check_code_quality -o concat-code-quality.json $(find build/ -name 'code-quality-*.json')
+  artifacts:
+    expire_in: 18h
+    paths:
+      # packages
+      - "packages/${PACKAGE}"
+      # log files
+      - "build/${PACKAGE}-*/**/config.log"
+      - "build/${PACKAGE}-*/**/test-suite.log"
+      # generated sources
+      - "build/${PACKAGE}-*/**/swiglal_lal*_octave.cpp"
+      - "build/${PACKAGE}-*/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "build/${PACKAGE}-*/**/Makefile"
+      - "build/${PACKAGE}-*/**/libtool"
+      # package system files
+      - "build/${PACKAGE}-*/${LCI_BLD}-specific/"
+    reports:
+      codequality: concat-code-quality.json
+      junit: "build/**/*junit*.xml"
+    when: always
+
+# matches CI package job needs across build matrix
+# - e.g. "lalframe [LCI_PLAT=...]" needs "lal [LCI_PLAT=...]"
+.pkg-level-needs:
+  parallel:
+    matrix:
+      - LCI_PLAT: '$[[ matrix.LCI_PLAT ]]'
+        LCI_ENV: '$[[ matrix.LCI_ENV ]]'
+        LCI_JOB_TYPE: '$[[ matrix.LCI_JOB_TYPE ]]'
+
+lal:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:lal
+  variables:
+    PACKAGE: lal
+  rules:
+    - !reference [.default-matrix-rule, rules]
+
+lalframe:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:pkg
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalframe
+  rules:
+    # do not run if only building packages for the LAL library
+    - if: >
+        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+lalmetaio:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:pkg
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalmetaio
+  rules:
+    # do not run if only building packages for the LAL library
+    - if: >
+        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+lalsimulation:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:pkg
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalsimulation
+  rules:
+    # do not run if only building packages for the LAL library
+    - if: >
+        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+lalburst:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:pkg
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalburst
+  rules:
+    # do not run if only building packages for the LAL library
+    - if: >
+        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+lalinspiral:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:pkg
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalinspiral
+  rules:
+    # do not run if only building packages for the LAL library
+    - if: >
+        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+lalinference:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:pkg
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalinference
+  rules:
+    # do not run if only building packages for the LAL library
+    - if: >
+        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+lalpulsar:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:pkg
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalpulsar
+  rules:
+    # do not run if only building packages for the LAL library
+    - if: >
+        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+lalapps:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:pkg
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalpulsar
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalapps
+  rules:
+    # do not run if only building packages for the LAL library
+    - if: >
+        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+upgrade:
+  stage: Package-level builds
+  image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
+  extends:
+    - .linux-job
+    - .tarball-build-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalpulsar
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalapps
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    GIT_STRATEGY: none
+    PACKAGE_ROOT_DIR: "${CI_PROJECT_DIR}/packages"
+  script:
+    # set builder environment
+    - eval export "${LCI_ENV}"
+    - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
+    - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
+    # upgrade packages
+    - source ${LCI_SCRIPTS}/pkg_upgrade_${LCI_BLD}.sh
+  rules:
+    # do not runs if the job is not a plain make build
+    - if: >
+        $LCI_ENV =~ /LCI_BLD=make/
+      when: never
+    # do not run if only building packages for the LAL library
+    - if: >
+        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
+      when: never
+    - !reference [.default-matrix-rule, rules]

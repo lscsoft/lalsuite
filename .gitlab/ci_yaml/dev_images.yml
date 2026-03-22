@@ -1,0 +1,169 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: build Docker development images for CI pipelines
+# ----------------------------------------------------------------------
+
+# -- CI image matrix ---------------------------------------------------
+
+.dev-image-matrix:
+  parallel:
+    matrix:
+
+      # --- Platforms --------------------------------------------------
+
+      # Enterprise Linux
+      - LCI_PLAT: "el8"
+        LCI_PLAT_BASE: "el"
+        LCI_DOCKER_ARGS: "EL_VERSION=el8"
+
+      # Debian
+      - LCI_PLAT: "bookworm"
+        LCI_PLAT_BASE: "debian"
+        LCI_DOCKER_ARGS: "DEB_VERSION=bookworm"
+
+      # Ubuntu
+      - LCI_PLAT: "noble"
+        LCI_PLAT_BASE: "ubuntu"
+        LCI_DOCKER_ARGS: "UBU_VERSION=noble"
+
+      # CUDA (Ubuntu)
+      - LCI_PLAT: "cuda12.8"
+        LCI_PLAT_BASE: "cuda"
+        LCI_DOCKER_ARGS: "CUDA_VERSION=12.8.1 UBU_VERSION=noble UBU_VERSION_N=24.04"
+
+      # Conda
+      - LCI_PLAT: "conda-py313"
+        LCI_PLAT_BASE: "conda"
+        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.13.*"
+
+      - LCI_PLAT: "conda-py312"
+        LCI_PLAT_BASE: "conda"
+        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.12.*"
+
+      - LCI_PLAT: "conda-py311"
+        LCI_PLAT_BASE: "conda"
+        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.11.*"
+
+      - LCI_PLAT: "conda-py310"
+        LCI_PLAT_BASE: "conda"
+        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.10.*"
+
+      # --- Compilers --------------------------------------------------
+
+      # GCC
+      - LCI_PLAT: "gcc-latest"
+        LCI_PLAT_BASE: "gcc"
+        LCI_DOCKER_ARGS: "GCC_VERSION_NAME=latest GCC_IMAGE_TAG=latest DEB_VERSION=trixie"
+
+      - LCI_PLAT: "gcc-14"
+        LCI_PLAT_BASE: "gcc"
+        LCI_DOCKER_ARGS: "GCC_VERSION_NAME=14 GCC_IMAGE_TAG=14-bookworm DEB_VERSION=bookworm"
+
+      - LCI_PLAT: "gcc-13"
+        LCI_PLAT_BASE: "gcc"
+        LCI_DOCKER_ARGS: "GCC_VERSION_NAME=13 GCC_IMAGE_TAG=13-bookworm DEB_VERSION=bookworm"
+
+      - LCI_PLAT: "gcc-12"
+        LCI_PLAT_BASE: "gcc"
+        LCI_DOCKER_ARGS: "GCC_VERSION_NAME=12 GCC_IMAGE_TAG=12-bookworm DEB_VERSION=bookworm"
+
+      # Clang
+      - LCI_PLAT: "clang-latest"
+        LCI_PLAT_BASE: "clang"
+        # remove -22 suffix when https://github.com/llvm/llvm-project/issues/180239 is resolved
+        LCI_DOCKER_ARGS: "CLANG_VERSION_NAME=latest CLANG_VERSION_SUFFIX=-22 DEB_VERSION=bookworm"
+
+      - LCI_PLAT: "clang-22"
+        LCI_PLAT_BASE: "clang"
+        LCI_DOCKER_ARGS: "CLANG_VERSION_NAME=22 CLANG_VERSION_SUFFIX=-22 DEB_VERSION=bookworm"
+
+      - LCI_PLAT: "clang-21"
+        LCI_PLAT_BASE: "clang"
+        LCI_DOCKER_ARGS: "CLANG_VERSION_NAME=21 CLANG_VERSION_SUFFIX=-21 DEB_VERSION=bookworm"
+
+      - LCI_PLAT: "clang-20"
+        LCI_PLAT_BASE: "clang"
+        LCI_DOCKER_ARGS: "CLANG_VERSION_NAME=20 CLANG_VERSION_SUFFIX=-20 DEB_VERSION=bookworm"
+
+# -- CI image jobs -----------------------------------------------------
+
+.dev-image-job:
+  extends:
+    - .linux-job
+    - .dev-image-matrix
+  variables:
+    # push new Docker development image tags here for testing
+    TESTING_IMG_PATH: "${CI_REGISTRY_IMAGE}/dev:dev-${LCI_PLAT}-testing"
+    # once tested push Docker development image tags here
+    FINAL_IMG_PATH: "${CI_REGISTRY_IMAGE}/dev:dev-${LCI_PLAT}"
+
+dev-image:
+  stage: Input sources
+  extends:
+    - .dev-image-job
+    - .docker-image-job
+  script:
+    # build Docker images in a temporary directory
+    # - all Docker files, and any input files they require, should reside in the
+    #   directory .gitlab/ci_images, with the exception of conda-dev-env.yml
+    - |
+      tmpdir=$(mktemp -d -p ${LCI_TMPDIR})
+      mv -v conda-dev-env.yml ${tmpdir}/
+      mkdir ${tmpdir}/.gitlab/
+      mv -v .gitlab/ci_images/ ${tmpdir}/.gitlab/
+      cd ${tmpdir}/
+    # build image and push to registry
+    - |
+      docker_args="--pull"
+      for arg in ${LCI_DOCKER_ARGS}; do
+        docker_args="${docker_args} --build-arg ${arg}"
+      done
+      echo "docker_args=${docker_args}"
+      docker buildx build ${docker_args} --tag ${TESTING_IMG_PATH} --file ".gitlab/ci_images/dev_${LCI_PLAT_BASE}.Dockerfile" .
+    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - docker push ${TESTING_IMG_PATH}
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+      changes:
+        # only run in merge pipeline if the following files have changed
+        paths:
+          - conda-dev-env.yml
+          - ".gitlab/ci_images/*"
+        compare_to: 'refs/heads/${CI_DEFAULT_BRANCH}'
+    - if: >
+        $LCI_PIPE_TYPE == "sched-devimg"
+
+dev-image:deploy:
+  extends:
+    - .dev-image-job
+    - .docker-image-job
+    - .deploy-job
+  needs:
+    # build the development images
+    - job: dev-image
+      parallel:
+        matrix:
+          - LCI_PLAT: '$[[ matrix.LCI_PLAT ]]'
+            LCI_PLAT_BASE: '$[[ matrix.LCI_PLAT_BASE ]]'
+            LCI_DOCKER_ARGS: '$[[ matrix.LCI_DOCKER_ARGS ]]'
+    # run the package-level build jobs
+    # - upgrade depends on all the package-level jobs
+    - job: upgrade
+      optional: true
+    # run the top-level build jobs
+    - job: lalsuite:linux
+      optional: true
+    - job: lalsuite:macos-x86-64
+      optional: true
+    - job: lalsuite:macos-arm64
+      optional: true
+  script:
+    # push testing image to production image
+    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - docker pull ${TESTING_IMG_PATH}
+    - docker tag ${TESTING_IMG_PATH} ${FINAL_IMG_PATH}
+    - docker push ${FINAL_IMG_PATH}
+  rules:
+    - !reference [.deploy-check-execute, rules]
+    - if: >
+        $LCI_PIPE_TYPE == "sched-devimg"

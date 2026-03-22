@@ -1,0 +1,128 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: run some specialised tests
+# ----------------------------------------------------------------------
+
+.specialised-test-matrix:
+  parallel:
+    matrix:
+
+      # --- Use RPM packages for specialised tests ---------------------
+
+      - LCI_PLAT: "el8"
+        LCI_ENV: "LCI_BLD=rpm"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+lalinference:test-job:
+  extends:
+    - lalinference
+  parallel: !reference [.specialised-test-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:pkg
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+  script:
+    # set up builder environment
+    - eval export "${LCI_ENV}"
+    - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
+    - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
+    # install upstream RPMs
+    - |
+      upstream_rpms=$(find ${PACKAGE_ROOT_DIR} -name '*.rpm')
+      echo "===== upstream RPMs"
+      printf "%s\n" ${upstream_rpms}
+      echo "====="
+      ${LCI_SCRIPTS}/retry dnf install -y ${upstream_rpms}
+    # unpack tarball
+    - mkdir -p build/
+    - cd build/
+    - export TARBALL=$(ls -1 ${CI_PROJECT_DIR}/tarballs/${PACKAGE}-*.tar.*)
+    - tar xf ${TARBALL}
+    - cd ${PACKAGE}-*/
+    # run test job
+    - git -c "lfs.fetchinclude=**/params.dat,*/4s/**" clone https://git.ligo.org/lscsoft/ROQ_data
+    - bash ./test/lalinference_nestedSampling_integration_test.sh
+  artifacts:
+    expire_in: 18h
+    paths:
+      # test configuration
+      - "build/${PACKAGE}-*/example.ini"
+      # test results
+      - "build/${PACKAGE}-*/example/"
+    when: always
+
+lalpulsar:long-tests:
+  extends:
+    - lalpulsar
+  parallel: !reference [.specialised-test-matrix, parallel]
+  needs:
+    - job: ci-scripts
+    - job: tarballs:pkg
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+  script:
+    # set up builder environment
+    - eval export "${LCI_ENV}"
+    - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
+    - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
+    # install upstream RPMs
+    - |
+      upstream_rpms=$(find ${PACKAGE_ROOT_DIR} -name '*.rpm')
+      echo "===== upstream RPMs"
+      printf "%s\n" ${upstream_rpms}
+      echo "====="
+      ${LCI_SCRIPTS}/retry dnf install -y ${upstream_rpms}
+    # unpack tarball
+    - mkdir -p build/
+    - cd build/
+    - export TARBALL=$(ls -1 ${CI_PROJECT_DIR}/tarballs/${PACKAGE}-*.tar.*)
+    - tar xf ${TARBALL}
+    - cd ${PACKAGE}-*/
+    # setup build environment
+    - source ${LCI_SCRIPTS}/build_env.sh
+    # configure
+    - eval ./configure "${LCI_CONFIGURE_FLAGS}"
+    # build, test, and install package
+    - make -j${CPU_COUNT} all
+    - make -j${CPU_COUNT} install
+    # test finding data files
+    - env LAL_DEBUG_LEVEL=info lalpulsar_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
+    # run long-running tests
+    - make -j${CPU_COUNT} check -C bin/longtests/ LONGTESTS=1
+  artifacts:
+    expire_in: 18h
+    paths:
+      # log files
+      - "build/${PACKAGE}-*/**/config.log"
+      - "build/${PACKAGE}-*/**/test-suite.log"
+      # generated sources
+      - "build/${PACKAGE}-*/**/swiglal_lal*_octave.cpp"
+      - "build/${PACKAGE}-*/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "build/${PACKAGE}-*/**/Makefile"
+      - "build/${PACKAGE}-*/**/libtool"
+    when: always

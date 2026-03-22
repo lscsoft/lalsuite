@@ -1,0 +1,46 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: top-level build job
+# ----------------------------------------------------------------------
+
+.top-level-job:
+  stage: Top-level builds
+  image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
+  extends:
+    - .tarball-build-job
+  needs:
+    - ci-scripts
+    - tarballs:top
+  script:
+    # set up builder environment
+    - eval export "${LCI_ENV}"
+    - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
+    - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
+    # unpack tarball
+    - mkdir -p build/
+    - cd build/
+    - export TARBALL=$(ls -1 ${CI_PROJECT_DIR}/tarballs/lalsuite-*.tar.*)
+    - tar xf ${TARBALL}
+    - cd lalsuite-*
+    # run top-level build
+    - source ${LCI_SCRIPTS}/top_build_${LCI_BLD}.sh
+    # check/concatenate code quality reports
+    - cd ${CI_PROJECT_DIR}
+    - ${LCI_SCRIPTS}/check_code_quality -o concat-code-quality.json $(find build/ -name 'code-quality-*.json')
+  artifacts:
+    expire_in: 18h
+    paths:
+      # log files
+      - "build/**/config.log"
+      - "build/**/test-suite.log"
+      # generated sources
+      - "build/**/swiglal_lal*_octave.cpp"
+      - "build/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "build/**/Makefile"
+      - "build/**/libtool"
+    reports:
+      codequality: concat-code-quality.json
+      junit: "build/**/*junit*.xml"
+    when: always
+  rules:
+    - !reference [.default-matrix-rule, rules]
