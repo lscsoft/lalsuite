@@ -5,17 +5,7 @@
 # production-ready at any time.
 
 {% set name = "lalburst" %}
-
-# set version based on nightly
-# (we rebuild the nightly version ourselves because the tarball might have
-#  been generate on a different day)
-{% set base_version = "@BASE_VERSION@" %}
-{% set nightly_version = "@NIGHTLY_VERSION@" %}
-{% if nightly_version %}
-{% set version = base_version + "-dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
-{% else %}
-{% set version = base_version %}
-{% endif %}
+{% set version = "@VERSION@" %}
 
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
@@ -27,7 +17,7 @@
 
 package:
   name: {{ name }}-split
-  version: {{ version|replace('-', '.') }}
+  version: {{ version }}
 
 source:
   url: file://@TARBALL@
@@ -37,8 +27,8 @@ build:
   error_overlinking: true
   number: 9999
   script_env:
-    - ENABLE_NIGHTLY
     - GITLAB_CI
+    - LCI_CONFIGURE_FLAGS
   skip: true  # [win]
 
 requirements:
@@ -105,8 +95,8 @@ outputs:
     build:
       error_overlinking: true
       script_env:
-        - ENABLE_NIGHTLY
         - GITLAB_CI
+        - LCI_CONFIGURE_FLAGS
       # astropy (for python-lalsimulation) is incompatible with numpy 2 on Python < 3.10
       skip: true  # [py==39]
     requirements:

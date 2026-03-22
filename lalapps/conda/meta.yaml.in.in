@@ -5,17 +5,7 @@
 # production-ready at any time.
 
 {% set name = "lalapps" %}
-
-# set version based on nightly
-# (we rebuild the nightly version ourselves because the tarball might have
-#  been generate on a different day)
-{% set base_version = "@BASE_VERSION@" %}
-{% set nightly_version = "@NIGHTLY_VERSION@" %}
-{% if nightly_version %}
-{% set version = base_version + "-dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
-{% else %}
-{% set version = base_version %}
-{% endif %}
+{% set version = "@VERSION@" %}
 
 # dependencies
 {% set framel_version = "@MIN_FRAMEL_VERSION@" %}
@@ -31,7 +21,7 @@
 
 package:
   name: {{ name }}
-  version: {{ version|replace('-', '.') }}
+  version: {{ version }}
 
 source:
   url: file://@TARBALL@
@@ -43,8 +33,8 @@ build:
     - python
   number: 9999
   script_env:
-    - ENABLE_NIGHTLY
     - GITLAB_CI
+    - LCI_CONFIGURE_FLAGS
   # python-lalburst is py>=39
   skip: true  # [win or py==39]
 
