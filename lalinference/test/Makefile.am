@@ -34,4 +34,6 @@ MOSTLYCLEANFILES = \
 
 EXTRA_DIST += \
 	LALInferenceTest.h \
+	injection_standard.xml \
+	lalinference_nestedSampling_integration_test.sh \
 	$(END_OF_LIST)
