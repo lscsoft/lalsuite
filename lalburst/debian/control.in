@@ -4,10 +4,10 @@ Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
 Build-Depends:
- debhelper (>= 9),
+ debhelper-compat (= 13),
  dh-python,
  help2man (>= 1.37),
- pkg-config (>= 0.18.0),
+ pkgconf,
  libgsl-dev,
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
@@ -27,7 +27,7 @@ Build-Depends:
  python3-tqdm,
  rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-X-Python3-Version: >= @LALSUITE_DEFAULT_MIN_PYTHON_VERSION@
+X-Python3-Version: >= @MIN_PYTHON_VERSION@
 Standards-Version: 3.9.8
 
 Package: liblalburst@LIBMAJOR@
