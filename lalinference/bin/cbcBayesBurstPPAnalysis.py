@@ -98,8 +98,7 @@ def fractional_rank(x, xs):
 def pp_plot(ps, title=None, outfile=None):
     """Generates a p-p plot for the given ps.
 
-    :param ps: The p-values whose cumulative distribution is to be
-      plotted.
+    :param ps: The p-values whose cumulative distribution is to be plotted.
 
     :param title: An (optional) title for the plot.
 

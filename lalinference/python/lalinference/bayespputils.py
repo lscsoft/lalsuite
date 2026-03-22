@@ -6730,7 +6730,7 @@ def plot_spline_pos(logf, ys, nf=100, level=0.9, color='k', label=None, xform=No
     Args:
         logf: The (log) location of spline control points.
         ys: List of posterior draws of function at control points ``logf``
-        nx: Number of points to evaluate spline at for plotting.
+        nf: Number of points to evaluate spline at for plotting.
         level: Credible level to fill in.
         color: Color to plot with.
         label: Label for plot.
