@@ -862,7 +862,7 @@ XLALPsdFromFile(REAL8FrequencySeries **psd,  /**< [out] The PSD */
 {
   REAL8FrequencySeries *ret;
   LALParsedDataFile *cfgdata=NULL;
-  LIGOTimeGPS stubEpoch;
+  LIGOTimeGPS stubEpoch = {0, 0};
   UINT4 length, k, r;
   REAL8 freq, value;
   REAL8 step1=0, deltaF=0;
