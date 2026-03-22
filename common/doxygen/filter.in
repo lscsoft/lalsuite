@@ -3,11 +3,11 @@ filename=`expr "X$1" : "^X.*/\([^/]*\)"`
 case "${filename}" in
     SWIG*.i)
         # Filter SWIG interface files
-        @SED@ -n -f @abs_srcdir@/filter_swig.sed "$1"
+        @SED@ -n -f @abs_srcdir@/filter_swig.sed "$1" | tee "$1.filtered"
         ;;
     *.py)
         # Filter Python source files
-        @PYTHON@ @abs_srcdir@/filter_py.py "$1"
+        doxypypy -a -c "$1" | tee "$1.filtered"
         ;;
     *)
         # Output all other files unfiltered
