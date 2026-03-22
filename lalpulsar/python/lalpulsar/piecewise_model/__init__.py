@@ -4,4 +4,4 @@
 Piecewise model code used by lalpulsar_PiecewiseSearch.py
 """
 
-# Empty comment to make sure filter_py.py outputs all documentation
+# Empty comment to make sure Doxygen outputs all documentation

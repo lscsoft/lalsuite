@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalpulsar_bin_Hough
+ * \ingroup lalpulsar_bin_Apps
  * \author Badri Krishnan, Alicia Sintes, Llucia Sancho
  * \brief Driver code for performing Hough transform search on non-demodulated
  * data using SFTs from possible multiple IFOs
