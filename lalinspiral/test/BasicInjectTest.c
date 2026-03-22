@@ -20,7 +20,6 @@
 /**
  * \author Creighton, T. D.
  * \file
- * \ingroup Inject_h
  *
  * \brief Injects inspiral signals into detector noise.
  *
