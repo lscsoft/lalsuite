@@ -1,18 +1,18 @@
-%define nightly @NIGHTLY_VERSION@%{nil}
+%define snapshot @SNAPSHOT_VERSION@%{nil}
 %define release 1
 %define configure_opts --enable-openmp
 
-%if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
-%undefine nightly
+%if "%{?snapshot:%{snapshot}}%{!?snapshot:0}" == "%{nil}"
+%undefine snapshot
 %endif
 
 # -- metadata ---------------
 
 Name: @PACKAGE@
 Version: @BASE_VERSION@
-Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
+Release: %{?snapshot:0.%{snapshot}}%{!?snapshot:%{release}}%{?dist}
 License: GPLv2+
-Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
+Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?snapshot:.%{snapshot}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 Prefix: %{_prefix}
@@ -89,7 +89,7 @@ Simulation library.
 %package -n python3-%{name}
 Summary: Python %{python3_version} bindings for LALSimulation
 Requires: lib%{name} = %{version}-%{release}
-Requires: python3
+Requires: python3 >= @MIN_PYTHON_VERSION@
 Requires: python3-lal >= @MIN_LAL_VERSION@
 Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 %description -n python3-%{name}
@@ -107,7 +107,7 @@ This package provides the Octave Bindings for LALSimulation.
 # -- build stages -----------
 
 %prep
-%setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
+%setup -q -n %{name}-%{version}%{?snapshot:.%{snapshot}}
 
 %build
 %configure %{configure_opts} --sysconfdir=%{_sysconfdir} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
@@ -126,7 +126,7 @@ find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
-rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
+rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?snapshot:.%{snapshot}}
 
 # -- files ------------------
 
