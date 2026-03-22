@@ -98,10 +98,9 @@ html-local: Makefile doxygen_header.html doxygen-input-sources autogen.dox $(CON
 		$(SED) 's/autotoc/$(PACKAGE)_autotoc/g' $${file} > sed-output.tmp 2>> warnings.log; \
 		mv -f sed-output.tmp $${file} 2>> warnings.log; \
 	done; \
-	rm -rf in/; \
 	$(SED) -e 's|^$(abs_top_builddir)/doxygen/in|$(abs_top_srcdir)|g' warnings.log > warnings-tmp.log; \
 	mv -f warnings-tmp.log warnings.log; \
-	$(SED) $(DOXYGEN_WARNING_REGEX) warnings.log > errors.log; \
+	$(SED) -f $(srcdir)/ignore_warnings.sed warnings.log > errors.log; \
 	cat errors.log >&2; \
 	test `cat errors.log | wc -l` -eq 0; \
 	echo "$(subdir)/Makefile: Doxygen documentation was built successfully!"; \
@@ -139,9 +138,9 @@ clean-local:
 EXTRA_DIST = \
 	check_tags.py \
 	exclude.list \
-	filter_py.py \
 	filter_swig.sed \
 	gitlab-CODEOWNERS \
+	ignore_warnings.sed \
 	install_regex.py \
 	layout.xml \
 	mathjax.js \

@@ -23,10 +23,7 @@ AC_SUBST([LIBCURRENT],[11])
 AC_SUBST([LIBREVISION],[2])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
-AS_CASE([${host_os}],
-  [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR],[${LIBCURRENT}])],
-  [AC_SUBST([LIBMAJOR],[$((LIBCURRENT-LIBAGE))])]
-)
+AC_SUBST([LIBMAJOR],[$((LIBCURRENT-LIBAGE))])
 
 AC_CONFIG_FILES([ \
   Makefile \
@@ -67,7 +64,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-AC_SUBST([MIN_LAL_VERSION],["7.7.0"])
+AC_SUBST([MIN_LAL_VERSION],[7.7.0])
 
 AC_CANONICAL_HOST
 
@@ -77,9 +74,6 @@ LALSUITE_CHECK_PLATFORM
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LALSUITE_WITH_FALLBACK_DATA_PATH
-
-# nightly build
-LALSUITE_ENABLE_NIGHTLY
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
@@ -170,6 +164,7 @@ AC_MSG_NOTICE([
 ==================================================
 LALMetaIO has now been successfully configured:
 
+* Version: $VERSION
 * Python support is $PYTHON_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL

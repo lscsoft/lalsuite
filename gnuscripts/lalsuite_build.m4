@@ -1,7 +1,13 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 189
+# serial 190
+
+AC_DEFUN([_LALSUITE_MIN_PYTHON_VERSION],[
+  # $0: default minimum Python version
+  AC_SUBST([MIN_PYTHON_VERSION],[3.6])
+  # end $0
+])
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -319,25 +325,62 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   m4_pushdef([uppercase],m4_translit(AC_PACKAGE_NAME, [a-z], [A-Z]))
   m4_pushdef([lowercase],m4_translit(AC_PACKAGE_NAME, [A-Z], [a-z]))
   m4_pushdef([withoutlal],m4_bpatsubst(AC_PACKAGE_NAME, [^LAL], []))
+
+  # generate reproducible dates
+  export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}"
+  reproducible_date="${srcdir}/gnuscripts/reproducible-date"
+
+  # package name
+  AC_SUBST([PACKAGE_NAME_UCASE],uppercase)
+  AC_SUBST([PACKAGE_NAME_LCASE],lowercase)
+  AC_SUBST([PACKAGE_NAME_NOLAL],withoutlal)
+
+  # version numbers
   version_major=`echo "$VERSION" | cut -d. -f1`
   version_minor=`echo "$VERSION" | cut -d. -f2`
   version_micro=`echo "$VERSION" | cut -d. -f3`
   version_devel=`echo "$VERSION" | cut -d. -f4-`
   test -z "$version_micro" && version_micro=0
   test -z "$version_devel" && version_devel=0
-  reproducible_date="${srcdir}/gnuscripts/reproducible-date"
-  configure_date=`${reproducible_date} +"%Y-%m-%dT%H:%M:%S%z"` >&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD
-  AS_IF([test "x${configure_date}" = x],[AC_MSG_ERROR([failed to run ${reproducible_date}])])
   AC_DEFINE_UNQUOTED(uppercase[_VERSION],["$VERSION"],AC_PACKAGE_NAME[ Version])
   AC_DEFINE_UNQUOTED(uppercase[_VERSION_MAJOR],[$version_major],AC_PACKAGE_NAME[ Version Major Number])
   AC_DEFINE_UNQUOTED(uppercase[_VERSION_MINOR],[$version_minor],AC_PACKAGE_NAME[ Version Minor Number])
   AC_DEFINE_UNQUOTED(uppercase[_VERSION_MICRO],[$version_micro],AC_PACKAGE_NAME[ Version Micro Number])
   AC_DEFINE_UNQUOTED(uppercase[_VERSION_DEVEL],[$version_devel],AC_PACKAGE_NAME[ Version Devel Number])
+
+  # ./configure date and arguments
   AC_SUBST([ac_configure_args])
+  configure_date=`${reproducible_date} +"%Y-%m-%dT%H:%M:%S%z"` 2>&AS_MESSAGE_LOG_FD
+  AS_IF([test "x${configure_date}" = x],[AC_MSG_ERROR([failed to run ${reproducible_date} for configure date])])
   AC_SUBST([configure_date])
-  AC_SUBST([PACKAGE_NAME_UCASE],uppercase)
-  AC_SUBST([PACKAGE_NAME_LCASE],lowercase)
-  AC_SUBST([PACKAGE_NAME_NOLAL],withoutlal)
+
+  # add shapshot version number based on day
+  snapshot_date=
+  AC_ARG_WITH(
+    [snapshot-version],
+    AS_HELP_STRING(
+      [--with-snapshot-version],
+      [with snapshot version [default=no]]
+    ),[
+      AS_CASE(["${withval}"],
+        [yes],[
+          snapshot_date=`${reproducible_date} +"%Y%m%d"` 2>&AS_MESSAGE_LOG_FD
+          AS_IF([test "x${snapshot_date}" = x],[AC_MSG_ERROR([failed to run ${reproducible_date} for snapshot date])])
+        ]
+        [no],[:],
+        [AC_MSG_ERROR([bad value ${withval} for --with-snapshot-version])]
+      )
+    ]
+  )
+  BASE_VERSION="${VERSION}"
+  SNAPSHOT_VERSION=""
+  AS_IF([test "x${snapshot_date}" != x],[
+    SNAPSHOT_VERSION="dev${snapshot_date}"
+    VERSION="${VERSION}.${SNAPSHOT_VERSION}"
+  ])
+  AC_SUBST([BASE_VERSION])
+  AC_SUBST([SNAPSHOT_VERSION])
+
   m4_popdef([uppercase])
   m4_popdef([lowercase])
   m4_popdef([withoutlal])
@@ -378,7 +421,7 @@ AC_DEFUN([LALSUITE_ENABLE_STRICT_DEFS],[
       AS_CASE(["${enableval}"],
         [yes],[LALSUITE_ADD_FLAGS([C],[-DLAL_STRICT_DEFS_ENABLED])],
         [no],[:],
-        [AC_MSG_ERROR([bad value for ${enableval} for --enable-strict-defs])]
+        [AC_MSG_ERROR([bad value ${enableval} for --enable-strict-defs])]
       )
     ],[
     ]
@@ -482,18 +525,11 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   # end $0
 ])
 
-AC_DEFUN([_LALSUITE_SET_DEFAULT_MIN_PYTHON_VERSION],[
-  # $0: default minimum Python version
-  # - keep this version in sync with --target-version in common/.pretty.black
-  AC_SUBST([LALSUITE_DEFAULT_MIN_PYTHON_VERSION],[3.6])
-  # end $0
-])
-
 AC_DEFUN([LALSUITE_REQUIRE_PYTHON],[
   # $0: require Python version
-  AC_REQUIRE([_LALSUITE_SET_DEFAULT_MIN_PYTHON_VERSION])
+  AC_REQUIRE([_LALSUITE_MIN_PYTHON_VERSION])
   m4_if($1,[],[
-    arg1="${LALSUITE_DEFAULT_MIN_PYTHON_VERSION}"
+    arg1="${MIN_PYTHON_VERSION}"
   ],[
     arg1="$1"
   ])
@@ -509,9 +545,9 @@ AC_DEFUN([LALSUITE_REQUIRE_PYTHON],[
 
 AC_DEFUN([LALSUITE_CHECK_PYTHON],[
   # $0: check for Python
-  AC_REQUIRE([_LALSUITE_SET_DEFAULT_MIN_PYTHON_VERSION])
+  AC_REQUIRE([_LALSUITE_MIN_PYTHON_VERSION])
   m4_if($1,[],[
-    arg1="${LALSUITE_DEFAULT_MIN_PYTHON_VERSION}"
+    arg1="${MIN_PYTHON_VERSION}"
   ],[
     arg1="$1"
   ])
@@ -530,7 +566,6 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
       python=
     ]
   )
-  lalsuite_minimum_pyvers="${arg1}"
   lalsuite_pyvers="${arg1}"
   AS_IF([test "x${lalsuite_require_pyvers}" != x],[
     LALSUITE_VERSION_COMPARE([${lalsuite_require_pyvers}],[>],[${lalsuite_pyvers}],[
@@ -858,25 +893,6 @@ AC_DEFUN([LALSUITE_CHECK_LIBRARY_FOR_SUPPORT],[
   LALSUITE_POP_UVARS
   m4_popdef([uppercase])
   # end $0
-])
-
-AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
-[
-  BASE_VERSION="${VERSION}"
-  AC_ARG_ENABLE(
-    [nightly],
-    AS_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
-    [ case "${enableval}" in
-        yes) NIGHTLY_VERSION=dev`date -u +"%Y%m%d"`
-             VERSION="${BASE_VERSION}-${NIGHTLY_VERSION}" ;;
-        no) NIGHTLY_VERSION="";;
-        *) NIGHTLY_VERSION="${enableval}"
-           VERSION="${BASE_VERSION}-${NIGHTLY_VERSION}" ;;
-        esac ],
-    [ NIGHTLY_VERSION="" ] )
-    AC_SUBST([VERSION])
-    AC_SUBST([BASE_VERSION])
-    AC_SUBST([NIGHTLY_VERSION])
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_ALL_LAL],
@@ -1253,26 +1269,6 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
       AC_MSG_ERROR([Doxygen version ${doxygen_min_version} or later is required])
     ])
     AC_MSG_RESULT([yes (${doxygen_version})])
-
-    # ignore some Doxygen warnings due to Doxygen bugs
-    AC_SUBST([DOXYGEN_WARNING_REGEX],["-e '/^\$$/d'"])
-    LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[1.8.9.1],[
-      # https://bugzilla.gnome.org/show_bug.cgi?id=742151
-      DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/^citelist/d'"]
-    ])
-    LALSUITE_VERSION_COMPARE([1.8.8],[<=],[${doxygen_version}],[
-      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[1.8.11],[
-        # https://bugzilla.gnome.org/show_bug.cgi?id=743604
-        DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: Duplicate anchor/d'"]
-        DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: multiple use of section label/d'"]
-      ])
-    ])
-    LALSUITE_VERSION_COMPARE([1.8.8],[<=],[${doxygen_version}],[
-      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<=],[1.8.9.1],[
-        # https://bugzilla.gnome.org/show_bug.cgi?id=743605
-        DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: explicit link request/d'"]
-      ])
-    ])
 
     # configure layout
     LALSUITE_VERSION_COMPARE([${doxygen_version}],[>=],[1.9.8],[
