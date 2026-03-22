@@ -432,8 +432,9 @@ class PowerNode(pipeline.AnalysisNode):
 	def set_mdccache(self, file):
 		"""
 		Set the LAL frame cache to to use. The frame cache is
-		passed to the job with the --frame-cache argument.  @param
-		file: calibration file to use.
+		passed to the job with the --frame-cache argument.
+
+                @param file: calibration file to use.
 		"""
 		self.add_var_opt("mdc-cache", file)
 		self.add_input_file(file)
