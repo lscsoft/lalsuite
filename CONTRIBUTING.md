@@ -325,10 +325,10 @@ result in problems merging upstream changes.
 ### Continuous integration
 
 GitLab runs continuous integration (CI) pipelines on LALSuite to ensure that it
-builds and passes its test suite on a wide variety of platforms. There are 2
-main CI pipelines:
+builds and passes its test suite on a wide variety of platforms. The two CI
+pipelines of interest to developers are:
 
-1. The push CI pipeline runs whenever you push commit(s) to your LALSuite
+1. The *push* CI pipeline runs whenever you push commit(s) to your LALSuite
    fork. This pipeline performs some basic checks that LALSuite still builds and
    passes its tests with your changes:
 
@@ -343,7 +343,7 @@ main CI pipelines:
    - some basic checks for code style/formatting/whitespace errors, build
      byproduct files missing from `.gitignore`, etc.
 
-1. The merge CI pipeline runs when you are ready to submit your changes to the
+1. The *merge* CI pipeline runs when you are ready to submit your changes to the
    upstream LALSuite fork via a merge request. This pipeline runs a much more
    comprehensive series of checks that LALSuite still builds and passes its
    tests with a wide variety of platforms (e.g. MacOS, various Linux
@@ -351,44 +351,23 @@ main CI pipelines:
    that LALSuite packages for a number of package management systems (e.g. RPM,
    Debian, Conda, Python wheels) are built correctly.
 
-3. (A third CI pipeline runs nightly on the [main LALSuite
-   repository][lalsuiterepo] fork for deployment tasks, e.g. updating the
-   [online documentation][nightlydocs]).
+To trigger the *merge* CI pipeline from a regular commit push (in place of the
+*push* pipeline), you can add the special text `[ci merge]` to the commit
+message. For complicated developments, this is recommended as a check that your
+changes pass the *merge* CI pipeline before opening the merge request.
 
-You can request a subset of the jobs which normally run as part of the merge
-pipeline to also be run as part of the push pipeline. This is useful if you are
-making changes to LALSuite which could potentially cause problems with different
-platforms/compilers, or which could affect the packaging, and you want to test
-the effect of your changes before submitting a merge request.
+For reference, the following table gives the complete list of CI pipelines and
+how to trigger then:
 
-For individual commits, you can request a subset of merge pipeline jobs to run
-by adding key text to the commit message, as listed in the table below. If
-instead you have a branch where you want a subset of merge pipeline jobs to be
-run on every push, you can name the branch to match one of the regular
-expressions given in the table below.
-
-| If commit message contains | Or branch name matches    | Action                                                       |
-| -------------------------- | ------------------------- | ------------------------------------------------------------ |
-| `[ci compiler]`            | `/[-_]ci[-_]compiler/`    | Test different compilers (e.g. `clang`, `icc`, `gcc`)        |
-| `[ci conda]`               | `/[-_]ci[-_]conda/`       | Build Conda packages                                         |
-| `[ci coverage]`            | `/[-_]ci[-_]coverage/`    | Report test suite coverage                                   |
-| `[ci deb]`                 | `/[-_]ci[-_]deb/`         | Build Debian packages                                        |
-| `[ci docker]`              | `/[-_]ci[-_]docker/`      | Build Docker containers                                      |
-| `[ci docs]`                | `/[-_]ci[-_]docs/`        | Build the documentation                                      |
-| `[ci full]`                | n/a                       | Run all jobs in the merge pipeline                           |
-| `[ci integration]`         | `/[-_]ci[-_]integration/` | Longer-running integration/build configuration tests         |
-| `[ci lint]`                | `/[-_]ci[-_]lint/`        | Check for code quality issues, API changes, etc.             |
-| `[ci nightly]`             | n/a                       | Run all jobs in the nightly deployment pipeline              |
-| `[ci pkg]`                 | `/[-_]ci[-_]pkg/`         | Perform a basic package-level build from tarballs            |
-| `[ci platform]`            | `/[-_]ci[-_]platform/`    | Test different platforms (MacOS, various Linux distros)      |
-| `[ci rpm]`                 | `/[-_]ci[-_]rpm/`         | Build RPM packages                                           |
-| `[ci tags]`                | n/a                       | Run all pipeline jobs for release tags (`lalsuite-v*`)       |
-| `[ci wheels]`              | `/[-_]ci[-_]wheels/`      | Build Python wheel packages                                  |
-
-Note: The `[ci nightly]` and `[ci tags]` pipelines do not execute any deployment
-actions with external consequences, e.g. deploying documentation, pushing
-packages to repositories. These actions can only be executed by the third CI
-pipeline which runs nightly on the main `lscsoft/lalsuite` fork.
+| Pipeline                                 | Commit message trigger | Other triggers                                    |
+| ---------------------------------------- | ---------------------- | --------------------------------------------------|
+| Build and deploy Doxygen documentation   | `[ci sched doc]`       | Schedule variable `LCI_PIPE_TYPE=sched-doc`       |
+| Build and test Docker development images | `[ci sched devimg]`    | Schedule variable `LCI_PIPE_TYPE=sched-devimg`    |
+| Build snapshot Docker images and wheels  | `[ci sched snapshot]`  | Schedule variable `LCI_PIPE_TYPE=sched-snapshot`  |
+| Debug tracking of API changes            | `[ci debug api]`       |                                                   |
+| LALSuite tags                            | `[ci lalsuite tag]`    | `lscsoft/lalsuite` branches matching `/^release/` |
+| Merge requests                           | `[ci merge]`           |                                                   |
+| Post-merge request tasks                 | `[ci postmerge]`       |                                                   |
 
 ## More information
 
@@ -410,7 +389,7 @@ pipeline which runs nightly on the main `lscsoft/lalsuite` fork.
 [lalsuiterepo]:  https://git.ligo.org/lscsoft/lalsuite
 [lalsuitewiki]:  https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
 [mergerequests]: https://git.ligo.org/help/user/project/merge_requests/index.html
-[nightlydocs]:   https://lscsoft.docs.ligo.org/lalsuite
+[lalsuitedocs]:  https://lscsoft.docs.ligo.org/lalsuite
 [precommit]:     https://pre-commit.com/
 [prettyastyle]:  https://astyle.sourceforge.net/
 [prettyblack]:   https://black.readthedocs.io/en/stable/
