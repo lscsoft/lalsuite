@@ -139,10 +139,8 @@ def str_to_gps(time_string=None):
         - "tomorrow"
 
     Example:
-    \code
     >>> gpstime.str_to_gps("September 14 2011, 01:46:25")
     1000000000.000000000
-    \endcode
 
     @returns a LIGOTimeGPS
     """
@@ -176,10 +174,8 @@ def gps_to_str(gps, form=None):
 
     Example:
 
-    \code
     >>> gps_to_str(1000000000)
     'September 14 2011, 01:46:25 UTC'
-    \endcode
 
     @returns a string with the given format.
     """
@@ -204,14 +200,12 @@ def tconvert(arg=None, form=None):
 
     Example:
 
-    \code
     >>> tconvert()
     1048275013.000000000
     >>> tconvert("January 6 1980 00:00:00")
     0.000000000
     >>> tconvert(1000000000)
     'September 14 2011, 01:46:25 UTC'
-    \endcode
 
     @returns the LIGOTimeGPS of the given time string, OR, string
     representing the given GPS time
