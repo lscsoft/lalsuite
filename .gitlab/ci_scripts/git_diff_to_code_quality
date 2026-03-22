@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+
+"""Transform the output of `git diff` into a GitLab code quality report in JSON format"""
+
+__author__ = "Karl Wette"
+__copyright__ = "Copyright (C) 2024 Karl Wette"
+
+import sys
+import re
+import subprocess
+import json
+
+description = sys.argv[1]
+
+check_name = description.lower()
+check_name = re.sub(r"\W", "-", check_name)
+check_name = re.sub(r"-{2,}", "-", check_name)
+
+file = None
+sha1range = None
+
+first = True
+
+proc = subprocess.Popen(
+    ["git", "diff", "--unified=0"], stdout=subprocess.PIPE, text=True
+)
+
+results = []
+
+for line in proc.stdout:
+    line = line.rstrip("\n")
+
+    m = re.match(r"^diff --git a/(.*?) b/\1", line)
+    if m:
+        file = m.group(1)
+
+    m = re.match(r"^index (.*)", line)
+    if m:
+        sha1range = m.group(1)
+
+    begin = None
+    m = re.match(r"^@@ -(\d+)", line)
+    if m:
+        begin = int(m.group(1))
+    elif line.startswith("old mode"):
+        begin = 1
+
+    if begin is not None and file is not None:
+        entry = {
+            "description": description,
+            "check_name": check_name,
+            "fingerprint": f"git-diff-to-code-quality-report-{check_name}-{file}-{begin}",
+            "severity": "blocker",
+            "location": {"path": file, "lines": {"begin": begin}},
+        }
+        results.append(entry)
+
+proc.stdout.close()
+proc.wait()
+
+print(json.dumps(results))

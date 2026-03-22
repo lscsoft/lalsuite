@@ -1,0 +1,95 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: make tarballs for each subpackage
+# ----------------------------------------------------------------------
+
+# jobs that build from tarballs do not check out the Git repository
+# - this speeds things up and prevents other issues
+.tarball-build-job:
+  variables:
+    GIT_STRATEGY: none
+
+# since tarball build jobs do not check out the Git repository, serve
+# the CI scripts to tarballs jobs as a separate artifact
+ci-scripts:
+  stage: Input sources
+  image: docker:latest
+  extends:
+    - .linux-job
+  needs:
+    # make sure the development images are built first
+    - job: dev-image
+      optional: true
+  before_script: []
+  script:
+    - exit 0
+  artifacts:
+    expire_in: 18h
+    paths:
+      # the CI scripts, for all jobs
+      - .gitlab/ci_scripts/
+      # environment file containing the LALSuite Conda packages
+      - conda-dev-env.yml
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "push"
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+    - if: >
+        $LCI_PIPE_TYPE == "sched-devimg"
+    - if: >
+        $LCI_PIPE_TYPE == "sched-snapshot"
+    - if: >
+        $LCI_PIPE_TYPE == "lalsuite-tag"
+
+# base tarball job
+.tarballs-job:
+  stage: Input sources
+  extends:
+    - .linux-job
+  needs:
+    # make sure the development images are built first
+    - job: dev-image
+      optional: true
+  script:
+    # initialise Conda environment
+    - source ${LCI_SCRIPTS}/init_conda.sh
+    # install build dependencies
+    - source ${LCI_SCRIPTS}/top_builddep_conda.sh
+    # make tarballs directory
+    - export TARBALL_DIR="${CI_PROJECT_DIR}/tarballs"
+    - mkdir -p ${TARBALL_DIR}
+    # make tarballs
+    - source ${LCI_SCRIPTS}/tarballs.sh
+  artifacts:
+    expire_in: 18h
+    paths:
+      # store the tarballs
+      - tarballs/
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "push"
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+    - if: >
+        $LCI_PIPE_TYPE == "sched-devimg"
+    - if: >
+        $LCI_PIPE_TYPE == "sched-snapshot"
+    - if: >
+        $LCI_PIPE_TYPE == "lalsuite-tag"
+
+# make the tarball for LAL only
+# - this job will run much faster than the `tarballs:pkg` job so we use
+#   it to release the LAL package-level build jobs as early as possible
+tarballs:lal:
+  extends:
+    - .tarballs-job
+
+# make tarballs for all packages except LAL
+tarballs:pkg:
+  extends:
+    - .tarballs-job
+
+# make top-level tarball
+tarballs:top:
+  extends:
+    - .tarballs-job

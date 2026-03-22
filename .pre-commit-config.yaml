@@ -42,7 +42,7 @@ repos:
         name: remove executive permissions
         args: [--ux, --gx, --ox]
         files: ""
-        exclude: 00boot$|common/|conda/|debian/|gnuscripts/
+        exclude: ^.gitlab/ci_scripts/|00boot$|common/|conda/|debian/|gnuscripts/
         stages: [pre-commit]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -87,4 +87,4 @@ repos:
       - id: black
         name: prettify Python code (black)
         args: [--target-version=py310]
-        files: ^common/   ### |^lalpulsar/ TOFIX
+        files: ^.gitlab/ci_scripts/|^common/   ### |^lalpulsar/ TOFIX

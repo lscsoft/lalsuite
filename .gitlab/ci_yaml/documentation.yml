@@ -1,0 +1,74 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: build Doxygen documentation
+# ----------------------------------------------------------------------
+
+doxygen-doc:
+  extends:
+    - .code-quality-job
+  variables:
+    LCI_CONFIGURE_FLAGS_DOC: "--enable-doxygen"
+  script:
+    # install build dependencies
+    - source ${LCI_SCRIPTS}/top_builddep_conda.sh
+    # configure
+    - ./00boot
+    - source ${LCI_SCRIPTS}/build_env.sh
+    - eval ./configure "${LCI_CONFIGURE_FLAGS}"
+    # build and install documentation
+    - make -j${CPU_COUNT} install-html
+    - mv _inst/share/doc html
+    # save outputs from Doxygen documentation filters
+    - |
+      for path in $(find -name '*.filtered'); do
+          basedir=doxygen_filtered/$(dirname ${path} | sed 's|/doxygen/in/|/|')
+          mkdir -p ${basedir}
+          mv ${path} ${basedir}
+      done
+    # add redirect for primary documentation
+    - |
+      cat > html/_redirect <<EOF
+      /lalsuite            /lalsuite/dev/lalsuite/index.html
+      /lalsuite/:version   /lalsuite/:version/lalsuite/index.html
+      EOF
+    # export path prefix
+    - echo "PATH_PREFIX=${LCI_DOC_PATH_PREFIX##lalsuite-v}" > path_prefix.env
+  artifacts:
+    expose_as: html
+    paths:
+      # documentation
+      - html/
+      # outputs from Doxygen documentation filters for debugging
+      - doxygen_filtered/
+    reports:
+      dotenv: path_prefix.env
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "merge"
+    - if: >
+        $LCI_PIPE_TYPE == "sched-devimg"
+    - if: >
+        $LCI_PIPE_TYPE == "sched-doc"
+    - if: >
+        $LCI_PIPE_TYPE == "lalsuite-tag"
+
+pages-doc:
+  pages:
+    path_prefix: "${PATH_PREFIX}"
+  environment:
+    name: "Doxygen documentation for ${PATH_PREFIX}"
+    url: "${CI_PAGES_URL}"
+  extends:
+    - .deploy-job
+  needs:
+    - doxygen-doc
+  script:
+    - mv html/ public/
+  artifacts:
+    paths:
+      - public
+  rules:
+    - !reference [.deploy-check-execute, rules]
+    - if: >
+        $LCI_PIPE_TYPE == "sched-doc"
+    - if: >
+        $LCI_PIPE_TYPE == "lalsuite-tag"

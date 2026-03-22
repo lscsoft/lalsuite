@@ -1,141 +1,400 @@
 # ----------------------------------------------------------------------
-# LALSuite: Gitlab-CI configuration
+# LALSuite Gitlab-CI: configuration
 #
 # If you have any questions, please email lal-discuss@ligo.org, or open
 # a question ticket at https://git.ligo.org/lscsoft/lalsuite/-/issues/
 # ----------------------------------------------------------------------
-
-# -- setup --------------------------------------
-
-stages:
-  # pipeline errors
-  - pipeline error
-  # make tarballs for each subpackage
-  - tarballs
-  # build packages for each subpackage
-  - LAL
-  - LALFrame
-  - LALMetaIO
-  - LALSimulation
-  - LALBurst
-  - LALInspiral
-  - LALInference
-  - LALPulsar
-  - LALApps
-  - wheels
-  # end-to-end tests
-  - integration tests
-  - compiler tests
-  - platform tests
-  - upgrade tests
-  # build containers
-  - docker
-  # quality checks
-  - coverage
-  - lint
-  # documentation
-  - documentation
-  # deploy packages
-  - deploy
+# All variables defined by the LALSuite Gitlab-CI should start with
+# the prefix `LCI_` to avoid conflicts
+# ----------------------------------------------------------------------
 
 include:
-  # retry() macro
-  - local: '/.gitlab/ci/retry.yml'
+  - local: .gitlab/ci_yaml/dev_images.yml
+  - local: .gitlab/ci_yaml/code_quality.yml
+  - local: .gitlab/ci_yaml/api_changes.yml
+  - local: .gitlab/ci_yaml/documentation.yml
+  - local: .gitlab/ci_yaml/tarballs.yml
+  - local: .gitlab/ci_yaml/package_level_matrix.yml
+  - local: .gitlab/ci_yaml/package_level_build.yml
+  - local: .gitlab/ci_yaml/specialised_tests.yml
+  - local: .gitlab/ci_yaml/top_level_matrix.yml
+  - local: .gitlab/ci_yaml/top_level_build.yml
+  - local: .gitlab/ci_yaml/wheel_matrix.yml
+  - local: .gitlab/ci_yaml/wheel_build.yml
+  - local: .gitlab/ci_yaml/release_images.yml
 
-  # CI rules
-  - local: '/.gitlab/ci/rules.yml'
+# -- CI pipeline setup -------------------------------------------------
 
-  # make tarballs for each subpackage
-  - local: '/.gitlab/ci/tarballs.yml'
-
-  # build packages for each subpackage
-  - local: '/.gitlab/ci/conda.yml'
-  - local: '/.gitlab/ci/deb.yml'
-  - local: '/.gitlab/ci/pkg.yml'
-  - local: '/.gitlab/ci/rpm.yml'
-  - local: '/.gitlab/ci/wheels.yml'
-
-  # end-to-end tests
-  - local: '/.gitlab/ci/integration.yml'
-  - local: '/.gitlab/ci/compilers.yml'
-  - local: '/.gitlab/ci/platform.yml'
-  - local: '/.gitlab/ci/upgrade.yml'
-
-  # build containers
-  - local: '/.gitlab/ci/containers.yml'
-
-  # quality checks
-  - local: '/.gitlab/ci/coverage.yml'
-  - local: '/.gitlab/ci/lint.yml'
-
-  # documentation
-  - local: '/.gitlab/ci/docs.yml'
-
-  # deploy packages
-  # - wheels: see .gitlab/ci/wheels.yml
-
-# -- global settings ----------------------------
-
-# by default cache everything in the .cache directory
-cache:
-  key: "${CI_JOB_NAME}"
-  paths:
-    - .cache
+stages:
+  - Pipeline errors
+  - Input sources
+  - Code quality
+  - Package-level builds
+  - Top-level builds
+  - Deployment actions
 
 variables:
-  PIPELINE_NAME: "LALSuite CI/CD"
-
   # job stage attempts
   ARTIFACT_DOWNLOAD_ATTEMPTS: 2
   EXECUTOR_JOB_SECTION_ATTEMPTS: 2
   GET_SOURCES_ATTEMPTS: 2
   RESTORE_CACHE_ATTEMPTS: 2
 
+  # don't need git history
+  GIT_DEPTH: 1
+
   # run autoreconf in pedantic and loud mode
   AUTORECONF: "autoreconf --verbose --warnings=error"
 
-  # enable nightly build
-  ENABLE_NIGHTLY: ""
-
-  # version of python to use for builds
-  LALSUITE_PYTHON_VERSION: "3.12"
+  # default ./configure flags
+  LCI_CONFIGURE_FLAGS_DEFAULT: "--enable-strict-defs"
 
   # gitlab runners have 4 cores per job
   CPU_COUNT: 4
 
-  # don't need git history
-  GIT_DEPTH: 1
+  # enable more verbose build output and error messaegs
+  # - Automake prints test suite logs
+  VERBOSE: "yes"
+  # - print any errors from libtool static linking
+  LALSUITE_LIBTOOL_NO_SUPPRESS: "yes"
+  # - verbose Conda package builds
+  CONDA_SMITHY_LOGLEVEL: "DEBUG"
+  # - do not buffer output from Python scripts
+  PYTHONUNBUFFERED: "yes"
 
-  # global build helpers
-  VERBOSE: "true"
-
-  # where to store files, ideally everything that is 'cache'
-  # should go under ${CI_PROJECT_DIR}/.cache to match the
-  # cache key setting above
-  XDG_CONFIG_HOME: "${CI_PROJECT_DIR}/.config"
-  XDG_CACHE_HOME: "${CI_PROJECT_DIR}/.cache"
+  # files that should be cached should go under ${CI_PROJECT_DIR}/.cache/
+  APT_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/apt"
   CCACHE_DIR: "${CI_PROJECT_DIR}/.cache/ccache"
-  CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/.cache/conda/pkgs"
-  PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pipe"
+  PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pip"
+  RPM_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/rpm"
+  XDG_CACHE_HOME: "${CI_PROJECT_DIR}/.cache"
 
-  # where to build conda environments (i.e. not in ~/.conda)
-  CONDA_ENVS_PATH: "${CI_PROJECT_DIR}/envs"
+  # temporary location within project directory
+  LCI_TMPDIR: "${CI_PROJECT_DIR}/.ci-tmp"
 
-  # what file to use for conda configuration
-  CONDARC: "${CI_PROJECT_DIR}/.condarc"
+  # ephemeral configuration files
+  # - do not cache Conda packages due to corruption issues
+  CONDARC: "${LCI_TMPDIR}/conda/condarc"
+  CONDA_PKGS_DIRS: "${LCI_TMPDIR}/conda/pkgs"
+  XDG_CONFIG_HOME: "${LCI_TMPDIR}/config"
 
-  # tell Debian-based installers to run non-interactively
+  # packaging system configuration variables
+  CONDA_ROOT: /opt/conda
   DEBIAN_FRONTEND: noninteractive
 
+  # location of CI scripts
+  LCI_SCRIPTS: "${CI_PROJECT_DIR}/.gitlab/ci_scripts"
+
   # canonical list of LALSuite packages
-  LALSUITE_PACKAGES: >-
-    lal
+  LCI_PKGLIST_X_LAL_LALAPPS: >-
     lalframe lalmetaio lalsimulation
     lalburst lalinspiral lalinference lalpulsar
-    lalapps
+  LCI_PKGLIST_X_LAL: "${LCI_PKGLIST_X_LAL_LALAPPS} lalapps"
+  LCI_PKGLIST: "lal ${LCI_PKGLIST_X_LAL}"
 
-# default parameters for jobs
+  # --- default pipeline variables -------------------------------------
+
+  # Docker development image
+  LCI_DEV_IMG: containers.ligo.org/anu-cga/lalsuite/dev    ##### TOFIX #####
+
+  # use the Docker development image tags that have been tested (no suffix)
+  LCI_DEV_TAG_SUFFIX: ""
+
+  # pipeline specific ./configure flags
+  LCI_CONFIGURE_FLAGS_PIPE: ""
+
+  # deploy documentation for the main branch at lscsoft/lalsuite
+  LCI_DOC_PATH_PREFIX: "dev"
+
+  # do not execute deployment actions
+  LCI_DEPLOY_EXECUTE: "no"
+
+  # do not simulate creating a new release
+  LCI_RELEASE_SIMULATE: "no"
+
+workflow:
+  name: "$LCI_PIPE_NAME"
+  rules:
+
+    # --- CI scheduled pipelines ---------------------------------------
+
+    # runs if:
+    # - the trigger is a scheduled or manual web pipeline
+    # - the pipeline type does NOT match a known scheduled pipeline
+    # - the branch is the main branch at lscsoft/lalsuite
+    - if: >
+        ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
+        && $LCI_PIPE_TYPE !~ /^sched-(devimg|snapshot|doc)$/
+        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Pipeline error"
+        LCI_PIPE_TYPE: pipeline-error
+        # - pipeline error message
+        LCI_PIPE_ERROR_MESSAGE: |
+          ------------------------------------------------------------------------
+          LCI_PIPE_TYPE must be set to the name of the pipeline to schedule:
+          - sched-devimg: build and test Docker development images
+          - sched-snapshot: build snapshot Docker images and wheels
+          - sched-doc: build and deploy Doxygen documentation
+          ------------------------------------------------------------------------
+
+    # ---- sched-devimg: build and test Docker development images
+
+    # runs if:
+    # - the trigger is a scheduled or manual web pipeline
+    # - the pipeline type is "sched-devimg"
+    # - the branch is the main branch at lscsoft/lalsuite
+    - if: >
+        ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
+        && $LCI_PIPE_TYPE == "sched-devimg"
+        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Scheduled pipeline (devimg)"
+        # - test the new Docker development image tags
+        LCI_DEV_TAG_SUFFIX: "-testing"
+        # - execute deployment actions
+        LCI_DEPLOY_EXECUTE: "yes"
+
+    # runs if:
+    # - the trigger is a commit push
+    # - the commit message contains "[ci sched devimg]"
+    - if: >
+        $CI_PIPELINE_SOURCE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci sched devimg\]/i
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Test scheduled pipeline (devimg)"
+        LCI_PIPE_TYPE: sched-devimg
+        # - test the new Docker development image tags
+        LCI_DEV_TAG_SUFFIX: "-testing"
+        LCI_DEPLOY_EXECUTE: "yes"    ##### TOFIX #####
+
+    # ---- sched-snapshot: build snapshot Docker images and wheels
+
+    # runs if:
+    # - the trigger is a scheduled or manual web pipeline
+    # - the pipeline type is "sched-snapshot"
+    # - the branch is the main branch at lscsoft/lalsuite
+    - if: >
+        ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
+        && $LCI_PIPE_TYPE == "sched-snapshot"
+        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Scheduled pipeline (snapshot)"
+        # - add shapshot version number based on day
+        LCI_CONFIGURE_FLAGS_PIPE: "--with-snapshot-version"
+        # - execute deployment actions
+        LCI_DEPLOY_EXECUTE: "yes"
+
+    # runs if:
+    # - the trigger is a commit push
+    # - the commit message contains "[ci sched snapshot]"
+    - if: >
+        $CI_PIPELINE_SOURCE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci sched snapshot\]/i
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Test scheduled pipeline (snapshot)"
+        LCI_PIPE_TYPE: sched-snapshot
+        # - add shapshot version number based on day
+        LCI_CONFIGURE_FLAGS_PIPE: "--with-snapshot-version"
+
+    # ---- sched-doc: build and deploy Doxygen documentation
+
+    # runs if:
+    # - the trigger is a scheduled or manual web pipeline
+    # - the pipeline type is "sched-doc"
+    # - the branch is the main branch at lscsoft/lalsuite
+    - if: >
+        ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
+        && $LCI_PIPE_TYPE == "sched-doc"
+        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Scheduled pipeline (doc)"
+        # - execute deployment actions
+        LCI_DEPLOY_EXECUTE: "yes"
+
+    # runs if:
+    # - the trigger is a commit push
+    # - the commit message contains "[ci sched doc]"
+    - if: >
+        $CI_PIPELINE_SOURCE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci sched doc\]/i
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Test scheduled pipeline (doc)"
+        LCI_PIPE_TYPE: sched-doc
+
+    # --- CI pipeline for LALSuite tags --------------------------------
+
+    # runs if:
+    # - the commit has been tagged, and the tag name begins with "lalsuite-v"
+    # - the repository is lscsoft/lalsuite
+    - if: >
+        $CI_COMMIT_TAG =~ /^lalsuite-v/
+        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
+      when: always
+      variables:
+        LCI_PIPE_NAME: "LALSuite tag pipeline"
+        LCI_PIPE_TYPE: lalsuite-tag
+        # - deploy documentation for this LALSuite tag
+        LCI_DOC_PATH_PREFIX: "$CI_COMMIT_TAG"
+        # - execute deployment actions
+        LCI_DEPLOY_EXECUTE: "yes"
+
+    # runs if:
+    # - the trigger is a commit push
+    # - the commit message contains "[ci lalsuite tag]"
+    - if: >
+        $CI_PIPELINE_SOURCE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci lalsuite tag\]/i
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Test LALSuite tag pipeline"
+        LCI_PIPE_TYPE: lalsuite-tag
+
+    # runs if:
+    # - the trigger is a commit push
+    # - the branch is a release branch at lscsoft/lalsuite
+    - if: >
+        $CI_PIPELINE_SOURCE == "push"
+        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME =~ /^release/
+      when: always
+      variables:
+        LCI_PIPE_NAME: "LALSuite tag pipeline (simulate release)"
+        LCI_PIPE_TYPE: lalsuite-tag
+        # - simulate creating a new release
+        # LCI_RELEASE_SIMULATE: "yes"    ### TOFIX
+
+    # --- CI pipeline for merge requests -------------------------------
+
+    # runs if:
+    # - the trigger is opening a merge request to lscsoft/lalsuite
+    # - the pipeline is NOT a merged results pipeline
+    - if: >
+        $CI_PIPELINE_SOURCE == "merge_request_event"
+        && $CI_MERGE_REQUEST_PROJECT_PATH  == "lscsoft/lalsuite"
+        && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == ""
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Pipeline error"
+        LCI_PIPE_TYPE: pipeline-error
+        # - pipeline error message
+        LCI_PIPE_ERROR_MESSAGE: |
+          ------------------------------------------------------------------------
+          This merge request cannot run the CI pipeline of the target repository
+          $CI_MERGE_REQUEST_PROJECT_URL
+          The most likely reason is you do not have Developer access permissions.
+          Please request to be added as a Developer to this repository.
+          ------------------------------------------------------------------------
+
+    # runs if:
+    # - the trigger is opening a merge request
+    # - the pipeline is a merged results pipeline
+    - if: >
+        $CI_PIPELINE_SOURCE == "merge_request_event"
+        && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA != ""
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Merge pipeline ($CI_MERGE_REQUEST_IID)"
+        LCI_PIPE_TYPE: merge
+
+    # runs if:
+    # - the trigger is a commit push
+    # - the commit message contains "[ci merge]"
+    - if: >
+        $CI_PIPELINE_SOURCE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci merge\]/i
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Test merge pipeline"
+        LCI_PIPE_TYPE: merge
+
+    # --- CI post-merge-request pipeline -------------------------------
+
+    # runs if:
+    # - the trigger is a commit push
+    # - the branch is the main branch at lscsoft/lalsuite
+    - if: >
+        $CI_PIPELINE_SOURCE == "push"
+        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Post-merge push pipeline"
+        LCI_PIPE_TYPE: postmerge
+
+    # runs if:
+    # - the trigger is a commit push
+    # - the commit message contains "[ci postmerge]"
+    - if: >
+        $CI_PIPELINE_SOURCE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci postmerge\]/i
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Test post-merge pipeline"
+        LCI_PIPE_TYPE: postmerge
+
+    # --- CI pipeline for pushes ---------------------------------------
+
+    # runs if:
+    # - the trigger is a commit push
+    # - there are no open merge requests for this branch
+    - if: >
+        $CI_PIPELINE_SOURCE == "push"
+        && $CI_COMMIT_BRANCH != "" && $CI_OPEN_MERGE_REQUESTS == null
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Push pipeline"
+        LCI_PIPE_TYPE: push
+
+    # --- otherwise do not run CI pipeline -----------------------------
+
+    - when: never
+
+# -- CI job for displaying pipeline setup errors -----------------------
+
+pipeline-error:
+  stage: Pipeline errors
+  image: docker:latest
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    # print environment variables for debugging
+    - export -p
+  script:
+    - echo -e "$LCI_PIPE_ERROR_MESSAGE"
+    - exit 1
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "pipeline-error"
+
+# -- CI job defaults ---------------------------------------------------
+
+# by default cache everything in the .cache directory
+cache:
+  key: "${CI_JOB_NAME}"
+  paths:
+    - .cache/
+
+# job defaults
 default:
+
+  # default to Conda container for non-build and other jobs
+  image: "${LCI_DEV_IMG}:dev-conda-py312${LCI_DEV_TAG_SUFFIX}"
+
+  # cancel job when a newer pipeline starts
+  interruptible: true
+
   # retry running jobs on abnormal failures
   retry:
     max: 2
@@ -147,176 +406,133 @@ default:
       - archived_failure
       - scheduler_failure
     exit_codes:
-      # exit code of retry() macro after all attempts
+      # exit code of ${LCI_SCRIPTS}/retry after all attempts
       - 111
 
-  # cancel job when a newer pipeline starts
-  interruptible: true
-
-# -- helper fragments ----------------------------------
-
-# to use:
-# - !reference [.name-of-fragment]
-
-# basic steps for a job that compiles stuff
-.build-init:
-  # use retry()
-  - !reference [.retry]
-  # do not save coredumps
-  - ulimit -S -c 0
-  # set up ccache
-  - export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
-  # print environment for debugging
-  - |
-    declare -x | cut -c 12- | sed 's/^/ENV: /'
-  # ensure Git-LFS files are checked out
-  - |
-    test "X${GIT_STRATEGY}" = Xnone || ( git lfs ls-files | sed 's/^/LFS: /' )
-
-# set up Python virtual environment for pip installing local packages, etc.
-.python-venv:
-  - !reference [.retry]
-  - |
-    rm -rf .venv/
-    ${PYTHON:-python3} -m venv --system-site-packages .venv/
-    source .venv/bin/activate
-    for n in python python3 pip; do
-      if [ "X`type -p ${n}`" != "X${VIRTUAL_ENV}/bin/${n}" ]; then
-         echo "ERROR: virtual environment in '${VIRTUAL_ENV}' is missing ${n}" >&2
-         exit 1
-      fi
-    done
-    retry python -m pip install --upgrade pip
-
-# -- base templates ----------------------------------
-
-# basic before_script template for a compiling job
-.build-job:
-  timeout: 3 hours
   before_script:
-    - !reference [.build-init]
+    # exit immediately on any error
+    - set -e
+    # do not save coredumps
+    - ulimit -S -c 0
+    # set up ccache
+    - export PATH="/usr/lib/ccache:/opt/local/libexec/ccache:${PATH}"
+    # make directories
+    - mkdir -p ${XDG_CONFIG_HOME} ${XDG_CACHE_HOME}
+    # ensure Git-LFS files are checked out
+    - test "X${GIT_STRATEGY}" = Xnone || git lfs ls-files
 
-# helper template for jobs running on macOS
+# job default timeout
+# - must be included in `extends` for every job
+# - see https://gitlab.com/gitlab-org/gitlab/-/issues/213634
+.default-timeout:
+  timeout: 3h
+
+# Docker image job defaults
+.docker-image-job:
+
+  # use Docker image
+  # - need to install Git-LFS
+  image: docker:latest
+  before_script:
+    - apk add --no-interactive --no-progress git-lfs
+    - git lfs install
+    - !reference [default, before_script]
+
+  # select runner which can runs Docker container
+  tags:
+    - executor-docker
+
+  # set up Docker
+  variables:
+    DOCKER_DRIVER: overlay
+
+  # do not retry jobs
+  retry: 0
+
+  # do not interrupt
+  interruptible: false
+
+# deploy job defaults
+.deploy-job:
+  stage: Deployment actions
+
+  # do not retry jobs
+  retry: 0
+
+  # do not interrupt
+  interruptible: false
+
+# -- architecture-specific CI job defaults -----------------------------
+
+# Linux jobs
+.linux-job:
+  extends:
+    - .default-timeout
+
+# AArch64 architecture jobs
+.aarch64-job:
+  extends:
+    - .default-timeout
+  tags:
+    - aarch64
+  variables:
+    # disable for merge requests due to low availability of aarch64 runners
+    LCI_EXCLUDE_JOB_TYPES: "merge|sched-snapshot|lalsuite-tag"    ### TOFIX ###
+
+# macOS job defaults
 .macos-job:
+  extends:
+    - .default-timeout
+
   variables:
     # use the clone strategy so permissions are correctly reset on any failed jobs
     # see: https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/3726
     GIT_STRATEGY: clone
-    # Clang has weird bugs when compiling with CFLAGS=-O3
-    CFLAGS: "-O2"
+
+    # macOS jobs cannot modify environments outside the project directory
+    CONDA_ENVS_PATH: "${LCI_TMPDIR}/conda/envs"
+
     # stop Clang generating profile files
     LLVM_PROFILE_FILE: "/dev/null"
 
-# tag for macOS x86_64 architecture jobs
-.macos-x86_64:
+# macOS x86-64 architecture jobs
+.macos-x86-64-job:
   extends:
     - .macos-job
   tags:
     - macos_x86_64
 
-# tag for macOS arm64 architecture jobs
-.macos-arm64:
+# macOS arm64 architecture jobs
+.macos-arm64-job:
   extends:
     - .macos-job
   tags:
     - macos_arm64
 
-# deploy outputs to various locations
-.deploy:
-  stage: deploy
-  variables:
-    GIT_STRATEGY: none
-  retry: 0
-  interruptible: false
+# macOS arm64 oldest supported architecture jobs
+.macos-arm64-oldest-job:
+  tags:
+    # explicitly use the oldest macOS tag we have
+    - macos_monterey_arm64
 
-# -- CI job templates ----------------------------------
 
-# a top-level build runs the standard boot/configure/make
-# cycle with some sensible defaults
-.make-distcheck:
-  extends:
-    - .build-job
-  variables:
-    # default configure flags (can be overridden from dependents)
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
-    # default C flags (can be overridden from dependents)
-    CFLAGS: "-O3"
-    # target to actually run (distcheck is the most thorough)
-    MAKE_TARGET: "distcheck"
-  needs: []
-  script:
-    - ./00boot
-    # we use xargs here in case CONFIGURE_FLAGS contains
-    # variables with spaces, etc etc
-    - xargs ./configure
-          --enable-strict-defs
-          ${ENABLE_NIGHTLY}
-          CFLAGS="${CFLAGS}"
-          LALSUITE_LIBTOOL_NO_SUPPRESS=1
-          <<< ${CONFIGURE_FLAGS}
-    # install build dependencies, if requested
-    - |
-      if test "X$(declare -F install_build_deps)" != X; then
-        echo "Installing build dependencies ..."
-        install_build_deps
-      else
-        echo "Not installing build dependencies"
-      fi
-    # build
-    - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
-  artifacts:
-    # upload some files to debug failures
-    paths:
-      - config.log
-      - Makefile
-      - lal*/config.log
-      - lal*/libtool
-      - lal*/Makefile
-      - lal*/**/test-suite.log
-    when: on_failure
+# -- CI job rules ------------------------------------------------------
 
-# install deb dependencies for top-level builds
-.make-distcheck-deb:
-  extends:
-    - .make-distcheck
-  before_script:
-    - !reference [.make-distcheck, before_script]
-    - |
-      install_build_deps() {
-        retry apt-get update -y -q
-        local subdir
-        for subdir in ${LALSUITE_PACKAGES}; do
-          if test -f ${subdir}/config.log; then
-            pushd ${subdir}
-            awk '
-              /^Build-Depends:/ { bd=1; print; next }
-              bd==1 && ( / lal/ || / liblal/ || / python.*-lal/ ) { next }
-              /^[^ ]/ { bd=0 }
-              { print }
-            ' debian/control > debian/control.tmp
-            mv -f debian/control.tmp debian/control
-            retry apt-get build-dep -y -q .
-            popd
-          fi
-        done
-      }
+# default rule for matrix build jobs
+.default-matrix-rule:
+  rules:
+    # do not run if $LCI_JOB_TYPE matches an excluded job type
+    - if: >
+        $LCI_JOB_TYPE =~ $LCI_EXCLUDE_JOB_TYPES
+      when: never
+    # run if $LCI_JOB_TYPE matches the pipeline type
+    - if: >
+        $LCI_PIPE_TYPE == $LCI_JOB_TYPE
 
-# install rpm dependencies for top-level builds
-.make-distcheck-rpm:
-  extends:
-    - .make-distcheck
-  before_script:
-    - !reference [.make-distcheck, before_script]
-    - |
-      install_build_deps() {
-        local specs
-        local subdir
-        for subdir in ${LALSUITE_PACKAGES}; do
-          if test -f ${subdir}/config.log; then
-            local spec="${subdir}/${subdir}.spec"
-            sed -i -e '/BuildRequires: *\(lal\|liblal\|python.*-lal\)/d' ${spec}
-            specs="${specs} ${spec}"
-          fi
-        done
-        retry yum-builddep -y -q ${specs}
-      }
+# check LCI_DEPLOY_EXECUTE before running deploy jobs
+.deploy-check-execute:
+  rules:
+    # do not run if $LCI_DEPLOY_EXECUTE is not set correctly
+    - if: >
+        $LCI_DEPLOY_EXECUTE != "yes"
+      when: never

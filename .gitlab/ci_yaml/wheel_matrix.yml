@@ -1,0 +1,66 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: Python wheel build matrix
+# ----------------------------------------------------------------------
+
+.wheel-linux-matrix:
+  parallel:
+    matrix:
+
+      - PYTHON_TAG: "cp314-cp314"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+      - PYTHON_TAG: "cp314-cp314t"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+      - PYTHON_TAG: "cp313-cp313"
+        LCI_JOB_TYPE: ["merge", "sched-snapshot", "lalsuite-tag"]
+
+      - PYTHON_TAG: "cp312-cp312"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+      - PYTHON_TAG: "cp311-cp311"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+      - PYTHON_TAG: "cp310-cp310"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+wheel:linux-x86-64:
+  extends:
+    - .wheel-linux-job
+    - .linux-job
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux_2_28_x86_64
+
+wheel:linux-aarch64:
+  extends:
+    - .wheel-linux-job
+    - .aarch64-job
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux_2_28_aarch64
+
+.wheel-macos-matrix:
+  parallel:
+    matrix:
+
+      - PYTHON_VERSION: "3.14"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+      - PYTHON_VERSION: "3.13"
+        LCI_JOB_TYPE: ["merge", "sched-snapshot", "lalsuite-tag"]
+
+      - PYTHON_VERSION: "3.12"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+      - PYTHON_VERSION: "3.11"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+      - PYTHON_VERSION: "3.10"
+        LCI_JOB_TYPE: ["sched-snapshot", "lalsuite-tag"]
+
+wheel:macos-x86-64:
+  extends:
+    - .wheel-macos-job
+    - .macos-x86-64-job
+
+wheel:macos-arm64:
+  extends:
+    - .wheel-macos-job
+    - .macos-arm64-oldest-job
