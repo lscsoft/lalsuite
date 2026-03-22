@@ -23,10 +23,7 @@ AC_SUBST([LIBCURRENT],[14])
 AC_SUBST([LIBREVISION],[4])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
-AS_CASE([${host_os}],
-  [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR],[${LIBCURRENT}])],
-  [AC_SUBST([LIBMAJOR],[$((LIBCURRENT-LIBAGE))])]
-)
+AC_SUBST([LIBMAJOR],[$((LIBCURRENT-LIBAGE))])
 
 AC_CONFIG_FILES([ \
   Makefile \
@@ -68,9 +65,9 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-AC_SUBST([MIN_LAL_VERSION],["7.7.0"])
-AC_SUBST([MIN_FRAMECPPC_VERSION],["2.5.5"])
-AC_SUBST([MIN_FRAMEL_VERSION],["8.42.2"])
+AC_SUBST([MIN_LAL_VERSION],[7.7.0])
+AC_SUBST([MIN_FRAMECPPC_VERSION],[2.5.5])
+AC_SUBST([MIN_FRAMEL_VERSION],[8.42.2])
 
 AC_CANONICAL_HOST
 
@@ -80,9 +77,6 @@ LALSUITE_CHECK_PLATFORM
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LALSUITE_WITH_FALLBACK_DATA_PATH
-
-# nightly build
-LALSUITE_ENABLE_NIGHTLY
 
 # enable check for framec
 LALFRAME_ENABLE_FRAMEC
@@ -291,6 +285,7 @@ AC_MSG_NOTICE([
 ==================================================
 LALFrame has now been successfully configured:
 
+* Version: $VERSION
 * Python support is $PYTHON_ENABLE_VAL
 * FrameC availability... ${FRAMEC_AVAILABLE}
 * FrameL availability... ${FRAMEL_AVAILABLE}
