@@ -2,6 +2,10 @@
 # impossible to make sure the pages compile without warnings
 groff-message
 
+# ignore warnings from CUDA build
+pkg-config-bad-directive -I/usr/local/cuda/* [usr/lib/*/pkgconfig/*.pc]
+pkg-config-bad-directive -L/usr/local/cuda/* [usr/lib/*/pkgconfig/*.pc]
+
 # this occurs because Debian wants to supply its own
 # packaged version of jquery.js, but we need to support
 # other platforms too
