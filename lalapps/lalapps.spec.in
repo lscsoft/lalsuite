@@ -1,16 +1,16 @@
-%define nightly @NIGHTLY_VERSION@%{nil}
+%define snapshot @SNAPSHOT_VERSION@%{nil}
 %define release 1
 
-%if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
-%undefine nightly
+%if "%{?snapshot:%{snapshot}}%{!?snapshot:0}" == "%{nil}"
+%undefine snapshot
 %endif
 
 Name: @PACKAGE@
 Version: @BASE_VERSION@
-Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
+Release: %{?snapshot:0.%{snapshot}}%{!?snapshot:%{release}}%{?dist}
 Summary: LVK Algorithm Library Applications
 License: GPLv2+
-Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
+Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?snapshot:.%{snapshot}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: bc
@@ -51,7 +51,7 @@ Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: less
 Requires: libframel >= @MIN_FRAMEL_VERSION@
 Requires: libmetaio >= @MIN_METAIO_VERSION@
-Requires: python3
+Requires: python3 >= @MIN_PYTHON_VERSION@
 Requires: python3dist(h5py)
 Requires: python3dist(igwn-ligolw) >= @MIN_PYTHON_IGWN_LIGOLW_VERSION@
 Requires: python3dist(igwn-segments)
@@ -110,7 +110,7 @@ This package contains applications that are built on tools in the LVK
 Algorithm Library.
 
 %prep
-%setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
+%setup -q -n %{name}-%{version}%{?snapshot:.%{snapshot}}
 
 %build
 %configure --sysconfdir=%{_sysconfdir} --disable-gcc-flags --enable-cfitsio PYTHON=%{__python3}
@@ -131,7 +131,7 @@ env PYTHONPATH="%{buildroot}%{python3_sitearch}" \
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
-rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
+rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?snapshot:.%{snapshot}}
 
 %files
 %defattr(-,root,root)
