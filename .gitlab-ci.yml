@@ -477,7 +477,7 @@ default:
     - aarch64
   variables:
     # disable for merge requests due to low availability of aarch64 runners
-    LCI_EXCLUDE_JOB_TYPES: "merge|sched-snapshot|lalsuite-tag"    ### TOFIX ###
+    LCI_EXCLUDE_JOB_TYPES: "merge"
 
 # macOS job defaults
 .macos-job:
