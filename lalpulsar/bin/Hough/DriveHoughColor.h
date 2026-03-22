@@ -19,7 +19,7 @@
 
 /**
  * \file DriveHoughColor.h
- * \ingroup lalpulsar_bin_Hough
+ * \ingroup lalpulsar_bin_Apps
  * \author Alicia Sintes, Badri Krishnan
  * \brief Header file for non-demodulated Hough search
  *

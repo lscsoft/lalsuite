@@ -446,7 +446,7 @@ class PulsarParametersPy(object):
 
         Args:
             name (str): a parameter name
-            value (float, list, :class:`numpy.ndarray`): the value of the parameter
+            value (float|list|:class:`numpy.ndarray`): the value of the parameter
             iserr (bool): state whether where converting the parameter's error value
 
         Returns:
