@@ -95,7 +95,7 @@ variables:
   # --- default pipeline variables -------------------------------------
 
   # Docker development image
-  LCI_DEV_IMG: containers.ligo.org/anu-cga/lalsuite/dev    ##### TOFIX #####
+  LCI_DEV_IMG: containers.ligo.org/lscsoft/lalsuite/dev
 
   # use the Docker development image tags that have been tested (no suffix)
   LCI_DEV_TAG_SUFFIX: ""
@@ -171,7 +171,6 @@ workflow:
         LCI_PIPE_TYPE: sched-devimg
         # - test the new Docker development image tags
         LCI_DEV_TAG_SUFFIX: "-testing"
-        LCI_DEPLOY_EXECUTE: "yes"    ##### TOFIX #####
 
     # ---- sched-snapshot: build snapshot Docker images and wheels
 
@@ -273,7 +272,7 @@ workflow:
         LCI_PIPE_NAME: "LALSuite tag pipeline (simulate release)"
         LCI_PIPE_TYPE: lalsuite-tag
         # - simulate creating a new release
-        # LCI_RELEASE_SIMULATE: "yes"    ### TOFIX
+        LCI_RELEASE_SIMULATE: "yes"
 
     # --- CI pipeline for merge requests -------------------------------
 
