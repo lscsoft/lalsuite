@@ -83,7 +83,7 @@ snapshot-image:
     # test image
     - docker run --rm ${PLAT_IMG_PATH} lalapps_version
   rules:
-    # - !reference [.deploy-check-execute, rules]    ### TOFIX ###
+    - !reference [.deploy-check-execute, rules]
     # only run for building snapshot Docker images
     - if: >
         $LCI_PIPE_TYPE != "sched-snapshot"
