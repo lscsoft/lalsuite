@@ -80,12 +80,16 @@ static double eos_p_of_e_tabular(double e, LALSimNeutronStarEOS * eos)
 {
     double log_e;
     double log_p;
+    double tol = 1e-12;
     if (e == 0.0)
 	return 0.0;
     log_e = log(e);
-    // Clamp
+    if (log_e > eos->data.tabular->log_edat[eos->data.tabular->ndat-1] + tol)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+            "Energy density e=%.5e is above the EOS interpolation range.", e);
+    // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_e = clamp_to_range_tol(log_e, eos->data.tabular->log_edat[0],
-        eos->data.tabular->log_edat[eos->data.tabular->ndat-1], 1e-12);
+        eos->data.tabular->log_edat[eos->data.tabular->ndat-1], tol);
     if (log_e < eos->data.tabular->log_edat[0])
 	/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
 	return exp(eos->data.tabular->log_pdat[0] + (5.0 / 3.0) * (log_e - eos->data.tabular->log_edat[0]));
@@ -99,12 +103,16 @@ static double eos_p_of_rho_tabular(double rho, LALSimNeutronStarEOS * eos)
 {
     double log_rho;
     double log_p;
+    double tol = 1e-12;
     if (rho == 0.0)
 	return 0.0;
     log_rho = log(rho);
-    // Clamp
+    if (log_rho > eos->data.tabular->log_rhodat[eos->data.tabular->ndat-1] + tol)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+            "Rest-mass density rho=%.5e is above the EOS interpolation range.", rho);
+    // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_rho = clamp_to_range_tol(log_rho, eos->data.tabular->log_rhodat[0],
-        eos->data.tabular->log_rhodat[eos->data.tabular->ndat-1], 1e-12);
+        eos->data.tabular->log_rhodat[eos->data.tabular->ndat-1], tol);
     if (log_rho < eos->data.tabular->log_rhodat[0])
 	/* use non-relativistic degenerate gas, p = K * rho**(5./3.) */
 	return exp(eos->data.tabular->log_pdat[0] + (5.0 / 3.0) * (log_rho - eos->data.tabular->log_rhodat[0]));
@@ -118,12 +126,16 @@ static double eos_e_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
 {
     double log_p;
     double log_e;
+    double tol = 1e-12;
     if (p == 0.0)
 	return 0.0;
     log_p = log(p);
-    // Clamp
+    if (log_p > eos->data.tabular->log_pdat[eos->data.tabular->ndat-1] + tol)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+            "Pressure p=%.5e is above the EOS interpolation range.", p);
+    // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_p = clamp_to_range_tol(log_p, eos->data.tabular->log_pdat[0],
-        eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], 1e-12);
+        eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], tol);
     if (log_p < eos->data.tabular->log_pdat[0])
 	/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
 	return exp(eos->data.tabular->log_edat[0] + (3.0 / 5.0) * (log_p - eos->data.tabular->log_pdat[0]));
@@ -137,12 +149,16 @@ static double eos_e_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 {
     double log_h;
     double log_e;
+    double tol = 1e-12;
     if (h == 0.0)
 	return 0.0;
     log_h = log(h);
-    // Clamp
+    if (log_h > eos->data.tabular->log_hdat[eos->data.tabular->ndat-1] + tol)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+            "Pseudo-enthalpy h=%.5e is above the EOS interpolation range.", h);
+    // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
-        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
+        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], tol);
     if (log_h < eos->data.tabular->log_hdat[0])
 	/* use non-relativistic degenerate gas, e = K * h**(3./2.) */
 	return exp(eos->data.tabular->log_edat[0] + 1.5 * (log_h - eos->data.tabular->log_hdat[0]));
@@ -156,12 +172,16 @@ static double eos_p_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 {
     double log_h;
     double log_p;
+    double tol = 1e-12;
     if (h == 0.0)
 	return 0.0;
     log_h = log(h);
-    // Clamp
+    if (log_h > eos->data.tabular->log_hdat[eos->data.tabular->ndat-1] + tol)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+            "Pseudo-enthalpy h=%.5e is above the EOS interpolation range.", h);
+    // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
-        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
+        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], tol);
     if (log_h < eos->data.tabular->log_hdat[0])
 	/* use non-relativistic degenerate gas, p = K * h**(5./2.) */
 	return exp(eos->data.tabular->log_pdat[0] + 2.5 * (log_h - eos->data.tabular->log_hdat[0]));
@@ -175,12 +195,16 @@ static double eos_rho_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 {
     double log_h;
     double log_rho;
+    double tol = 1e-12;
     if (h == 0.0)
 	return 0.0;
     log_h = log(h);
-    // Clamp
+    if (log_h > eos->data.tabular->log_hdat[eos->data.tabular->ndat-1] + tol)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+            "Pseudo-enthalpy h=%.5e is above the EOS interpolation range.", h);
+    // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
-        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
+        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], tol);
     if (log_h < eos->data.tabular->log_hdat[0])
 	/* use non-relativistic degenerate gas, rho = K * h**(3./2.) */
 	return exp(eos->data.tabular->log_rhodat[0] + 1.5 * (log_h - eos->data.tabular->log_hdat[0]));
@@ -194,12 +218,16 @@ static double eos_h_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
 {
     double log_p;
     double log_h;
+    double tol = 1e-12;
     if (p == 0)
 	return 0.0;
     log_p = log(p);
-    // Clamp
+    if (log_p > eos->data.tabular->log_pdat[eos->data.tabular->ndat-1] + tol)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+            "Pressure p=%.5e is above the EOS interpolation range.", p);
+    // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_p = clamp_to_range_tol(log_p, eos->data.tabular->log_pdat[0],
-        eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], 1e-12);
+        eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], tol);
     if (log_p < eos->data.tabular->log_pdat[0])
 	/* use non-relativistic degenerate gas, h = K * p**(2./5.) */
 	return exp(eos->data.tabular->log_hdat[0] + 0.4 * (log_p - eos->data.tabular->log_pdat[0]));
@@ -214,12 +242,16 @@ static double eos_dedp_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
     double log_p;
     double log_e;
     double d_log_e_d_log_p;
+    double tol = 1e-12;
     if (p == 0 || (log_p = log(p)) < eos->data.tabular->log_pdat[0])
 	/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
 	return (3.0 / 5.0) * exp(eos->data.tabular->log_edat[0] - eos->data.tabular->log_pdat[0]);
-    // Clamp
+    if (log_p > eos->data.tabular->log_pdat[eos->data.tabular->ndat-1] + tol)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+            "Pressure p=%.5e is above the EOS interpolation range.", p);
+    // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_p = clamp_to_range_tol(log_p, eos->data.tabular->log_pdat[0],
-        eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], 1e-12);
+        eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], tol);
     log_e = gsl_interp_eval(eos->data.tabular->log_e_of_log_p_interp,
         eos->data.tabular->log_pdat, eos->data.tabular->log_edat, log_p,
         eos->data.tabular->log_e_of_log_p_acc);
@@ -232,6 +264,7 @@ static double eos_dedp_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
 static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 {
     double p, dedp, log_cs2, log_h;
+    double tol = 1e-12;
     if (eos->data.tabular->ncol == 2)
     {
         p = eos_p_of_h_tabular(h, eos);
@@ -239,9 +272,13 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
         return pow(dedp, -0.5);
     }
     log_h = log(h);
-    // Clamp
+    if (log_h < eos->data.tabular->log_hdat[0] - tol ||
+        log_h > eos->data.tabular->log_hdat[eos->data.tabular->ndat-1] + tol)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+            "Pseudo-enthalpy h=%.5e is outside the EOS interpolation range.", h);
+    // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_h = clamp_to_range_tol(log_h, eos->data.tabular->log_hdat[0],
-        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], 1e-12);
+        eos->data.tabular->log_hdat[eos->data.tabular->ndat-1], tol);
     log_cs2 = gsl_interp_eval(eos->data.tabular->log_cs2_of_log_h_interp,
     eos->data.tabular->log_hdat, eos->data.tabular->log_cs2dat, log_h,
     eos->data.tabular->log_cs2_of_log_h_acc);
@@ -859,6 +896,27 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
     if (hdat == NULL) ncol = 2;
     eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
     return eos;
+}
+
+/**
+ * @brief Creates a tabulated neutron star equation of state from
+ * energy density and pressure arrays.
+ * @details This is a convenience wrapper around XLALSimNeutronStarEOSFromTabData
+ * that accepts REAL8Vector inputs, making it usable from Python via SWIG.
+ *
+ * @param energy_density Array for the energy density (in m^-2).
+ * @param pressure Array for the pressure (in m^-2).
+ * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOS).
+ */
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
+    const REAL8Vector *energy_density, const REAL8Vector *pressure)
+{
+    XLAL_CHECK_NULL(energy_density && pressure, XLAL_EFAULT);
+    XLAL_CHECK_NULL(energy_density->length == pressure->length, XLAL_ESIZE,
+        "energy_density and pressure must have the same length");
+    return XLALSimNeutronStarEOSFromTabData(
+        NULL, energy_density->data, pressure->data,
+        NULL, NULL, NULL, NULL, NULL, pressure->length);
 }
 
 
