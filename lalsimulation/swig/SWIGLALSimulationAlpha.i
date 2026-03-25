@@ -24,6 +24,11 @@
 /// \author Karl Wette
 ///
 
+// Ignore XLALSimNeutronStarEOSFromTabData because SWIG incorrectly treats
+// double* array params as output scalars. Use XLALSimNeutronStarEOSFromArrays
+// instead, which takes REAL8Vector inputs that SWIG handles correctly.
+%ignore XLALSimNeutronStarEOSFromTabData;
+
 // Local Variables:
 // mode: c
 // End:
