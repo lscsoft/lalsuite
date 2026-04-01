@@ -32,8 +32,10 @@
 #include <lal/LALSimNeutronStar.h>
 
 
-/* Implements Eq. (50) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).
- * See also Eq. (14) of Hinderer et al. Phys. Rev. D 81 123016 (2010). */
+/*
+ * Implements Eq.(50) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).
+ * See also Eq.(14) of Hinderer et al. Phys. Rev. D 81 123016 (2010).
+ */
 static double tidal_Love_number_k2(double c, double y)
 {
     double num;
@@ -49,8 +51,11 @@ static double tidal_Love_number_k2(double c, double y)
     return num / den;
 }
 
-/* Implements Eq.(51) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).*/
-static double tidal_Love_number_k3(double c, double y){
+/*
+ * Implements Eq.(51) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).
+ */
+static double tidal_Love_number_k3(double c, double y)
+{
     double num;
     double den;
     double c2 = pow(c, 2.0);
@@ -70,8 +75,11 @@ static double tidal_Love_number_k3(double c, double y){
     return num / den;
 }
 
-/* Implements Eq.(52) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).*/
-static double tidal_Love_number_k4(double c, double y){
+/*
+ * Implements Eq.(52) of Damour & Nagar, Phys. Rev. D 80 084035 (2009).
+ */
+static double tidal_Love_number_k4(double c, double y)
+{
     double num;
     double den;
     double c2 = pow(c, 2.0);
@@ -92,8 +100,10 @@ static double tidal_Love_number_k4(double c, double y){
     return num / den;
 }
 
+/*
+ * Implements Eq.(29) of Damour & Nagar PRD 80 084035 (2009).
+ */
 static double constant_zero_for_kl(double r, double m, double A, double e, double p, double dedp, int l){
-    /* Eq. (29) of Damour & Nagar PRD 80 084035 (2009). */
     double C0 =
     A * (-(l) * (l + 1) / (r * r) + 4.0 * LAL_PI * (e + p) * dedp +
         4.0 * LAL_PI * (5.0 * e + 9.0 * p)) - pow(2.0 * (m +
@@ -103,9 +113,10 @@ static double constant_zero_for_kl(double r, double m, double A, double e, doubl
 }
 
 
-
-/* For convenience, use a structure that provides a dictionary between
- * a vector of the ode variables and what they represent. */
+/*
+ * For convenience, use a structure that provides a dictionary between
+ * a vector of the ode variables and what they represent.
+ */
 struct tov_ode_vars {
     double r;   /* radial coordinate, m */
     double m;   /* mass within r in geometric units, m */
@@ -115,7 +126,9 @@ struct tov_ode_vars {
 
 #define TOV_ODE_VARS_DIM (sizeof(struct tov_ode_vars)/sizeof(double))
 
-/* Casts an array of doubles to a structure with named parameter. */
+/*
+ * Casts an array of doubles to a structure with named parameter.
+ */
 static struct tov_ode_vars *tov_ode_vars_cast(const double *y)
 {
     union {
@@ -126,12 +139,14 @@ static struct tov_ode_vars *tov_ode_vars_cast(const double *y)
     return u.v;
 }
 
-/* ODE integrand for TOV equations with pseudo-enthalpy independent variable.
+/*
+ * ODE integrand for TOV equations with pseudo-enthalpy independent variable.
  * Implements Eqs. (5) and (6) of Lindblom, Astrophys. J. 398, 569 (1992).
  * Also uses Eqs. (7) and (8) [ibid] for inner boundary data, and
  * Eqs. (18), (27), (28) of Damour & Nagar, Phys. Rev. D 80, 084035 (2009)
  * [See also: Eqs. (11) & (12) Hinderer et al. Phys. Rev. D 81 123016 (2010)]
- * for the metric perturbation used to obtain the Love number. */
+ * for the metric perturbation used to obtain the Love number.
+ */
 static int tov_ode(double h, const double *y, double *dy, void *params)
 {
     struct tov_ode_vars *vars = tov_ode_vars_cast(y);
@@ -183,7 +198,7 @@ static int tov_ode(double h, const double *y, double *dy, void *params)
  * Astrophys. J. 398 569 "Determining the Nuclear Equation of State from
  * Neutron-Star Masses and Radii".
  * The surface of the star is defined by a minimum value of the pseudo-enthalpy
- * h1 =1e-12*hc (with hc the central pseudo-enthalpy) ; if the minimum
+ * h1 = 1e-12 * hc (with hc the central pseudo-enthalpy) ; if the minimum
  * pseudo-enthalpy of the equation of state is larger, a polytrope
  * (degenerate non-relativistic gas) is used to extend the model beyond
  * the EoS minimal value down to h1.
@@ -192,13 +207,12 @@ static int tov_ode(double h, const double *y, double *dy, void *params)
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
  * @param eos Pointer to the Equation of State structure.
- * @param[in] epsrel The relative error for the TOV solver routine
+ * @param[in] epsrel The relative error for the TOV solver routine.
  * @retval 0 Success.
  * @retval <0 Failure.
  */
 int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
-    double *love_number_k2, double central_pressure_si,
-    LALSimNeutronStarEOS * eos, double epsrel)
+    double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos, double epsrel)
 {
     /* ode integration variables */
     const double epsabs = 0.0;
@@ -278,6 +292,44 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     return 0;
 }
 
+
+/**
+ * @brief Integrates the stellar structure system of ordinary differential
+ * equations to obtain neutron star's macroscopic parameters with a solver
+ * relative precision 1e-6.
+ * @details
+ * Solves the Tolman-Oppenheimer-Volkoff stellar structure equations and
+ * the gravito-electric tidal Love number equations, given an equation of
+ * state and a central pressure. The solution to this set of ODEs provides
+ * the neutron star's radius, gravitational mass and second order gravito-electric
+ * tidal Love number.
+ * It uses the pseudo-enthalpy formalism introduced in Lindblom (1992)
+ * Astrophys. J. 398 569 "Determining the Nuclear Equation of State from
+ * Neutron-Star Masses and Radii".
+ * The surface of the star is defined by a minimum value of the pseudo-enthalpy
+ * h1 = 1e-12 * hc (with hc the central pseudo-enthalpy) ; if the minimum
+ * pseudo-enthalpy of the equation of state is larger, a polytrope
+ * (degenerate non-relativistic gas) is used to extend the model beyond
+ * the EoS minimal value down to h1.
+ * @param[out] radius The radius of the star in m.
+ * @param[out] mass The mass of the star in kg.
+ * @param[out] love_number_k2 The k_2 tidal love number of the star.
+ * @param[in] central_pressure_si The central pressure of the star in Pa.
+ * @param eos Pointer to the Equation of State structure.
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ */
+int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
+    double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos)
+{
+    const double epsrel = 1e-6;
+    return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
+}
+
+/*
+ * For convenience, use a structure that provides a dictionary between
+ * a vector of the TOV+virial ode variables and what they represent.
+ */
 struct tov_virial_ode_vars {
     double r;   /* radial coordinate, m */
     double m;   /* mass within r in geometric units, m */
@@ -292,6 +344,9 @@ struct tov_virial_ode_vars {
 
 #define TOV_VIRIAL_ODE_VARS_DIM (sizeof(struct tov_virial_ode_vars)/sizeof(double))
 
+/*
+ * Casts an array of doubles to a structure with named parameter.
+ */
 static struct tov_virial_ode_vars *tov_virial_ode_vars_cast(const double *y)
 {
     union {
@@ -364,8 +419,8 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
 }
 
 /**
- * @brief Integrates the stellar structure system of ordinary differential
- * equations to obtain neutron star's macroscopic parameters and the Virial Equations.
+ * @brief Integrates the stellar structure and virial system of ordinary differential
+ * equations to obtain neutron star's macroscopic parameters and virial parameters.
  * @details
  * Solves the Tolman-Oppenheimer-Volkoff stellar structure equations,
  * the gravito-electric tidal Love number equations and the virial equations,
@@ -376,7 +431,7 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
  * Astrophys. J. 398 569 "Determining the Nuclear Equation of State from
  * Neutron-Star Masses and Radii".
  * The surface of the star is defined by a minimum value of the pseudo-enthalpy
- * h1 =1e-12*hc (with hc the central pseudo-enthalpy) ; if the minimum
+ * h1 = 1e-12 * hc (with hc the central pseudo-enthalpy) ; if the minimum
  * pseudo-enthalpy of the equation of state is larger, a polytrope
  * (degenerate non-relativistic gas) is used to extend the model beyond
  * the EoS minimal value down to h1.
@@ -390,7 +445,7 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
  * @param[out] int6 Virial parameter.
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
- * @param eos EoS structure (multiple part EOS)
+ * @param eos Pointer to the Equation of State structure.
  * @param[in] epsrel The relative error in the TOV solver routine.
  * @retval 0 Success.
  * @retval <0 Failure.
@@ -442,15 +497,6 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     r0 *= 1.0 + 0.25 * dh * (ec - 3.0 * pc  - 0.6 * dedh_c) / (ec + 3.0 * pc);
     /* second factor of Eq. (8) of Lindblom (1992) */
     m0 *= 1.0 + 0.6 * dh * dedh_c / ec;
-
-    // double Gamma_c = (ec + pc)/(pc * dedp_c);
-    // double r1 = sqrt(3.0/(2.0 * LAL_PI * (ec + 3.0 * pc)));
-    // double r3 = - (r1 / (4.0 * (ec + 3.0 * pc))) * (ec - 3.0 * pc - 3.0 * (ec + pc) * (ec + pc) /  (5.0 * pc * Gamma_c));
-    // double m3 = 4.0 * LAL_PI * ec * r1 * r1 * r1 / 3.0;
-    // double m5 = 4.0 * LAL_PI * r1 * r1 * r1 * (r3 * ec / r1 - (ec + pc) * (ec + pc) / (5.0 * pc * Gamma_c));
-
-    // r0 = r1 * sqrt(fabs(dh)) + r3 * pow(sqrt(fabs(dh)), 3.0);
-    // m0 = m3 * pow(sqrt(fabs(dh)), 3.0) + m5 * pow(sqrt(fabs(dh)), 5.0);
 
     /* Virial ODEs starting points */
 
@@ -510,8 +556,52 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     return 0;
 }
 
+/**
+ * @brief Integrates the stellar structure and virial system of ordinary differential
+ * equations to obtain neutron star's macroscopic parameters and virial parameters,
+ * with a solver relative precision 1e-6.
+ * @details
+ * Solves the Tolman-Oppenheimer-Volkoff stellar structure equations,
+ * the gravito-electric tidal Love number equations and the virial equations,
+ * given an equation of state and a central pressure. The solution to this set
+ * of ODEs provides the neutron star's radius, gravitational mass, second order
+ * gravito-electric tidal Love number and the virial parameters.
+ * It uses the pseudo-enthalpy formalism introduced in Lindblom (1992)
+ * Astrophys. J. 398 569 "Determining the Nuclear Equation of State from
+ * Neutron-Star Masses and Radii".
+ * The surface of the star is defined by a minimum value of the pseudo-enthalpy
+ * h1 = 1e-12 * hc (with hc the central pseudo-enthalpy) ; if the minimum
+ * pseudo-enthalpy of the equation of state is larger, a polytrope
+ * (degenerate non-relativistic gas) is used to extend the model beyond
+ * the EoS minimal value down to h1.
+ * @param[out] radius The radius of the star in m.
+ * @param[out] mass The mass of the star in kg.
+ * @param[out] int1 Virial parameter.
+ * @param[out] int2 Virial parameter.
+ * @param[out] int3 Virial parameter.
+ * @param[out] int4 Virial parameter.
+ * @param[out] int5 Virial parameter.
+ * @param[out] int6 Virial parameter.
+ * @param[out] love_number_k2 The k_2 tidal love number of the star.
+ * @param eos Pointer to the Equation of State structure.
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ */
+int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
+    double *love_number_k2, double central_pressure_si,
+    LALSimNeutronStarEOS * eos)
+{
+    const double epsrel = 1e-6;
+    return XLALSimNeutronStarVirialODEIntegrateWithTolerance(radius, mass,
+    int1, int2, int3, int4, int5, int6, love_number_k2, central_pressure_si, eos, epsrel);
+}
 
-/* Structure that contains the set of physical variables to solve with ODE solver */
+
+/*
+ * For convenience, use a structure that provides a dictionary between
+ * a vector of the extended TOV ode variables and what they represent.
+ */
 struct tov_ext_ode_vars {
     double r;   /* radial coordinate, m */
     double m;   /* mass within r in geometric units, m */
@@ -526,6 +616,9 @@ struct tov_ext_ode_vars {
 
 #define TOV_EXT_ODE_VARS_DIM (sizeof(struct tov_ext_ode_vars)/sizeof(double)) // Dimension of the ODE equation system
 
+/*
+ * Casts an array of doubles to a structure with named parameter.
+ */
 static struct tov_ext_ode_vars *tov_ext_ode_vars_cast(const double *y)
 {
     union {
@@ -536,28 +629,9 @@ static struct tov_ext_ode_vars *tov_ext_ode_vars_cast(const double *y)
     return u.v;
 }
 
-/* Structure that contains the set of physical variables to solve with ODE solver */
-struct tov_mini_ode_vars {
-    double r;   /* radial coordinate, m */
-    double m;   /* mass within r in geometric units, m */
-    double H_k2;   /* stellar perturbation in arbitrary units */
-    double b_k2;   /* derivative of metric perturbation in arbitrary units */
-};
-
-#define TOV_MINI_ODE_VARS_DIM (sizeof(struct tov_mini_ode_vars)/sizeof(double)) // Dimension of the ODE equation system
-
-static struct tov_mini_ode_vars *tov_mini_ode_vars_cast(const double *y)
-{
-    union {
-        const double *y;
-        struct tov_mini_ode_vars *v;
-    } u = {
-    y};
-    return u.v;
-}
-
-/* Boundary condition for gravitaitonal mass, baryonic mass,
- * radius and tidal deformability related parameters (H and beta)
+/*
+ * Boundary condition for gravitational mass, baryonic mass,
+ * radius and tidal deformability related parameters (H and beta for order 2, 3 and 4)
  * defined for the center of the star.
 */
 static int tov_ext_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_ext_ode_vars *variables){
@@ -596,9 +670,9 @@ static int tov_ext_initial_condition(double eps, double p, double dh, LALSimNeut
     return 0;
 }
 
-/* ODE integrand for TOV (including the baryonic mass) and
- * Love number (k2, k3 and k4) equations with pseudo-enthalpy as
- * the independent variable.
+/*
+ * ODE integrand for extended TOV and Love number (k2, k3 and k4) equations
+ * with pseudo-enthalpy as the independent variable.
  */
 static int tov_ext_ode(double h, const double *y, double *dy, void *params)
 {
@@ -651,82 +725,13 @@ static int tov_ext_ode(double h, const double *y, double *dy, void *params)
     return 0;
 }
 
-
-/* Boundary condition for gravitational mass,
- * radius and tidal deformability related parameters (H and beta)
- * defined for the center of the star.
+/*
+ * Phase transition correction for the tidal love number.
+ * Implements Eq.(41) of Pereira et al. 2020 ApJ 895 28
 */
-static int tov_mini_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_mini_ode_vars *variables){
-
-    double dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos); // Central energy density derivative
-    double dhdp = 1.0 / (eps + p);
-    double dedh = dedp / dhdp;
-
-    double rval = sqrt(-3.0 * dh / (2.0 * LAL_PI * (eps + 3.0 * p)));
-    double mval = 4.0 * LAL_PI * rval * rval * rval * eps / 3.0;
-    double Hval_k2 = rval * rval;
-    double bval_k2 = 2.0 * rval;
-
-    /* series expansion for the initial core */
-    /* second factor of Eq. (7) of Lindblom (1992) */
-    rval *= 1.0 + 0.25 * dh * (eps - 3.0 * p  - 0.6 * dedh) / (eps + 3.0 * p);
-    /* second factor of Eq. (8) of Lindblom (1992) */
-    mval *= 1.0 + 0.6 * dh * dedh / eps;
-
-    /* perform integration at first point */
-    variables->r = rval;
-    variables->m = mval;
-    variables->H_k2 = Hval_k2;
-    variables->b_k2 = bval_k2;
-
-    return 0;
-}
-
-/* ODE integrand for TOV and Love number (k2) equations with pseudo-enthalpy as
- * the independent variable.
- */
-static int tov_mini_ode(double h, const double *y, double *dy, void *params)
-{
-    struct tov_mini_ode_vars *vars = tov_mini_ode_vars_cast(y);
-    struct tov_mini_ode_vars *derivs = tov_mini_ode_vars_cast(dy);
-
-    LALSimNeutronStarEOS * eos = *(LALSimNeutronStarEOS **) params;
-
-    double r = vars->r;
-    double m = vars->m;
-    double H_k2 = vars->H_k2;
-    double b_k2 = vars->b_k2;
-
-    double p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos);
-    double e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h, eos);
-    double dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos);
-    /* Eq. (18) of Damour & Nagar PRD 80 084035 (2009). */
-    double A = 1.0 / (1.0 - 2.0 * m / r);
-    /* Eq. (28) of Damour & Nagar PRD 80 084035 (2009). */
-    double C1 = 2.0 / r + A * (2.0 * m / (r * r) + 4.0 * LAL_PI * r * (p - e));
-    /* Eq. (29) of Damour & Nagar PRD 80 084035 (2009). */
-    double C0_k2 = constant_zero_for_kl(r, m, A, e, p, dedp, 2);
-    double dr = -r * (r - 2.0 * m) / (m + 4.0 * LAL_PI * r * r * r * p);
-    double dm = 4.0 * LAL_PI * r * r * e * dr;
-
-    double dH_k2 = b_k2 * dr;
-    double db_k2 = -(C0_k2 * H_k2 + C1 * b_k2) * dr;
-
-    derivs->r = dr;
-    derivs->m = dm;
-    derivs->H_k2 = dH_k2;
-    derivs->b_k2 = db_k2;
-    return 0;
-}
-
-
 static double correction_phase_transition(double r, double m, double b_kl, double H_kl,
                                           double h, LALSimNeutronStarEOS * eos0, LALSimNeutronStarEOS * eos1){
-    /* Phase transition correction for the tidal love number
-    * Implements Eq.(41) of Pereira et al. 2020 ApJ 895 28
-    * Note: Eq.(14) of Postnikov et al. 2010 Phys. Rev. D 82, 024016
-    * takes an approximation for the denominator on the correction terms
-    */
+
     double corrected_term = 0.0;
     double r3 = r*r*r;
     double pres_pt = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos1);
@@ -741,26 +746,29 @@ static double correction_phase_transition(double r, double m, double b_kl, doubl
 
 /**
  * @brief Integrates the stellar structure system of ordinary differential
- * equations to obtain neutron star's macroscopic parameters.
+ * equations to obtain neutron star's macroscopic parameters; can accomodate
+ * equations of state with phase transitions.
  * @details
  * Solves the Tolman-Oppenheimer-Volkoff stellar structure equations and
  * the gravito-electric tidal Love number equations, given an equation of
  * state and a central pressure. The solution to this set of ODEs provides
  * the neutron star's radius, gravitational mass, baryonic mass, and
- * second, third and fourth order gravito-electric tidal Love number.
+ * second, third and fourth order gravito-electric tidal Love number;
+ * it also accounts for corrections required for equations of state with
+ * phase transitions.
  * It uses the pseudo-enthalpy formalism introduced in Lindblom (1992)
  * Astrophys. J. 398 569 "Determining the Nuclear Equation of State from
  * Neutron-Star Masses and Radii".
  * The surface of the star is defined by a minimum pseudo-enthalpy of the
  * input equation of state.
  * @param[out] radius The radius of the star in m.
- * @param[out] mass The gravitationnal mass of the star in kg.
+ * @param[out] mass The gravitational mass of the star in kg.
  * @param[out] baryon_mass The baryon mass of the star in kg.
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
  * @param[out] love_number_k3 The k_3 tidal love number of the star.
  * @param[out] love_number_k4 The k_4 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
- * @param eos Pointer to the Equation of State structure.
+ * @param eos Pointer to the multiple-parts Equation of State structure.
  * @param[in] epsrel The relative error for the numerical solver routine.
  */
 void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
@@ -807,7 +815,6 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     double h0 = hc + dh;
     double hmin;
     double h;
-
     tov_ext_initial_condition(ec, pc, dh, eos_part, vars);
     h = h0;
 
@@ -843,8 +850,8 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     /* compute tidal Love numbers and compactness at the surface of the star */
     double comp = vars->m / vars->r;      /* compactness */
     double yy_k2 = vars->r * vars->b_k2 / vars->H_k2; /* Eq. 13 of Hinderer et al. Phys. Rev. D 81 123016 */
-    double yy_k3 = vars->r * vars->b_k3 / vars->H_k3; /* Eq. 13 of Hinderer et al. Phys. Rev. D 81 123016 */
-    double yy_k4 = vars->r * vars->b_k4 / vars->H_k4; /* Eq. 13 of Hinderer et al. Phys. Rev. D 81 123016 */
+    double yy_k3 = vars->r * vars->b_k3 / vars->H_k3;
+    double yy_k4 = vars->r * vars->b_k4 / vars->H_k4;
     /* convert from geometric units to SI units */
     *radius = vars->r;
     *mass = vars->m * LAL_MSUN_SI / LAL_MRSUN_SI;
@@ -861,16 +868,152 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     return;
 }
 
+/**
+ * @brief Integrates the stellar structure system of ordinary differential
+ * equations to obtain neutron star's macroscopic parameters, with a solver
+ * relative precision 1e-6.; can accomodate equations of state with phase transitions.
+ * @details
+ * Solves the Tolman-Oppenheimer-Volkoff stellar structure equations and
+ * the gravito-electric tidal Love number equations, given an equation of
+ * state and a central pressure. The solution to this set of ODEs provides
+ * the neutron star's radius, gravitational mass, baryonic mass, and
+ * second, third and fourth order gravito-electric tidal Love number;
+ * it also accounts for corrections required for equations of state with
+ * phase transitions.
+ * It uses the pseudo-enthalpy formalism introduced in Lindblom (1992)
+ * Astrophys. J. 398 569 "Determining the Nuclear Equation of State from
+ * Neutron-Star Masses and Radii".
+ * The surface of the star is defined by a minimum pseudo-enthalpy of the
+ * input equation of state.
+ * @param[out] radius The radius of the star in m.
+ * @param[out] mass The gravitational mass of the star in kg.
+ * @param[out] baryon_mass The baryon mass of the star in kg.
+ * @param[out] love_number_k2 The k_2 tidal love number of the star.
+ * @param[out] love_number_k3 The k_3 tidal love number of the star.
+ * @param[out] love_number_k4 The k_4 tidal love number of the star.
+ * @param[in] central_pressure_si The central pressure of the star in Pa.
+ * @param eos Pointer to the multiple-parts Equation of State structure.
+ */
+void XLALSimNeutronStarTOVODEExtendedIntegrate(double *radius, double *mass, double *baryon_mass,
+             double *love_number_k2, double *love_number_k3, double *love_number_k4,
+             double central_pressure_si,
+             EOSMultiParts *eos)
+{
+    const double epsrel = 1e-6;
+    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(radius, mass, baryon_mass, love_number_k2,
+                                                           love_number_k3, love_number_k4, central_pressure_si,
+                                                           eos, epsrel);
+    return ;
+}
+
+/*
+ * For convenience, use a structure that provides a dictionary between
+ * a vector of the mini TOV ode variables and what they represent.
+ */
+struct tov_mini_ode_vars {
+    double r;   /* radial coordinate, m */
+    double m;   /* mass within r in geometric units, m */
+    double H_k2;   /* stellar perturbation in arbitrary units */
+    double b_k2;   /* derivative of metric perturbation in arbitrary units */
+};
+
+#define TOV_MINI_ODE_VARS_DIM (sizeof(struct tov_mini_ode_vars)/sizeof(double)) // Dimension of the ODE equation system
+
+/*
+ * Casts an array of doubles to a structure with named parameter.
+ */
+static struct tov_mini_ode_vars *tov_mini_ode_vars_cast(const double *y)
+{
+    union {
+        const double *y;
+        struct tov_mini_ode_vars *v;
+    } u = {
+    y};
+    return u.v;
+}
+
+
+/*
+ * Boundary condition for gravitational mass,
+ * radius and tidal deformability related parameters (H and beta)
+ * defined for the center of the star.
+*/
+static int tov_mini_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_mini_ode_vars *variables){
+
+    double dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos); // Central energy density derivative
+    double dhdp = 1.0 / (eps + p);
+    double dedh = dedp / dhdp;
+
+    double rval = sqrt(-3.0 * dh / (2.0 * LAL_PI * (eps + 3.0 * p)));
+    double mval = 4.0 * LAL_PI * rval * rval * rval * eps / 3.0;
+    double Hval_k2 = rval * rval;
+    double bval_k2 = 2.0 * rval;
+
+    /* series expansion for the initial core */
+    /* second factor of Eq. (7) of Lindblom (1992) */
+    rval *= 1.0 + 0.25 * dh * (eps - 3.0 * p  - 0.6 * dedh) / (eps + 3.0 * p);
+    /* second factor of Eq. (8) of Lindblom (1992) */
+    mval *= 1.0 + 0.6 * dh * dedh / eps;
+
+    /* perform integration at first point */
+    variables->r = rval;
+    variables->m = mval;
+    variables->H_k2 = Hval_k2;
+    variables->b_k2 = bval_k2;
+
+    return 0;
+}
+
+/*
+ * ODE integrand for the TOV and Love number (k2) equations with pseudo-enthalpy as
+ * the independent variable (pertinent for the mini TOV solver).
+ */
+static int tov_mini_ode(double h, const double *y, double *dy, void *params)
+{
+    struct tov_mini_ode_vars *vars = tov_mini_ode_vars_cast(y);
+    struct tov_mini_ode_vars *derivs = tov_mini_ode_vars_cast(dy);
+
+    LALSimNeutronStarEOS * eos = *(LALSimNeutronStarEOS **) params;
+
+    double r = vars->r;
+    double m = vars->m;
+    double H_k2 = vars->H_k2;
+    double b_k2 = vars->b_k2;
+
+    double p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos);
+    double e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h, eos);
+    double dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos);
+    /* Eq. (18) of Damour & Nagar PRD 80 084035 (2009). */
+    double A = 1.0 / (1.0 - 2.0 * m / r);
+    /* Eq. (28) of Damour & Nagar PRD 80 084035 (2009). */
+    double C1 = 2.0 / r + A * (2.0 * m / (r * r) + 4.0 * LAL_PI * r * (p - e));
+    /* Eq. (29) of Damour & Nagar PRD 80 084035 (2009). */
+    double C0_k2 = constant_zero_for_kl(r, m, A, e, p, dedp, 2);
+    double dr = -r * (r - 2.0 * m) / (m + 4.0 * LAL_PI * r * r * r * p);
+    double dm = 4.0 * LAL_PI * r * r * e * dr;
+
+    double dH_k2 = b_k2 * dr;
+    double db_k2 = -(C0_k2 * H_k2 + C1 * b_k2) * dr;
+
+    derivs->r = dr;
+    derivs->m = dm;
+    derivs->H_k2 = dH_k2;
+    derivs->b_k2 = db_k2;
+    return 0;
+}
+
 
 /**
  * @brief Integrates the stellar structure system of ordinary differential
- * equations to obtain neutron star's macroscopic parameters.
+ * equations to obtain a minimum number of neutron star's macroscopic parameters;
+ * can accomodate equations of state with phase transitions.
  * @details
  * Solves the Tolman-Oppenheimer-Volkoff stellar structure equations and
  * the gravito-electric tidal Love number equations, given an equation of
  * state and a central pressure. The solution to this set of ODEs provide
  * the neutron star's radius, gravitational mass and
- * second order gravito-electric tidal Love number.
+ * second order gravito-electric tidal Love number; it also accounts for
+ * corrections required for equations of state with phase transitions.
  * It uses the pseudo-enthalpy formalism introduced in Lindblom (1992)
  * Astrophys. J. 398 569 "Determining the Nuclear Equation of State from
  * Neutron-Star Masses and Radii".
@@ -880,7 +1023,7 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
  * @param[out] mass The gravitationnal mass of the star in kg.
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
- * @param eos Pointer to the Equation of State structure.
+ * @param eos Pointer to the multiple-parts Equation of State structure.
  * @param[in] epsrel The relative error for the numerical solver routine.
  */
 void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *mass,
@@ -926,9 +1069,9 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
     double h0 = hc + dh;
     double hmin;
     double h;
-
     tov_mini_initial_condition(ec, pc, dh, eos_part, vars);
     h = h0;
+
     for(int j = central_piece; j >= 0; j--) {
         LALSimNeutronStarEOS * eos_part_1 = XLALSimNeutronStarEOSPart(eos,j);
         params = eos_part_1;
@@ -969,42 +1112,36 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
     return ;
 }
 
-int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
-    double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos)
-{
-    const double epsrel = 1e-6;
-    return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
-}
 
-void XLALSimNeutronStarTOVODEExtendedIntegrate(double *radius, double *mass, double *baryon_mass,
-             double *love_number_k2, double *love_number_k3, double *love_number_k4,
-             double central_pressure_si,
-             EOSMultiParts *eos)
-{
-    const double epsrel = 1e-6;
-    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(radius, mass, baryon_mass, love_number_k2,
-                                                           love_number_k3, love_number_k4, central_pressure_si,
-                                                           eos, epsrel);
-    return ;
-}
-
+/**
+ * @brief Integrates the stellar structure system of ordinary differential
+ * equations to obtain a minimum number of neutron star's macroscopic parameters,
+ * with a solver relative precision 1e-6.; can accomodate equations of state with
+ * phase transitions.
+ * @details
+ * Solves the Tolman-Oppenheimer-Volkoff stellar structure equations and
+ * the gravito-electric tidal Love number equations, given an equation of
+ * state and a central pressure. The solution to this set of ODEs provide
+ * the neutron star's radius, gravitational mass and
+ * second order gravito-electric tidal Love number; it also accounts for
+ * corrections required for equations of state with phase transitions.
+ * It uses the pseudo-enthalpy formalism introduced in Lindblom (1992)
+ * Astrophys. J. 398 569 "Determining the Nuclear Equation of State from
+ * Neutron-Star Masses and Radii".
+ * The surface of the star is defined by a minimum pseudo-enthalpy of the
+ * input equation of state.
+ * @param[out] radius The radius of the star in m.
+ * @param[out] mass The gravitationnal mass of the star in kg.
+ * @param[out] love_number_k2 The k_2 tidal love number of the star.
+ * @param[in] central_pressure_si The central pressure of the star in Pa.
+ * @param eos Pointer to the multiple-parts Equation of State structure.
+ */
 void XLALSimNeutronStarTOVODEMiniIntegrate(double *radius, double *mass, double *love_number_k2,
                                        double central_pressure_si, EOSMultiParts *eos)
 {
     const double epsrel = 1e-6;
     XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
     return ;
-}
-
-
-int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
-    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
-    double *love_number_k2, double central_pressure_si,
-    LALSimNeutronStarEOS * eos)
-{
-    const double epsrel = 1e-6;
-    return XLALSimNeutronStarVirialODEIntegrateWithTolerance(radius, mass,
-    int1, int2, int3, int4, int5, int6, love_number_k2, central_pressure_si, eos, epsrel);
 }
 
 
