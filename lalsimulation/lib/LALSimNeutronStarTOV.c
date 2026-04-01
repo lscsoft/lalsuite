@@ -583,6 +583,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
  * @param[out] int5 Virial parameter.
  * @param[out] int6 Virial parameter.
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
+ * @param[in] central_pressure_si The central pressure of the star in Pa.
  * @param eos Pointer to the Equation of State structure.
  * @retval 0 Success.
  * @retval <0 Failure.
