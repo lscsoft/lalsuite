@@ -44,7 +44,7 @@
  * \author Hanna, C. R.
  *
  * \brief This header file includes all the necessary types and
- * function prototypes for LALNDTemplateBank() and LALMakeTemplateBank().
+ * function prototypes for LALNDTemplateBank().
  *
  * ### Synopsis ###
  *
@@ -118,15 +118,5 @@ LALNDTemplateBank(
 
 
 /** @} */ /* end:TemplateBankGeneration_h */
-
-#if 0
-void
-LALMakeTemplateBank(
-     	LALStatus *,
-     	TemplateBankType *,
-     	MakeTemplateBankInput *,
-     	MetadataTable *);
-     /* LALMakeTemplateBank(); */
-#endif
 
 #endif
