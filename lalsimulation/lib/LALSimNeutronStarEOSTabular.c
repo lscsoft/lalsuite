@@ -19,10 +19,15 @@
  */
 /**
  * @author Philip Davis, Micaela Oertel, Lami Suleiman, Leslie Wade
- * @addtogroup LALSimNeutronStarEOS_c
  * @brief Provides routines for tabulated equations of state
+ * @addtogroup LALSimNeutronStarEOS_c
  * @{
  */
+ /**
+ * @name Creation routines for tabulated equations of state
+ * @{
+ */
+
 
 #include <stdbool.h>
 #include <lal/LALSimReadData.h>
