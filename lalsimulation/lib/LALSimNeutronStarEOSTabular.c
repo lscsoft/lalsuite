@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 J. Creighton, B. Lackey
+ * Copyright (C) 2026 P. Davis, M. Oertel, L. Suleiman, L. Wade
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,11 +18,9 @@
  *  MA  02110-1301  USA
  */
 /**
+ * @author Philip Davis, Micaela Oertel, Lami Suleiman, Leslie Wade
  * @addtogroup LALSimNeutronStarEOS_c
- * @{
- */
-/**
- * @name Creation routines for tabulated equations of state
+ * @brief Provides routines for tabulated equations of state
  * @{
  */
 

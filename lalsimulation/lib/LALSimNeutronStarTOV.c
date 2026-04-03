@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 J. Creighton, B. Lackey
+ * Copyright (C) 2026 P. Davis, M. Oertel, L. Suleiman, L. Wade
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +18,7 @@
  *  MA  02110-1301  USA
  */
 /**
- * @author Jolien Creighton, Benjamin Lackey
+ * @author Jolien Creighton, Benjamin Lackey, Philip Davis, Micaela Oertel, Lami Suleiman, Leslie Wade
  * @addtogroup LALSimNeutronStarTOV_c
  * @brief Provides routines for solving the Tolman-Oppenheimer-Volkov equation.
  * @{
