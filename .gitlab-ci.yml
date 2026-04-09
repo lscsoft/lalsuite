@@ -95,7 +95,7 @@ variables:
   # --- default pipeline variables -------------------------------------
 
   # Docker development image
-  LCI_DEV_IMG: containers.ligo.org/lscsoft/lalsuite/dev
+  LCI_DEV_IMG: "${CI_REGISTRY}/lscsoft/lalsuite/dev"
 
   # use the Docker development image tags that have been tested (no suffix)
   LCI_DEV_TAG_SUFFIX: ""
