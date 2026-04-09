@@ -79,7 +79,7 @@ wheel:check:
         $LCI_PIPE_TYPE == "lalsuite-tag"
       when: always
 
-wheel:upload:
+wheel:deploy:
   extends:
     - .deploy-job
   needs:
