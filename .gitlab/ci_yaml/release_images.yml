@@ -41,7 +41,7 @@
     - .deploy-job
     - .docker-image-job
 
-snapshot-image:
+snapshot-image:deploy:
   extends:
     .release-image-job
   needs:
