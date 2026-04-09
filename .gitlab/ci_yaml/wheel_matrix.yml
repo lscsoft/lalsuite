@@ -28,13 +28,13 @@ wheel:linux-x86-64:
   extends:
     - .wheel-linux-job
     - .linux-job
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux_2_28_x86_64
+  image: "${CI_REGISTRY}/lscsoft/lalsuite-manylinux/manylinux_2_28_x86_64"
 
 wheel:linux-aarch64:
   extends:
     - .wheel-linux-job
     - .aarch64-job
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux_2_28_aarch64
+  image: "${CI_REGISTRY}/lscsoft/lalsuite-manylinux/manylinux_2_28_aarch64"
 
 .wheel-macos-matrix:
   parallel:
