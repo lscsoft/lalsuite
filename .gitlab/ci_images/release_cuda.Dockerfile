@@ -6,6 +6,10 @@ ARG UBU_VERSION_N
 
 FROM nvidia/cuda:${CUDA_VERSION}-runtime-ubuntu${UBU_VERSION_N}
 
+ARG CUDA_VERSION
+ARG UBU_VERSION
+ARG UBU_VERSION_N
+
 LABEL name="LALSuite Release Image - CUDA ${CUDA_VERSION} (Ubuntu ${UBU_VERSION})"
 LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
 LABEL support="Best Effort"
