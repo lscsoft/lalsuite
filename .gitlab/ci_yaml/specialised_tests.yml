@@ -52,7 +52,7 @@ lalinference:test-job:
     - tar xf ${TARBALL}
     - cd ${PACKAGE}-*/
     # run test job
-    - git -c "lfs.fetchinclude=**/params.dat,*/4s/**" clone https://git.ligo.org/lscsoft/ROQ_data
+    - git -c "lfs.fetchinclude=**/params.dat,*/4s/**" clone "https://${CI_SERVER_FQDN}/lscsoft/ROQ_data"
     - bash ./test/lalinference_nestedSampling_integration_test.sh
   artifacts:
     expire_in: 18h
