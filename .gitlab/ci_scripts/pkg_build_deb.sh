@@ -22,7 +22,7 @@ version=$(basename ${TARBALL} | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
 cp -v ${TARBALL} ../${PACKAGE}_${version}.orig.${suffix}
 
 # update changelog
-dch -v "${version}-1+local" -b 'Rebuilt automatically on git.ligo.org CI'
+dch -v "${version}-1+local" -b 'Rebuilt automatically by LALSuite GitLab-CI'
 
 # install build dependencies
 ${LCI_SCRIPTS}/retry mk-build-deps \
