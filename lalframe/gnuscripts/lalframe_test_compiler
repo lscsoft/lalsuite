@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set -e
+
+# get configured frame libraries to test against
+frame_libraries=""
+while test "x$1" != "x--"; do
+    frame_libraries="${frame_libraries} $1"
+    shift
+done
+shift
+
+# run tests against each configured frame library
+for frame_library in ${frame_libraries}; do
+    export LAL_FRAME_LIBRARY=${frame_library}
+    echo
+    echo ">>>>>>> Running test with LAL_FRAME_LIBRARY=${LAL_FRAME_LIBRARY}"
+    echo
+    eval "$@"
+    echo
+    echo "^^^^^^^ Test above was run with LAL_FRAME_LIBRARY=${LAL_FRAME_LIBRARY}"
+    echo
+done

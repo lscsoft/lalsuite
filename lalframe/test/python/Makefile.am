@@ -1,5 +1,8 @@
 include $(top_srcdir)/gnuscripts/lalsuite_test_python.am
 
+# Run tests against each configured frame library
+test_script_compiler = $(top_srcdir)/gnuscripts/lalframe_test_compiler $(FRAME_LIBRARIES_AVAILABLE) --
+
 # Add compiled test programs to this variable
 test_programs +=
 
