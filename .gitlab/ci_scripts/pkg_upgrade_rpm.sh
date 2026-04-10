@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------
 
 # install latest release
-${LCI_SCRIPTS}/retry dnf -y -q install lal* python*-lal* --exclude lalsuite*
+${LCI_SCRIPTS}/retry dnf -y -q install 'lal*' 'python*-lal*' --exclude 'lalsuite*'
 
 # create local repo for upstream RPMs
 local_repo="${CI_PROJECT_DIR}/local_repo"
@@ -23,4 +23,4 @@ gpgcheck=0
 EOF
 
 # upgrade all packages
-${LCI_SCRIPTS}/retry dnf -y upgrade lal* python*-lal*
+${LCI_SCRIPTS}/retry dnf -y upgrade 'lal*' 'python*-lal*'
