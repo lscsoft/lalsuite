@@ -83,6 +83,8 @@ cp -v ${upstream_debs} /srv/local-apt-repository
 # upgrade all packages
 apt-get -y -q update
 apt-get -y dist-upgrade
+apt-mark manual 'lal*' 'liblal*' 'python*-lal*'
+apt-get -y autoremove
 
 # print info
 dpkg-query --list
