@@ -3343,6 +3343,7 @@ LALH5Dataset * XLALH5TableAlloc(LALH5File UNUSED *file, const char UNUSED *name,
 		XLAL_ERROR_NULL(XLAL_EINVAL, "Attempting to write to a read-only HDF5 file");
 
 	/* map the LAL types to HDF5 types */
+	memset(dtype_id, 0, sizeof(dtype_id));
 	for (col = 0; col < ncols; ++col) {
 		dtype_id[col] = XLALH5TypeFromLALType(types[col]);
 		if (dtype_id[col] < 0)

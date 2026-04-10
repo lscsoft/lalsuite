@@ -27,9 +27,16 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
 #include <lal/Date.h>
+#include "config.h"
 
 #ifndef P_tmpdir
 #define P_tmpdir "/tmp"
+#endif
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
 #endif
 
 /* suppress warnings from FrameC headers; remove this when headers are fixed */
@@ -543,8 +550,15 @@ double XLALFrameUFrameHQueryGTimeModf_FrameC_(double *iptr, const LALFrameUFrame
 
 int XLALFrameUFrameHQueryULeapS_FrameC_(const LALFrameUFrameH * frame)
 {
+#ifdef FRAMEC_FRAME_H_HAS_ULEAPS
     frame_h_uleaps_t uleaps;
     TRY_FRAMEC_FUNCTION_VAL(uleaps, -1, FrameCFrameHQuery, frame, FRAME_H_FIELD_ULEAPS, &uleaps, FRAME_H_FIELD_LAST);
+#else
+    /* frame header no longer has leap seconds in version 9 */
+    double sec;
+    XLALFrameUFrameHQueryGTimeModf_FrameC_(&sec, frame);
+    return XLALGPSLeapSeconds(sec);
+#endif
 }
 
 double XLALFrameUFrameHQueryDt_FrameC_(const LALFrameUFrameH * frame)
@@ -928,7 +942,7 @@ LALFrameUFrDetector *XLALFrameUFrDetectorRead_FrameC_(LALFrameUFrFile * stream, 
 
 LALFrameUFrDetector *XLALFrameUFrDetectorAlloc_FrameC_(const char *name,
     const char *prefix, double latitude, double longitude, double elevation,
-    double azimuthX, double azimuthY, double altitudeX, double altitudeY, double midpointX, double midpointY, int localTime)
+    double azimuthX, double azimuthY, double altitudeX, double altitudeY, double midpointX, double midpointY, int localTime UNUSED)
 {
     LALFrameUFrDetector *detector;
     int err;
@@ -937,9 +951,16 @@ LALFrameUFrDetector *XLALFrameUFrDetectorAlloc_FrameC_(const char *name,
         return NULL;
     if (prefix)
         memcpy(detector->prefix, prefix, 2);
+#ifdef FRAMEC_FR_DETECTOR_HAS_LOCAL_TIME
     CALL_FRAMEC_FUNCTION_RETVAL(detector->handle, err, FrameCFrDetectorAlloc,
         name, prefix, latitude, longitude, elevation, azimuthX, azimuthY,
         altitudeX, altitudeY, midpointX, midpointY, localTime);
+#else
+    /* FrDetector structure no longer has localTime in version 9 */
+    CALL_FRAMEC_FUNCTION_RETVAL(detector->handle, err, FrameCFrDetectorAlloc,
+        name, prefix, latitude, longitude, elevation, azimuthX, azimuthY,
+        altitudeX, altitudeY, midpointX, midpointY);
+#endif
     if (err || !detector->handle) {
         XLALFrameUFrDetectorFree_FrameC_(detector);
         return NULL;
@@ -1024,11 +1045,16 @@ double XLALFrameUFrDetectorQueryArmYMidpoint_FrameC_(const LALFrameUFrDetector *
         detector->handle, FR_DETECTOR_FIELD_ARM_Y_MIDPOINT, &armYmidpoint, FR_DETECTOR_FIELD_LAST);
 }
 
-int XLALFrameUFrDetectorQueryLocalTime_FrameC_(const LALFrameUFrDetector * detector)
+int XLALFrameUFrDetectorQueryLocalTime_FrameC_(const LALFrameUFrDetector * detector UNUSED)
 {
+#ifdef FRAMEC_FR_DETECTOR_HAS_LOCAL_TIME
     fr_detector_localtime_t localTime;
     TRY_FRAMEC_FUNCTION_VAL(localTime, -1.0, FrameCFrDetectorQuery,
         detector->handle, FR_DETECTOR_FIELD_LOCAL_TIME, &localTime, FR_DETECTOR_FIELD_LAST);
+#else
+    /* FrDetector structure no longer has localTime in version 9 */
+    return 1; /* "If localTime%1800 != 0 then localTime is undefined." */
+#endif
 }
 
 /*

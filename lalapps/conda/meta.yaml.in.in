@@ -121,7 +121,7 @@ test:
     - ldas-tools-framecpp
   commands:
     # set up test data (creates Z-ilwd_test_frame-600000000-1.gwf)
-    - framecpp_sample
+    - framecpp_sample --version=8
     # run --help
     - lalapps_binj --help
     - lalapps_blindinj --help

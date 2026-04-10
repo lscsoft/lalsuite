@@ -160,8 +160,10 @@ int dumpdetector(LALFrameUFrFile * frfile, size_t det)
      */
 
     indent;
-    printf("FrDetector %zu %s (%s): local time = %d\n", det, name, prefix,
-        loctime);
+    if (loctime % 1800 == 0)
+        printf("FrDetector %zu %s (%s): local time = %d\n", det, name, prefix, loctime);
+    else
+        printf("FrDetector %zu %s (%s): local time is undefined\n", det, name, prefix);
 
     XLALFrameUFrTOCFree(toc);
     XLALFrameUFrDetectorFree(detector);
