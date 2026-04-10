@@ -26,3 +26,5 @@ cp -v ${upstream_debs} /srv/local-apt-repository
 # upgrade all packages
 ${LCI_SCRIPTS}/retry apt-get -y -q update
 ${LCI_SCRIPTS}/retry apt-get -y dist-upgrade
+apt-mark manual 'lal*' 'liblal*' 'python*-lal*'
+apt-get -y autoremove
