@@ -190,6 +190,7 @@ def solsbetweenknots(
 
 points = []
 
+
 # Calculates model value at given point for basis function coeffs 'coeffs' and parameter values 'params'
 def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=False):
 
