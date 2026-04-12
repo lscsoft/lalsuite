@@ -36,6 +36,7 @@ import numpy as np
 
 knotslist = [0.0]
 
+
 # Returns the value of the ith knot. If we are using the methods in the estimating_knots module, this method should
 # simply extract the ith element from the knotslist variable above.
 def p(i):
@@ -140,6 +141,7 @@ def allcoeffs(s):
 
 
 # allcoeffs(3, 10, 10000)
+
 
 # Returns the value of a specified basis function given the 4D list of coefficients coeffs.
 def basisfunctionvalue(t, i, borc, s, coeffs):
