@@ -96,6 +96,7 @@ model = het.model(parupdate, usephase=True, updateSSB=True)
 ~~~
 
 """
+
 ## @{
 
 from __future__ import division, print_function
@@ -118,7 +119,6 @@ except ImportError:
     raise ImportError("Cannot import PulsarParametersPy class")
 
 from . import git_version
-
 
 __author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__ = git_version.id
