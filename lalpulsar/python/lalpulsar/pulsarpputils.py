@@ -271,8 +271,7 @@ def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
     else:
         forperr = porferr / porf**2.0
         fdorpderr = np.sqrt(
-            (4.0 * pdorfd**2.0 * porferr**2.0) / porf**6.0
-            + pdorfderr**2.0 / porf**4.0
+            (4.0 * pdorfd**2.0 * porferr**2.0) / porf**6.0 + pdorfderr**2.0 / porf**4.0
         )
         [forp, fdorpd] = p_to_f(porf, pdorfd)
 
@@ -720,9 +719,7 @@ class psr_prior:
 # (Hz), spin-down (Hz/s) and distance (kpc). The canonical value of moment of
 # inertia of 1e38 kg m^2 is used
 def spin_down_limit(freq, fdot, dist):
-    hsd = np.sqrt((5.0 / 2.0) * (G / C**3) * I38 * np.fabs(fdot) / freq) / (
-        dist * KPC
-    )
+    hsd = np.sqrt((5.0 / 2.0) * (G / C**3) * I38 * np.fabs(fdot) / freq) / (dist * KPC)
 
     return hsd
 
