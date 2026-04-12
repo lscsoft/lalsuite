@@ -31,6 +31,7 @@ from . import errors
 # In this module we build the methods that generate the semi-coherent metric for our piecewise model. Each piecewise
 # segment being a semi-coherent segment.
 
+
 # This method checks whether an integral on the lth segment (starting from a segment number 0) will have a non-zero
 # value if we integrate a basis function attached to the parameter with coordinates (i, borc) (ommitting the s value
 # as this does not effect whether this integral is non-zero or not).
