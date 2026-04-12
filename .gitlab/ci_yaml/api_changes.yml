@@ -168,7 +168,7 @@ cmp-last-release-api:
     - |
       ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
           ${CI_SERVER_URL} lscsoft/lalsuite \
-          get-artifacts --latest-tag lalsuite-v lint:api-dump-release   ### TOFIX ###
+          get-artifacts --latest-tag lalsuite-v dump-release-api
       api_dump_tarball="api-dump-release-v${API_DUMP_VERSION}.tar.bz2"
       if [ ! -f ${api_dump_tarball} ]; then
         echo "WARNING: API dump tarball not found: ${api_dump_tarball}"
