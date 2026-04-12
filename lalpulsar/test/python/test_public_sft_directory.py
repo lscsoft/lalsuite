@@ -19,7 +19,6 @@ import pytest
 
 from lalpulsar.public_sft_directory import public_sft_directory
 
-
 SFT_FILENAME_TO_DIRECTORY = (
     (
         "H-1_H1_1800SFT_O4RUN+R1+Choft+WTKEY5-1257800000-1800.sft",
