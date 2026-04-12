@@ -1732,9 +1732,7 @@ class posteriors:
                             )  # no value for this parameter
 
                 if i == 0:
-                    self._injection_credible_regions[
-                        ifo
-                    ] = (
+                    self._injection_credible_regions[ifo] = (
                         {}
                     )  # dictionary for injection minimal credible regions to be input for each parameter
                 maxL, maxLparams = self._posteriors[ifo].maxL
