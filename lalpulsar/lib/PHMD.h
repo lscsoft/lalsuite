@@ -126,30 +126,30 @@ typedef REAL8 HoughDT; /* for weighted hough maps */
 /**
  * \brief This structure stores the ``peak-gram''
  */
-  typedef struct tagHOUGHPeakGram{
-    INT2    timeIndex;  /**< The time index of the peak-gram */
-    REAL8   deltaF;     /**< Frequency resolution: <tt>df=1/TCOH</tt> */
-    UINT8   fBinIni;    /**< Frequency index of the first element of the spectrum covered by this peak-gram; it can be seen as an offset */
-    UINT8   fBinFin;    /**< Frequency index of the last element of the spectrum covered by this peak-gram */
-    UINT4   length;     /**< Number of peaks present in the peak-gram */
-    INT4    *peak;      /**< The peak indices relative to \c fBinIni, i.e., the zero peak  corresponds to \c fBinIni */
-  } HOUGHPeakGram;
+typedef struct tagHOUGHPeakGram {
+  INT2    timeIndex;  /**< The time index of the peak-gram */
+  REAL8   deltaF;     /**< Frequency resolution: <tt>df=1/TCOH</tt> */
+  UINT8   fBinIni;    /**< Frequency index of the first element of the spectrum covered by this peak-gram; it can be seen as an offset */
+  UINT8   fBinFin;    /**< Frequency index of the last element of the spectrum covered by this peak-gram */
+  UINT4   length;     /**< Number of peaks present in the peak-gram */
+  INT4    *peak;      /**< The peak indices relative to \c fBinIni, i.e., the zero peak  corresponds to \c fBinIni */
+} HOUGHPeakGram;
 
 /**
  * \brief This structure stores a partial Hough map derivative
  */
-typedef struct tagHOUGHphmd{
-  UINT8          fBin;  	/**< Frequency bin of this partial map derivative */
-  UINT2          lengthLeft; 	/**< Exact number of \e Left borders */
-  UINT2          lengthRight;	/**< Exact number of \e Right borders */
-  UINT2          maxNBorders; 	/**< Maximun number of borders of each type (for memory allocation purposes),
+typedef struct tagHOUGHphmd {
+  UINT8          fBin;    /**< Frequency bin of this partial map derivative */
+  UINT2          lengthLeft;  /**< Exact number of \e Left borders */
+  UINT2          lengthRight; /**< Exact number of \e Right borders */
+  UINT2          maxNBorders;   /**< Maximun number of borders of each type (for memory allocation purposes),
                                  * i.e.\ length of <tt>*leftBorderP</tt> and <tt>*rightBorderP</tt>
                                  */
   HOUGHBorder    **leftBorderP; /**< Pointers to borders */
   HOUGHBorder    **rightBorderP;/**< Pointers to borders */
-  UINT2          ySide;  	/**< number of elements of firstColumn */
-  UCHAR          *firstColumn; 	/**< Number of elements of \c firstColumn */
-  HoughDT        weight; 	/**< First column border, containing the edge effects  when clipping on a finite patch */
+  UINT2          ySide;   /**< number of elements of firstColumn */
+  UCHAR          *firstColumn;  /**< Number of elements of \c firstColumn */
+  HoughDT        weight;  /**< First column border, containing the edge effects  when clipping on a finite patch */
 } HOUGHphmd;
 
 /*
@@ -160,11 +160,11 @@ typedef struct tagHOUGHphmd{
  * 12. Functions Declarations (i.e., prototypes).
  */
 
-void LALHOUGHPeak2PHMD (LALStatus    *status,
-			HOUGHphmd    *phmd,
-			HOUGHptfLUT  *lut,
-			HOUGHPeakGram *pg
-			);
+void LALHOUGHPeak2PHMD( LALStatus    *status,
+                        HOUGHphmd    *phmd,
+                        HOUGHptfLUT  *lut,
+                        HOUGHPeakGram *pg
+                      );
 
 /** @} */
 #ifdef  __cplusplus
