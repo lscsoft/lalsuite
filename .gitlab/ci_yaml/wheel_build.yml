@@ -94,7 +94,7 @@ wheel:deploy:
     PYPI_CLEANUP_PASSWORD: "${TWINE_PASSWORD}"
   script:
     # cleanup old wheels
-    - ${LCI_SCRIPTS}/retry pypi-cleanup --username ${TWINE_USERNAME} --package lalsuite --days 365 --verbose --query-only ### TOFIX ###
+    - ${LCI_SCRIPTS}/retry pypi-cleanup --username ${TWINE_USERNAME} --package lalsuite --days 365 --verbose
     # upload wheels to PyPI
     - ${LCI_SCRIPTS}/retry python -m twine upload wheelhouse/*
   rules:
