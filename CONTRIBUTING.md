@@ -346,10 +346,10 @@ pipelines of interest to developers are:
 1. The *merge* CI pipeline runs when you are ready to submit your changes to the
    upstream LALSuite fork via a merge request. This pipeline runs a much more
    comprehensive series of checks that LALSuite still builds and passes its
-   tests with a wide variety of platforms (e.g. MacOS, various Linux
-   distributions) and compilers (e.g. `clang`, `icc`, `gcc`). It also checks
-   that LALSuite packages for a number of package management systems (e.g. RPM,
-   Debian, Conda, Python wheels) are built correctly.
+   tests with a wide variety of platforms (MacOS, various Linux distributions)
+   and compilers (`clang`, `gcc`). It also checks that LALSuite packages for a
+   number of package management systems (RPM, Debian, CUDA, Conda, Python
+   wheels) are built correctly.
 
 To trigger the *merge* CI pipeline from a regular commit push (in place of the
 *push* pipeline), you can add the special text `[ci merge]` to the commit
@@ -359,15 +359,61 @@ changes pass the *merge* CI pipeline before opening the merge request.
 For reference, the following table gives the complete list of CI pipelines and
 how to trigger then:
 
-| Pipeline                                 | Commit message trigger | Other triggers                                    |
-| ---------------------------------------- | ---------------------- | --------------------------------------------------|
-| Build and deploy Doxygen documentation   | `[ci sched doc]`       | Schedule variable `LCI_PIPE_TYPE=sched-doc`       |
-| Build and test Docker development images | `[ci sched devimg]`    | Schedule variable `LCI_PIPE_TYPE=sched-devimg`    |
-| Build snapshot Docker images and wheels  | `[ci sched snapshot]`  | Schedule variable `LCI_PIPE_TYPE=sched-snapshot`  |
-| Debug tracking of API changes            | `[ci debug api]`       |                                                   |
-| LALSuite tags                            | `[ci lalsuite tag]`    | `lscsoft/lalsuite` branches matching `/^release/` |
-| Merge requests                           | `[ci merge]`           |                                                   |
-| Post-merge request tasks                 | `[ci postmerge]`       |                                                   |
+<table>
+    <thead>
+        <tr>
+            <th>Pipeline</th>
+            <th>Triggers</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Build and test Docker development images</td>
+            <td>
+                Commit message: <code>[ci sched devimg]</code><br/>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-devimg</code>
+            </td>
+        </tr>
+        <tr>
+            <td>Build snapshot Docker images and wheels</td>
+            <td>
+                Commit message: <code>[ci sched snapshot]</code><br/>
+                Schedule variable <code>LCI_PIPE_TYPE=sched-snapshot</code>
+            </td>
+        </tr>
+        <tr>
+            <td>Build and deploy Doxygen documentation</td>
+            <td>
+                Commit message: <code>[ci sched doc]</code><br/>
+                Schedule variable <code>LCI_PIPE_TYPE=sched-doc</code>
+            </td>
+        </tr>
+        <tr>
+            <td>LALSuite release tag</td>
+            <td>
+                Branch name: <code>/^release/</code>, location: <code>lscsoft/lalsuite</code>
+            </td>
+        </tr>
+        <tr>
+            <td>Merge request</td>
+            <td>
+                Commit message: <code>[ci merge]</code>
+            </td>
+        </tr>
+        <tr>
+            <td>Post-merge request tasks</td>
+            <td>
+                Commit message: <code>[ci postmerge]</code>
+            </td>
+        </tr>
+        <tr>
+            <td>Debug jobs that track API changes</td>
+            <td>
+                Commit message: <code>[ci debug api]</code>
+            </td>
+        </tr>
+    </tbody>
+</table>
 
 ## More information
 
