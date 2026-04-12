@@ -18,6 +18,7 @@
 Tools to estimate Nstar and related functions
 
 """
+
 from __future__ import division, absolute_import, print_function
 
 import pprint
