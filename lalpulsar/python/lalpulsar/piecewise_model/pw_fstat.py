@@ -36,6 +36,7 @@ from . import gte_and_other_methods as gom
 from . import semicoherent_metric_methods as scmm
 from . import tbank_estimates as tbe
 
+
 # Returns our FstatInput object, currently uses SFTs built in pwsim
 # fmax (and fmin) should be chosen with the same reasoning outlined in the pwsim notbook. fmax = f0 + 10^-4 * f0 + 58/TSFT,
 # fmin is the same except fmin = f0 - .... AND fmin should be lower than the minimum value any given template we might use
