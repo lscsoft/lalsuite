@@ -135,13 +135,9 @@ static double eos_e_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
     if (p == 0.0)
 	return 0.0;
     log_p = log(p);
-    if (log_p > eos->data.tabular->log_pdat[eos->data.tabular->ndat-1] + tol) {
-        fprintf(stderr, "DEBUG eos_e_of_p: log_p=%.16e log_pmax=%.16e diff=%.6e\n",
-                log_p, eos->data.tabular->log_pdat[eos->data.tabular->ndat-1],
-                log_p - eos->data.tabular->log_pdat[eos->data.tabular->ndat-1]);
+    if (log_p > eos->data.tabular->log_pdat[eos->data.tabular->ndat-1] + tol)
         XLAL_ERROR_REAL8(XLAL_EDOM,
             "Pressure p=%.5e is above the EOS interpolation range.", p);
-    }
     // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_p = clamp_to_range_tol(log_p, eos->data.tabular->log_pdat[0],
         eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], tol);
