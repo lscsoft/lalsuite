@@ -30,6 +30,7 @@
 
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <lal/LALSimReadData.h>
 #include <gsl/gsl_interp.h>
 #include <lal/LALSimNeutronStar.h>
@@ -134,9 +135,13 @@ static double eos_e_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
     if (p == 0.0)
 	return 0.0;
     log_p = log(p);
-    if (log_p > eos->data.tabular->log_pdat[eos->data.tabular->ndat-1] + tol)
+    if (log_p > eos->data.tabular->log_pdat[eos->data.tabular->ndat-1] + tol) {
+        fprintf(stderr, "DEBUG eos_e_of_p: log_p=%.16e log_pmax=%.16e diff=%.6e\n",
+                log_p, eos->data.tabular->log_pdat[eos->data.tabular->ndat-1],
+                log_p - eos->data.tabular->log_pdat[eos->data.tabular->ndat-1]);
         XLAL_ERROR_REAL8(XLAL_EDOM,
             "Pressure p=%.5e is above the EOS interpolation range.", p);
+    }
     // Clamp to interpolation range within tolerance to handle floating-point roundoff
     log_p = clamp_to_range_tol(log_p, eos->data.tabular->log_pdat[0],
         eos->data.tabular->log_pdat[eos->data.tabular->ndat-1], tol);
@@ -919,6 +924,30 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
     XLAL_CHECK_NULL(energy_density->length == pressure->length, XLAL_ESIZE,
         "energy_density and pressure must have the same length");
     return XLALSimNeutronStarEOSFromTabData(
+        NULL, energy_density->data, pressure->data,
+        NULL, NULL, NULL, NULL, NULL, pressure->length);
+}
+
+/**
+ * @brief Creates a phase-transition-aware tabulated neutron star equation of
+ * state from energy density and pressure arrays.
+ * @details This is a convenience wrapper around
+ * XLALSimNeutronStarEOSFromTabDataPhaseTransition that accepts REAL8Vector
+ * inputs, making it usable from Python via SWIG. Use this instead of
+ * XLALSimNeutronStarEOSFromArrays when the EOS contains a first-order phase
+ * transition (i.e., pressure is not strictly increasing).
+ *
+ * @param energy_density Array for the energy density (in m^-2).
+ * @param pressure Array for the pressure (in m^-2).
+ * @return A pointer to EOSMultiParts equation of state structure.
+ */
+EOSMultiParts *XLALSimNeutronStarEOSFromArraysPhaseTransition(
+    const REAL8Vector *energy_density, const REAL8Vector *pressure)
+{
+    XLAL_CHECK_NULL(energy_density && pressure, XLAL_EFAULT);
+    XLAL_CHECK_NULL(energy_density->length == pressure->length, XLAL_ESIZE,
+        "energy_density and pressure must have the same length");
+    return XLALSimNeutronStarEOSFromTabDataPhaseTransition(
         NULL, energy_density->data, pressure->data,
         NULL, NULL, NULL, NULL, NULL, pressure->length);
 }

@@ -229,6 +229,9 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition(double *nbdat, do
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
     const REAL8Vector *energy_density, const REAL8Vector *pressure);
 
+EOSMultiParts *XLALSimNeutronStarEOSFromArraysPhaseTransition(
+    const REAL8Vector *energy_density, const REAL8Vector *pressure);
+
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double

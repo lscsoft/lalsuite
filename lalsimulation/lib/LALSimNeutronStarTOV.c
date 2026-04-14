@@ -799,7 +799,7 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     /* Equations of state quantities at the center of the star */
     double pc = central_pressure_si * LAL_G_C4_SI; // convert the pressure from Pascal to geometrized units [/m^2]
     int number_eos = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    int central_piece = 0;
+    int central_piece = 0; // default to first piece; handles floating-point edge case at pmin
     for(int j = 0; j < number_eos; j++){
         double pmin_piece = XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, j);
         double pmax_piece = XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, j);
@@ -807,6 +807,8 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
             central_piece = j;
             break;
         }
+        if (pc > pmax_piece)
+            central_piece = j; // track last piece whose range pc exceeded; handles floating-point edge case at pmax
     }
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, central_piece);
     double ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(pc, eos_part);
@@ -815,7 +817,7 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     /* Initial condition */
     double dh = -1e-12 * hc;
     double h0 = hc + dh;
-    double hmin;
+    double hmin = 0.0;
     double h;
     tov_ext_initial_condition(ec, pc, dh, eos_part, vars);
     h = h0;
@@ -1052,7 +1054,7 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
     /* Equations of state quantities at the center of the star */
     double pc = central_pressure_si * LAL_G_C4_SI; // convert the pressure from Pascal to geometrized units [/m^2]
     int number_eos = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    int central_piece = 0;
+    int central_piece = 0; // default to first piece; handles floating-point edge case at pmin
     for(int j = 0; j < number_eos; j++){
         double pmin_piece = XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, j);
         double pmax_piece = XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, j);
@@ -1060,6 +1062,8 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
             central_piece = j;
             break;
         }
+        if (pc > pmax_piece)
+            central_piece = j; // track last piece whose range pc exceeded; handles floating-point edge case at pmax
     }
     LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, central_piece);
     double ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(pc, eos_part);
@@ -1069,7 +1073,7 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
     /* Initial condition */
     double dh = -1e-12 * hc;
     double h0 = hc + dh;
-    double hmin;
+    double hmin = 0.0;
     double h;
     tov_mini_initial_condition(ec, pc, dh, eos_part, vars);
     h = h0;
