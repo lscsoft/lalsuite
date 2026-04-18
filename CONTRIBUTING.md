@@ -371,6 +371,7 @@ how to trigger then:
             <td>Build and test Docker development images</td>
             <td>
                 Commit message: <code>[ci sched devimg]</code><br/>
+                OR<br/>
                 Schedule variable: <code>LCI_PIPE_TYPE=sched-devimg</code>
             </td>
         </tr>
@@ -378,20 +379,23 @@ how to trigger then:
             <td>Build snapshot Docker images and wheels</td>
             <td>
                 Commit message: <code>[ci sched snapshot]</code><br/>
-                Schedule variable <code>LCI_PIPE_TYPE=sched-snapshot</code>
+                OR<br/>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-snapshot</code>
             </td>
         </tr>
         <tr>
             <td>Build and deploy Doxygen documentation</td>
             <td>
                 Commit message: <code>[ci sched doc]</code><br/>
-                Schedule variable <code>LCI_PIPE_TYPE=sched-doc</code>
+                OR<br/>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-doc</code>
             </td>
         </tr>
         <tr>
             <td>LALSuite release tag</td>
             <td>
-                Branch name: <code>/^release/</code>, location: <code>lscsoft/lalsuite</code>
+                Branch name matches: <code>/^release/</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code>
             </td>
         </tr>
         <tr>
