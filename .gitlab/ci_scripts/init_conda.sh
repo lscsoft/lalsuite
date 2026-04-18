@@ -6,23 +6,20 @@
 source ${CONDA_ROOT}/etc/profile.d/conda.sh
 conda activate base
 
-# recreate environment for CI jobs
-# - if not running under the Conda container
-# - assume base environment is correctly set up
-if ! conda list --name lalsuite-ci; then
+# configure Conda options
+conda config --set always_yes yes
+conda config --add channels conda-forge
+conda config --set channel_priority strict
 
-    # configure Conda options
-    conda config --set always_yes yes
-    conda config --add channels conda-forge
-    conda config --set channel_priority strict
+# try to activate environment
+if ! conda activate lalsuite-ci; then
 
-    # create environment for CI jobs
+    # recreate environment for CI jobs
+    # - if not running under the Conda container
+    # - assume base environment is correctly set up
     conda create --quiet --name lalsuite-ci
 
 fi
-
-# activate environment
-conda activate lalsuite-ci
 
 # print info
 conda info --all
