@@ -68,7 +68,7 @@ pages-doc:
     paths:
       - public
   rules:
-    ### TOFIX - !reference [.deploy-check-execute, rules]
+    - !reference [.deploy-check-execute, rules]
     - if: >
         $LCI_PIPE_TYPE == "sched-doc"
     - if: >
