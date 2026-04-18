@@ -71,6 +71,8 @@ wheel:check:
       ls wheelhouse/
       echo "----------------------------"
     # verify wheels
+    - python -m venv "${LCI_TMPDIR}/venv-check"
+    - source "${LCI_TMPDIR}/venv-check/bin/activate"
     - python -m pip check wheelhouse.*
   rules:
     - if: >
