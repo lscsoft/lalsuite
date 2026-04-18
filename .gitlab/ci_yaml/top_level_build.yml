@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------
 
 .top-level-job:
-  stage: Top-level builds
+  stage: top-level
   image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
   extends:
     - .tarball-build-job

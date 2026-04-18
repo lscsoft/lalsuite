@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------
 
 .wheel-job:
-  stage: Top-level builds
+  stage: top-level
   needs: []
   artifacts:
     expire_in: 18h

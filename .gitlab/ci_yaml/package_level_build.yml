@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------
 
 .pkg-level-job:
-  stage: Package-level builds
+  stage: package-level
   image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
   extends:
     - .linux-job
@@ -263,7 +263,7 @@ lalapps:
     - !reference [.default-matrix-rule, rules]
 
 upgrade:
-  stage: Package-level builds
+  stage: package-level
   image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
   extends:
     - .linux-job

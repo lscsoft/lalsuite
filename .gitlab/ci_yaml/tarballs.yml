@@ -11,7 +11,7 @@
 # since tarball build jobs do not check out the Git repository, serve
 # the CI scripts to tarballs jobs as a separate artifact
 ci-scripts:
-  stage: Input sources
+  stage: input-sources
   image: docker:latest
   extends:
     - .linux-job
@@ -43,7 +43,7 @@ ci-scripts:
 
 # base tarball job
 .tarballs-job:
-  stage: Input sources
+  stage: input-sources
   extends:
     - .linux-job
   needs:

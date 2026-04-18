@@ -8,7 +8,7 @@ include:
   # https://git.ligo.org/explore/catalog/computing/gitlab/components/sast
   - component: '${CI_SERVER_FQDN}/computing/gitlab/components/sast/sast@~latest'
     inputs:
-      stage: Code quality
+      stage: code-quality
       run_advanced_sast: true
 
 gitlab-advanced-sast:
@@ -35,7 +35,7 @@ semgrep-sast:
 
 # code quality job
 .code-quality-job:
-  stage: Code quality
+  stage: code-quality
   extends:
     - .linux-job
   needs:

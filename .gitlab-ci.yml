@@ -26,12 +26,12 @@ include:
 # -- CI pipeline setup -------------------------------------------------
 
 stages:
-  - Pipeline errors
-  - Input sources
-  - Code quality
-  - Package-level builds
-  - Top-level builds
-  - Deployment actions
+  - pipeline-errors
+  - input-sources
+  - code-quality
+  - package-level
+  - top-level
+  - deploy
 
 variables:
   # job stage attempts
@@ -352,7 +352,7 @@ workflow:
 # -- CI job for displaying pipeline setup errors -----------------------
 
 pipeline-error:
-  stage: Pipeline errors
+  stage: pipeline-errors
   image: docker:latest
   variables:
     GIT_STRATEGY: none
@@ -442,7 +442,7 @@ default:
 
 # deploy job defaults
 .deploy-job:
-  stage: Deployment actions
+  stage: deploy
 
   # do not retry jobs
   retry: 0
