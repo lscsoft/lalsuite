@@ -6,6 +6,12 @@
 %undefine snapshot
 %endif
 
+# To build without FrameC support: rpmbuild --without framec ...
+%bcond_without framec
+
+# To build without FrameL support: rpmbuild --without framel ...
+%bcond_without framel
+
 # -- metadata ---------------
 
 Name: @PACKAGE@
@@ -23,10 +29,14 @@ Prefix: %{_prefix}
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: help2man >= 1.37
+%if %{with framec}
 BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
 BuildRequires: ldas-tools-framecpp-c-devel <  @MAX_FRAMECPPC_VERSION@
+%endif
+%if %{with framel}
 BuildRequires: libframel-devel >= @MIN_FRAMEL_VERSION@
 BuildRequires: libframel-devel <  @MAX_FRAMEL_VERSION@
+%endif
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
@@ -57,10 +67,14 @@ This package provides the runtime tools.
 # liblalframe
 %package -n lib%{name}
 Summary: LVK Algorithm Frame Library - library package
+%if %{with framec}
 Requires: ldas-tools-framecpp-c >= @MIN_FRAMECPPC_VERSION@
 Requires: ldas-tools-framecpp-c <  @MAX_FRAMECPPC_VERSION@
+%endif
+%if %{with framel}
 Requires: libframel >= @MIN_FRAMEL_VERSION@
 Requires: libframel <  @MAX_FRAMEL_VERSION@
+%endif
 Requires: liblal >= @MIN_LAL_VERSION@
 Conflicts: lalframe <= 1.5.2-1
 %description -n lib%{name}
@@ -72,10 +86,14 @@ that use the LAL Frame library.
 %package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Frame
 Requires: lib%{name} = %{version}-%{release}
+%if %{with framec}
 Requires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
 Requires: ldas-tools-framecpp-c-devel <  @MAX_FRAMECPPC_VERSION@
+%endif
+%if %{with framel}
 Requires: libframel-devel >= @MIN_FRAMEL_VERSION@
 Requires: libframel-devel <  @MAX_FRAMEL_VERSION@
+%endif
 Requires: liblal-devel >= @MIN_LAL_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 1.5.3-1
@@ -111,7 +129,18 @@ This package provides the Octave bindings for LALFrame.
 %setup -q -n %{name}-%{version}%{?snapshot:.%{snapshot}}
 
 %build
-%configure %{configure_opts} --sysconfdir=%{_sysconfdir} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
+%configure %{configure_opts} \
+%if %{with framec}
+    --enable-framec \
+%else
+    --disable-framec \
+%endif
+%if %{with framel}
+    --enable-framel \
+%else
+    --disable-framel \
+%endif
+    --sysconfdir=%{_sysconfdir} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
 %check
