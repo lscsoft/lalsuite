@@ -54,8 +54,9 @@ doxygen-doc:
 pages-doc:
   pages:
     path_prefix: "${PATH_PREFIX}"
+    expire_in: never
   environment:
-    name: "Doxygen documentation for ${PATH_PREFIX}"
+    name: "Documentation"
     url: "${CI_PAGES_URL}"
   extends:
     - .deploy-job
@@ -67,7 +68,7 @@ pages-doc:
     paths:
       - public
   rules:
-    - !reference [.deploy-check-execute, rules]
+    ### TOFIX - !reference [.deploy-check-execute, rules]
     - if: >
         $LCI_PIPE_TYPE == "sched-doc"
     - if: >
