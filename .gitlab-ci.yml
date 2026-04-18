@@ -377,9 +377,6 @@ cache:
 # job defaults
 default:
 
-  # default to Conda container for non-build and other jobs
-  image: "${LCI_DEV_IMG}:dev-conda-py312${LCI_DEV_TAG_SUFFIX}"
-
   # cancel job when a newer pipeline starts
   interruptible: true
 
@@ -414,6 +411,18 @@ default:
 # - see https://gitlab.com/gitlab-org/gitlab/-/issues/213634
 .default-timeout:
   timeout: 3h
+
+# use Conda environment for generic jobs
+.generic-job:
+  image: "${LCI_DEV_IMG}:dev-conda-py312${LCI_DEV_TAG_SUFFIX}"
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image
+      optional: true
+  before_script:
+    - !reference [default, before_script]
+    # initialise Conda environment
+    - source ${LCI_SCRIPTS}/init_conda.sh
 
 # Docker image job defaults
 .docker-image-job:

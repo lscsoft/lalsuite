@@ -37,15 +37,8 @@ semgrep-sast:
 .code-quality-job:
   stage: code-quality
   extends:
+    - .generic-job
     - .linux-job
-  needs:
-    # make sure the development images are built first
-    - job: dev-image
-      optional: true
-  before_script:
-    - !reference [default, before_script]
-    # initialise Conda environment
-    - source ${LCI_SCRIPTS}/init_conda.sh
 
 # check CI serial
 ci-serial-check:

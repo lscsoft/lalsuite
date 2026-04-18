@@ -45,11 +45,8 @@ ci-scripts:
 .tarballs-job:
   stage: input-sources
   extends:
+    - .generic-job
     - .linux-job
-  needs:
-    # make sure the development images are built first
-    - job: dev-image
-      optional: true
   script:
     # initialise Conda environment
     - source ${LCI_SCRIPTS}/init_conda.sh

@@ -3,8 +3,10 @@
 # ----------------------------------------------------------------------
 
 doxygen-doc:
+  stage: code-quality
   extends:
-    - .code-quality-job
+    - .generic-job
+    - .linux-job
   variables:
     LCI_CONFIGURE_FLAGS_DOC: "--enable-doxygen"
   script:

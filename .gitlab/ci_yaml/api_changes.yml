@@ -4,8 +4,10 @@
 
 # dump API job
 .dump-api-job:
+  stage: code-quality
   extends:
-    - .code-quality-job
+    - .generic-job
+    - .linux-job
   variables:
     LC_CONFIGURE_FLAGS_API: >-
       --disable-doxygen --disable-framec --enable-framel

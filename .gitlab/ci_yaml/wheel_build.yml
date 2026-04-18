@@ -49,6 +49,7 @@
 
 wheel:check:
   extends:
+    - .generic-job
     - .deploy-job
   needs:
     - job: wheel:linux-x86-64
@@ -81,6 +82,7 @@ wheel:check:
 
 wheel:deploy:
   extends:
+    - .generic-job
     - .deploy-job
   needs:
     - !reference [wheel:check, needs]
