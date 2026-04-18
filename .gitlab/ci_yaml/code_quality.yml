@@ -40,16 +40,6 @@ semgrep-sast:
     - .generic-job
     - .linux-job
 
-# check CI serial
-ci-serial-check:
-  extends:
-    - .code-quality-job
-  script:
-    - echo "TOFIX"
-  rules:
-    - if: >-
-        $LCI_PIPE_TYPE == "merge"
-
 # run pre-commit hooks
 pre-commit-check:
   extends:

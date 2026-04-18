@@ -427,8 +427,7 @@ workflow:
 
     - when: never
 
-# -- CI job for displaying pipeline setup errors -----------------------
-
+# CI job for displaying pipeline setup errors
 pipeline-error:
   stage: .pre
   image: docker:latest
