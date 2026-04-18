@@ -53,7 +53,7 @@ doxygen-doc:
     - if: >
         $LCI_PIPE_TYPE == "lalsuite-tag"
 
-pages-doc:
+pages:
   pages:
     path_prefix: "${PATH_PREFIX}"
     expire_in: never
@@ -61,6 +61,7 @@ pages-doc:
     name: "Documentation"
     url: "${CI_PAGES_URL}"
   extends:
+    - .generic-job
     - .deploy-job
   needs:
     - doxygen-doc
