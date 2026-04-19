@@ -215,7 +215,6 @@ workflow:
         ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
         && $LCI_PIPE_TYPE == "sched-doc"
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
-        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: always
       variables:
         LCI_PIPE_NAME: "Build and deploy Doxygen documentation"
