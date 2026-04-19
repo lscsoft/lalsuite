@@ -82,6 +82,9 @@ snapshot-image:deploy:
     - docker push ${PLAT_IMG_PATH}
     # test image
     - docker run --rm ${PLAT_IMG_PATH} lalapps_version
+  environment:
+    name: "image/snapshot/${LCI_PLAT_BASE}"
+    url: "${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:snapshot"
   rules:
     - !reference [.deploy-check-execute, rules]
     # only run for building snapshot Docker images

@@ -97,6 +97,9 @@ wheel:deploy:
     - ${LCI_SCRIPTS}/retry pypi-cleanup --username ${TWINE_USERNAME} --package lalsuite --days 365 --verbose
     # upload wheels to PyPI
     - ${LCI_SCRIPTS}/retry python -m twine upload wheelhouse/*
+  environment:
+    name: "wheel/release"
+    url: "https://pypi.org/project/lalsuite/"
   rules:
     - !reference [.deploy-check-execute, rules]
     - if: >

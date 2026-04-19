@@ -57,9 +57,6 @@ pages:
   pages:
     path_prefix: "${PATH_PREFIX}"
     expire_in: never
-  environment:
-    name: "Documentation"
-    url: "${CI_PAGES_URL}"
   extends:
     - .generic-job
     - .deploy-job
@@ -70,6 +67,9 @@ pages:
   artifacts:
     paths:
       - public
+  environment:
+    name: "pages/${LCI_DOC_ENV_SUFFIX}"
+    url: "${CI_PAGES_URL}"
   rules:
     - !reference [.deploy-check-execute, rules]
     - if: >

@@ -105,6 +105,7 @@ variables:
 
   # deploy documentation for the main branch at lscsoft/lalsuite
   LCI_DOC_PATH_PREFIX: "dev"
+  LCI_DOC_ENV_SUFFIX: "dev"
 
   # do not execute deployment actions
   LCI_DEPLOY_EXECUTE: "no"
@@ -246,6 +247,7 @@ workflow:
         LCI_PIPE_TYPE: lalsuite-tag
         # - deploy documentation for this LALSuite tag
         LCI_DOC_PATH_PREFIX: "$CI_COMMIT_TAG"
+        LCI_DOC_ENV_SUFFIX: "release"
         # - execute deployment actions
         LCI_DEPLOY_EXECUTE: "yes"
 
