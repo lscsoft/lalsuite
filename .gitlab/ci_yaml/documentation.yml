@@ -26,12 +26,12 @@ doxygen-doc:
           mkdir -p ${basedir}
           mv ${path} ${basedir}
       done
-    # add redirect for primary documentation
-    - |
-      cat > html/_redirect <<EOF
-      /lalsuite            /lalsuite/dev/lalsuite/index.html
-      /lalsuite/:version   /lalsuite/:version/lalsuite/index.html
-      EOF
+    # # add redirect for primary documentation TOFIX
+    # - |
+    #   cat > html/_redirect <<EOF
+    #   /lalsuite            /lalsuite/dev/lalsuite/index.html
+    #   /lalsuite/:version   /lalsuite/:version/lalsuite/index.html
+    #   EOF
     # export path prefix
     - echo "PATH_PREFIX=${LCI_DOC_PATH_PREFIX##lalsuite-v}" > path_prefix.env
   artifacts:
