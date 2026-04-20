@@ -6,7 +6,9 @@ SH_LOG_COMPILER = $(SHELL)
 if DOXYGEN
 
 if HAVE_GIT_REPO
-doxygen_include_gitid = true
+doxygen_version_git_sha = $(GIT) log -1 --pretty='format:%h'
+else
+doxygen_version_git_sha = echo
 endif # HAVE_GIT_REPO
 
 doxygen_quiet   = $(doxygen_quiet_$(V))
@@ -80,12 +82,13 @@ autogen.dox: Makefile doxygen-input-sources make_autogen_dox
 html-local: Makefile doxygen_header.html doxygen-input-sources autogen.dox $(CONFIG_CLEAN_FILES)
 	$(AM_V_GEN)set -e; \
 	export doxygen_version="$(VERSION)"; \
-	if test "x$(doxygen_include_gitid)" = xtrue; then \
-		gitid=`cd $(abs_top_srcdir) && $(GIT) log -1 --pretty='format:%h'`; \
-		if test "x$${gitid}" != x; then \
-			unclean=`cd $(abs_top_srcdir) && ( $(GIT) diff --quiet HEAD || printf %s -UNCLEAN )`; \
-			doxygen_version="$${doxygen_version}-$${gitid}$${unclean}"; \
+	if test "x$(DOXYGEN_VERSION_SUFFIX)" = x"git-sha"; then \
+		git_sha=`cd $(abs_top_srcdir) && ( $(doxygen_version_git_sha) ) 2>/dev/null`; \
+		if test "$${git_sha}" != x; then \
+			doxygen_version="$${doxygen_version}-$${git_sha}"; \
 		fi; \
+	elif test "x$(DOXYGEN_VERSION_SUFFIX)" != x; then \
+		doxygen_version="$${doxygen_version}-$(DOXYGEN_VERSION_SUFFIX)"; \
 	fi; \
 	for tagfile in $(DOXYGEN_TAGFILES); do \
 		tagfile=`echo "$${tagfile}" | $(SED) 's/=.*$$//'`; \

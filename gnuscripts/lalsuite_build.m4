@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 191
+# serial 192
 
 AC_DEFUN([_LALSUITE_MIN_PYTHON_VERSION],[
   # $0: default minimum Python version
@@ -1212,6 +1212,18 @@ AC_DEFUN([LALSUITE_ENABLE_DOXYGEN],[
       doxygen=false
     ]
   )
+  AC_ARG_WITH(
+    [doxygen-version-suffix],
+    AS_HELP_STRING(
+      [--with-doxygen-version-suffix],
+      [append suffix to Doxygen documentation version [default: Git SHA]]
+    ),[
+      DOXYGEN_VERSION_SUFFIX="${withval}"
+    ],[
+      DOXYGEN_VERSION_SUFFIX=git-sha
+    ]
+  )
+  AC_SUBST([DOXYGEN_VERSION_SUFFIX])
   # end $0
 ])
 
