@@ -29,10 +29,11 @@ print <<EOF;
 EOF
 markdown_to_html("in/README.md");
 print <<EOF;
-\\htmlonly
-<h2>License</h2>
-\\endhtmlonly
+
+\\page ${package}_license License
+
 \\verbinclude COPYING
+
 */
 EOF
 
