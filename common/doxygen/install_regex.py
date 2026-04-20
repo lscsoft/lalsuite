@@ -30,8 +30,8 @@ for elem in install_dirmap.split():
 
 # install regex for top-level navigation tabs
 print(r"s|\.\./\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|../\1/index.html|g")
-print(r"s|\.\./\.\./\.\./doxygen/out/index\.html|../lalsuite/index.html|g")
-print(r"s|\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|../\1/index.html|g")
+print(r"s|\.\./\.\./\.\./doxygen/out/index\.html|../index.html|g")
+print(r"s|\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|./\1/index.html|g")
 
 # output
 print("p")

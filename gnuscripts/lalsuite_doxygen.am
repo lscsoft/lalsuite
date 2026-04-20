@@ -19,51 +19,58 @@ doxygen_redir_  = $(doxygen_redir_$(AM_DEFAULT_VERBOSITY))
 doxygen_redir_0 = >/dev/null
 doxygen_redir_1 =
 
+if PACKAGE_IS_LALSUITE
+
+doxygendir = $(datarootdir)/doc/lalsuite
+doxygen_lalsuite_reldir = .
+doxygen_lalpkg_reldir = ../..
+
+doxygen-input-sources: Makefile
+	$(AM_V_GEN)set -e; \
+	rm -rf in/; \
+	$(MKDIR_P) in/; \
+	cp $(top_srcdir)/README.md $(top_srcdir)/COPYING $(top_srcdir)/CONTRIBUTING.md in/; \
+	if test -f $(top_srcdir)/AUTHORS; then \
+		cp $(top_srcdir)/AUTHORS in/; \
+	else \
+		( cd $(top_builddir) && $(MAKE) V=$(V) AUTHORS ); \
+		cp  $(top_builddir)/AUTHORS in/; \
+	fi
+
+else # !PACKAGE_IS_LALSUITE
+
+doxygendir = $(datarootdir)/doc/lalsuite/$(PACKAGE_NAME_LCASE)
+
+doxygen_lalsuite_reldir = ../../../doxygen/out
+doxygen_lalpkg_reldir = ../../..
+
+doxygen-input-sources: Makefile
+	$(AM_V_GEN)set -e; \
+	rm -rf in/; \
+	( cd $(top_builddir) && $(MAKE) V=$(V) distdir $(doxygen_redir) ); \
+	mv "$(top_builddir)/$(PACKAGE)-$(VERSION)/" in/; \
+	rm -rf in/doxygen/
+
+endif # PACKAGE_IS_LALSUITE
+
 doxygen_header.html: Makefile $(DOXYGEN)
 	$(AM_V_GEN)set -e; \
 	rm -f $@.tmp; \
 	$(DOXYGEN) -w html $@.tmp /dev/null /dev/null >/dev/null 2>&1; \
 	if test "x$(DOXYGEN_NAVIGATION_TABS)" != x; then \
-		if test "x$(PACKAGE)" = xlalsuite; then \
-			pkg_reldir="../.."; \
-		else \
-			pkg_reldir="../../.."; \
-		fi; \
 		echo "<div id=\"lalsuite_navigation_tabs\"><ul class=\"sm sm-dox\">" >> $@.tmp; \
-		if test "x$(PACKAGE)" = xlalsuite; then \
-			echo "<li class=\"sm sm-dox\"><a href=\"index.html\"><span>LALSuite</span></a></li>" >> $@.tmp; \
-		else \
-			echo "<li class=\"sm sm-dox\"><a href=\"../../../doxygen/out/index.html\"><span>LALSuite</span></a></li>" >> $@.tmp; \
-		fi; \
+		echo "<li class=\"sm sm-dox\"><a href=\"$(doxygen_lalsuite_reldir)/index.html\"><span>LALSuite</span></a></li>" >> $@.tmp; \
 		for pkg in $(DOXYGEN_NAVIGATION_TABS); do \
 			pkg_lcase=`echo $${pkg} | tr '[A-Z]' '[a-z]'`; \
 			if test "x$${pkg_lcase}" = "x$(PACKAGE_NAME_LCASE)"; then \
-				echo "<li class=\"sm sm-dox\"><a href=\"index.html\"><span>$${pkg}</span></a></li>" >> $@.tmp; \
+				echo "<li class=\"sm sm-dox\"><a href=\"./index.html\"><span>$${pkg}</span></a></li>" >> $@.tmp; \
 			else \
-				echo "<li class=\"sm sm-dox\"><a href=\"$${pkg_reldir}/$${pkg_lcase}/doxygen/out/index.html\"><span>$${pkg}</span></a></li>" >> $@.tmp; \
+				echo "<li class=\"sm sm-dox\"><a href=\"$(doxygen_lalpkg_reldir)/$${pkg_lcase}/doxygen/out/index.html\"><span>$${pkg}</span></a></li>" >> $@.tmp; \
 			fi; \
 		done; \
 		echo "</ul></div>" >> $@.tmp; \
 	fi; \
 	mv -f $@.tmp $@
-
-doxygen-input-sources: Makefile
-	$(AM_V_GEN)set -e; \
-	rm -rf in/; \
-	if test "x$(PACKAGE)" = xlalsuite; then \
-		$(MKDIR_P) in/; \
-		cp $(top_srcdir)/README.md $(top_srcdir)/COPYING $(top_srcdir)/CONTRIBUTING.md in/; \
-		if test -f $(top_srcdir)/AUTHORS; then \
-			cp $(top_srcdir)/AUTHORS in/; \
-		else \
-			( cd $(top_builddir) && $(MAKE) V=$(V) AUTHORS ); \
-			cp  $(top_builddir)/AUTHORS in/; \
-		fi; \
-	else \
-		( cd $(top_builddir) && $(MAKE) V=$(V) distdir $(doxygen_redir) ); \
-		mv "$(top_builddir)/$(PACKAGE)-$(VERSION)/" in/; \
-		rm -rf in/doxygen/; \
-	fi
 
 autogen.dox: Makefile doxygen-input-sources make_autogen_dox
 	$(AM_V_GEN)set -e; \
@@ -113,23 +120,23 @@ test_doxygen.sh:
 install-html-local: html-local
 	$(AM_V_at)set -e; \
 	for dir in `cd out/ && find . -type d`; do \
-		echo " $(MKDIR_P) '$(DESTDIR)$(htmldir)/$${dir}'"; \
-		$(MKDIR_P) "$(DESTDIR)$(htmldir)/$${dir}"; \
-		$(PYTHON) $(abs_srcdir)/install_regex.py "$(DESTDIR)$(htmldir)/$${dir}" "$(DOXYGEN_INSTALL_DIRMAP)" > $@.regex; \
+		echo " $(MKDIR_P) '$(DESTDIR)$(doxygendir)/$${dir}'"; \
+		$(MKDIR_P) "$(DESTDIR)$(doxygendir)/$${dir}"; \
+		$(PYTHON) $(abs_srcdir)/install_regex.py "$(DESTDIR)$(doxygendir)/$${dir}" "$(DOXYGEN_INSTALL_DIRMAP)" > $@.regex; \
 		for file in `cd out/ && echo $${dir}/*`; do \
 			if test -f "out/$${file}"; then \
-				echo " $(INSTALL_DATA) out/$${file} '$(DESTDIR)$(htmldir)/$${file}'"; \
+				echo " $(INSTALL_DATA) out/$${file} '$(DESTDIR)$(doxygendir)/$${file}'"; \
 				LC_ALL=C $(SED) -n -f $@.regex "out/$${file}" > $@.tmp; \
-				$(INSTALL_DATA) $@.tmp "$(DESTDIR)$(htmldir)/$${file}"; \
+				$(INSTALL_DATA) $@.tmp "$(DESTDIR)$(doxygendir)/$${file}"; \
 			fi; \
 		done; \
 	done; \
 	rm -f $@.regex $@.tmp; \
 	echo "$(subdir)/Makefile: Doxygen documentation was installed successfully!"; \
-	echo "$(subdir)/Makefile: installed $(PACKAGE_NAME) main page is at file://$(DESTDIR)$(htmldir)/index.html"
+	echo "$(subdir)/Makefile: installed $(PACKAGE_NAME) main page is at file://$(DESTDIR)$(doxygendir)/index.html"
 
 uninstall-local:
-	-rm -rf "$(DESTDIR)$(htmldir)/"
+	-rm -rf "$(DESTDIR)$(doxygendir)/"
 
 clean-local:
 	-rm -rf in/ out/
