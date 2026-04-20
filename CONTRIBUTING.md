@@ -6,21 +6,6 @@ GitLab][compguidegit] before you start.
 
 [[_TOC_]]
 
-## Reporting issues
-
-If you have `ligo.org` authentication, please report issues directly through
-GitLab. Otherwise, you can use the [service desk address][helpdesk] to send bug
-reports by e-mail.
-
-In either case, please include as much detail as possible to reproduce the
-error, including information about your operating system and the version of each
-(relevant) component of LALSuite. If possible, please include a brief,
-self-contained code example that demonstrates the problem.
-
-Note that when an issue is marked as *Confidential*, currently this means that
-most internal users will also not be able to see it, but only a small number of
-people with reporter, developer or maintainer status.
-
 ## Building LALSuite
 
 Please see [here][buildfromsrc] for instructions on building LALSuite from source.
@@ -424,22 +409,41 @@ how to trigger then:
 * More information regarding the usage of GitLab can be found in the main GitLab
   [documentation][githelp].
 
-* See also [the LALSuite gitlab wiki pages][lalsuitewiki] for some additional
+* See also [the LALSuite GitLab wiki pages][lalsuitewiki] for some additional
   developer FAQs.
 
-[buildfromsrc]:  https://git.ligo.org/lscsoft/lalsuite/-/wikis/INSTALL#building-lalsuite-from-source
-[compguidegit]:  https://computing.docs.ligo.org/guide/gitlab/
-[doxygen]:       https://doxygen.nl
-[forkworkflow]:  https://git.ligo.org/help/user/project/repository/forking_workflow.html
-[githelp]:       https://git.ligo.org/help
-[gitlfs]:        https://wiki.ligo.org/Computing/GitLFS
-[gitsetup]:      https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
-[helpdesk]:      mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
-[lalsuitedocs]:  https://lscsoft.docs.ligo.org/lalsuite
-[lalsuiteforks]: https://git.ligo.org/lscsoft/lalsuite/-/forks/new
-[lalsuiterepo]:  https://git.ligo.org/lscsoft/lalsuite
-[lalsuitewiki]:  https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
-[mergerequests]: https://git.ligo.org/help/user/project/merge_requests/index.html
-[precommit]:     https://pre-commit.com/
-[prettyastyle]:  https://astyle.sourceforge.net/
-[prettyblack]:   https://black.readthedocs.io/en/stable/
+## Appendix: Notes on Ancient History
+
+LALSuite was transferred to `git.ligo.org` in December 2017. Older
+history has been imported, though commit hashes were rewritten during
+the [Git LFS][gitlfs] conversion. Please note:
+
+1. The `Original:` commit IDs quoted in each commit message can be used
+   to compare with the [archived reference repo][oldlalsuite], old issue
+   discussions on the [Redmine tracker][oldredmine], review wiki pages
+   etc.
+
+1. Commits before December 2017 may also include references to issues
+   (`#number`). These refer to the corresponding [Redmine
+   issue][oldredmine] (LVC-authorized access only), and any clickable
+   link the internal GitLab web interface produces for those old commits
+   will therefore be spurious.
+
+[buildfromsrc]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis/BUILD
+[compguidegit]:     https://computing.docs.ligo.org/guide/gitlab/
+[doxygen]:          https://doxygen.nl
+[forkworkflow]:     https://git.ligo.org/help/user/project/repository/forking_workflow.html
+[githelp]:          https://git.ligo.org/help
+[gitlfs]:           https://wiki.ligo.org/Computing/GitLFS
+[gitsetup]:         https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
+[helpdesk]:         mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
+[lalsuitedocs]:     https://docs.ligo.org/lscsoft/lalsuite
+[lalsuiteforks]:    https://git.ligo.org/lscsoft/lalsuite/-/forks/new
+[lalsuiterepo]:     https://git.ligo.org/lscsoft/lalsuite
+[lalsuitewiki]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
+[mergerequests]:    https://git.ligo.org/help/user/project/merge_requests/index.html
+[oldlalsuite]:      https://git.ligo.org/lscsoft/lalsuite-archive
+[oldredmine]:       https://bugs.ligo.org/redmine/projects/lalsuite
+[precommit]:        https://pre-commit.com/
+[prettyastyle]:     https://astyle.sourceforge.net/
+[prettyblack]:      https://black.readthedocs.io/en/stable/
