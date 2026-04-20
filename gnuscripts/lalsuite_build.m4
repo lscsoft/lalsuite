@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 190
+# serial 191
 
 AC_DEFUN([_LALSUITE_MIN_PYTHON_VERSION],[
   # $0: default minimum Python version
@@ -334,6 +334,7 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   AC_SUBST([PACKAGE_NAME_UCASE],uppercase)
   AC_SUBST([PACKAGE_NAME_LCASE],lowercase)
   AC_SUBST([PACKAGE_NAME_NOLAL],withoutlal)
+  AM_CONDITIONAL([PACKAGE_IS_LALSUITE],[test "x${PACKAGE_NAME_LCASE}" = xlalsuite])
 
   # version numbers
   version_major=`echo "$VERSION" | cut -d. -f1`
