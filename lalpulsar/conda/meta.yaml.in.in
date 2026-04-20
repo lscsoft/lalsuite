@@ -181,7 +181,7 @@ outputs:
     test:
       requires:
         - pytest >=4.0.0a0
-        - solar_system_ephemerides
+        - solar-system-ephemerides
         - tqdm
       source_files:
         - test/python
@@ -191,7 +191,7 @@ outputs:
         - |
           env LAL_DEBUG_LEVEL=info python3 - <<EOF
           import lalpulsar
-          # not in lalpulsar-data, only in solar_system_ephemerides
+          # not in lalpulsar-data, only in solar-system-ephemerides
           lalpulsar.InitBarycenter("earth00-40-DE440.dat.gz", "sun00-40-DE440.dat.gz")
           EOF
       imports:

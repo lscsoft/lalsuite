@@ -14,7 +14,7 @@ source "${LCI_TMPDIR}/venv-build/bin/activate"
 
 # fall-back LAL data path
 # - set ${base} to data path relative to binary LAL library install location
-# - use the solar_system_ephemerides package for LALPulsar ephemeris files
+# - use the solar-system-ephemerides package for LALPulsar ephemeris files
 sse="solar_system_ephemerides/ephemerides"
 fallback_data_path='${base}/lalapps/data:${base}/${sse}/earth:${base}/${sse}/sun:${base}/${sse}/time'
 
@@ -102,7 +102,7 @@ source "${LCI_TMPDIR}/venv-test/bin/activate"
 
 # install packages required for testing
 ${LCI_SCRIPTS}/retry python -m pip install \
-    solar_system_ephemerides
+    solar-system-ephemerides
 
 # install wheel
 python -m pip install wheelhouse/*
