@@ -1,10 +1,10 @@
-[[_TOC_]]
-
 # Contributing to LALSuite
 
 This page outlines the recommended procedure for contributing changes to the
 LALSuite repository. Please read the [IGWN Computing Guide to
 GitLab][compguidegit] before you start.
+
+[[_TOC_]]
 
 ## Reporting issues
 
@@ -40,14 +40,14 @@ You should first ensure that Git is correctly configured on your machine. In
 particular, you should set your name and email address; these will appear on any
 commits made to the LALSuite repository. To do this, run these commands:
 
-1. ```bash
+1. ```
    git config --global user.name "..."
    ```
 
    where `...` is replaced with your name (i.e. your human name, not your
    computer user/login name).
 
-1. ```bash
+1. ```
    git config --global user.email "..."
    ```
 
@@ -78,7 +78,7 @@ for your account profile photo in the top right-hand corner of the screen.
 
 Make sure that you have installed and configured [Git-LFS][gitlfs]:
 
-```bash
+```
 git lfs install
 ```
 
@@ -87,7 +87,7 @@ install your development fork.
 
 Then, clone your fork with
 
-```bash
+```
 git clone git@git.ligo.org:<namespace>/lalsuite.git
 ```
 
@@ -98,7 +98,7 @@ These are run by the [`pre-commit`][precommit] tool, which can be installed
 using `conda`, `pip`, etc. Once `pre-commit` is installed, it must be
 configured:
 
-```bash
+```
 cd lalsuite
 pre-commit install
 ```
@@ -118,7 +118,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and
 
 1. Link your fork to the main repository:
 
-    ```bash
+    ```
     cd lalsuite
     git remote add upstream git@git.ligo.org:lscsoft/lalsuite.git
     ```
@@ -127,7 +127,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and
 
 1. Update your `master` branch to track changes from upstream:
 
-    ```bash
+    ```
     git checkout master
     git fetch upstream
     git branch --set-upstream-to upstream/master
@@ -139,7 +139,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and
 1. Fetch new changes from the `upstream` repository, merge them with your master
    branch, and push them to your fork on `git.ligo.org`:
 
-    ```bash
+    ```
     git checkout master
     git pull
     git push origin master
@@ -147,7 +147,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and
 
 1. You can see which remotes are configured using
 
-   ```bash
+   ```
    git remote -v
    ```
 
@@ -165,7 +165,7 @@ complete. The workflow is:
 
 1. Create a new feature branch configured to track the `master` branch:
 
-   ```bash
+   ```
    git checkout master
    git pull
    git checkout -b my-new-feature upstream/master
@@ -190,19 +190,19 @@ complete. The workflow is:
    option to `push` to create a link between your new branch and the `origin`
    remote:
 
-    ```bash
+    ```
     git push --set-upstream origin my-new-feature
     ```
 
     Subsequent pushes can be made with just:
 
-    ```bash
+    ```
     git push
     ```
 
 1. Keep your feature branch up to date with the `upstream` repository by doing:
 
-   ```bash
+   ```
    git checkout master
    git pull
    git checkout my-new-feature
@@ -315,7 +315,7 @@ better. The reviewer will merge your request.
 Once the changes are merged into the upstream repository, you should remove the
 development branch from your clone using
 
-```bash
+```
 git branch -d my-new-feature
 ```
 
@@ -427,19 +427,19 @@ how to trigger then:
 * See also [the LALSuite gitlab wiki pages][lalsuitewiki] for some additional
   developer FAQs.
 
-[buildfromsrc]:  https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md#building-from-source
+[buildfromsrc]:  https://git.ligo.org/lscsoft/lalsuite/-/wikis/INSTALL#building-lalsuite-from-source
 [compguidegit]:  https://computing.docs.ligo.org/guide/gitlab/
 [doxygen]:       https://doxygen.nl
 [forkworkflow]:  https://git.ligo.org/help/user/project/repository/forking_workflow.html
 [githelp]:       https://git.ligo.org/help
-[gitlfs]:        https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client
+[gitlfs]:        https://wiki.ligo.org/Computing/GitLFS
 [gitsetup]:      https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
 [helpdesk]:      mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
+[lalsuitedocs]:  https://lscsoft.docs.ligo.org/lalsuite
 [lalsuiteforks]: https://git.ligo.org/lscsoft/lalsuite/-/forks/new
 [lalsuiterepo]:  https://git.ligo.org/lscsoft/lalsuite
 [lalsuitewiki]:  https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
 [mergerequests]: https://git.ligo.org/help/user/project/merge_requests/index.html
-[lalsuitedocs]:  https://lscsoft.docs.ligo.org/lalsuite
 [precommit]:     https://pre-commit.com/
 [prettyastyle]:  https://astyle.sourceforge.net/
 [prettyblack]:   https://black.readthedocs.io/en/stable/
