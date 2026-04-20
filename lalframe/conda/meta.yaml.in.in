@@ -75,8 +75,8 @@ outputs:
         # check pkg-config
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalframe
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -133,8 +133,8 @@ outputs:
         - lalframe
         - lalframe.frread
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -180,8 +180,8 @@ outputs:
         - lalfr-stream --channel H1:LSC-AS_Q --start-time 600000000 --duration 0.01 --frame-glob test/F-TEST-*.gwf
         - lalfr-vis --channel H1:LSC-AS_Q --start-time 600000000 --duration 0.01 --frame-glob test/F-TEST-*.gwf
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -191,8 +191,8 @@ outputs:
         This package contains the runtime tools.
 
 about:
-  home: https://wiki.ligo.org/Computing/LALSuite
-  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
+  home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+  doc_url: https://docs.ligo.org/lscsoft/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
   license_file: COPYING

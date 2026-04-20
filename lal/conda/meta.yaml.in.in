@@ -86,8 +86,8 @@ outputs:
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lal
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalsupport
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -157,8 +157,8 @@ outputs:
       commands:
         - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python {% if migrating -%} --ignore test/python/test_rate.py -k 'not lal.rate and not lal.series' {%- endif %}
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -220,8 +220,8 @@ outputs:
         - test "$(lal_tconvert 1831518865)" == "Tue Jan 19 03:14:07 UTC 2038"
         - test "$(lal_tconvert 1831518866)" == "Tue Jan 19 03:14:08 UTC 2038"
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -231,8 +231,8 @@ outputs:
         This package contains the runtime tools.
 
 about:
-  home: https://wiki.ligo.org/Computing/LALSuite
-  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+  home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+  doc_url: https://docs.ligo.org/lscsoft/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
   license_file: COPYING

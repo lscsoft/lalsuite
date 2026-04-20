@@ -67,8 +67,8 @@ outputs:
       commands:
         - test -f ${LALPULSAR_DATADIR}/sun00-40-DE405.dat.gz  # [unix]
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -124,8 +124,8 @@ outputs:
         # check pkg-config
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalpulsar
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -203,8 +203,8 @@ outputs:
         - lalpulsar.pulsarhtmlutils
         - lalpulsar.pulsarpputils
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -291,8 +291,8 @@ outputs:
         - lalpulsar_splitSFTs --help
         - test "$(lalpulsar_ssbtodetector --gps 1000000000 --ra 0 --dec 0 --telescope JBO)" == "999999506.306100250"
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -305,8 +305,8 @@ outputs:
         package.
 
 about:
-  home: https://wiki.ligo.org/Computing/LALSuite
-  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
+  home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+  doc_url: https://docs.ligo.org/lscsoft/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
   license_file: COPYING

@@ -86,8 +86,8 @@ outputs:
         # check pkg-config
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalinspiral
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -156,8 +156,8 @@ outputs:
         - lalinspiral.inspinjfind
         - lalinspiral.thinca
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -201,8 +201,8 @@ outputs:
       imports:
         - lalinspiral
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
+      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -211,8 +211,8 @@ outputs:
         The LSC Algorithm Inspiral Library for gravitational wave data analysis.
 
 about:
-  home: https://wiki.ligo.org/Computing/LALSuite
-  doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
+  home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+  doc_url: https://docs.ligo.org/lscsoft/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
   license_file: COPYING
