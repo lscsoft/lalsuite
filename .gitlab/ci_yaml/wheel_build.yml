@@ -71,9 +71,7 @@ wheel:check:
       ls wheelhouse/
       echo "----------------------------"
     # verify wheels
-    - python -m venv "${LCI_TMPDIR}/venv-check"
-    - source "${LCI_TMPDIR}/venv-check/bin/activate"
-    - python -m pip check wheelhouse.*
+    - python -m twine check --strict wheelhouse/*
   rules:
     - if: >
         $LCI_PIPE_TYPE == "sched-snapshot"
@@ -93,10 +91,29 @@ wheel:deploy:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     PYPI_CLEANUP_PASSWORD: "${TWINE_PASSWORD}"
   script:
+    - |
+      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        echo "WARNING: simulating execution of deployment actions"
+      fi
     # cleanup old wheels
-    - ${LCI_SCRIPTS}/retry pypi-cleanup --username ${TWINE_USERNAME} --package lalsuite --days 365 --verbose
+    - |
+      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --username ${TWINE_USERNAME} --package lalsuite --days 365
+      else
+        ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --username ${TWINE_USERNAME} --package lalsuite --days 365 --do-it
+      fi
     # upload wheels to PyPI
-    - ${LCI_SCRIPTS}/retry python -m twine upload wheelhouse/*
+    - |
+      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        ${LCI_SCRIPTS}/retry python -m twine check --strict wheelhouse/*
+      else
+        ${LCI_SCRIPTS}/retry python -m twine upload --verbose --non-interactive wheelhouse/*
+      fi
+    # done
+    - |
+      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        exit 123
+      fi
   environment:
     name: "wheel/release"
     url: "https://pypi.org/project/lalsuite/"

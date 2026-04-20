@@ -206,7 +206,7 @@ cmp-last-release-api:
     # compare API to the latest LALSuite tag at lscsoft/lalsuite for release branches
     - if: >
         $LCI_PIPE_TYPE == "lalsuite-tag"
-        && $LCI_RELEASE_SIMULATE == "yes"
+        && $LCI_DEPLOY_EXECUTE == "sim"
     # for debugging
     - if: >
         $LCI_PIPE_TYPE == "push"

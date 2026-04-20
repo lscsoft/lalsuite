@@ -77,6 +77,11 @@ snapshot-image:deploy:
       echo "docker_args=${docker_args}"
       docker buildx build ${docker_args} --tag ${PLAT_BASE_IMG_PATH} --file ".gitlab/ci_images/release_${LCI_PLAT_BASE}.Dockerfile" .
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - |
+      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        echo "WARNING: simulating execution of deployment actions"
+        exit 123
+      fi
     - docker push ${PLAT_BASE_IMG_PATH}
     - docker tag ${PLAT_BASE_IMG_PATH} ${PLAT_IMG_PATH}
     - docker push ${PLAT_IMG_PATH}

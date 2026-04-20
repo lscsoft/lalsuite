@@ -110,9 +110,6 @@ variables:
   # do not execute deployment actions
   LCI_DEPLOY_EXECUTE: "no"
 
-  # do not simulate creating a new release
-  LCI_RELEASE_SIMULATE: "no"
-
 workflow:
   name: "$LCI_PIPE_NAME"
   rules:
@@ -262,8 +259,8 @@ workflow:
       variables:
         LCI_PIPE_NAME: "[test] LALSuite release tag"
         LCI_PIPE_TYPE: lalsuite-tag
-        # - simulate creating a new release
-        LCI_RELEASE_SIMULATE: "yes"
+        # - simulate executing deployment actions
+        LCI_DEPLOY_EXECUTE: "sim"
 
     # --- merge: Merge request -----------------------------------------
 
@@ -461,6 +458,10 @@ default:
   # do not interrupt
   interruptible: false
 
+  allow_failure:
+    # returned when $LCI_DEPLOY_EXECUTE is simulating deployment actions
+    exit_codes: 123
+
 # -- architecture-specific CI job defaults -----------------------------
 
 # Linux jobs
@@ -531,7 +532,7 @@ default:
 # check LCI_DEPLOY_EXECUTE before running deploy jobs
 .deploy-check-execute:
   rules:
-    # do not run if $LCI_DEPLOY_EXECUTE is not set correctly
+    # do not run if $LCI_DEPLOY_EXECUTE prevent executing deployment actions
     - if: >
-        $LCI_DEPLOY_EXECUTE != "yes"
+        $LCI_DEPLOY_EXECUTE == "no"
       when: never
