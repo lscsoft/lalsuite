@@ -2,6 +2,8 @@
 # LALSuite GitLab-CI: build Doxygen documentation
 # ----------------------------------------------------------------------
 
+# -- Doxygen documentation jobs ----------------------------------------
+
 doxygen-doc:
   stage: code-quality
   extends:
@@ -18,7 +20,7 @@ doxygen-doc:
     - eval ./configure "${LCI_CONFIGURE_FLAGS}"
     # build and install documentation
     - make -j${CPU_COUNT} install-html
-    - mv _inst/share/doc html
+    - mv _inst/share/doc/lalsuite html
     # save outputs from Doxygen documentation filters
     - |
       for path in $(find -name '*.filtered'); do
@@ -26,19 +28,6 @@ doxygen-doc:
           mkdir -p ${basedir}
           mv ${path} ${basedir}
       done
-    # add required root index.html
-    - |
-      cat > html/index.html <<EOF
-      <!DOCTYPE html>
-      <html>
-      <head><meta http-equiv="refresh" content="0; url='lalsuite/index.html'"/></head>
-      </html>
-      EOF
-    # add redirect for primary documentation
-    - |
-      cat > html/_redirect <<EOF
-      /lalsuite /lalsuite/dev
-      EOF
     # export path prefix
     - echo "PATH_PREFIX=${LCI_DOC_PATH_PREFIX##lalsuite-v}" > path_prefix.env
   artifacts:
@@ -60,22 +49,56 @@ doxygen-doc:
     - if: >
         $LCI_PIPE_TYPE == "lalsuite-tag"
 
-pages:
-  pages:
-    path_prefix: "${PATH_PREFIX}"
-    expire_in: never
+doxygen-index:
+  stage: code-quality
   extends:
     - .generic-job
+    - .linux-job
+  script:
+    - mkdir html
+    - cd html
+    # add top-level index
+    - |
+      cat > index.html <<EOF
+      <!DOCTYPE html>
+      <html>
+      <head><meta http-equiv="refresh" content="0; url='dev/index.html'"/></head>
+      </html>
+      EOF
+  artifacts:
+    expose_as: html
+    paths:
+      # top-level index
+      - html/
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "sched-doc"
+
+# -- page deployment jobs ----------------------------------------------
+
+.pages-job:
+  image: docker:latest
+  extends:
     - .deploy-job
-  needs:
-    - doxygen-doc
+  before_script:
+    # print environment variables for debugging
+    - export -p
   script:
     - mv html/ public/
   artifacts:
     paths:
       - public
+
+pages:doc:
+  pages:
+    path_prefix: "${PATH_PREFIX}"
+    expire_in: never
+  extends:
+    - .pages-job
+  needs:
+    - doxygen-doc
   environment:
-    name: "pages/${LCI_DOC_ENV_SUFFIX}"
+    name: "pages/doc/${LCI_DOC_ENV_SUFFIX}"
     url: "${CI_PAGES_URL}"
   rules:
     - !reference [.deploy-check-execute, rules]
@@ -83,3 +106,19 @@ pages:
         $LCI_PIPE_TYPE == "sched-doc"
     - if: >
         $LCI_PIPE_TYPE == "lalsuite-tag"
+
+pages:index:
+  pages:
+    path_prefix: ""
+    expire_in: never
+  extends:
+    - .pages-job
+  needs:
+    - doxygen-index
+  environment:
+    name: "pages/index"
+    url: "${CI_PAGES_URL}"
+  rules:
+    - !reference [.deploy-check-execute, rules]
+    - if: >
+        $LCI_PIPE_TYPE == "sched-doc"
