@@ -355,25 +355,25 @@ how to trigger then:
         <tr>
             <td>Build and test Docker development images</td>
             <td>
-                Commit message: <code>[ci sched devimg]</code><br/>
-                OR<br/>
-                Schedule variable: <code>LCI_PIPE_TYPE=sched-devimg</code>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-devimg</code><br/>
+                <i>or</i><br/>
+                Commit message: <code>[ci sched devimg]</code> (note: only runs on a GitLab fork of LALSuite)
             </td>
         </tr>
         <tr>
             <td>Build snapshot Docker images and wheels</td>
             <td>
-                Commit message: <code>[ci sched snapshot]</code><br/>
-                OR<br/>
-                Schedule variable: <code>LCI_PIPE_TYPE=sched-snapshot</code>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-snapshot</code><br/>
+                <i>or</i><br/>
+                Commit message: <code>[ci sched snapshot]</code> (note: only runs on a GitLab fork of LALSuite)
             </td>
         </tr>
         <tr>
             <td>Build and deploy Doxygen documentation</td>
             <td>
-                Commit message: <code>[ci sched doc]</code><br/>
-                OR<br/>
-                Schedule variable: <code>LCI_PIPE_TYPE=sched-doc</code>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-doc</code><br/>
+                <i>or</i><br/>
+                Commit message: <code>[ci sched doc]</code> (note: only runs on a GitLab fork of LALSuite)
             </td>
         </tr>
         <tr>

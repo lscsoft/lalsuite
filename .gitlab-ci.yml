@@ -163,9 +163,11 @@ workflow:
     # runs if:
     # - the trigger is a commit push
     # - the commit message contains "[ci sched devimg]"
+    # - the branch is NOT on lscsoft/lalsuite
     - if: >
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci sched devimg\]/i
+        && $CI_PROJECT_PATH != "lscsoft/lalsuite"
       when: always
       variables:
         LCI_PIPE_NAME: "[test] Build and test Docker development images"
@@ -195,9 +197,11 @@ workflow:
     # runs if:
     # - the trigger is a commit push
     # - the commit message contains "[ci sched snapshot]"
+    # - the branch is NOT on lscsoft/lalsuite
     - if: >
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci sched snapshot\]/i
+        && $CI_PROJECT_PATH != "lscsoft/lalsuite"
       when: always
       variables:
         LCI_PIPE_NAME: "[test] Build snapshot Docker images and wheels"
@@ -225,9 +229,11 @@ workflow:
     # runs if:
     # - the trigger is a commit push
     # - the commit message contains "[ci sched doc]"
+    # - the branch is NOT on lscsoft/lalsuite
     - if: >
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci sched doc\]/i
+        && $CI_PROJECT_PATH != "lscsoft/lalsuite"
       when: always
       variables:
         LCI_PIPE_NAME: "[test] Build and deploy Doxygen documentation"

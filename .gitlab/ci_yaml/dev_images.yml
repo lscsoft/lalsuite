@@ -123,14 +123,6 @@ dev-image:
     - docker push ${TESTING_IMG_PATH}
   rules:
     - if: >
-        $LCI_PIPE_TYPE == "merge"
-      changes:
-        # only run in merge pipeline if the following files have changed
-        paths:
-          - conda-dev-env.yml
-          - ".gitlab/ci_images/*"
-        compare_to: 'refs/heads/${CI_DEFAULT_BRANCH}'
-    - if: >
         $LCI_PIPE_TYPE == "sched-devimg"
 
 dev-image:deploy:
