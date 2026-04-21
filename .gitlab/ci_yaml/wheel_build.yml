@@ -98,9 +98,9 @@ wheel:deploy:
     # cleanup old wheels
     - |
       if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
-        ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --username ${TWINE_USERNAME} --package lalsuite --days 365
+        ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --package lalsuite --days 365 --query-only
       else
-        ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --username ${TWINE_USERNAME} --package lalsuite --days 365 --do-it
+        ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --package lalsuite --days 365 --username ${TWINE_USERNAME} --do-it
       fi
     # upload wheels to PyPI
     - |
