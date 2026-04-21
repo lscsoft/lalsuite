@@ -410,7 +410,7 @@ UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin )
  * Gaussian (with mean of zero). This comes from taking a Gaussian likelihood function and analytically marginalising
  * over the standard deviation (using a prior on the standard deviation of \f$ 1/\sigma \f$ ), giving (see
  * [\cite DupuisWoan2005]) a Students-t distribution (see
- * <a href="https://wiki.ligo.org/foswiki/pub/CW/PulsarParameterEstimationNestedSampling/studentst.pdf">here</a>).
+ * <a href="https://wiki.ligo.org/CW/PulsarParameterEstimationNestedSampling/studentst.pdf">here</a>).
  * Following this the data is split into two segments (with lengths greater than, or equal to the minimum chunk length)
  * for all possible combinations, and the joint evidence for each of the two segments consisting of independent
  * Gaussian (basically multiplying the above equation calculated for each segment separately) is calculated and the
