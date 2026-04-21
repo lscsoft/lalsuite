@@ -242,6 +242,8 @@ workflow:
       variables:
         LCI_PIPE_NAME: "LALSuite release tag"
         LCI_PIPE_TYPE: lalsuite-tag
+        # - disable Doxygen version suffix for release documentation
+        LCI_CONFIGURE_FLAGS_DOC_NOSUFFIX: "--with-doxygen-version-suffix="
         # - deploy documentation for this LALSuite tag
         LCI_DOC_PATH_PREFIX: "$CI_COMMIT_TAG"
         LCI_DOC_ENV_SUFFIX: "$CI_COMMIT_TAG"
@@ -259,6 +261,8 @@ workflow:
       variables:
         LCI_PIPE_NAME: "[test] LALSuite release tag"
         LCI_PIPE_TYPE: lalsuite-tag
+        # - disable Doxygen version suffix for release documentation
+        LCI_CONFIGURE_FLAGS_DOC_NOSUFFIX: "--with-doxygen-version-suffix="
         # - simulate executing deployment actions
         LCI_DEPLOY_EXECUTE: "sim"
 
