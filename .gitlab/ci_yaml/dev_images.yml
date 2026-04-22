@@ -128,7 +128,7 @@ dev-image:
 dev-image:deploy:
   extends:
     - .dev-image-job
-    - .docker-build-job
+    - .docker-manage-job
     - .deploy-job
   needs:
     # build the development images
@@ -150,12 +150,11 @@ dev-image:deploy:
     - job: lalsuite:macos-arm64
       optional: true
   script:
-    # push testing image to production image
-    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - docker pull ${TESTING_IMG_PATH}
-    - docker tag ${TESTING_IMG_PATH} ${FINAL_IMG_PATH}
-    - docker push ${FINAL_IMG_PATH}
+    - crane auth login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    # copy testing image to production image
+    - crane copy ${TESTING_IMG_PATH} ${FINAL_IMG_PATH}
+    # delete testing image
+    - crane delete ${TESTING_IMG_PATH}
   rules:
-    - !reference [.deploy-check-execute, rules]
     - if: >
         $LCI_PIPE_TYPE == "sched-devimg"

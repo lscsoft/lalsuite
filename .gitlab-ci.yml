@@ -467,6 +467,23 @@ default:
   # do not interrupt
   interruptible: false
 
+# Docker image management job default
+.docker-manage-job:
+
+  # use crane from go-containerregistry
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: [""]
+  before_script:
+    # exit immediately on any error
+    - set -e
+
+  # do not retry jobs
+  retry: 0
+
+  # do not interrupt
+  interruptible: false
+
 # deploy job defaults
 .deploy-job:
   stage: deploy
