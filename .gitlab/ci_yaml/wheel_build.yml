@@ -117,7 +117,7 @@ wheel:deploy:
         exit 123
       fi
   environment:
-    name: "wheel/release"
+    name: "wheel/${LCI_WHEEL_ENV_SUBDIV}"
     url: "https://pypi.org/project/lalsuite/"
   rules:
     - !reference [.deploy-check-execute, rules]

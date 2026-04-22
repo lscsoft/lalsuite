@@ -107,6 +107,9 @@ variables:
   LCI_DOC_PATH_PREFIX: "dev"
   LCI_DOC_ENV_SUFFIX: "$CI_DEFAULT_BRANCH"
 
+  # deploy wheels in the "snapshot" folder by default
+  LCI_WHEEL_ENV_SUBDIV: "snapshot"
+
   # do not execute deployment actions
   LCI_DEPLOY_EXECUTE: "no"
 
@@ -247,6 +250,8 @@ workflow:
         # - deploy documentation for this LALSuite tag
         LCI_DOC_PATH_PREFIX: "$CI_COMMIT_TAG"
         LCI_DOC_ENV_SUFFIX: "$CI_COMMIT_TAG"
+        # deploy wheels in the "release" folder
+        LCI_WHEEL_ENV_SUBDIV: "release"
         # - execute deployment actions
         LCI_DEPLOY_EXECUTE: "yes"
 
