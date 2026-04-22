@@ -467,15 +467,15 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLPARAMS );
   }
 
-  if ( ( !strcmp( params->model, "BT" ) ) &&
-       ( !strcmp( params->model, "BT1P" ) ) &&
-       ( !strcmp( params->model, "BT2P" ) ) &&
-       ( !strcmp( params->model, "BTX" ) ) &&
-       ( !strcmp( params->model, "ELL1" ) ) &&
-       ( !strcmp( params->model, "DD" ) ) &&
-       ( !strcmp( params->model, "DDS" ) ) &&
-       ( !strcmp( params->model, "MSS" ) ) &&
-       ( !strcmp( params->model, "T2" ) ) ) {
+  if ( ( strcmp( params->model, "BT" ) ) &&
+       ( strcmp( params->model, "BT1P" ) ) &&
+       ( strcmp( params->model, "BT2P" ) ) &&
+       ( strcmp( params->model, "BTX" ) ) &&
+       ( strcmp( params->model, "ELL1" ) ) &&
+       ( strcmp( params->model, "DD" ) ) &&
+       ( strcmp( params->model, "DDS" ) ) &&
+       ( strcmp( params->model, "MSS" ) ) &&
+       ( strcmp( params->model, "T2" ) ) ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLBINARYMODEL );
   }
 
@@ -972,15 +972,15 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLPARAMS );
   }
 
-  if ( ( !strcmp( model, "BT" ) ) &&
-       ( !strcmp( model, "BT1P" ) ) &&
-       ( !strcmp( model, "BT2P" ) ) &&
-       ( !strcmp( model, "BTX" ) ) &&
-       ( !strcmp( model, "ELL1" ) ) &&
-       ( !strcmp( model, "DD" ) ) &&
-       ( !strcmp( model, "DDS" ) ) &&
-       ( !strcmp( model, "MSS" ) ) &&
-       ( !strcmp( model, "T2" ) ) ) {
+  if ( ( strcmp( model, "BT" ) ) &&
+       ( strcmp( model, "BT1P" ) ) &&
+       ( strcmp( model, "BT2P" ) ) &&
+       ( strcmp( model, "BTX" ) ) &&
+       ( strcmp( model, "ELL1" ) ) &&
+       ( strcmp( model, "DD" ) ) &&
+       ( strcmp( model, "DDS" ) ) &&
+       ( strcmp( model, "MSS" ) ) &&
+       ( strcmp( model, "T2" ) ) ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLBINARYMODEL );
   }
 
