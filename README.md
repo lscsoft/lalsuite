@@ -166,7 +166,7 @@ these directions.
 [clonerepo]:        https://git.ligo.org/lscsoft/lalsuite/-/wikis/BUILD#cloning-the-git-repository
 [cmp-discuss-a]:    https://sympa.ligo.org/wws/info/computing-discuss
 [cmp-discuss-s]:    https://grouper.ligo.org/selfmanage/computing-discuss
-[contributing]:     https://docs.ligo.org/lscsoft/lalsuite/dev/lalsuite_contributing.html
+[contributing]:     https://git.ligo.org/lscsoft/lalsuite/-/blob/master/CONTRIBUTING.md
 [currentissues]:    https://git.ligo.org/lscsoft/lalsuite/issues
 [doi]:              https://doi.org/10.7935/GT1W-FZ16
 [helpdesk]:         mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
