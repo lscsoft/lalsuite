@@ -369,6 +369,14 @@ how to trigger then:
             </td>
         </tr>
         <tr>
+            <td>Rebuild release Docker images</td>
+            <td>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-release</code><br/>
+                <i>or</i><br/>
+                Commit message: <code>[ci sched release]</code> (note: only runs on a GitLab fork of LALSuite)
+            </td>
+        </tr>
+        <tr>
             <td>Build and deploy Doxygen documentation</td>
             <td>
                 Schedule variable: <code>LCI_PIPE_TYPE=sched-doc</code><br/>

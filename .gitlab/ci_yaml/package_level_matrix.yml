@@ -16,19 +16,19 @@
 
       - LCI_PLAT: "el8"
         LCI_ENV: "LCI_BLD=rpm"
-        LCI_JOB_TYPE: ["merge", "sched-devimg", "sched-snapshot", "lalsuite-tag"]
+        LCI_JOB_TYPE: ["merge", "sched-devimg", "sched-snapshot", "sched-release", "lalsuite-tag"]
 
       # --- Debian packages --------------------------------------------
 
       - LCI_PLAT: "bookworm"
         LCI_ENV: "LCI_BLD=deb"
-        LCI_JOB_TYPE: ["merge", "sched-devimg", "sched-snapshot", "lalsuite-tag"]
+        LCI_JOB_TYPE: ["merge", "sched-devimg", "sched-snapshot", "sched-release", "lalsuite-tag"]
 
       # --- CUDA (Ubuntu) packages -------------------------------------
 
       - LCI_PLAT: "cuda12.8"
         LCI_ENV: "LCI_BLD=deb LCI_CUDA=yes"
-        LCI_JOB_TYPE: ["merge", "sched-devimg", "sched-snapshot", "lalsuite-tag"]
+        LCI_JOB_TYPE: ["merge", "sched-devimg", "sched-snapshot", "sched-release", "lalsuite-tag"]
 
       # --- Conda packages ---------------------------------------------
 

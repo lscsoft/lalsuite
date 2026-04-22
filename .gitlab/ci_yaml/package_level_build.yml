@@ -58,6 +58,15 @@
         LCI_ENV: '$[[ matrix.LCI_ENV ]]'
         LCI_JOB_TYPE: '$[[ matrix.LCI_JOB_TYPE ]]'
 
+# default rules for package jobs
+.default-pkg-level-rule:
+  rules:
+    # do not run when rebuilding release Docker images
+    - if: >-
+        $LCI_JOB_TYPE == "sched-release"
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
 lal:
   extends:
     - .pkg-level-job
@@ -68,7 +77,7 @@ lal:
   variables:
     PACKAGE: lal
   rules:
-    - !reference [.default-matrix-rule, rules]
+    - !reference [.default-pkg-level-rule, rules]
 
 lalframe:
   extends:
@@ -86,7 +95,7 @@ lalframe:
     - if: >
         $LCI_ENV =~ /LCL_LAL_ONLY=yes/
       when: never
-    - !reference [.default-matrix-rule, rules]
+    - !reference [.default-pkg-level-rule, rules]
 
 lalmetaio:
   extends:
@@ -104,7 +113,7 @@ lalmetaio:
     - if: >
         $LCI_ENV =~ /LCL_LAL_ONLY=yes/
       when: never
-    - !reference [.default-matrix-rule, rules]
+    - !reference [.default-pkg-level-rule, rules]
 
 lalsimulation:
   extends:
@@ -122,7 +131,7 @@ lalsimulation:
     - if: >
         $LCI_ENV =~ /LCL_LAL_ONLY=yes/
       when: never
-    - !reference [.default-matrix-rule, rules]
+    - !reference [.default-pkg-level-rule, rules]
 
 lalburst:
   extends:
@@ -144,7 +153,7 @@ lalburst:
     - if: >
         $LCI_ENV =~ /LCL_LAL_ONLY=yes/
       when: never
-    - !reference [.default-matrix-rule, rules]
+    - !reference [.default-pkg-level-rule, rules]
 
 lalinspiral:
   extends:
@@ -170,7 +179,7 @@ lalinspiral:
     - if: >
         $LCI_ENV =~ /LCL_LAL_ONLY=yes/
       when: never
-    - !reference [.default-matrix-rule, rules]
+    - !reference [.default-pkg-level-rule, rules]
 
 lalinference:
   extends:
@@ -198,7 +207,7 @@ lalinference:
     - if: >
         $LCI_ENV =~ /LCL_LAL_ONLY=yes/
       when: never
-    - !reference [.default-matrix-rule, rules]
+    - !reference [.default-pkg-level-rule, rules]
 
 lalpulsar:
   extends:
@@ -228,7 +237,7 @@ lalpulsar:
     - if: >
         $LCI_ENV =~ /LCL_LAL_ONLY=yes/
       when: never
-    - !reference [.default-matrix-rule, rules]
+    - !reference [.default-pkg-level-rule, rules]
 
 lalapps:
   extends:
@@ -260,7 +269,7 @@ lalapps:
     - if: >
         $LCI_ENV =~ /LCL_LAL_ONLY=yes/
       when: never
-    - !reference [.default-matrix-rule, rules]
+    - !reference [.default-pkg-level-rule, rules]
 
 upgrade:
   stage: package-level
@@ -308,4 +317,4 @@ upgrade:
     - if: >
         $LCI_ENV =~ /LCL_LAL_ONLY=yes/
       when: never
-    - !reference [.default-matrix-rule, rules]
+    - !reference [.default-pkg-level-rule, rules]

@@ -135,6 +135,7 @@ workflow:
           LCI_PIPE_TYPE must be set to the name of the pipeline to schedule:
           - sched-devimg: build and test Docker development images
           - sched-snapshot: build snapshot Docker images and wheels
+          - sched-release: rebuild release Docker images
           - sched-doc: build and deploy Doxygen documentation
           ------------------------------------------------------------------------
 
@@ -206,6 +207,36 @@ workflow:
         LCI_PIPE_TYPE: sched-snapshot
         # - add shapshot version number based on day
         LCI_CONFIGURE_FLAGS_PIPE: "--with-snapshot-version"
+
+    # ---- sched-release: Rebuild release Docker images
+
+    # runs if:
+    # - the trigger is a scheduled or manual web pipeline
+    # - the pipeline type is "sched-release"
+    # - the branch is the main branch at lscsoft/lalsuite
+    - if: >
+        ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
+        && $LCI_PIPE_TYPE == "sched-release"
+        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+      when: always
+      variables:
+        LCI_PIPE_NAME: "Rebuild release Docker images"
+        # - execute deployment actions
+        LCI_DEPLOY_EXECUTE: "yes"
+
+    # runs if:
+    # - the trigger is a commit push
+    # - the commit message contains "[ci sched release]"
+    # - the branch is NOT on lscsoft/lalsuite
+    - if: >
+        $CI_PIPELINE_SOURCE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci sched release\]/i
+        && $CI_PROJECT_PATH != "lscsoft/lalsuite"
+      when: always
+      variables:
+        LCI_PIPE_NAME: "[test] Rebuild release Docker images"
+        LCI_PIPE_TYPE: sched-release
 
     # ---- sched-doc: Build and deploy Doxygen documentation
 
