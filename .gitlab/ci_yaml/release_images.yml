@@ -40,10 +40,23 @@
     - .release-image-matrix
     - .deploy-job
     - .docker-build-job
+  script:
+    # generate configuration file for docker compose
+    - ${LCI_SCRIPTS}/docker_compose_cfg -o compose.yaml
+          --file ".gitlab/ci_images/release_${LCI_PLAT_BASE}.Dockerfile"
+          --build-args ${LCI_DOCKER_ARGS}
+          --tags ${IMG_PATHS}
+    # build image
+    - docker compose build
+    # test image
+    - docker run --rm ${IMG_PATHS%% *} lalapps_version
+    # push image to registry
+    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - docker compose push -q
 
 snapshot-image:deploy:
   extends:
-    .release-image-job
+    - .release-image-job
   needs:
     - job: lal
       parallel: !reference [.pkg-level-needs, parallel]
@@ -65,33 +78,13 @@ snapshot-image:deploy:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     # push release snapshot images to the "snapshot" tag
-    PLAT_BASE_IMG_PATH: "${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:snapshot"
-    PLAT_IMG_PATH: "${CI_REGISTRY_IMAGE}/${LCI_PLAT}:snapshot"
-  script:
-    # build image and push to registry
-    - |
-      docker_args="--pull"
-      for arg in ${LCI_DOCKER_ARGS}; do
-        docker_args="${docker_args} --build-arg ${arg}"
-      done
-      echo "docker_args=${docker_args}"
-      docker buildx build ${docker_args} --tag ${PLAT_BASE_IMG_PATH} --file ".gitlab/ci_images/release_${LCI_PLAT_BASE}.Dockerfile" .
-    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - |
-      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
-        echo "WARNING: simulating execution of deployment actions"
-        exit 123
-      fi
-    - docker push ${PLAT_BASE_IMG_PATH}
-    - docker tag ${PLAT_BASE_IMG_PATH} ${PLAT_IMG_PATH}
-    - docker push ${PLAT_IMG_PATH}
-    # test image
-    - docker run --rm ${PLAT_IMG_PATH} lalapps_version
+    IMG_PATHS: >-
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:snapshot
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:snapshot
   environment:
     name: "image/snapshot/${LCI_PLAT_BASE}"
-    url: "${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:snapshot"
+    url: "${CI_PROJECT_URL}/container_registry"
   rules:
-    - !reference [.deploy-check-execute, rules]
     # only run for building snapshot Docker images
     - if: >
         $LCI_PIPE_TYPE != "sched-snapshot"
