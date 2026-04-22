@@ -122,7 +122,7 @@ with open("@abs_top_srcdir@/README.md") as f:
     readme = f.readlines()
 
 description = readme[0].lstrip("#").strip()
-long_description = __doc__.strip() + "\n\n" + "\n".join(readme[1:]).strip()
+long_description = __doc__.strip() + "\n\n" + "".join(readme[1:]).strip()
 
 setup(
     # metadata
