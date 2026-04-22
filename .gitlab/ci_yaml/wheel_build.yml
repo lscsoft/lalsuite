@@ -98,9 +98,11 @@ wheel:deploy:
     # cleanup old wheels
     - |
       if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        ### TOFIX: replace --query-only with --username ${TWINE_USERNAME}
         ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --package lalsuite --days 365 --query-only
       else
-        ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --package lalsuite --days 365 --username ${TWINE_USERNAME} --do-it
+        ### TOFIX: replace --query-only with --username ${TWINE_USERNAME} --do-it
+        ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --package lalsuite --days 365 --query-only
       fi
     # upload wheels to PyPI
     - |
