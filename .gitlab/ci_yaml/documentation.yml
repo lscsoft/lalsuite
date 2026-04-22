@@ -59,12 +59,9 @@ doxygen-index:
     - cd html
     # add top-level index
     - |
-      cat > index.html <<EOF
-      <!DOCTYPE html>
-      <html>
-      <head><meta http-equiv="refresh" content="0; url='dev/index.html'"/></head>
-      </html>
-      EOF
+      ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
+          ${CI_SERVER_URL} lscsoft/lalsuite \
+          doxygen-index
   artifacts:
     expose_as: html
     paths:

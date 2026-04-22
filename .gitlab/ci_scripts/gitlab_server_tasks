@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2025 Karl Wette"
 import os
 import sys
 import time
+from textwrap import dedent
 import argparse
 import logging
 import gitlab
@@ -55,6 +56,8 @@ def parse_command_line():
     )
     subparsers = parser.add_subparsers(dest="command", help="subcommand help")
     subparsers.required = True
+
+    # Subparser for get-artifacts command
     parser_get_artifacts = subparsers.add_parser(
         "get-artifacts", help="get-artifacts help"
     )
@@ -70,6 +73,12 @@ def parse_command_line():
     parser_get_artifacts.add_argument(
         "job_name", type=str, help="Get artifacts from this job name"
     )
+
+    # Subparser for doxygen-index command
+    parser_doxygen_index = subparsers.add_parser(
+        "doxygen-index", help="doxygen-index help"
+    )
+    parser_doxygen_index.set_defaults(subcommand=doxygen_index)
 
     # Parse command line
     args = parser.parse_args()
@@ -124,6 +133,54 @@ def get_artifacts(server, repo, args):
     # extract artifacts from ZIP file
     with ZipFile(artifacts_archive) as zf:
         zf.extractall()
+
+
+def doxygen_index(server, repo, args):
+    """Generate a top-level index for Doxygen documentation"""
+
+    # get list of pages
+    pages = repo.pages.get()
+    deployments = pages.deployments
+    deployments = []
+    path_prefixes = natsorted(
+        [
+            p
+            for p in [d["path_prefix"] for d in deployments]
+            if p is not None and p != "dev"
+        ]
+    )
+    LOGGER.info(
+        "found Doxygen documentation for releases: %s",
+        ", ".join(path_prefixes) if path_prefixes else "none",
+    )
+
+    # generate index entries
+    entry_template = "<li><a href='{}/index.html'>{}</a></li>"
+    entries = [entry_template.format("dev", "development version")]
+    for p in path_prefixes:
+        entries.append(entry_template.format(p, "release version " + p))
+
+    # generate index
+    index = dedent("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <title>LALSuite Documentation</title>
+        </head>
+        <body>
+        <h1>LALSuite Documentation</h1>
+        Please select documentation for:
+        <ul>
+        {}
+        </ul>
+        </body>
+        </html>
+        """).strip().format("\n".join(entries))
+
+    # write index
+    with open("index.html", "w") as f:
+        print(index, file=f)
+    LOGGER.info("wrote index.html")
 
 
 def main():
