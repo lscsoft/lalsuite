@@ -17,7 +17,7 @@
 
 # avoid circular imports that would break migrations
 {% set migrating = False %}
-{% set migrating = True %}  # [python_impl!='cpython' or py>=313]
+{% set migrating = True %}  # [python_impl!='cpython' or py>=314]
 
 package:
   name: {{ name }}-split

@@ -24,8 +24,8 @@
 
       # --- Conda ------------------------------------------------------
 
-      - LCI_PLAT: "conda-py313"
-        LCI_ENV: "LCI_BLD=conda LCI_CONDA_PLAT_BASE=linux_64 LCI_CONDA_PLAT_lal=fft_implfftw LCI_CONDA_ABI=cp313"
+      - LCI_PLAT: "conda-py314"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_PLAT_BASE=linux_64 LCI_CONDA_PLAT_lal=fft_implfftw LCI_CONDA_ABI=cp314"
         LCI_JOB_TYPE: ["merge", "sched-devimg"]
         LCI_SINGLE_PKG: "conda"
 
