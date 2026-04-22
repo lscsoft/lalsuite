@@ -5,6 +5,8 @@ extend-exclude = [
 
 [lint]
 select = [
+    # isort errors
+    "I",
     # pycodestyle errors
     "E9",
     # executable issues
