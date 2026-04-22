@@ -43,7 +43,6 @@ conda smithy recipe-lint --conda-forge || true  # lint, but don't fail
 # specify `--python` to build only the Python version of the Conda container
 export CONDA_BUILD_ARGS="--python \"${LCI_PYTHON_VERSION} *_cp*\""
 
-
 echo "======================== Conda configuration ========================="
 
 # use package-specific configuration
