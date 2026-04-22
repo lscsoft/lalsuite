@@ -14,7 +14,7 @@ def fail(msg):
 
 
 # get input arguments
-install_dir, install_dirmap = sys.argv[1:]
+toplevel_reldir, install_dir, install_dirmap = sys.argv[1:]
 
 # install regex built from install directory map
 # - make 'to_dir' relative to install_dir to ensure
@@ -32,6 +32,18 @@ for elem in install_dirmap.split():
 print(r"s|\.\./\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|../\1/index.html|g")
 print(r"s|\.\./\.\./\.\./doxygen/out/index\.html|../index.html|g")
 print(r"s|\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|./\1/index.html|g")
+
+# install regex for top-level README and contributing guide
+print(
+    r"s|https://git\.ligo\.org/lscsoft/lalsuite/-/blob/master/README\.md|"
+    + toplevel_reldir
+    + r"/index.html|g"
+)
+print(
+    r"s|https://git\.ligo\.org/lscsoft/lalsuite/-/blob/master/CONTRIBUTING\.md|"
+    + toplevel_reldir
+    + r"/lalsuite_contributing.html|g"
+)
 
 # output
 print("p")
