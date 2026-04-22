@@ -17,20 +17,3 @@ select = [
     "W2",
     "W605",
 ]
-
-[lint.per-file-ignores]
-"__init__.py" = [
-    "F401",  # unused-import
-]
-"lalburst/*" = [
-    "F401",  # unused-import
-]
-"lalinspiral/*" = [
-    "F401",  # unused-import
-]
-"lalinference/*" = [
-    "F401",  # unused-import
-]
-"lalsimulation/*" = [
-    "F401",  # unused-import
-]
