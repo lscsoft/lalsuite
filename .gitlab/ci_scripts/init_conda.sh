@@ -10,6 +10,10 @@ conda activate base
 conda config --set always_yes yes
 conda config --add channels conda-forge
 conda config --set channel_priority strict
+conda config --set remote_max_retries 5
+conda config --set remote_backoff_factor 2
+conda config --set remote_connect_timeout_secs 60.0
+conda config --set remote_read_timeout_secs 180.0
 
 # try to activate environment
 if ! conda activate lalsuite-ci; then
