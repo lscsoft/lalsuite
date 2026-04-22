@@ -439,8 +439,8 @@ default:
     # initialise Conda environment
     - source ${LCI_SCRIPTS}/init_conda.sh
 
-# Docker image job defaults
-.docker-image-job:
+# Docker image build job defaults
+.docker-build-job:
 
   # use Docker image
   # - need to install Git-LFS

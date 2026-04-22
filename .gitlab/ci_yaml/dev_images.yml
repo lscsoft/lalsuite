@@ -100,7 +100,7 @@ dev-image:
   stage: input-sources
   extends:
     - .dev-image-job
-    - .docker-image-job
+    - .docker-build-job
   script:
     # build Docker images in a temporary directory
     # - all Docker files, and any input files they require, should reside in the
@@ -128,7 +128,7 @@ dev-image:
 dev-image:deploy:
   extends:
     - .dev-image-job
-    - .docker-image-job
+    - .docker-build-job
     - .deploy-job
   needs:
     # build the development images

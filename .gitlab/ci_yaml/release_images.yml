@@ -39,7 +39,7 @@
     - .linux-job
     - .release-image-matrix
     - .deploy-job
-    - .docker-image-job
+    - .docker-build-job
 
 snapshot-image:deploy:
   extends:
