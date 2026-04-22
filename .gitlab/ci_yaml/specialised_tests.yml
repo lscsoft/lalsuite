@@ -40,7 +40,7 @@ lalinference:test-job:
     - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
     # install upstream RPMs
     - |
-      upstream_rpms=$(find ${PACKAGE_ROOT_DIR} -name '*.rpm')
+      upstream_rpms=$(find packages/ -name '*.rpm')
       echo "===== upstream RPMs"
       printf "%s\n" ${upstream_rpms}
       echo "====="
@@ -91,7 +91,7 @@ lalpulsar:long-tests:
     - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
     # install upstream RPMs
     - |
-      upstream_rpms=$(find ${PACKAGE_ROOT_DIR} -name '*.rpm')
+      upstream_rpms=$(find packages/ -name '*.rpm')
       echo "===== upstream RPMs"
       printf "%s\n" ${upstream_rpms}
       echo "====="
