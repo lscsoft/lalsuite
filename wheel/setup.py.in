@@ -210,7 +210,7 @@ setup(
             'scipy',
         ],
         'lalpulsar': [
-            'solar-system-ephemerides',
+            'solar_system_ephemerides',
         ],
         'test': [
             'pytest',

@@ -9,7 +9,7 @@ set -ex
 mkdir -pv _build
 cd _build
 
-# path to ephemeris files in `solar-system-ephemerides` package
+# path to ephemeris files in `solar_system_ephemerides` package
 SSE='./python*/site-packages/solar_system_ephemerides/ephemerides'
 
 # configure
