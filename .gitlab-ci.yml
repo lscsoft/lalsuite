@@ -417,7 +417,7 @@ default:
     # set up ccache
     - export PATH="/usr/lib/ccache:/opt/local/libexec/ccache:${PATH}"
     # make directories
-    - mkdir -p ${XDG_CONFIG_HOME} ${XDG_CACHE_HOME}
+    - mkdir -p ${LCI_TMPDIR} ${XDG_CONFIG_HOME} ${XDG_CACHE_HOME}
     # ensure Git-LFS files are checked out
     - test "X${GIT_STRATEGY}" = Xnone || git lfs ls-files
 
@@ -442,13 +442,16 @@ default:
 # Docker image build job defaults
 .docker-build-job:
 
-  # use Docker image
-  # - need to install Git-LFS
+  # use Docker image, with additional packages
   image: docker:latest
   before_script:
-    - apk add --no-interactive --no-progress git-lfs
-    - git lfs install
-    - !reference [default, before_script]
+    # exit immediately on any error
+    - set -e
+    # install additional packages
+    - apk add --no-interactive --no-progress
+          coreutils python3 py3-yaml
+    # make directories
+    - mkdir -p ${LCI_TMPDIR}
 
   # select runner which can runs Docker container
   tags:

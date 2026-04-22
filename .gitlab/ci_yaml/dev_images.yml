@@ -111,16 +111,16 @@ dev-image:
       mkdir ${tmpdir}/.gitlab/
       mv -v .gitlab/ci_images/ ${tmpdir}/.gitlab/
       cd ${tmpdir}/
-    # build image and push to registry
-    - |
-      docker_args="--pull"
-      for arg in ${LCI_DOCKER_ARGS}; do
-        docker_args="${docker_args} --build-arg ${arg}"
-      done
-      echo "docker_args=${docker_args}"
-      docker buildx build ${docker_args} --tag ${TESTING_IMG_PATH} --file ".gitlab/ci_images/dev_${LCI_PLAT_BASE}.Dockerfile" .
+    # generate configuration file for docker compose
+    - ${LCI_SCRIPTS}/docker_compose_cfg -o compose.yaml
+          --file ".gitlab/ci_images/dev_${LCI_PLAT_BASE}.Dockerfile"
+          --build-args ${LCI_DOCKER_ARGS}
+          --tags ${TESTING_IMG_PATH}
+    # build image
+    - docker compose build
+    # push image to registry
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - docker push ${TESTING_IMG_PATH}
+    - docker compose push -q
   rules:
     - if: >
         $LCI_PIPE_TYPE == "sched-devimg"
