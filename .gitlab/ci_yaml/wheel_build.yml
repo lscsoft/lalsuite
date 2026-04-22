@@ -47,7 +47,7 @@
     - ./00boot
     - source ${LCI_SCRIPTS}/wheel.sh
 
-wheel:check:
+wheel:deploy:
   extends:
     - .generic-job
     - .deploy-job
@@ -60,7 +60,14 @@ wheel:check:
       optional: true
     - job: wheel:macos-arm64
       optional: true
+  variables:
+    # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
+    PYPI_CLEANUP_PASSWORD: "${TWINE_PASSWORD}"
   script:
+    - |
+      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        echo "WARNING: simulating execution of deployment actions"
+      fi
     # check for any wheels to deploy, list them
     - |
       if [ ! -d wheelhouse/ ]; then
@@ -72,29 +79,6 @@ wheel:check:
       echo "----------------------------"
     # verify wheels
     - python -m twine check --strict wheelhouse/*
-  rules:
-    - if: >
-        $LCI_PIPE_TYPE == "sched-snapshot"
-      when: always
-    - if: >
-        $LCI_PIPE_TYPE == "lalsuite-tag"
-      when: always
-
-wheel:deploy:
-  extends:
-    - .generic-job
-    - .deploy-job
-  needs:
-    - !reference [wheel:check, needs]
-    - wheel:check
-  variables:
-    # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
-    PYPI_CLEANUP_PASSWORD: "${TWINE_PASSWORD}"
-  script:
-    - |
-      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
-        echo "WARNING: simulating execution of deployment actions"
-      fi
     # cleanup old wheels
     - |
       if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
@@ -106,9 +90,7 @@ wheel:deploy:
       fi
     # upload wheels to PyPI
     - |
-      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
-        ${LCI_SCRIPTS}/retry python -m twine check --strict wheelhouse/*
-      else
+      if test "${LCI_DEPLOY_EXECUTE}" = "yes"; then
         ${LCI_SCRIPTS}/retry python -m twine upload --verbose --non-interactive wheelhouse/*
       fi
     # done
