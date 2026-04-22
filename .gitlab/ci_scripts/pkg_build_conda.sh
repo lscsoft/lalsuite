@@ -62,7 +62,7 @@ source ${LCI_SCRIPTS}/build_env.sh
 
 # build packages
 # - we use eval here because CONDA_BUILD_ARGS contains multiple spaces
-eval ${LCI_SCRIPTS}/retry --max-try 2 conda build \
+eval conda build \
     recipe/ \
     --dirty \
     --error-overlinking \
