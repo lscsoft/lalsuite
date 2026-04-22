@@ -173,6 +173,7 @@ workflow:
         LCI_PIPE_NAME: "[test] Build and test Docker development images"
         LCI_PIPE_TYPE: sched-devimg
         # - test the new Docker development image tags
+        LCI_DEV_IMG: "${CI_REGISTRY_IMAGE}/dev"
         LCI_DEV_TAG_SUFFIX: "-testing"
 
     # ---- sched-snapshot: Build snapshot Docker images and wheels
