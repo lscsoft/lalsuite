@@ -38,6 +38,7 @@ doxygen-doc:
       # outputs from Doxygen documentation filters for debugging
       - doxygen_filtered/
     reports:
+      # path prefix
       dotenv: path_prefix.env
   rules:
     - if: >
