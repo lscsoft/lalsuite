@@ -2,6 +2,8 @@
 # LALSuite GitLab-CI: package-level build jobs
 # ----------------------------------------------------------------------
 
+# -- templates ---------------------------------------------------------
+
 .pkg-level-job:
   stage: package-level
   image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
@@ -23,6 +25,8 @@
     - export TARBALL=$(ls -1 ${CI_PROJECT_DIR}/tarballs/${PACKAGE}-*.tar.*)
     - tar xf ${TARBALL}
     - cd ${PACKAGE}-*/
+    # install upstream packages
+    - source ${LCI_SCRIPTS}/pkg_install_upstream_${LCI_PKG}.sh
     # run package-level build
     - source ${LCI_SCRIPTS}/pkg_build_${LCI_BLD}.sh
     # check/concatenate code quality reports
@@ -48,6 +52,12 @@
       codequality: concat-code-quality.json
       junit: "build/**/*junit*.xml"
     when: always
+  rules:
+    # do not run when rebuilding release Docker images
+    - if: >-
+        $LCI_JOB_TYPE == "sched-release"
+      when: never
+    - !reference [.default-matrix-rule, rules]
 
 # matches CI package job needs across build matrix
 # - e.g. "lalframe [LCI_PLAT=...]" needs "lal [LCI_PLAT=...]"
@@ -58,14 +68,7 @@
         LCI_ENV: '$[[ matrix.LCI_ENV ]]'
         LCI_JOB_TYPE: '$[[ matrix.LCI_JOB_TYPE ]]'
 
-# default rules for package jobs
-.default-pkg-level-rule:
-  rules:
-    # do not run when rebuilding release Docker images
-    - if: >-
-        $LCI_JOB_TYPE == "sched-release"
-      when: never
-    - !reference [.default-matrix-rule, rules]
+# -- package jobs ------------------------------------------------------
 
 lal:
   extends:
@@ -76,8 +79,6 @@ lal:
     - job: tarballs:lal
   variables:
     PACKAGE: lal
-  rules:
-    - !reference [.default-pkg-level-rule, rules]
 
 lalframe:
   extends:
@@ -90,12 +91,6 @@ lalframe:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     PACKAGE: lalframe
-  rules:
-    # do not run if only building packages for the LAL library
-    - if: >
-        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
-      when: never
-    - !reference [.default-pkg-level-rule, rules]
 
 lalmetaio:
   extends:
@@ -108,12 +103,6 @@ lalmetaio:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     PACKAGE: lalmetaio
-  rules:
-    # do not run if only building packages for the LAL library
-    - if: >
-        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
-      when: never
-    - !reference [.default-pkg-level-rule, rules]
 
 lalsimulation:
   extends:
@@ -126,12 +115,6 @@ lalsimulation:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     PACKAGE: lalsimulation
-  rules:
-    # do not run if only building packages for the LAL library
-    - if: >
-        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
-      when: never
-    - !reference [.default-pkg-level-rule, rules]
 
 lalburst:
   extends:
@@ -148,12 +131,6 @@ lalburst:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     PACKAGE: lalburst
-  rules:
-    # do not run if only building packages for the LAL library
-    - if: >
-        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
-      when: never
-    - !reference [.default-pkg-level-rule, rules]
 
 lalinspiral:
   extends:
@@ -174,12 +151,6 @@ lalinspiral:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     PACKAGE: lalinspiral
-  rules:
-    # do not run if only building packages for the LAL library
-    - if: >
-        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
-      when: never
-    - !reference [.default-pkg-level-rule, rules]
 
 lalinference:
   extends:
@@ -202,12 +173,6 @@ lalinference:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     PACKAGE: lalinference
-  rules:
-    # do not run if only building packages for the LAL library
-    - if: >
-        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
-      when: never
-    - !reference [.default-pkg-level-rule, rules]
 
 lalpulsar:
   extends:
@@ -232,12 +197,6 @@ lalpulsar:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     PACKAGE: lalpulsar
-  rules:
-    # do not run if only building packages for the LAL library
-    - if: >
-        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
-      when: never
-    - !reference [.default-pkg-level-rule, rules]
 
 lalapps:
   extends:
@@ -264,12 +223,8 @@ lalapps:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     PACKAGE: lalapps
-  rules:
-    # do not run if only building packages for the LAL library
-    - if: >
-        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
-      when: never
-    - !reference [.default-pkg-level-rule, rules]
+
+# -- package upgrade job -----------------------------------------------
 
 upgrade:
   stage: package-level
@@ -313,8 +268,4 @@ upgrade:
     - if: >
         $LCI_ENV =~ /LCI_BLD=make/
       when: never
-    # do not run if only building packages for the LAL library
-    - if: >
-        $LCI_ENV =~ /LCL_LAL_ONLY=yes/
-      when: never
-    - !reference [.default-pkg-level-rule, rules]
+    - !reference [.pkg-level-job, rules]

@@ -2,15 +2,6 @@
 # LALSuite GitLab-CI: build RPM package
 # ----------------------------------------------------------------------
 
-# install upstream RPMs
-upstream_rpms=$(find ${PACKAGE_ROOT_DIR} -name '*.rpm')
-if [ "X${upstream_rpms}" != X ]; then
-    echo "===== upstream RPMs"
-    printf "%s\n" ${upstream_rpms}
-    echo "====="
-    ${LCI_SCRIPTS}/retry dnf install -y ${upstream_rpms}
-fi
-
 # where to build things
 topdir="${PWD}/"
 

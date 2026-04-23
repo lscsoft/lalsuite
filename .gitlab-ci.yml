@@ -16,7 +16,8 @@ include:
   - local: .gitlab/ci_yaml/tarballs.yml
   - local: .gitlab/ci_yaml/package_level_matrix.yml
   - local: .gitlab/ci_yaml/package_level_build.yml
-  - local: .gitlab/ci_yaml/specialised_tests.yml
+  - local: .gitlab/ci_yaml/single_package_templates.yml
+  - local: .gitlab/ci_yaml/single_package_tests.yml
   - local: .gitlab/ci_yaml/top_level_matrix.yml
   - local: .gitlab/ci_yaml/top_level_build.yml
   - local: .gitlab/ci_yaml/wheel_matrix.yml

@@ -2,20 +2,6 @@
 # LALSuite GitLab-CI: build .deb package
 # ----------------------------------------------------------------------
 
-# install upstream .debs
-upstream_debs=$(find ${PACKAGE_ROOT_DIR} -name '*.deb')
-if [ "X${upstream_debs}" != X ]; then
-    echo "===== upstream .debs"
-    printf "%s\n" ${upstream_debs}
-    echo "====="
-    mkdir -pv /srv/local-apt-repository
-    cp -v ${upstream_debs} /srv/local-apt-repository
-    /usr/lib/local-apt-repository/rebuild
-fi
-
-# update APT cache
-${LCI_SCRIPTS}/retry apt-get -y -q update
-
 # copy tarball and rename to orig tarball
 suffix=$(basename ${TARBALL} | sed 's/.*\.\(tar\..*\)/\1/')
 version=$(basename ${TARBALL} | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
