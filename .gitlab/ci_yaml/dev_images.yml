@@ -31,6 +31,10 @@
         LCI_DOCKER_ARGS: "CUDA_VERSION=12.8.1 UBU_VERSION=noble UBU_VERSION_N=24.04"
 
       # Conda
+      - LCI_PLAT: "conda-py314"
+        LCI_PLAT_BASE: "conda"
+        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.14.*"
+
       - LCI_PLAT: "conda-py313"
         LCI_PLAT_BASE: "conda"
         LCI_DOCKER_ARGS: "PYTHON_VERSION=3.13.*"
