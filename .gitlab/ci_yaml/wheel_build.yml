@@ -60,14 +60,7 @@ wheel:deploy:
       optional: true
     - job: wheel:macos-arm64
       optional: true
-  variables:
-    # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
-    PYPI_CLEANUP_PASSWORD: "${TWINE_PASSWORD}"
   script:
-    - |
-      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
-        echo "WARNING: simulating execution of deployment actions"
-      fi
     # check for any wheels to deploy, list them
     - |
       if [ ! -d wheelhouse/ ]; then
@@ -79,25 +72,17 @@ wheel:deploy:
       echo "----------------------------"
     # verify wheels
     - python -m twine check --strict wheelhouse/*
-    # cleanup old wheels
-    - |
-      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
-        ### TOFIX: replace --query-only with --username ${TWINE_USERNAME}
-        ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --package lalsuite --days 365 --query-only
-      else
-        ### TOFIX: replace --query-only with --username ${TWINE_USERNAME} --do-it
-        ${LCI_SCRIPTS}/retry pypi-cleanup --verbose --package lalsuite --days 365 --query-only
-      fi
+    # show old development wheels that might need cleaning up
+    - ${LCI_SCRIPTS}/retry pypi-cleanup --package lalsuite --days 365 --query-only
     # upload wheels to PyPI
-    - |
-      if test "${LCI_DEPLOY_EXECUTE}" = "yes"; then
-        ${LCI_SCRIPTS}/retry python -m twine upload --verbose --non-interactive wheelhouse/*
-      fi
-    # done
+    # - TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     - |
       if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        echo "WARNING: simulating execution of deployment actions"
         exit 123
       fi
+      ${LCI_SCRIPTS}/retry python -m twine upload --non-interactive wheelhouse/*
+    # done
   environment:
     name: "wheel/${LCI_WHEEL_ENV_SUBDIV}"
     url: "https://pypi.org/project/lalsuite/"
