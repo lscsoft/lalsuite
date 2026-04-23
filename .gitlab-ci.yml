@@ -458,6 +458,8 @@ default:
 
 # use Conda environment for generic jobs
 .generic-job:
+  extends:
+    - .default-timeout
   image: "${LCI_DEV_IMG}:dev-conda-py312${LCI_DEV_TAG_SUFFIX}"
   needs:
     # ensure the Docker development images are built first
@@ -470,6 +472,8 @@ default:
 
 # Docker image build job defaults
 .docker-build-job:
+  extends:
+    - .default-timeout
 
   # use Docker image, with additional packages
   image: docker:latest
@@ -498,6 +502,8 @@ default:
 
 # Docker image management job default
 .docker-manage-job:
+  extends:
+    - .default-timeout
 
   # use crane from go-containerregistry
   image:
@@ -515,6 +521,8 @@ default:
 
 # deploy job defaults
 .deploy-job:
+  extends:
+    - .default-timeout
 
   # run deploy jobs after all other jobs
   stage: .post
