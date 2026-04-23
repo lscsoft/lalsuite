@@ -52,6 +52,7 @@ requirements:
     - liblalsimulation >={{ lalsimulation_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
+    - swig-abi
 
 outputs:
   - name: lalpulsar-data
@@ -103,6 +104,7 @@ outputs:
         - liblalsimulation >={{ lalsimulation_version }}
         - libgomp  # [linux]
         - llvm-openmp  # [osx]
+        - swig-abi
       run:
         - cfitsio
         - fftw
@@ -167,6 +169,7 @@ outputs:
         - python-lalframe >={{ lalframe_version }}
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
+        - swig-abi
       run:
         - astropy
         - h5py

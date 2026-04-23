@@ -60,6 +60,7 @@ requirements:
     - liblalsimulation >={{ lalsimulation_version }}
     - liblalburst >={{ lalburst_version }}
     - liblalinspiral >={{ lalinspiral_version }}
+    - swig-abi
 
 outputs:
   - name: lalinference-data
@@ -110,6 +111,7 @@ outputs:
         - liblalburst >={{ lalburst_version }}
         - liblalinspiral >={{ lalinspiral_version }}
         - llvm-openmp  # [osx]
+        - swig-abi
       run:
         - gsl
         - {{ pin_subpackage("lalinference-data", exact=True) }}
@@ -173,6 +175,7 @@ outputs:
         - python-lalburst >={{ lalburst_version }}
         - python-lalinspiral >={{ lalinspiral_version }}
         - numpy
+        - swig-abi
       run:
         - astropy >=1.1.1
         - healpy >=1.17.3

@@ -46,6 +46,7 @@ requirements:
     - liblalburst >={{ lalburst_version }}
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalsimulation >={{ lalsimulation_version }}
+    - swig-abi
 
 outputs:
   - name: liblalinspiral
@@ -67,6 +68,7 @@ outputs:
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
+        - swig-abi
       run:
         - gsl
         - liblal >={{ lal_version }}
@@ -133,6 +135,7 @@ outputs:
         - python-lalframe >={{ lalframe_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
+        - swig-abi
       run:
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - igwn-ligolw

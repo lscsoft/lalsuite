@@ -49,6 +49,7 @@ requirements:
     - pytest
     - python
     - python-lal >={{ lal_version }}
+    - swig-abi
     # extras for help2man / make check
     - astropy  # [py != 39]
     - gwpy  # [py != 39]
