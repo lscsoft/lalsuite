@@ -14,7 +14,7 @@ Optional dependencies:
   $ pip install lalsuite[lalinference]
   ```
 
-* Packages needed by LALPulsar for pulsar and continuous wave gravitational wave data analysis, e.g. [solar system ephemerides](https://pypi.org/project/solar-system-ephemerides/):
+* Packages needed by LALPulsar for pulsar and continuous wave gravitational wave data analysis, e.g. [solar system ephemerides](https://pypi.org/project/solar_system_ephemerides/):
   ```
   $ pip install lalsuite[lalpulsar]
   ```
