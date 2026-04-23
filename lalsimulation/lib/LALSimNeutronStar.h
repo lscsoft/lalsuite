@@ -220,11 +220,15 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
 EOSMultiParts *XLALSimNeutronStarEOSMultiPartsByName(const char *name);
 EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname);
 
+#ifndef SWIG /* exclude from SWIG interface: double* array params are not handled correctly by SWIG */
+/* Python users should use XLALSimNeutronStarEOSFromArrays instead, which takes REAL8Vector inputs */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
 
+/* Python users should use XLALSimNeutronStarEOSFromArraysPhaseTransition instead, which takes REAL8Vector inputs */
 EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition(double *nbdat, double *edat, double *pdat,
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
+#endif /* SWIG */
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
     const REAL8Vector *energy_density, const REAL8Vector *pressure);
