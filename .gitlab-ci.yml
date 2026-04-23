@@ -474,7 +474,6 @@ default:
 .docker-build-job:
   extends:
     - .default-timeout
-
   # use Docker image, with additional packages
   image: docker:latest
   before_script:
@@ -485,18 +484,14 @@ default:
           coreutils python3 py3-yaml
     # make directories
     - mkdir -p ${LCI_TMPDIR}
-
   # select runner which can runs Docker container
   tags:
     - executor-docker
-
   # set up Docker
   variables:
     DOCKER_DRIVER: overlay
-
   # do not retry jobs
   retry: 0
-
   # do not interrupt
   interruptible: false
 
@@ -504,7 +499,6 @@ default:
 .docker-manage-job:
   extends:
     - .default-timeout
-
   # use crane from go-containerregistry
   image:
     name: gcr.io/go-containerregistry/crane:debug
@@ -512,10 +506,8 @@ default:
   before_script:
     # exit immediately on any error
     - set -e
-
   # do not retry jobs
   retry: 0
-
   # do not interrupt
   interruptible: false
 
@@ -523,16 +515,12 @@ default:
 .deploy-job:
   extends:
     - .default-timeout
-
   # run deploy jobs after all other jobs
   stage: .post
-
   # do not retry jobs
   retry: 0
-
   # do not interrupt
   interruptible: false
-
   allow_failure:
     # returned when $LCI_DEPLOY_EXECUTE is simulating deployment actions
     exit_codes: 123
@@ -558,15 +546,12 @@ default:
 .macos-job:
   extends:
     - .default-timeout
-
   variables:
     # use the clone strategy so permissions are correctly reset on any failed jobs
     # see: https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/3726
     GIT_STRATEGY: clone
-
     # macOS jobs cannot modify environments outside the project directory
     CONDA_ENVS_PATH: "${LCI_TMPDIR}/conda/envs"
-
     # stop Clang generating profile files
     LLVM_PROFILE_FILE: "/dev/null"
 
