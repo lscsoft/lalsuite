@@ -31,7 +31,6 @@ stages:
   - code-quality
   - package-level
   - top-level
-  - deploy
 
 variables:
   # job stage attempts
@@ -486,7 +485,9 @@ default:
 
 # deploy job defaults
 .deploy-job:
-  stage: deploy
+
+  # run deploy jobs after all other jobs
+  stage: .post
 
   # do not retry jobs
   retry: 0

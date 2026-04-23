@@ -4,7 +4,6 @@
 
 .wheel-job:
   stage: top-level
-  needs: []
   artifacts:
     expire_in: 18h
     paths:

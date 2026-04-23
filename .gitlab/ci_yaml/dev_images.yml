@@ -130,25 +130,6 @@ dev-image:deploy:
     - .dev-image-job
     - .docker-manage-job
     - .deploy-job
-  needs:
-    # build the development images
-    - job: dev-image
-      parallel:
-        matrix:
-          - LCI_PLAT: '$[[ matrix.LCI_PLAT ]]'
-            LCI_PLAT_BASE: '$[[ matrix.LCI_PLAT_BASE ]]'
-            LCI_DOCKER_ARGS: '$[[ matrix.LCI_DOCKER_ARGS ]]'
-    # run the package-level build jobs
-    # - upgrade depends on all the package-level jobs
-    - job: upgrade
-      optional: true
-    # run the top-level build jobs
-    - job: lalsuite:linux
-      optional: true
-    - job: lalsuite:macos-x86-64
-      optional: true
-    - job: lalsuite:macos-arm64
-      optional: true
   script:
     - crane auth login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
     # copy testing image to production image
