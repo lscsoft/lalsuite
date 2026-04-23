@@ -30,6 +30,7 @@ stages:
   - code-quality
   - package-level
   - top-level
+  - release-image
 
 variables:
   # job stage attempts

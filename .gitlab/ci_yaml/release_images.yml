@@ -91,8 +91,8 @@ snapshot-image:deploy:
       when: never
     - !reference [.default-matrix-rule, rules]
 
-release-image:prepare:
-  stage: .post
+release-image:
+  stage: release-image
   extends:
     - .linux-job
     - .release-image-matrix
@@ -125,7 +125,7 @@ release-image:deploy:
   extends:
     - .release-image-job
   needs:
-    - job: release-image:prepare
+    - job: release-image
       parallel:
         matrix:
           - LCI_PLAT: '$[[ matrix.LCI_PLAT ]]'
