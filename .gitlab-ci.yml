@@ -26,8 +26,6 @@ include:
 # -- CI pipeline setup -------------------------------------------------
 
 stages:
-  - pipeline-errors
-  - input-sources
   - code-quality
   - package-level
   - top-level
@@ -366,7 +364,7 @@ workflow:
 # -- CI job for displaying pipeline setup errors -----------------------
 
 pipeline-error:
-  stage: pipeline-errors
+  stage: .pre
   image: docker:latest
   variables:
     GIT_STRATEGY: none

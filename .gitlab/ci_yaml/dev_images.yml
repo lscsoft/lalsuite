@@ -97,7 +97,7 @@
     FINAL_IMG_PATH: "${CI_REGISTRY_IMAGE}/dev:dev-${LCI_PLAT}"
 
 dev-image:
-  stage: input-sources
+  stage: .pre
   extends:
     - .dev-image-job
     - .docker-build-job
