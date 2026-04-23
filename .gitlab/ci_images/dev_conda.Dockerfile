@@ -48,6 +48,10 @@ conda activate lalsuite-ci
 # pin Python version to PYTHON_VERSION
 conda config --add pinned_packages python=="${PYTHON_VERSION}"
 
+# ignore Python version constraints in conda-dev-env.yml
+# - Python version is already pinned above
+sed -i 's/- python .*$/- python/' conda-dev-env.yml
+
 # install required CI packages
 conda install --quiet --name lalsuite-ci \
     "python-gitlab>=5.6.0" \
