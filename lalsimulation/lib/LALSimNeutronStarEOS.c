@@ -289,10 +289,7 @@ double XLALSimNeutronStarEOSMinPressureGeometrized(LALSimNeutronStarEOS * eos)
  */
 double XLALSimNeutronStarEOSMaxPressure(LALSimNeutronStarEOS * eos)
 {
-    double pmax;
-    pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos);
-    pmax /= LAL_G_C4_SI;
-    return pmax;
+    return XLALSimNeutronStarEOSMaxPressureGeometrized(eos)/LAL_G_C4_SI;
 }
 
 
@@ -303,11 +300,7 @@ double XLALSimNeutronStarEOSMaxPressure(LALSimNeutronStarEOS * eos)
  */
 double XLALSimNeutronStarEOSMinPressure(LALSimNeutronStarEOS * eos)
 {
-    double pmin;
-    double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos);
-    pmin = eos->p_of_h(hmin, eos);
-    pmin /= LAL_G_C4_SI;
-    return pmin;
+    return XLALSimNeutronStarEOSMinPressureGeometrized(eos)/LAL_G_C4_SI;
 }
 
 /**
