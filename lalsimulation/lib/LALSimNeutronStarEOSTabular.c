@@ -1221,11 +1221,11 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
         double *muedat_recal = XLALMalloc(ndat * sizeof(*muedat_recal));
         double *yedat_recal  = XLALMalloc(ndat * sizeof(*yedat_recal));
         double *cs2dat_recal = XLALMalloc(ndat * sizeof(*cs2dat_recal));
-        memset(nbdat_recal,  0.0, ndat * sizeof(double));
-        memset(mubdat_recal, 0.0, ndat * sizeof(double));
-        memset(muedat_recal, 0.0, ndat * sizeof(double));
-        memset(yedat_recal,  0.0, ndat * sizeof(double));
-        memset(cs2dat_recal, 0.0, ndat * sizeof(double));
+        memset(nbdat_recal,  0.0, ndat * sizeof(*nbdat_recal));
+        memset(mubdat_recal, 0.0, ndat * sizeof(*mubdat_recal));
+        memset(muedat_recal, 0.0, ndat * sizeof(*muedat_recal));
+        memset(yedat_recal,  0.0, ndat * sizeof(*yedat_recal));
+        memset(cs2dat_recal, 0.0, ndat * sizeof(*cs2dat_recal));
         double *edat_recal = XLALMalloc(ndat * sizeof(*edat_recal));
         double *pdat_recal = XLALMalloc(ndat * sizeof(*pdat_recal));
         size_t ndat_total = 0;
