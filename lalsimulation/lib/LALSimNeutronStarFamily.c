@@ -538,7 +538,7 @@ double XLALSimNeutronStarFamMassTOVLimit(FamMultiParts *fam)
     if (fam->mtov == 1) {
         int nb_branch = XLALSimNeutronStarFamNumberOfBranches(fam);
         for (int b = 0 ; b < nb_branch; b++){
-            mmax_branch_temp = XLALSimNeutronStarFamBranchMaxMass(b, fam)
+            mmax_branch_temp = XLALSimNeutronStarFamBranchMaxMass(b, fam);
             if (mmax_branch_temp > mmax_branch)
                 mmax_branch = mmax_branch_temp;
         }
