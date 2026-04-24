@@ -20,6 +20,10 @@
         LCI_PLAT_BASE: "debian"
         LCI_DOCKER_ARGS: "DEB_VERSION=bookworm"
 
+      - LCI_PLAT: "trixie"
+        LCI_PLAT_BASE: "debian"
+        LCI_DOCKER_ARGS: "DEB_VERSION=trixie"
+
       # Ubuntu
       - LCI_PLAT: "noble"
         LCI_PLAT_BASE: "ubuntu"
