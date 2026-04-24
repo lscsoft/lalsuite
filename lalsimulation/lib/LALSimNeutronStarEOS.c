@@ -105,8 +105,8 @@ static int find_eos_piece_pressure(double p, EOSMultiParts *eos)
         double pmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, j);
         if (p >= pmin && p <= pmax) return j;
     }
-    assert(0 && "Pressure not found in EoS piece, see function find_eos_piece_pressure in LALSimNeutronStarEOS.c\n");
-    return -1;
+    XLALPrintError("Pressure not found in EoS piece.\n");
+    return XLAL_FAILURE;
 }
 
 
@@ -121,8 +121,8 @@ static int find_eos_piece_enthalpy(double h, EOSMultiParts *eos)
         double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, j);
         if (h >= hmin && h <= hmax) return j;
     }
-    assert(0 && "Enthalpy not found in EoS piece, see function find_eos_piece_enthalpy in LALSimNeutronStarEOS.c\n");
-    return -1;
+    XLALPrintError("Enthalpy not found in EoS piece.\n");
+    return XLAL_FAILURE;
 }
 
 
@@ -139,8 +139,8 @@ static int find_eos_piece_rest_mass_density(double rho, EOSMultiParts *eos)
         double rhomax = XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeometrized(hmax, eos, j);
         if (rho >= rhomin && rho <= rhomax) return j;
     }
-    assert(0 && "Rest mass density not found in EoS piece, see function find_eos_piece_rest_mass_density in LALSimNeutronStarEOS.c\n");
-    return -1;
+    XLALPrintError("Rest mass density not found in EoS piece.\n");
+    return XLAL_FAILURE;
 }
 
 /* This function finds the id number of the piece EoS containing
@@ -156,8 +156,8 @@ static int find_eos_piece_energy_density(double e, EOSMultiParts *eos)
         double emax = XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometrized(hmax, eos, j);
         if (e >= emin && e <= emax) return j;
     }
-    assert(0 && "Energy density not found in EoS piece, see function find_eos_piece_energy_density in LALSimNeutronStarEOS.c\n");
-    return -1;
+    XLALPrintError("Energy density not found in EoS piece.\n");
+    return XLAL_FAILURE;
 }
 
 /** @endcond */
