@@ -56,8 +56,6 @@ variables:
   VERBOSE: "yes"
   # - print any errors from libtool static linking
   LALSUITE_LIBTOOL_NO_SUPPRESS: "yes"
-  # - verbose Conda package builds
-  CONDA_SMITHY_LOGLEVEL: "DEBUG"
   # - do not buffer output from Python scripts
   PYTHONUNBUFFERED: "yes"
 
@@ -77,8 +75,14 @@ variables:
   CONDA_PKGS_DIRS: "${LCI_TMPDIR}/conda/pkgs"
   XDG_CONFIG_HOME: "${LCI_TMPDIR}/config"
 
-  # packaging system configuration variables
+  # Conda packaging system configuration variables
+  # - default install location
   CONDA_ROOT: /opt/conda
+  # - verbose package builds
+  CONDA_SMITHY_LOGLEVEL: "DEBUG"
+
+  # Debian packaging system configuration variables
+  # - disable interactive package configuration
   DEBIAN_FRONTEND: noninteractive
 
   # location of CI scripts
