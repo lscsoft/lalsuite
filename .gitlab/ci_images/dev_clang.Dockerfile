@@ -14,12 +14,21 @@ LABEL support="Best Effort"
 
 SHELL ["/bin/bash", "-c"]
 
+# copy list of LALSuite build dependencies
+COPY ./.gitlab/ci_images/dev_env.txt .
+
 # set compilers
 ENV CC="clang${CLANG_VERSION_SUFFIX}"
 ENV CXX="clang++${CLANG_VERSION_SUFFIX}"
 
 # run debconf noninteractively
 ENV DEBIAN_FRONTEND=noninteractive
+
+# APT configuration
+COPY <<EOF /etc/apt/apt.conf.d/99norecommends
+APT::Install-Recommends "false";
+APT::Install-Suggests "false";
+EOF
 
 RUN <<EOF
 set -ex
@@ -81,6 +90,10 @@ apt-get -y -q update
 
 # upgrade distribution
 apt-get -y -q upgrade
+
+# install LALSuite build dependencies
+apt-get -y -q install $(grep '|debian|' ./dev_env.txt | sed 's/#.*//')
+rm -f ./dev_env.txt
 
 # install Clang
 apt-get -y -q install clang${CLANG_VERSION_SUFFIX}

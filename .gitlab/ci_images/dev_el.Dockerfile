@@ -12,6 +12,9 @@ LABEL support="Reference Platform"
 
 SHELL ["/bin/bash", "-c"]
 
+# copy list of LALSuite build dependencies
+COPY ./.gitlab/ci_images/dev_env.txt .
+
 # write RPM macros
 COPY <<EOF /root/.rpmmacros
 %dist .${EL_VERSION}
@@ -40,7 +43,6 @@ dnf -y -q install \
     createrepo \
     curl \
     findutils \
-    igwn-lalsuite-devel \
     igwn-packaging-tools \
     rpm-build \
     rpmlint \
@@ -48,6 +50,10 @@ dnf -y -q install \
     ;
 python3 -m pip install --upgrade pip
 python3 -m pip install rpmlint-codeclimate
+
+# install LALSuite build dependencies
+dnf -y -q install $(grep '|el|' ./dev_env.txt | sed 's/#.*//')
+rm -f ./dev_env.txt
 
 # print info
 dnf list installed --quiet

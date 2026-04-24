@@ -13,10 +13,20 @@ ARG UBU_VERSION_N
 LABEL name="LALSuite CI Image - CUDA ${CUDA_VERSION} (Ubuntu ${UBU_VERSION})"
 LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
 LABEL support="Best Effort"
+
 SHELL ["/bin/bash", "-c"]
+
+# copy list of LALSuite build dependencies
+COPY ./.gitlab/ci_images/dev_env.txt .
 
 # run debconf noninteractively
 ENV DEBIAN_FRONTEND=noninteractive
+
+# APT configuration
+COPY <<EOF /etc/apt/apt.conf.d/99norecommends
+APT::Install-Recommends "false";
+APT::Install-Suggests "false";
+EOF
 
 RUN <<EOF
 set -ex
@@ -76,6 +86,10 @@ apt-get -y -q update
 
 # upgrade distribution
 apt-get -y -q upgrade
+
+# install LALSuite build dependencies
+apt-get -y -q install $(grep '|ubuntu|' ./dev_env.txt | sed 's/#.*//')
+rm -f ./dev_env.txt
 
 # print info
 dpkg-query --list

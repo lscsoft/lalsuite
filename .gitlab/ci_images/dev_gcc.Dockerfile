@@ -13,12 +13,21 @@ LABEL support="Best Effort"
 
 SHELL ["/bin/bash", "-c"]
 
+# copy list of LALSuite build dependencies
+COPY ./.gitlab/ci_images/dev_env.txt .
+
 # set compilers
 ENV CC="gcc"
 ENV CXX="g++"
 
 # run debconf noninteractively
 ENV DEBIAN_FRONTEND=noninteractive
+
+# APT configuration
+COPY <<EOF /etc/apt/apt.conf.d/99norecommends
+APT::Install-Recommends "false";
+APT::Install-Suggests "false";
+EOF
 
 RUN <<EOF
 set -ex
@@ -72,6 +81,10 @@ apt-get -y -q update
 
 # upgrade distribution
 apt-get -y -q upgrade
+
+# install LALSuite build dependencies
+apt-get -y -q install $(grep '|debian|' ./dev_env.txt | sed 's/#.*//')
+rm -f ./dev_env.txt
 
 # print info
 dpkg-query --list
