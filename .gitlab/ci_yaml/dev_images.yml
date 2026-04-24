@@ -77,7 +77,7 @@
       # Clang
       - LCI_PLAT: "clang-latest"
         LCI_PLAT_BASE: "clang"
-        # remove -22 suffix when https://github.com/llvm/llvm-project/issues/180239 is resolved
+        ### TOFIX - remove -22 suffix when https://github.com/llvm/llvm-project/issues/180239 is resolved
         LCI_DOCKER_ARGS: "CLANG_VERSION_NAME=latest CLANG_VERSION_SUFFIX=-22 DEB_VERSION=bookworm"
 
       - LCI_PLAT: "clang-22"
