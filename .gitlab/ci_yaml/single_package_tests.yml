@@ -4,21 +4,22 @@
 
 # lal - build Conda package with MKL
 lal:conda-mkl:
-  extends:
-    - .single-pkg:conda
-    - .single-pkg:lal
   variables:
-    LCI_CONDA_CFG_lal: "linux_64_fft_implmkl"
+    LCI_SINGLE_PKG_SELECT: "conda"
+    LCI_SINGLE_PKG_ENV: "LCI_CONDA_CFG_lal=linux_64_fft_implmkl"
+  extends:
+    - .single-pkg:lal
   script:
     - !reference [lal, script]
 
 # lalinference - run test nested sampling job
 lalinference:test-job:
+  variables:
+    LCI_SINGLE_PKG_SELECT: "rpm"
   extends:
-    - .single-pkg:rpm
     - .single-pkg:lalinference:after
   script:
-    - !reference [.single-pkg:base, script]
+    - !reference [.single-pkg-job, script]
     # run test job
     - git -c "lfs.fetchinclude=**/params.dat,*/4s/**" clone "https://${CI_SERVER_FQDN}/lscsoft/ROQ_data"
     - bash ./test/lalinference_nestedSampling_integration_test.sh
@@ -33,12 +34,12 @@ lalinference:test-job:
 
 # lalpulsar - runs tests using available frame libraries
 lalpulsar:frame-libs:
+  variables:
+    LCI_SINGLE_PKG_SELECT: "rpm|deb"
   extends:
-    - .single-pkg:rpm
-    - .single-pkg:deb
     - .single-pkg:lalpulsar:after
   script:
-    - !reference [.single-pkg:base, script]
+    - !reference [.single-pkg-job, script]
     # setup build environment
     - source ${LCI_SCRIPTS}/build_env.sh
     # configure
@@ -72,11 +73,12 @@ lalpulsar:frame-libs:
 
 # lalpulsar - run long-running tests
 lalpulsar:long-tests:
+  variables:
+    LCI_SINGLE_PKG_SELECT: "rpm"
   extends:
-    - .single-pkg:rpm
     - .single-pkg:lalpulsar:after
   script:
-    - !reference [.single-pkg:base, script]
+    - !reference [.single-pkg-job, script]
     # setup build environment
     - source ${LCI_SCRIPTS}/build_env.sh
     # configure

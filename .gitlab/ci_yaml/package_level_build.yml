@@ -54,7 +54,7 @@
     when: always
   rules:
     # do not run when rebuilding release Docker images
-    - if: >-
+    - if: >
         $LCI_JOB_TYPE == "sched-release"
       when: never
     - !reference [.default-matrix-rule, rules]

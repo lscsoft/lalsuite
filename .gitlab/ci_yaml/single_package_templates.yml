@@ -2,12 +2,43 @@
 # LALSuite GitLab-CI: templates for single-package test jobs
 # ----------------------------------------------------------------------
 
-.single-pkg:base:
+# -- platform matrix ---------------------------------------------------
+
+.single-pkg-matrix:
+  parallel:
+    matrix:
+
+      # --- Enterprise Linux -------------------------------------------
+
+      - LCI_PLAT: "el8"
+        LCI_ENV: "LCI_BLD=rpm"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+        LCI_SINGLE_PKG: "rpm"
+
+      # --- Debian -----------------------------------------------------
+
+      - LCI_PLAT: "bookworm"
+        LCI_ENV: "LCI_BLD=deb"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+        LCI_SINGLE_PKG: "deb"
+
+      # --- Conda ------------------------------------------------------
+
+      - LCI_PLAT: "conda-py313"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_ LCI_CONDA_CFG_lal=linux_64_fft_implfftw"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+        LCI_SINGLE_PKG: "conda"
+
+# -- templates ---------------------------------------------------------
+
+.single-pkg-job:
   extends:
     - .pkg-level-job
+    - .single-pkg-matrix
   script:
     # set up builder environment
     - eval export "${LCI_ENV}"
+    - eval export "${LCI_SINGLE_PKG_ENV}"
     - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
     - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
     # unpack tarball
@@ -21,41 +52,18 @@
     # install build dependencies
     - TOP_BUILDDEP_SUBDIRS="."
     - source ${LCI_SCRIPTS}/top_builddep_${LCI_PKG}.sh
-
-# -- platform matrices -------------------------------------------------
-
-.single-pkg:rpm:
-  extends:
-    - .single-pkg:base
-  parallel:
-    matrix:
-      - LCI_PLAT: "el8"
-        LCI_ENV: "LCI_BLD=rpm"
-        LCI_JOB_TYPE: ["merge", "sched-devimg"]
-
-.single-pkg:deb:
-  extends:
-    - .single-pkg:base
-  parallel:
-    matrix:
-      - LCI_PLAT: "bookworm"
-        LCI_ENV: "LCI_BLD=deb"
-        LCI_JOB_TYPE: ["merge", "sched-devimg"]
-
-.single-pkg:conda:
-  extends:
-    - .single-pkg:base
-  parallel:
-    matrix:
-      - LCI_PLAT: "conda-py313"
-        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_"
-        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+  rules:
+    # do not run in platform not selected by $LCI_SINGLE_PKG_SELECT
+    - if: >
+        $LCI_SINGLE_PKG !~ $LCI_SINGLE_PKG_SELECT
+      when: never
+    - !reference [.pkg-level-job, rules]
 
 # -- package dependencies ----------------------------------------------
 
 .single-pkg:lal:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lal, needs]
   variables:
@@ -63,7 +71,7 @@
 
 .single-pkg:lal:after:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lal, needs]
     - job: lal
@@ -73,7 +81,7 @@
 
 .single-pkg:lalframe:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalframe, needs]
   variables:
@@ -81,7 +89,7 @@
 
 .single-pkg:lalframe:after:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalframe, needs]
     - job: lalframe
@@ -91,7 +99,7 @@
 
 .single-pkg:lalmetaio:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalmetaio, needs]
   variables:
@@ -99,7 +107,7 @@
 
 .single-pkg:lalmetaio:after:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalmetaio, needs]
     - job: lalmetaio
@@ -109,7 +117,7 @@
 
 .single-pkg:lalsimulation:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalsimulation, needs]
   variables:
@@ -117,7 +125,7 @@
 
 .single-pkg:lalsimulation:after:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalsimulation, needs]
     - job: lalsimulation
@@ -127,7 +135,7 @@
 
 .single-pkg:lalburst:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalburst, needs]
   variables:
@@ -135,7 +143,7 @@
 
 .single-pkg:lalburst:after:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalburst, needs]
     - job: lalburst
@@ -145,7 +153,7 @@
 
 .single-pkg:lalinspiral:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalinspiral, needs]
   variables:
@@ -153,7 +161,7 @@
 
 .single-pkg:lalinspiral:after:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalinspiral, needs]
     - job: lalinspiral
@@ -163,7 +171,7 @@
 
 .single-pkg:lalinference:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalinference, needs]
   variables:
@@ -171,7 +179,7 @@
 
 .single-pkg:lalinference:after:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalinference, needs]
     - job: lalinference
@@ -181,7 +189,7 @@
 
 .single-pkg:lalpulsar:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalpulsar, needs]
   variables:
@@ -189,7 +197,7 @@
 
 .single-pkg:lalpulsar:after:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalpulsar, needs]
     - job: lalpulsar
@@ -199,7 +207,7 @@
 
 .single-pkg:lalapps:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalapps, needs]
   variables:
@@ -207,7 +215,7 @@
 
 .single-pkg:lalapps:after:
   extends:
-    - .single-pkg:base
+    - .single-pkg-job
   needs:
     - !reference [lalapps, needs]
     - job: lalapps
