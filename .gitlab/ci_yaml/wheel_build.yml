@@ -87,7 +87,7 @@ wheel:deploy:
     url: "https://pypi.org/project/lalsuite/"
   rules:
     - !reference [.deploy-check-execute, rules]
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-snapshot"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "lalsuite-tag"

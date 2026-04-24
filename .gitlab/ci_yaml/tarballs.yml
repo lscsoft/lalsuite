@@ -30,15 +30,15 @@ ci-scripts:
       # environment file containing the LALSuite Conda packages
       - conda-dev-env.yml
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "push"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-devimg"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-snapshot"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "lalsuite-tag"
 
 # base tarball job
@@ -63,15 +63,15 @@ ci-scripts:
       # store the tarballs
       - tarballs/
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "push"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-devimg"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-snapshot"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "lalsuite-tag"
 
 # make the tarball for LAL only

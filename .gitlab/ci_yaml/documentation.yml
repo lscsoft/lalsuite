@@ -41,13 +41,13 @@ doxygen-doc:
       # path prefix
       dotenv: path_prefix.env
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-devimg"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-doc"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "lalsuite-tag"
 
 doxygen-index:
@@ -69,7 +69,7 @@ doxygen-index:
       # top-level index
       - html/
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-doc"
 
 # -- page deployment jobs ----------------------------------------------
@@ -105,9 +105,9 @@ pages:doc:
     url: "${CI_PAGES_URL}"
   rules:
     - !reference [.deploy-check-execute, rules]
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-doc"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "lalsuite-tag"
 
 pages:index:
@@ -123,5 +123,5 @@ pages:index:
     url: "${CI_PAGES_URL}"
   rules:
     - !reference [.deploy-check-execute, rules]
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-doc"

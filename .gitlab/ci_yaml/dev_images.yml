@@ -130,7 +130,7 @@ dev-image:
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
     - docker compose push -q
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-devimg"
 
 dev-image:deploy:
@@ -145,5 +145,5 @@ dev-image:deploy:
     # delete testing image
     - crane delete ${TESTING_IMG_PATH}
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "sched-devimg"

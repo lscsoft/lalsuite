@@ -18,7 +18,7 @@ gitlab-advanced-sast:
     # set XDG_CONFIG_HOME (set in global variables) to something that always exists
     XDG_CONFIG_HOME: "/tmp"
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
 
 semgrep-sast:
@@ -28,7 +28,7 @@ semgrep-sast:
     # set XDG_CONFIG_HOME (set in global variables) to something that always exists
     XDG_CONFIG_HOME: "/tmp"
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
 
 # -- code quality jobs -------------------------------------------------
@@ -47,7 +47,7 @@ ci-serial-check:
   script:
     - echo "TOFIX"
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
 
 # run pre-commit hooks
@@ -87,9 +87,9 @@ pre-commit-check:
     reports:
       codequality: concat-code-quality.json
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "push"
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
 
 # check for consistent dependencies between LALSuite libraries
@@ -99,7 +99,7 @@ dependencies-check:
   script:
     - ${LCI_SCRIPTS}/dependencies_check
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
 
 # check that .gitignore files are complete
@@ -143,7 +143,7 @@ gitignore-check:
       - lal/Makefile
       - lal/config.log
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
 
 coverage-check:
@@ -209,5 +209,5 @@ coverage-check:
       - Makefile
       - config.log
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"

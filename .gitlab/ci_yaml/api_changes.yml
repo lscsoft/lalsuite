@@ -71,10 +71,10 @@ dump-main-api:
       - config.log
   rules:
     # dump API of the main branch at lscsoft/lalsuite
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "postmerge"
     # for debugging
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci debug api\]/i
 
@@ -102,10 +102,10 @@ dump-release-api:
       - config.log
   rules:
     # dump API of LALSuite releases
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "lalsuite-tag"
     # for debugging
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci debug api\]/i
 
@@ -153,10 +153,10 @@ cmp-merge-request-api:
       - config.log
   rules:
     # compare API to the main branch at lscsoft/lalsuite for merge requests
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
     # for debugging
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci debug api\]/i
 
@@ -204,11 +204,11 @@ cmp-last-release-api:
       - config.log
   rules:
     # compare API to the latest LALSuite tag at lscsoft/lalsuite for release branches
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "lalsuite-tag"
         && $LCI_DEPLOY_EXECUTE == "sim"
     # for debugging
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci debug api\]/i
 
@@ -233,6 +233,6 @@ cmp-debug-api:
       - api-report/
   rules:
     # for debugging
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci debug api\]/i

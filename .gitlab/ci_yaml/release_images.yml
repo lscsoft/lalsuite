@@ -86,7 +86,7 @@ snapshot-image:deploy:
     url: "${CI_PROJECT_URL}/container_registry"
   rules:
     # only run for building snapshot Docker images
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE != "sched-snapshot"
       when: never
     - !reference [.default-matrix-rule, rules]
@@ -116,7 +116,7 @@ release-image:
       dotenv: lalsuite_tag.env
   rules:
     # only run for building snapshot Docker images
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE != "sched-release"
       when: never
     - !reference [.default-matrix-rule, rules]
@@ -145,7 +145,7 @@ release-image:deploy:
     url: "${CI_PROJECT_URL}/container_registry"
   rules:
     # only run for building snapshot Docker images
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE != "sched-release"
       when: never
     - !reference [.default-matrix-rule, rules]

@@ -54,7 +54,7 @@
     - source ${LCI_SCRIPTS}/top_builddep_${LCI_PKG}.sh
   rules:
     # do not run in platform not selected by $LCI_SINGLE_PKG_SELECT
-    - if: >
+    - if: >-
         $LCI_SINGLE_PKG !~ $LCI_SINGLE_PKG_SELECT
       when: never
     - !reference [.pkg-level-job, rules]
