@@ -80,6 +80,9 @@ variables:
   CONDA_ROOT: /opt/conda
   # - verbose package builds
   CONDA_SMITHY_LOGLEVEL: "DEBUG"
+  # - prevent concurrent database access to avoid locks
+  CONDA_LIBMAMBA_SOLVER_MAX_CONCURRENT_DOWNLOADS: 1
+  CONDA_PLUGINS_USE_SHARDED_REPODATA: "false"
 
   # Debian packaging system configuration variables
   # - disable interactive package configuration
