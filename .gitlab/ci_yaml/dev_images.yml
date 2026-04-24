@@ -138,6 +138,7 @@ dev-image:deploy:
     - .dev-image-job
     - .docker-manage-job
     - .deploy-job
+  dependencies: []
   script:
     - crane auth login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
     # copy testing image to production image
