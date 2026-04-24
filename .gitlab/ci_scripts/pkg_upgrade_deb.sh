@@ -8,8 +8,9 @@ ${LCI_SCRIPTS}/retry apt-get -y -q update
 # upgrade distribution
 ${LCI_SCRIPTS}/retry apt-get -y -q upgrade
 
-# install latest release
-${LCI_SCRIPTS}/retry apt-get -y -q install lalsuite lalsuite-dev
+# TOFIX when FrameCPP is fixed
+# # install latest release
+# ${LCI_SCRIPTS}/retry apt-get -y -q install lalsuite lalsuite-dev
 
 # remove lalsuite meta-packages
 dpkg -r lalsuite lalsuite-dev
