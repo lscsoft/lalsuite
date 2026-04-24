@@ -9,7 +9,8 @@ for sft in SFT-good SFT-test*; do
         echo "lalpulsar_dumpSFT -$flag -i ./$sft"
         lalpulsar_dumpSFT -$flag -i ./$sft 2>stderr.txt | grep -v '^%' >stdout-$flag-$sft.txt
         if [ -s stderr.txt ]; then
-            echo "ERROR: lalpulsar_dumpSFT -$flag -i ./$sft should not write to standard error"
+            echo "ERROR: lalpulsar_dumpSFT -$flag -i ./$sft should not write to standard error:"
+            sed 's|^|ERROR: |' stderr.txt
             exit 1
         fi
     done
