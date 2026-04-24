@@ -28,6 +28,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
@@ -99,16 +100,13 @@ struct tagEOSMultiParts{
 static int find_eos_piece_pressure(double p, EOSMultiParts *eos)
 {
     int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    int item_piece = 0;
     for (int j = 0 ; j < number_pieces; j++){
         double pmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, j);
         double pmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, j);
-        if (p >= pmin && p <= pmax) {
-            item_piece = j;
-            break;
-        }
+        if (p >= pmin && p <= pmax) return j;
     }
-    return item_piece;
+    assert(0 && "Pressure not found in EoS piece, see function find_eos_piece_pressure in LALSimNeutronStarEOS.c\n");
+    return -1;
 }
 
 
@@ -118,16 +116,13 @@ static int find_eos_piece_pressure(double p, EOSMultiParts *eos)
 static int find_eos_piece_enthalpy(double h, EOSMultiParts *eos)
 {
     int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    int item_piece = 0;
     for (int j = 0 ; j < number_pieces; j++){
         double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, j);
         double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, j);
-        if (h >= hmin && h <= hmax) {
-            item_piece = j;
-            break;
-        }
+        if (h >= hmin && h <= hmax) return j;
     }
-    return item_piece;
+    assert(0 && "Enthalpy not found in EoS piece, see function find_eos_piece_enthalpy in LALSimNeutronStarEOS.c\n");
+    return -1;
 }
 
 
@@ -137,18 +132,15 @@ static int find_eos_piece_enthalpy(double h, EOSMultiParts *eos)
 static int find_eos_piece_rest_mass_density(double rho, EOSMultiParts *eos)
 {
     int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    int item_piece = 0;
     for (int j = 0 ; j < number_pieces; j++){
         double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, j);
         double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, j);
         double rhomin = XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeometrized(hmin, eos, j);
         double rhomax = XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeometrized(hmax, eos, j);
-        if (rho >= rhomin && rho <= rhomax) {
-            item_piece = j;
-            break;
-        }
+        if (rho >= rhomin && rho <= rhomax) return j;
     }
-    return item_piece;
+    assert(0 && "Rest mass density not found in EoS piece, see function find_eos_piece_rest_mass_density in LALSimNeutronStarEOS.c\n");
+    return -1;
 }
 
 /* This function finds the id number of the piece EoS containing
@@ -157,18 +149,15 @@ static int find_eos_piece_rest_mass_density(double rho, EOSMultiParts *eos)
 static int find_eos_piece_energy_density(double e, EOSMultiParts *eos)
 {
     int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    int item_piece = 0;
     for (int j = 0 ; j < number_pieces; j++){
         double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, j);
         double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, j);
         double emin = XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometrized(hmin, eos, j);
         double emax = XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometrized(hmax, eos, j);
-        if (e >= emin && e <= emax) {
-            item_piece = j;
-            break;
-        }
+        if (e >= emin && e <= emax) return j;
     }
-    return item_piece;
+    assert(0 && "Energy density not found in EoS piece, see function find_eos_piece_energy_density in LALSimNeutronStarEOS.c\n");
+    return -1;
 }
 
 /** @endcond */
