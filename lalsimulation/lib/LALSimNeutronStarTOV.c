@@ -59,11 +59,11 @@ static double tidal_Love_number_k3(double c, double y)
 {
     double num;
     double den;
-    double c2 = pow(c, 2.0);
-    double c3 = pow(c, 3.0);
-    double c4 = pow(c, 4.0);
-    double c5 = pow(c, 5.0);
-    double c7 = pow(c, 7.0);
+    double c2 = c*c;
+    double c3 = c2*c;
+    double c4 = c2*c2;
+    double c5 = c4*c;
+    double c7 = c4*c3;
 
     num = (8.0 / 7.0) * pow(1 - 2 * c, 2.0) * c7
         * (2 * (y - 1) * c2 - 3.0 * (y - 2.0) * c + y - 3.0);
@@ -83,12 +83,12 @@ static double tidal_Love_number_k4(double c, double y)
 {
     double num;
     double den;
-    double c2 = pow(c, 2.0);
-    double c3 = pow(c, 3.0);
-    double c4 = pow(c, 4.0);
-    double c5 = pow(c, 5.0);
-    double c6 = pow(c, 6.0);
-    double c9 = pow(c, 9.0);
+    double c2 = c*c;
+    double c3 = c2*c;
+    double c4 = c2*c2;
+    double c5 = c4*c;
+    double c6 = c3*c3;
+    double c9 = c6*c3;
 
     num = (32.0 / 147.0) * pow(1 - 2 * c, 2.0) * c9
         * ( 12*(y - 1)*c3 - 34*(y - 2)*c2 + 28*(y - 3)*c - 7*(y - 4) );
