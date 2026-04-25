@@ -30,7 +30,6 @@
 Command-line interface to burst injection identification code.
 """
 
-
 import sys
 from optparse import OptionParser
 
@@ -55,23 +54,43 @@ __date__ = git_version.date
 
 
 def parse_command_line():
-	parser = OptionParser(
-		version = "Name: %%prog\n%s" % git_version.verbose_msg,
-		usage = "%prog [options] [file ...]",
-		description = "Accepts as input one or more LIGO Light Weight XML files, each containing burst candidates and a list of injections, and adds entries to the coincidence tables indicating which burst events match which injections."
-	)
-	parser.add_option("-f", "--force", action = "store_true", help = "Process even if file has already been processed.")
-	parser.add_option("--comment", metavar = "text", help = "Set the comment string to be written to the process table (default = None).")
-	parser.add_option("-c", "--match-algorithm", metavar = "[stringcusp|excesspower|omega|waveburst]", default = None, help = "Set the algorithm used to match burst candidates with injections (required).")
-	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
-	options, filenames = parser.parse_args()
+    parser = OptionParser(
+        version="Name: %%prog\n%s" % git_version.verbose_msg,
+        usage="%prog [options] [file ...]",
+        description="Accepts as input one or more LIGO Light Weight XML files, each containing burst candidates and a list of injections, and adds entries to the coincidence tables indicating which burst events match which injections.",
+    )
+    parser.add_option(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Process even if file has already been processed.",
+    )
+    parser.add_option(
+        "--comment",
+        metavar="text",
+        help="Set the comment string to be written to the process table (default = None).",
+    )
+    parser.add_option(
+        "-c",
+        "--match-algorithm",
+        metavar="[stringcusp|excesspower|omega|waveburst]",
+        default=None,
+        help="Set the algorithm used to match burst candidates with injections (required).",
+    )
+    parser.add_option("-v", "--verbose", action="store_true", help="Be verbose.")
+    options, filenames = parser.parse_args()
 
-	if options.match_algorithm is None:
-		raise ValueError("missing required --match-algorithm option")
-	if options.match_algorithm not in ("stringcusp", "excesspower", "omega", "waveburst"):
-		raise ValueError("unrecognized match algorithm \"%s\"" % options.match_algorithm)
+    if options.match_algorithm is None:
+        raise ValueError("missing required --match-algorithm option")
+    if options.match_algorithm not in (
+        "stringcusp",
+        "excesspower",
+        "omega",
+        "waveburst",
+    ):
+        raise ValueError('unrecognized match algorithm "%s"' % options.match_algorithm)
 
-	return options, (filenames or [None])
+    return options, (filenames or [None])
 
 
 #
@@ -92,24 +111,24 @@ options, filenames = parse_command_line()
 
 # must match columns in sngl_burst table
 search = {
-	"stringcusp": "StringCusp",
-	"excesspower": "excesspower",
-	"omega": "omega",
-	"waveburst": "waveburst"
+    "stringcusp": "StringCusp",
+    "excesspower": "excesspower",
+    "omega": "omega",
+    "waveburst": "waveburst",
 }[options.match_algorithm]
 
 snglcomparefunc = {
-	"stringcusp": binjfind.StringCuspSnglCompare,
-	"excesspower": binjfind.ExcessPowerSnglCompare,
-	"omega": binjfind.OmegaSnglCompare,
-	"waveburst": binjfind.CWBSnglCompare
+    "stringcusp": binjfind.StringCuspSnglCompare,
+    "excesspower": binjfind.ExcessPowerSnglCompare,
+    "omega": binjfind.OmegaSnglCompare,
+    "waveburst": binjfind.CWBSnglCompare,
 }[options.match_algorithm]
 
 nearcoinccomparefunc = {
-	"stringcusp": binjfind.StringCuspNearCoincCompare,
-	"excesspower": binjfind.ExcessPowerNearCoincCompare,
-	"omega": binjfind.OmegaNearCoincCompare,
-	"waveburst": binjfind.CWBNearCoincCompare
+    "stringcusp": binjfind.StringCuspNearCoincCompare,
+    "excesspower": binjfind.ExcessPowerNearCoincCompare,
+    "omega": binjfind.OmegaNearCoincCompare,
+    "waveburst": binjfind.CWBNearCoincCompare,
 }[options.match_algorithm]
 
 
@@ -119,50 +138,63 @@ nearcoinccomparefunc = {
 
 
 for n, filename in enumerate(filenames):
-	#
-	# load the document
-	#
+    #
+    # load the document
+    #
 
-	if options.verbose:
-		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
-	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
+    if options.verbose:
+        print("%d/%d:" % (n + 1, len(filenames)), end=" ", file=sys.stderr)
+    xmldoc = ligolw_utils.load_filename(filename, verbose=options.verbose)
 
-	#
-	# have we already procesed it?
-	#
+    #
+    # have we already procesed it?
+    #
 
-	if ligolw_process.doc_includes_process(xmldoc, binjfind.process_program_name):
-		if options.verbose:
-			print("warning: %s already processed," % (filename or "stdin"), end=' ', file=sys.stderr)
-		if not options.force:
-			if options.verbose:
-				print("skipping (use --force to force)", file=sys.stderr)
-			continue
-		if options.verbose:
-			print("continuing by --force", file=sys.stderr)
+    if ligolw_process.doc_includes_process(xmldoc, binjfind.process_program_name):
+        if options.verbose:
+            print(
+                "warning: %s already processed," % (filename or "stdin"),
+                end=" ",
+                file=sys.stderr,
+            )
+        if not options.force:
+            if options.verbose:
+                print("skipping (use --force to force)", file=sys.stderr)
+            continue
+        if options.verbose:
+            print("continuing by --force", file=sys.stderr)
 
-	#
-	# add process metadata to document
-	#
+    #
+    # add process metadata to document
+    #
 
-	process = binjfind.append_process(xmldoc, match_algorithm = options.match_algorithm, comment = options.comment)
+    process = binjfind.append_process(
+        xmldoc, match_algorithm=options.match_algorithm, comment=options.comment
+    )
 
-	#
-	# run binjfind algorithm
-	#
+    #
+    # run binjfind algorithm
+    #
 
-	binjfind.binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, verbose = options.verbose)
+    binjfind.binjfind(
+        xmldoc,
+        process,
+        search,
+        snglcomparefunc,
+        nearcoinccomparefunc,
+        verbose=options.verbose,
+    )
 
-	#
-	# close out the process metadata
-	#
+    #
+    # close out the process metadata
+    #
 
-	process.set_end_time_now()
+    process.set_end_time_now()
 
-	#
-	# done
-	#
+    #
+    # done
+    #
 
-	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)
-	xmldoc.unlink()
-	lsctables.reset_next_ids(lsctables.TableByName.values())
+    ligolw_utils.write_filename(xmldoc, filename, verbose=options.verbose)
+    xmldoc.unlink()
+    lsctables.reset_next_ids(lsctables.TableByName.values())
