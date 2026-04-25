@@ -27,8 +27,10 @@
 
 #standard library imports
 import sys
-import numpy as np
+
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg")
 
 from lalinference import bayespputils as bppu
@@ -51,8 +53,9 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
     print("Must provide both a graceDB id and a posterior samples file or skymap file\n")
     sys.exit(1)
 
-  import ligo.gracedb.rest
   import os
+
+  import ligo.gracedb.rest
   if server is not None:
     g=ligo.gracedb.rest.GraceDb(server)
   else:
