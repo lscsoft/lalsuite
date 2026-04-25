@@ -40,69 +40,70 @@ import scipy.stats as ss
 from lalinference import bayespputils as bppu
 
 posterior_name_to_latex_name = {
-    'm1' : r'$m_1$',
-    'm2' : r'$m_2$',
-    'eta' : r'$\eta$',
-    'q' : r'$q$',
-    'mc' : r'$\mathcal{M}$',
-    'distance' : r'$d$',
-    'time' : r'$t$',
-    'ra' : r'$\alpha$',
-    'dec' : r'$\delta$',
-    'phi_orb' : r'$\phi_\mathrm{orb}$',
-    'psi' : r'$\psi$',
-    'iota' : r'$\iota$',
-    'a1' : r'$a_1$',
-    'a2' : r'$a_2$',
-    'theta1' : r'$\theta_1$',
-    'theta2' : r'$\theta_2$',
-    'phi1' : r'$\phi_1$',
-    'phi2' : r'$\phi_2$',
-    'phi12':r'$\phi_{12}$',
-    'phi_jl':r'$\phi_{jl}$',
-    'theta_jn':r'$\theta_{jn}$',
-    'tilt1':r'$\tau_1$',
-    'tilt2':r'$\tau_2$',
-    'dchiMinus2':r'$d\chi_{-2}$',
-    'dchiMinus1':r'$d\chi_{-1}$',
-    'dchi0':r'$d\chi_0$',
-    'dchi1':r'$d\chi_1$',
-    'dchi2':r'$d\chi_2$',
-    'dchi3':r'$d\chi_3$',
-    'dchi3S':r'$d\chi_{3S}$',
-    'dchi3NS':r'$d\chi_{3NS}$',
-    'dchi4':r'$d\chi_4$',
-    'dchi4S':r'$d\chi_{4S}$',
-    'dchi4NS':r'$d\chi_{4NS}$',
-    'dchi5':r'$d\chi_5$',
-    'dchi5S':r'$d\chi_{5S}$',
-    'dchi5NS':r'$d\chi_{5NS}$',
-    'dchi5l':r'$d\chi_{5l}$',
-    'dchi5lS':r'$d\chi_{5lS}$',
-    'dchi5lNS':r'$d\chi_{5lNS}$',
-    'dchi6':r'$d\chi_6$',
-    'dchi6S':r'$d\chi_{6S}$',
-    'dchi6NS':r'$d\chi_{6NS}$',
-    'dchi6l':r'$d\chi_{6l}$',
-    'dchi7':r'$d\chi_7$',
-    'dchi7S':r'$d\chi_{7S}$',
-    'dchi7NS':r'$d\chi_{7NS}$',
-    'dsigma1':r'$d\sigma_1$',
-    'dsigma2':r'$d\sigma_2$',
-    'dsigma3':r'$d\sigma_3$',
-    'dsigma4':r'$d\sigma_4$',
-    'dalpha1':r'$d\alpha_1$',
-    'dalpha2':r'$d\alpha_2$',
-    'dalpha3':r'$d\alpha_3$',
-    'dalpha4':r'$d\alpha_4$',
-    'dalpha5':r'$d\alpha_5$',
-    'dbeta1':r'$d\beta_1$',
-    'dbeta2':r'$d\beta_2$',
-    'dbeta3':r'$d\beta_3$',
-    'dbeta4':r'$d\beta_4$',
-    'dchikappaS':r'$d\chi_{\kappa_{S}}$',
-    'dchikappaA':r'$d\chi_{\kappa_{A}}$'
+    "m1": r"$m_1$",
+    "m2": r"$m_2$",
+    "eta": r"$\eta$",
+    "q": r"$q$",
+    "mc": r"$\mathcal{M}$",
+    "distance": r"$d$",
+    "time": r"$t$",
+    "ra": r"$\alpha$",
+    "dec": r"$\delta$",
+    "phi_orb": r"$\phi_\mathrm{orb}$",
+    "psi": r"$\psi$",
+    "iota": r"$\iota$",
+    "a1": r"$a_1$",
+    "a2": r"$a_2$",
+    "theta1": r"$\theta_1$",
+    "theta2": r"$\theta_2$",
+    "phi1": r"$\phi_1$",
+    "phi2": r"$\phi_2$",
+    "phi12": r"$\phi_{12}$",
+    "phi_jl": r"$\phi_{jl}$",
+    "theta_jn": r"$\theta_{jn}$",
+    "tilt1": r"$\tau_1$",
+    "tilt2": r"$\tau_2$",
+    "dchiMinus2": r"$d\chi_{-2}$",
+    "dchiMinus1": r"$d\chi_{-1}$",
+    "dchi0": r"$d\chi_0$",
+    "dchi1": r"$d\chi_1$",
+    "dchi2": r"$d\chi_2$",
+    "dchi3": r"$d\chi_3$",
+    "dchi3S": r"$d\chi_{3S}$",
+    "dchi3NS": r"$d\chi_{3NS}$",
+    "dchi4": r"$d\chi_4$",
+    "dchi4S": r"$d\chi_{4S}$",
+    "dchi4NS": r"$d\chi_{4NS}$",
+    "dchi5": r"$d\chi_5$",
+    "dchi5S": r"$d\chi_{5S}$",
+    "dchi5NS": r"$d\chi_{5NS}$",
+    "dchi5l": r"$d\chi_{5l}$",
+    "dchi5lS": r"$d\chi_{5lS}$",
+    "dchi5lNS": r"$d\chi_{5lNS}$",
+    "dchi6": r"$d\chi_6$",
+    "dchi6S": r"$d\chi_{6S}$",
+    "dchi6NS": r"$d\chi_{6NS}$",
+    "dchi6l": r"$d\chi_{6l}$",
+    "dchi7": r"$d\chi_7$",
+    "dchi7S": r"$d\chi_{7S}$",
+    "dchi7NS": r"$d\chi_{7NS}$",
+    "dsigma1": r"$d\sigma_1$",
+    "dsigma2": r"$d\sigma_2$",
+    "dsigma3": r"$d\sigma_3$",
+    "dsigma4": r"$d\sigma_4$",
+    "dalpha1": r"$d\alpha_1$",
+    "dalpha2": r"$d\alpha_2$",
+    "dalpha3": r"$d\alpha_3$",
+    "dalpha4": r"$d\alpha_4$",
+    "dalpha5": r"$d\alpha_5$",
+    "dbeta1": r"$d\beta_1$",
+    "dbeta2": r"$d\beta_2$",
+    "dbeta3": r"$d\beta_3$",
+    "dbeta4": r"$d\beta_4$",
+    "dchikappaS": r"$d\chi_{\kappa_{S}}$",
+    "dchikappaA": r"$d\chi_{\kappa_{A}}$",
 }
+
 
 def fractional_rank(x, xs):
     """Returns the fraction of samples, ``xs``, that fall below the value
@@ -111,7 +112,8 @@ def fractional_rank(x, xs):
     """
     nbelow = np.sum(xs < x)
 
-    return float(nbelow)/float(xs.shape[0])
+    return float(nbelow) / float(xs.shape[0])
+
 
 def pp_plot(ps, title=None, outfile=None):
     """Generates a p-p plot for the given ps.
@@ -127,33 +129,34 @@ def pp_plot(ps, title=None, outfile=None):
 
     ps = np.atleast_1d(ps)
     ps = np.sort(ps)
-    ys = np.zeros(ps.shape[0]+2)
-    ys[:-1] = np.linspace(0, 1, ps.shape[0]+1)
+    ys = np.zeros(ps.shape[0] + 2)
+    ys[:-1] = np.linspace(0, 1, ps.shape[0] + 1)
     ys[-1] = 1.0
-    xs = np.zeros(ps.shape[0]+2)
+    xs = np.zeros(ps.shape[0] + 2)
     xs[-1] = 1.0
     xs[1:-1] = ps
 
-    pp.figure(figsize=(6,6), dpi=100)
+    pp.figure(figsize=(6, 6), dpi=100)
 
     for i in range(10):
         syn_ps = np.random.uniform(size=ps.shape[0])
-        syn_xs = np.zeros(ps.shape[0]+2)
+        syn_xs = np.zeros(ps.shape[0] + 2)
         syn_xs[-1] = 1.0
         syn_xs[1:-1] = np.sort(syn_ps)
-        pp.plot(syn_xs, ys, '-', color='0.9')
+        pp.plot(syn_xs, ys, "-", color="0.9")
 
-    pp.plot(xs, ys, '-k')
-    pp.plot(ys, ys, '--k')
+    pp.plot(xs, ys, "-k")
+    pp.plot(ys, ys, "--k")
 
-    pp.xlabel(r'$p$')
-    pp.ylabel(r'$P(p)$')
+    pp.xlabel(r"$p$")
+    pp.ylabel(r"$P(p)$")
     if title is not None:
         pp.title(title)
 
     if outfile is not None:
-        pp.savefig(outfile + '.png')
-        pp.savefig(outfile + '.pdf')
+        pp.savefig(outfile + ".png")
+        pp.savefig(outfile + ".pdf")
+
 
 def pp_kstest_pvalue(ps):
     """Returns the K-S p-value for the test of the given ``ps`` against a
@@ -164,23 +167,22 @@ def pp_kstest_pvalue(ps):
 
     return p
 
-def read_posterior_samples(f,injrow):
-    """Returns a bppu posterior sample object
-    """
-    peparser=bppu.PEOutputParser('common')
-    commonResultsObj=peparser.parse(open(f,'r'))
-    data = bppu.Posterior(commonResultsObj,SimInspiralTableEntry=injrow,injFref=100.0)
+
+def read_posterior_samples(f, injrow):
+    """Returns a bppu posterior sample object"""
+    peparser = bppu.PEOutputParser("common")
+    commonResultsObj = peparser.parse(open(f, "r"))
+    data = bppu.Posterior(commonResultsObj, SimInspiralTableEntry=injrow, injFref=100.0)
     # add tilts, comp masses, tidal...
     try:
-      data.extend_posterior()
+        data.extend_posterior()
     except Exception as e:
-      pass
+        pass
     return data
 
-def output_html(outdir, ks_pvalues, injnum,skypp=False):
-    """Outputs the HTML page summarizing the results.
 
-    """
+def output_html(outdir, ks_pvalues, injnum, skypp=False):
+    """Outputs the HTML page summarizing the results."""
     table_row_template = string.Template("""<tr> <td> ${name} </td>
     <td> ${pvalue} </td>
     <td> <img src="${name}.png" alt="${name} p-p plot" width="300" height="300" /> </td> <td> <a href="${name}.png">PNG</a> <a href="${name}.pdf">PDF</a> <a href="${name}-ps.dat">p-values</a> </td> </tr>
@@ -213,51 +215,95 @@ def output_html(outdir, ks_pvalues, injnum,skypp=False):
     """)
 
     # If this script is run with lalinference_pp_pipe then the following directory structure should exist
-    links="<ul>"
-    if os.path.isdir(os.path.join(outdir,'prior')):
-        links+='<li><a href="prior/">Prior Samples used in this test</a>'
-    if os.path.isdir(os.path.join(outdir,'injections')):
-        links+='<li><a href="injections/">Posteriors for each injection</a>'
-    links+='</ul>'
+    links = "<ul>"
+    if os.path.isdir(os.path.join(outdir, "prior")):
+        links += '<li><a href="prior/">Prior Samples used in this test</a>'
+    if os.path.isdir(os.path.join(outdir, "injections")):
+        links += '<li><a href="injections/">Posteriors for each injection</a>'
+    links += "</ul>"
 
     tablerows = []
     for par, pv in ks_pvalues.items():
         tablerows.append(table_row_template.substitute(name=par, pvalue=str(pv)))
-    tablerows = '\n'.join(tablerows)
+    tablerows = "\n".join(tablerows)
 
     if skypp is False:
-      skysub=''
+        skysub = ""
     else:
-      skysub='<tr> <td> sky </td> <td> See Plot </td> <td> <img src="sky_p-p.png" alt="sky p-p plot" width="300" height="300" /> </td> <td> <a href="sky_p-p.png">PNG</a> <a href="sky_p-p.pdf">PDF</a></td>  </tr>'
+        skysub = '<tr> <td> sky </td> <td> See Plot </td> <td> <img src="sky_p-p.png" alt="sky p-p plot" width="300" height="300" /> </td> <td> <a href="sky_p-p.png">PNG</a> <a href="sky_p-p.pdf">PDF</a></td>  </tr>'
 
-    html = html_template.substitute(tablerows=tablerows, injnum=str(injnum), linkstr=links,skypp=skysub)
+    html = html_template.substitute(
+        tablerows=tablerows, injnum=str(injnum), linkstr=links, skypp=skysub
+    )
 
-    with open(os.path.join(outdir, 'index.html'), 'w') as out:
+    with open(os.path.join(outdir, "index.html"), "w") as out:
         out.write(html)
 
-if __name__ == '__main__':
-    USAGE='''%prog [options] posfile1.dat posfile2.dat ...
-            Generate PP analysis for a set of injections. posfiles must be in same order as injections.'''
+
+if __name__ == "__main__":
+    USAGE = """%prog [options] posfile1.dat posfile2.dat ...
+            Generate PP analysis for a set of injections. posfiles must be in same order as injections."""
     parser = optparse.OptionParser(USAGE)
-    parser.add_option('--injXML', action='store', type='string', dest='injxml',
-                      help='sim_inspiral XML file for injections')
-    parser.add_option('--outdir', action='store', type='string',
-                      help='output directory')
+    parser.add_option(
+        "--injXML",
+        action="store",
+        type="string",
+        dest="injxml",
+        help="sim_inspiral XML file for injections",
+    )
+    parser.add_option(
+        "--outdir", action="store", type="string", help="output directory"
+    )
 
-    parser.add_option('--postsamples', action='store', type='string',
-                      default='posterior_samples.dat',
-                      help='filename for posterior samples files')
+    parser.add_option(
+        "--postsamples",
+        action="store",
+        type="string",
+        default="posterior_samples.dat",
+        help="filename for posterior samples files",
+    )
 
-    parser.add_option('--par', action='append', default=[], type='string',
-                      help='parameter names for the p-p plot')
-    parser.add_option('--skyPPfolder', action='store',dest='skypp',type='string',default=None,help='Path to folder containing png/pdf with 2D skyarea PP plots')
+    parser.add_option(
+        "--par",
+        action="append",
+        default=[],
+        type="string",
+        help="parameter names for the p-p plot",
+    )
+    parser.add_option(
+        "--skyPPfolder",
+        action="store",
+        dest="skypp",
+        type="string",
+        default=None,
+        help="Path to folder containing png/pdf with 2D skyarea PP plots",
+    )
 
-    (options, args) = parser.parse_args()
+    options, args = parser.parse_args()
 
     injs = lsctables.SimInspiralTable.get_table(utils.load_filename(options.injxml))
 
     if options.par == []:
-        parameters = ['m1', 'm2', 'mc', 'eta', 'q',  'theta_jn', 'a1', 'a2', 'tilt1', 'tilt2', 'phi12', 'phi_jl', 'ra', 'dec', 'distance', 'time', 'phi_orb', 'psi']
+        parameters = [
+            "m1",
+            "m2",
+            "mc",
+            "eta",
+            "q",
+            "theta_jn",
+            "a1",
+            "a2",
+            "tilt1",
+            "tilt2",
+            "phi12",
+            "phi_jl",
+            "ra",
+            "dec",
+            "distance",
+            "time",
+            "phi_orb",
+            "psi",
+        ]
     else:
         parameters = options.par
 
@@ -266,13 +312,13 @@ if __name__ == '__main__':
     except:
         pass
 
-    pvalues = { }
-    posfiles=args
-    Ninj=0
-    for index,posfile in enumerate(posfiles):
+    pvalues = {}
+    posfiles = args
+    Ninj = 0
+    for index, posfile in enumerate(posfiles):
         try:
-            psamples = read_posterior_samples(posfile,injs[index])
-            Ninj+=1
+            psamples = read_posterior_samples(posfile, injs[index])
+            Ninj += 1
         except:
             # Couldn't read the posterior samples or the XML.
             continue
@@ -280,7 +326,7 @@ if __name__ == '__main__':
         for par in parameters:
             try:
                 samples = psamples[par].samples
-                true_value=psamples[par].injval
+                true_value = psamples[par].injval
                 p = fractional_rank(true_value, samples)
                 try:
                     pvalues[par].append(p)
@@ -293,31 +339,43 @@ if __name__ == '__main__':
     # Generate plots, K-S tests
     ks_pvalues = {}
     for par, ps in pvalues.items():
-        print("Trying to create the plot for",par,".")
+        print("Trying to create the plot for", par, ".")
         try:
-          pp_plot(ps, title=posterior_name_to_latex_name[par], outfile=os.path.join(options.outdir, par))
-          pp.clf()
-          ks_pvalues[par] = pp_kstest_pvalue(ps)
-          np.savetxt(os.path.join(options.outdir, par + '-ps.dat'), np.reshape(ps, (-1, 1)))
+            pp_plot(
+                ps,
+                title=posterior_name_to_latex_name[par],
+                outfile=os.path.join(options.outdir, par),
+            )
+            pp.clf()
+            ks_pvalues[par] = pp_kstest_pvalue(ps)
+            np.savetxt(
+                os.path.join(options.outdir, par + "-ps.dat"), np.reshape(ps, (-1, 1))
+            )
         except:
-          print("Could not create the plot for",par,"!!!")
+            print("Could not create the plot for", par, "!!!")
 
-    skypp=False
+    skypp = False
     if options.skypp is not None:
-      found=0
-      if os.path.isdir(options.skypp):
-        for i in ['png','pdf']:
-          if os.path.isfile(os.path.join(options.skypp,'p-p.%s'%i)):
-            inf=os.path.join(os.path.realpath(options.skypp),'p-p.%s'%i)
-            outf=os.path.join(options.outdir,'sky_p-p.%s'%i)
-            os.system('cp %s %s'%(inf,outf))
-            found+=1
-          else:
-            print("could not find %s\n"%os.path.join(options.skypp,'p-p.%s'%i))
-      else:
-        print("skyPPfolder %s doesn't seem to be a valid folder or cannot be read. Skipping skyPP plot\n"%os.path.realpath(options.skypp))
+        found = 0
+        if os.path.isdir(options.skypp):
+            for i in ["png", "pdf"]:
+                if os.path.isfile(os.path.join(options.skypp, "p-p.%s" % i)):
+                    inf = os.path.join(os.path.realpath(options.skypp), "p-p.%s" % i)
+                    outf = os.path.join(options.outdir, "sky_p-p.%s" % i)
+                    os.system("cp %s %s" % (inf, outf))
+                    found += 1
+                else:
+                    print(
+                        "could not find %s\n"
+                        % os.path.join(options.skypp, "p-p.%s" % i)
+                    )
+        else:
+            print(
+                "skyPPfolder %s doesn't seem to be a valid folder or cannot be read. Skipping skyPP plot\n"
+                % os.path.realpath(options.skypp)
+            )
 
-      if found>0:
-        skypp=True
+        if found > 0:
+            skypp = True
 
-    output_html(options.outdir, ks_pvalues, Ninj ,skypp=skypp )
+    output_html(options.outdir, ks_pvalues, Ninj, skypp=skypp)
