@@ -1,5 +1,7 @@
 import math
+
 import matplotlib
+
 matplotlib.rcParams.update({
 	"font.size": 8.0,
 	"axes.titlesize": 10.0,
@@ -11,12 +13,13 @@ matplotlib.rcParams.update({
 	"savefig.dpi": 300,
 	"text.usetex": True     # render all text with TeX
 })
+import numpy
 from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import numpy
 from scipy import fftpack
 
 import lal
+
 
 def make_windows(n, kaiser_beta, creighton_beta, tukey_beta, gauss_beta):
 	return {
