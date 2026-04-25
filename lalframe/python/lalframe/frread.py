@@ -48,11 +48,12 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
 __date__ = git_version.date
 
-__all__ = ['read_timeseries']
+__all__ = ["read_timeseries"]
 
 
-def read_timeseries(source, channel, start=None, duration=None,
-                    datatype=None, verbose=False):
+def read_timeseries(
+    source, channel, start=None, duration=None, datatype=None, verbose=False
+):
     r"""Read a TimeSeries of channel data from a source.
 
     Acceptable sources are:
@@ -120,23 +121,32 @@ def read_timeseries(source, channel, start=None, duration=None,
         channels = list(channel)
 
     # read cache file
-    if (isinstance(source, str) and
-          re.search(r'(.lcf|.cache)\Z', source)):
+    if isinstance(source, str) and re.search(r"(.lcf|.cache)\Z", source):
         source = lal.CacheImport(os.path.expanduser(source))
     # convert GLUE cache file
     if _HAS_GLUE and isinstance(source, gcache.Cache):
         source = lalutils.lalcache_from_gluecache(source)
 
     # read from single frame
-    if isinstance(source, str) and source.endswith('.gwf'):
-        out = _ts_from_frame_file(source, channels, start=start,
-                                  duration=duration, datatype=datatype,
-                                  verbose=verbose)
+    if isinstance(source, str) and source.endswith(".gwf"):
+        out = _ts_from_frame_file(
+            source,
+            channels,
+            start=start,
+            duration=duration,
+            datatype=datatype,
+            verbose=verbose,
+        )
     # read from XLALCache
     elif isinstance(source, lal.Cache):
-        out = _ts_from_cache(source, channels, start=start,
-                             duration=duration, datatype=datatype,
-                             verbose=verbose)
+        out = _ts_from_cache(
+            source,
+            channels,
+            start=start,
+            duration=duration,
+            datatype=datatype,
+            verbose=verbose,
+        )
     # otherwise barf
     else:
         raise ValueError("Cannot interpret source '%s'." % source)
@@ -148,8 +158,9 @@ def read_timeseries(source, channel, start=None, duration=None,
         return out
 
 
-def _ts_from_cache(cache, channels, start=None, duration=None, datatype=None,
-                   verbose=False):
+def _ts_from_cache(
+    cache, channels, start=None, duration=None, datatype=None, verbose=False
+):
     """Read a TimeSeries of channel data from a LAL Cache object
 
     @param cache
@@ -170,12 +181,19 @@ def _ts_from_cache(cache, channels, start=None, duration=None, datatype=None,
     # open the cache into a stream
     stream = lalframe.FrStreamCacheOpen(cache)
     # read the stream
-    return _ts_from_stream(stream, channels, start=start, duration=duration,
-                           datatype=datatype, verbose=verbose)
+    return _ts_from_stream(
+        stream,
+        channels,
+        start=start,
+        duration=duration,
+        datatype=datatype,
+        verbose=verbose,
+    )
 
 
-def _ts_from_frame_file(framefile, channels, start=None, duration=None,
-                        datatype=None, verbose=False):
+def _ts_from_frame_file(
+    framefile, channels, start=None, duration=None, datatype=None, verbose=False
+):
     """Read a TimeSeries of channel data from a GWF-format framefile
 
     @param framefile
@@ -196,14 +214,21 @@ def _ts_from_frame_file(framefile, channels, start=None, duration=None,
     """
     # open the file into a stream
     framefile = os.path.abspath(framefile)
-    stream = lalframe.FrStreamOpen('', framefile)
+    stream = lalframe.FrStreamOpen("", framefile)
     # read the stream
-    return _ts_from_stream(stream, channels, start=start, duration=duration,
-                           datatype=datatype, verbose=verbose)
+    return _ts_from_stream(
+        stream,
+        channels,
+        start=start,
+        duration=duration,
+        datatype=datatype,
+        verbose=verbose,
+    )
 
 
-def _ts_from_stream(stream, channels, start=None, duration=None, datatype=None,
-                    verbose=False):
+def _ts_from_stream(
+    stream, channels, start=None, duration=None, datatype=None, verbose=False
+):
     """Read a TimeSeries of channel data from an open FrStream
 
     @param stream
@@ -225,8 +250,7 @@ def _ts_from_stream(stream, channels, start=None, duration=None, datatype=None,
     # set verbosity
     lalframe.FrStreamSetMode(
         stream,
-        verbose and lalframe.FR_STREAM_VERBOSE_MODE
-        or lalframe.FR_STREAM_DEFAULT_MODE,
+        verbose and lalframe.FR_STREAM_VERBOSE_MODE or lalframe.FR_STREAM_DEFAULT_MODE,
     )
     # determine default start time and duration
     epoch = lal.LIGOTimeGPS(stream.epoch)
@@ -238,15 +262,17 @@ def _ts_from_stream(stream, channels, start=None, duration=None, datatype=None,
 
     out = []
     for channel in channels:
-        out.append(read_channel_from_stream(stream, channel, start, duration,
-                                            datatype=datatype))
+        out.append(
+            read_channel_from_stream(
+                stream, channel, start, duration, datatype=datatype
+            )
+        )
         lalframe.FrStreamSeek(stream, epoch)
     return out
 
 
 def read_channel_from_stream(stream, channel, start, duration, datatype=None):
-    """Read the TimeSeries of a single channel from an open stream
-    """
+    """Read the TimeSeries of a single channel from an open stream"""
     # get series type
     frdatatype = lalframe.FrStreamGetTimeSeriesType(channel, stream)
     if datatype is None:
@@ -255,19 +281,26 @@ def read_channel_from_stream(stream, channel, start, duration, datatype=None):
         datatype = lalutils.get_lal_type(datatype)
 
     # read original data
-    read = getattr(lalframe, 'FrStreamRead%sTimeSeries'
-                             % lalutils.get_lal_type_str(frdatatype))
+    read = getattr(
+        lalframe, "FrStreamRead%sTimeSeries" % lalutils.get_lal_type_str(frdatatype)
+    )
     origin = read(stream, channel, start, duration, 0)
     # format to output data-type if required
     if datatype == frdatatype:
         return origin
     if datatype != frdatatype:
         create = lalutils.func_factory(
-            'create', '%stimeseries' % lalutils.get_lal_type_str(datatype))
-        series = create(channel, start, origin.f0, origin.deltaT,
-                        origin.sampleUnits, origin.data.length)
-        series.data.data = origin.data.data.astype(
-                               lalutils.get_numpy_type(datatype))
+            "create", "%stimeseries" % lalutils.get_lal_type_str(datatype)
+        )
+        series = create(
+            channel,
+            start,
+            origin.f0,
+            origin.deltaT,
+            origin.sampleUnits,
+            origin.data.length,
+        )
+        series.data.data = origin.data.data.astype(lalutils.get_numpy_type(datatype))
         return series
 
 
@@ -281,15 +314,13 @@ def get_stream_length(stream, channel):
 
     @returns the integer length of the data for this channel
     """
-    epoch = lal.LIGOTimeGPS(stream.epoch.gpsSeconds,
-                            stream.epoch.gpsNanoSeconds)
+    epoch = lal.LIGOTimeGPS(stream.epoch.gpsSeconds, stream.epoch.gpsNanoSeconds)
     # loop over each file in the stream cache and query its vector length
     nfile = stream.cache.length
     length = 0
     for i in range(nfile):
         for j in range(lalframe.FrFileQueryNFrame(stream.file)):
-            length += lalframe.FrFileQueryChanVectorLength(stream.file,
-                                                           channel,0)
+            length += lalframe.FrFileQueryChanVectorLength(stream.file, channel, 0)
             lalframe.FrStreamNext(stream)
     # rewind the stream and return
     lalframe.FrStreamSeek(stream, epoch)
@@ -304,8 +335,7 @@ def get_stream_duration(stream):
 
     @returns the float duration (seconds) of the data for this channel
     """
-    epoch = lal.LIGOTimeGPS(stream.epoch.gpsSeconds,
-                            stream.epoch.gpsNanoSeconds)
+    epoch = lal.LIGOTimeGPS(stream.epoch.gpsSeconds, stream.epoch.gpsNanoSeconds)
     # loop over each file in the stream cache and query its duration
     nfile = stream.cache.length
     duration = 0
