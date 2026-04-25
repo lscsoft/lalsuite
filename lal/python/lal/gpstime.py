@@ -19,6 +19,7 @@
 """Utilties for calculating and modifying GPS times using the LAL date
 package
 """
+
 #
 # ### Synopsis ###
 #
@@ -36,7 +37,7 @@ package
 # ::str_to_gps.
 #
 # \author Duncan Macleod <duncan.macleod@ligo.org>
-#@{
+# @{
 
 import datetime as _datetime
 from decimal import Decimal
@@ -63,30 +64,30 @@ __version__ = git_version.verbose_msg
 __date__ = git_version.date
 
 TIME_ZONES = {
-    "PST": -8*3600,
-    "PDT": -7*3600,
-    "CST": -6*3600,
-    "CDT": -5*3600,
-    "EST": -5*3600,
-    "EDT": -4*3600,
+    "PST": -8 * 3600,
+    "PDT": -7 * 3600,
+    "CST": -6 * 3600,
+    "CDT": -5 * 3600,
+    "EST": -5 * 3600,
+    "EDT": -4 * 3600,
     "GMT": 0,
     "UTC": 0,
-    "BST": 1*3600,
-    "CET": 1*3600,
-    "CEST": 2*3600,
+    "BST": 1 * 3600,
+    "CET": 1 * 3600,
+    "CEST": 2 * 3600,
 }
 GPS_EPOCH = _datetime.datetime(1980, 1, 6, 0, 0, 0)
 LAL_GPS_MAX = _datetime.datetime(2048, 1, 24, 3, 13, 55)
 
 
 def _check_utc(utc_time):
-    """Check whether this UTC datetime will convert to a valid LIGOTimeGPS
-    """
+    """Check whether this UTC datetime will convert to a valid LIGOTimeGPS"""
     if utc_time < GPS_EPOCH:
         raise ValueError("Given UTC time is before the start of the GPS era.")
     if utc_time > LAL_GPS_MAX:
-        raise ValueError("Given UTC time is too far in the future, "
-                         "LAL will SegmentationFault.")
+        raise ValueError(
+            "Given UTC time is too far in the future, " "LAL will SegmentationFault."
+        )
     return
 
 
@@ -117,9 +118,9 @@ def gps_to_utc(gps):
     if isinstance(gps, (Decimal, Number)):
         gps = str(gps)
     gps = LIGOTimeGPS(gps)
-    dt = _datetime.datetime(
-        *_gps_to_utc(gps.gpsSeconds)[:7]
-    ).replace(microsecond=0)  # force microseconds to 0
+    dt = _datetime.datetime(*_gps_to_utc(gps.gpsSeconds)[:7]).replace(
+        microsecond=0
+    )  # force microseconds to 0
     if gps.gpsNanoSeconds:
         return dt.replace(
             microsecond=int(round(gps.gpsNanoSeconds * 1e-3)),
@@ -156,13 +157,11 @@ def str_to_gps(time_string=None):
         date = _datetime.date.today()
         return utc_to_gps(_datetime.datetime.combine(date, _datetime.time()))
     elif time_string == "tomorrow":
-        today = _datetime.datetime.combine(_datetime.date.today(),
-                                           _datetime.time())
+        today = _datetime.datetime.combine(_datetime.date.today(), _datetime.time())
         tomorrow = today + _datetime.timedelta(days=1)
         return utc_to_gps(tomorrow)
     elif time_string == "yesterday":
-        today = _datetime.datetime.combine(_datetime.date.today(),
-                                           _datetime.time())
+        today = _datetime.datetime.combine(_datetime.date.today(), _datetime.time())
         yesterday = today - _datetime.timedelta(days=1)
         return utc_to_gps(yesterday)
     # otherwise parse the string as a date/time
