@@ -23,19 +23,19 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
-from igwn_ligolw import table
-from igwn_ligolw import utils
 import matplotlib
+from igwn_ligolw import ligolw, lsctables, table, utils
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as pp
-import numpy as np
 import optparse
 import os
 import os.path
-import scipy.stats as ss
 import string
+
+import matplotlib.pyplot as pp
+import numpy as np
+import scipy.stats as ss
+
 
 class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
     def __init__(self,document):
