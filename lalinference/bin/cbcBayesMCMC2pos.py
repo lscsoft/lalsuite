@@ -27,10 +27,12 @@ import sys
 from functools import reduce
 
 import matplotlib
+
 matplotlib.use('Agg') #sets backend to not need to open windows
 
-import numpy as np
 import astropy.table as apt
+import numpy as np
+
 try:
 	from scipy.integrate import trapezoid
 except ImportError:
@@ -38,12 +40,12 @@ except ImportError:
 	from scipy.integrate import trapz as trapezoid
 from optparse import OptionParser
 
-from lalinference import git_version
-from lalinference import bayespputils as bppu
-from lalinference.io import read_samples, write_samples, extract_metadata
+from lalinference.io import extract_metadata, read_samples, write_samples
 
 from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
 from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
+from lalinference import bayespputils as bppu
+from lalinference import git_version
 
 __author__="Carl-Johan Haster <carl-johan.haster@ligo.org>>"
 __version__= "git id %s"%git_version.id
