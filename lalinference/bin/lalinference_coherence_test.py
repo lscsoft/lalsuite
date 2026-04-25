@@ -78,7 +78,8 @@ if len(incofiles)==0:
 	sys.exit(1)
 
 def logadd(a,b):
-    if(a>b): (a,b)=(b,a)
+    if(a>b):
+        (a,b)=(b,a)
     return (b+log(1+exp(a-b)))
 
 def get_metadata_old(Bfile,key):
