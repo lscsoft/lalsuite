@@ -7,21 +7,22 @@ python lalinference_evolve_spins_and_append_samples.py --sample_file <directory 
 '''
 # NKJ-M and Anuradha Gupta, 05.2019
 
-import numpy as np
 import argparse
-import lalsimulation as lalsim
-import h5py
 
+import h5py
+import matplotlib
+import numpy as np
 from numpy.linalg import norm
+
+import lalsimulation as lalsim
 from lal import MSUN_SI, MTSUN_SI
 
-import matplotlib
 matplotlib.use('Agg')
 
-from lalinference.io.hdf5 import read_samples, write_samples, extract_metadata
 from astropy.table import Column, Table, hstack
-
 from lalinference.bayespputils import mc2ms
+from lalinference.io.hdf5 import extract_metadata, read_samples, write_samples
+
 
 # Define a convenience function
 def tilts_and_phi12_from_Cartesian_spins_and_L(chi1_v, chi2_v, Ln_v):
