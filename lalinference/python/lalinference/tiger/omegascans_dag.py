@@ -239,8 +239,10 @@ def mkdirs(path):
   Helper function. Make the given directory, creating intermediate
   dirs if necessary, and don't complain about it already existing.
   """
-  if os.access(path,os.W_OK) and os.path.isdir(path): return
-  else: os.makedirs(path)
+  if os.access(path,os.W_OK) and os.path.isdir(path):
+    return
+  else:
+    os.makedirs(path)
 
 def system_call(command):
     p = Popen([command], stdout=PIPE,stderr=PIPE, shell=True)
@@ -569,7 +571,8 @@ class OmegaScansDAG(pipeline.CondorDAG):
 
       #read the trigtimes
       trigtimeslist=[]
-      if oddslimit_set: logoddslist=[]
+      if oddslimit_set:
+        logoddslist=[]
       for n in range(Nsources):
         linesplit = data[n].strip().split()
         coltrig = headerdict['trigtime']
