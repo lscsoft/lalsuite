@@ -1182,7 +1182,10 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     int number_eos = number_pt + 1 ;
     if (number_pt != 0) {
         for (int i = 1; i <= number_pt; i++){
-            if (indices_phase_transition[i+1] - indices_phase_transition[i] < 4) XLAL_ERROR_NULL(XLAL_EBADLEN); // if the EoS piece contains too few points
+            if (indices_phase_transition[i+1] - indices_phase_transition[i] < 4) {
+                XLALPrintError("EoS Piece contains too few points.");
+                XLAL_ERROR_NULL(XLAL_EDOM); // if the EoS piece contains too few points
+            }
             if (pdat[indices_phase_transition[i]] == pdat[indices_phase_transition[i]+1]){
                 printf("\t Phase transition found at index %d. This phase transition is clean.\n", indices_phase_transition[i]);
             } else {
