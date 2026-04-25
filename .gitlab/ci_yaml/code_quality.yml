@@ -167,6 +167,8 @@ coverage-check:
       omit =
           ${LCI_TMPDIR}/*
           */test/*
+          */swig/*
+          */bin/*/test*
       parallel = True
       EOF
     # run unit tests with Python scripts instrumented by coverage.py
@@ -177,8 +179,9 @@ coverage-check:
           PYBIN_SCRIPT_PY_FLAGS="-m coverage run"
     # output C coverage data in Cobertura format
     - gcovr -j ${CPU_COUNT}
-          --exclude '(.+/)?swiglal_[a-z]+\.c$'
-          --exclude-directories 'lal([a-z]+/)?test'
+          --exclude '.+?/test/'
+          --exclude '.+?/swig/'
+          --exclude '.+?/bin/.+?/test'
           --gcov-ignore-parse-errors 'suspicious_hits.warn'
           --xml c-coverage.xml
     # combine and output Python coverage data in Cobertura format
