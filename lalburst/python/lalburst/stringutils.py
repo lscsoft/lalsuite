@@ -30,25 +30,21 @@ except ImportError:
 	NegInf = float("-inf")
 import itertools
 import math
-import numpy
-import scipy.stats
 import sys
 
-
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
+import numpy
+from igwn_ligolw import ligolw, lsctables
 from igwn_ligolw import utils as ligolw_utils
-from igwn_ligolw.utils import process as ligolw_process
+from igwn_segments import utils as segmentsUtils
+
 import lal
 from lalburst import rate
-from igwn_segments import utils as segmentsUtils
-from .offsetvector import offsetvector
-from . import snglcoinc
 
+from . import git_version, snglcoinc
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from .git_version import date as __date__
-from .git_version import version as __version__
+__date__ = git_version.date
+__version__ = git_version.version
 
 
 #
