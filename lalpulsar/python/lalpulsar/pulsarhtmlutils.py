@@ -27,10 +27,10 @@ Some helper classes and functions for outputing html and LaTeX pages
 
 from __future__ import print_function
 
-import re
-import numpy as np
 import math
+import re
 
+import numpy as np
 from lalpulsar.pulsarpputils import rad_to_dms, rad_to_hms
 
 # some parameter names for special LaTeX treatment in figures
