@@ -357,7 +357,7 @@ def extract_metadata(filename, metadata, log_noise_evidences=[], log_max_likelih
 
             # storing the metadata under the posterior_group name simplifies
             # writing it into the output hdf file.
-            if dset_name == None:
+            if dset_name is None:
                 dset_name = POSTERIOR_SAMPLES
             current_level = '/lalinference/' + run_identifier + '/' + dset_name
             current_level_posterior = '/lalinference/' + run_identifier + '/' + POSTERIOR_SAMPLES
