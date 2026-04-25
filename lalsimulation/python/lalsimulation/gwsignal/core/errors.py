@@ -1,7 +1,8 @@
-import lal
 from functools import wraps
+
 from astropy import units as u
 
+import lal
 
 ##############################################################################################################
 # Mapping between LAL Errors and Python
