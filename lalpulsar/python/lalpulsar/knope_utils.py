@@ -6,28 +6,30 @@
 """
 
 # make print statements python 3-proof
-from __future__ import print_function, division
+from __future__ import division, print_function
 
 __author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
 __date__ = "$Date$"
 __version__ = "$Revision$"
 
-import os
-import re
-from lal import pipeline
-import sys
 import ast
 import json
-import subprocess as sp
-import shutil
-import uuid
-from configparser import RawConfigParser
-import urllib.parse as urlparse
-from copy import deepcopy
-import numpy as np
+import os
 import pickle
-from scipy import optimize
+import re
+import shutil
+import subprocess as sp
+import sys
+import urllib.parse as urlparse
+import uuid
 from collections import OrderedDict
+from configparser import RawConfigParser
+from copy import deepcopy
+
+import numpy as np
+from scipy import optimize
+
+from lal import pipeline
 from lalpulsar import pulsarpputils as pppu
 
 # set some specific error codes and messages
