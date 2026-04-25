@@ -9,6 +9,7 @@ select = [
     "I",
     # pycodestyle errors
     "E9",
+    "E711",
     # executable issues
     "EXE",
     # pyflakes
