@@ -6,19 +6,15 @@ This implementation is described in the paper, <https://dcc.ligo.org/P2100029>, 
 N. K. Johnson-McDaniel, 2021
 """
 
+from warnings import warn
+
 import numpy as np
-
 from numpy.linalg import norm
-
 from numpy.polynomial import Polynomial as P
-
+from scipy.integrate import ode
 from scipy.special import ellipe, ellipk
 
-from scipy.integrate import ode
-
 from .tilts_at_infinity_utils import *
-
-from warnings import warn
 
 try:
     from scipy.integrate import solve_ivp
