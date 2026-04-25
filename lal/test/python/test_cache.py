@@ -34,40 +34,41 @@ from lal import (
 )
 
 
-class TestCacheEntry():
-    """Test suite for `lal.utils.CacheEntry`.
-    """
+class TestCacheEntry:
+    """Test suite for `lal.utils.CacheEntry`."""
+
     CacheEntry = lal_utils.CacheEntry
 
-    @pytest.mark.parametrize(("args", "segs"), (
-        # normal
+    @pytest.mark.parametrize(
+        ("args", "segs"),
         (
-            ("A", "TEST", segments.segment(0, 1), "test.gwf"),
-            {'A': [segments.segment(0, 1)]},
+            # normal
+            (
+                ("A", "TEST", segments.segment(0, 1), "test.gwf"),
+                {"A": [segments.segment(0, 1)]},
+            ),
+            # empty instruments
+            (
+                ("-", "-", segments.segment(2, 10), "test.gwf"),
+                {None: [segments.segment(2, 10)]},
+            ),
+            # multiple instruments (not sure this is every actually valid)
+            (
+                ("H1,L1", "TEST", segments.segment(5, 10), "test.gwf"),
+                {
+                    "H1": [segments.segment(5, 10)],
+                    "L1": [segments.segment(5, 10)],
+                },
+            ),
         ),
-        # empty instruments
-        (
-            ("-", "-", segments.segment(2, 10), "test.gwf"),
-            {None: [segments.segment(2, 10)]},
-        ),
-        # multiple instruments (not sure this is every actually valid)
-        (
-            ("H1,L1", "TEST", segments.segment(5, 10), "test.gwf"),
-            {
-                'H1': [segments.segment(5, 10)],
-                'L1': [segments.segment(5, 10)],
-            },
-        ),
-    ))
+    )
     def test_segmentlistdict(self, args, segs):
-        """Test that `CacheEntry.segmentlistdict` works.
-        """
+        """Test that `CacheEntry.segmentlistdict` works."""
         a = self.CacheEntry(*args)
         assert a.segmentlistdict == segs
 
     def test_fspath(self):
-        """Test that `CacheEntry` FSPath protocol works.
-        """
+        """Test that `CacheEntry` FSPath protocol works."""
         a = self.CacheEntry("A", "TEST", segments.segment(0, 1), "/path/to/test.gwf")
         assert str(Path(a)) == a.path
         assert os.path.basename(a) == "test.gwf"
@@ -92,11 +93,9 @@ def test_lalcache_from_gluecache():
             if os.path.isfile(fp):
                 os.remove(fp)
     assert lcache.length == len(gcache)
-    assert lcache.list.url == (
-        "file://localhost{}".format(os.path.abspath(files[0]))
-    )
+    assert lcache.list.url == ("file://localhost{}".format(os.path.abspath(files[0])))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-utils-cache.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
