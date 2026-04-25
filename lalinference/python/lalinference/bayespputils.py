@@ -6028,7 +6028,7 @@ def parse_converge_output_section(fo):
             result[key]={}
             out=result[key]
             continue
-        if result is not {}:
+        if result != {}:
             if 'chain' in line:
                 chain_line=True
                 continue
@@ -6040,7 +6040,7 @@ def parse_converge_output_section(fo):
             else:
                 try:
                     newline=line.strip('"').split()
-                    if newline is not []:
+                    if newline != []:
                         out2.append(line.strip('"').split())
                 except:
                     pass
