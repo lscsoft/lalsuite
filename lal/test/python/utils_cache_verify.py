@@ -6,7 +6,6 @@ import unittest
 
 from lal.utils import cache
 
-
 #
 # Define the components of the test suite.
 #
