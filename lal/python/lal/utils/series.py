@@ -17,8 +17,9 @@
 """Methods to generate LAL Time- and FrequencySeries objects in python
 """
 
-import numpy
 import re
+
+import numpy
 
 import lal
 
