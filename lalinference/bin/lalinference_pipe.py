@@ -56,8 +56,10 @@ def mkdirs(path):
     Helper function. Make the given directory, creating intermediate
     dirs if necessary, and don't complain about it already existing.
     """
-    if os.access(path,os.W_OK) and os.path.isdir(path): return
-    else: os.makedirs(path)
+    if os.access(path,os.W_OK) and os.path.isdir(path):
+        return
+    else:
+        os.makedirs(path)
 
 def add_variations(cp, section, option, values=None, allowed_values=None):
     """
