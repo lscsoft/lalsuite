@@ -134,7 +134,8 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
 		ps, samps = peparser.parse(data_hdf5, deltaLogP=deltaLogP, fixedBurnins=fixedBurnin,
 			nDownsample=nDownsample, tablename='chain_'+str('%02.f' %i))
 		highTchains.append(apt.Table(samps, names=ps))
-		if verbose: print('chain_'+str('%02.f' %i)+' at a temperature '+str(highTchains[i-1]['temperature'].mean()))
+		if verbose:
+                        print('chain_'+str('%02.f' %i)+' at a temperature '+str(highTchains[i-1]['temperature'].mean()))
 
 	betas = np.zeros(len(highTchains)+1)
 	logls = np.zeros_like(betas)
@@ -193,7 +194,8 @@ def weight_and_combine(pos_chains, verbose=False, evidence_weighting=True, combi
 	for i in range(len(pos_chains)):
 		log_evs[i] = pos_chains[i]['chain_log_evidence'][0]
 		log_noise_evs[i] = pos_chains[i]['chain_log_noise_evidence'][0]
-	if verbose: print('Computed log_evidences: %s'%(str(log_evs)))
+	if verbose:
+                print('Computed log_evidences: %s'%(str(log_evs)))
 
 	max_log_ev = log_evs.max()
 
@@ -201,14 +203,16 @@ def weight_and_combine(pos_chains, verbose=False, evidence_weighting=True, combi
 	    fracs=[np.exp(log_ev-max_log_ev) for log_ev in log_evs]
 	else:
 	    fracs = [1.0 for _ in log_evs]
-	if verbose: print('Relative weights of input files: %s'%(str(fracs)))
+	if verbose:
+            print('Relative weights of input files: %s'%(str(fracs)))
 
 	Ns=[fracs[i]/len(pos_chains[i]) for i in range(len(fracs))]
 	Ntot=max(Ns)
 	fracs=[n/Ntot for n in Ns]
 	if combine_only:
 	    fracs = [1.0 for _ in fracs]
-	if verbose: print('Relative weights of input files taking into account their length: %s'%(str(fracs)))
+	if verbose:
+            print('Relative weights of input files taking into account their length: %s'%(str(fracs)))
 
 	final_posterior = pos_chains[0][np.random.uniform(size=len(pos_chains[0]))<fracs[0]]
 
