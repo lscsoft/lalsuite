@@ -12,8 +12,9 @@ author = 'C.K.,J.F.N.,T.A.'
 release = '0.0.1'
 
 import os
-import sys
 import pathlib
+import sys
+
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.insert(0, pathlib.Path(__file__).parents[3].resolve().as_posix())
 sys.path.insert(0, os.path.abspath('../../..'))
