@@ -34,11 +34,9 @@ class NRSur7dq4Remnant(NRFits):
     the training parameter range.
     """
 
-
-    #-------------------------------------------------------------------------
-    def _get_coorbital_frame_spins_at_idx(self, chiA, chiB, omega, lNhat, phi, \
-            idx):
-        """ Computes PN spins and dynamics at a given idx.
+    # -------------------------------------------------------------------------
+    def _get_coorbital_frame_spins_at_idx(self, chiA, chiB, omega, lNhat, phi, idx):
+        """Computes PN spins and dynamics at a given idx.
 
         Inputs:
             chiA:       Dimless spin evolution of BhA in inertial frame.
@@ -75,25 +73,40 @@ class NRSur7dq4Remnant(NRFits):
         # The zeroth element is taken because transform_time_dependent_vector
         # is designed for arrays, but here we only have one element
         chiA_at_idx_copr = quaternion_utils.transform_time_dependent_vector(
-                np.array([quat_copr_at_idx]).T,
-                np.array([chiA_at_idx]).T, inverse=1).T[0]
+            np.array([quat_copr_at_idx]).T, np.array([chiA_at_idx]).T, inverse=1
+        ).T[0]
         chiB_at_idx_copr = quaternion_utils.transform_time_dependent_vector(
-                np.array([quat_copr_at_idx]).T,
-                np.array([chiB_at_idx]).T, inverse=1).T[0]
+            np.array([quat_copr_at_idx]).T, np.array([chiB_at_idx]).T, inverse=1
+        ).T[0]
 
         # get coorbital frame spins at idx
         chiA_at_idx_coorb = quaternion_utils.rotate_in_plane(
-                chiA_at_idx_copr, phi_at_idx)
+            chiA_at_idx_copr, phi_at_idx
+        )
         chiB_at_idx_coorb = quaternion_utils.rotate_in_plane(
-                chiB_at_idx_copr, phi_at_idx)
+            chiB_at_idx_copr, phi_at_idx
+        )
 
-        return chiA_at_idx_coorb, chiB_at_idx_coorb, quat_copr_at_idx, \
-            phi_at_idx, omega_at_idx
+        return (
+            chiA_at_idx_coorb,
+            chiB_at_idx_coorb,
+            quat_copr_at_idx,
+            phi_at_idx,
+            omega_at_idx,
+        )
 
-    #-------------------------------------------------------------------------
-    def _get_surrogate_dynamics(self, q, chiA0, chiB0, init_quat, \
-            init_orbphase, omega_ref, unlimited_extrapolation):
-        """ A wrapper for NRSur7dq4 dynamics.
+    # -------------------------------------------------------------------------
+    def _get_surrogate_dynamics(
+        self,
+        q,
+        chiA0,
+        chiB0,
+        init_quat,
+        init_orbphase,
+        omega_ref,
+        unlimited_extrapolation,
+    ):
+        """A wrapper for NRSur7dq4 dynamics.
 
         Inputs:
             q:          Mass ratio, mA/mB >= 1.
@@ -124,11 +137,36 @@ class NRSur7dq4Remnant(NRFits):
         if unlimited_extrapolation:
             lal.DictInsertUINT4Value(LALParams, "unlimited_extrapolation", 1)
 
-        t_dyn, quat0, quat1, quat2, quat3, orbphase, chiAx, chiAy, chiAz, \
-            chiBx, chiBy, chiBz = lalsim.PrecessingNRSurDynamics(q, \
-            chiA0[0], chiA0[1], chiA0[2], chiB0[0], chiB0[1], chiB0[2], \
-            omega_ref, init_quat[0], init_quat[1], init_quat[2], init_quat[3], \
-            init_orbphase, LALParams, approxTag)
+        (
+            t_dyn,
+            quat0,
+            quat1,
+            quat2,
+            quat3,
+            orbphase,
+            chiAx,
+            chiAy,
+            chiAz,
+            chiBx,
+            chiBy,
+            chiBz,
+        ) = lalsim.PrecessingNRSurDynamics(
+            q,
+            chiA0[0],
+            chiA0[1],
+            chiA0[2],
+            chiB0[0],
+            chiB0[1],
+            chiB0[2],
+            omega_ref,
+            init_quat[0],
+            init_quat[1],
+            init_quat[2],
+            init_quat[3],
+            init_orbphase,
+            LALParams,
+            approxTag,
+        )
 
         t_dyn = t_dyn.data
         orbphase = orbphase.data
@@ -138,11 +176,18 @@ class NRSur7dq4Remnant(NRFits):
 
         return t_dyn, copr_quat, orbphase, chiA_copr, chiB_copr
 
-    #-------------------------------------------------------------------------
-    def _get_pn_spins_at_surrogate_start(self, q, \
-            chiA0, chiB0, omega0, omega_switch_IG, t_sur_switch,
-            unlimited_extrapolation):
-        """ Gets PN spins and frame dynamics at a time close to the start
+    # -------------------------------------------------------------------------
+    def _get_pn_spins_at_surrogate_start(
+        self,
+        q,
+        chiA0,
+        chiB0,
+        omega0,
+        omega_switch_IG,
+        t_sur_switch,
+        unlimited_extrapolation,
+    ):
+        """Gets PN spins and frame dynamics at a time close to the start
             of the surrogate waveform model.
 
         Inputs:
@@ -197,23 +242,36 @@ class NRSur7dq4Remnant(NRFits):
         """
 
         # Get PN spin evolution starting at omega0
-        omega_PN, phi_PN, chiA_PN, chiB_PN, lNhat_PN \
-            = pn_spin_evolution_wrapper.spin_evolution(q, chiA0, chiB0, omega0)
+        omega_PN, phi_PN, chiA_PN, chiB_PN, lNhat_PN = (
+            pn_spin_evolution_wrapper.spin_evolution(q, chiA0, chiB0, omega0)
+        )
 
         # Get PN coorbital frame spins and frame dynamics at
         # omega_PN=omega_switch_IG
         idx = np.argmin(np.abs(omega_PN - omega_switch_IG))
-        chiA_PN_at_idx_coorb, chiB_PN_at_idx_coorb, quat_PN_copr_at_idx, \
-            phi_PN_at_idx, omega_PN_at_idx \
-            = self._get_coorbital_frame_spins_at_idx(chiA_PN, chiB_PN, \
-            omega_PN, lNhat_PN, phi_PN, idx)
+        (
+            chiA_PN_at_idx_coorb,
+            chiB_PN_at_idx_coorb,
+            quat_PN_copr_at_idx,
+            phi_PN_at_idx,
+            omega_PN_at_idx,
+        ) = self._get_coorbital_frame_spins_at_idx(
+            chiA_PN, chiB_PN, omega_PN, lNhat_PN, phi_PN, idx
+        )
 
         # Now evaluate the surrogate dynamics (both forwards and backwards)
         # using PN spins at omega_switch_IG
-        dyn_times, quat_sur, orbphase_sur, chiA_copr_sur, chiB_copr_sur \
-            = self._get_surrogate_dynamics(q, chiA_PN_at_idx_coorb, \
-            chiB_PN_at_idx_coorb, quat_PN_copr_at_idx, phi_PN_at_idx, \
-            omega_switch_IG, unlimited_extrapolation)
+        dyn_times, quat_sur, orbphase_sur, chiA_copr_sur, chiB_copr_sur = (
+            self._get_surrogate_dynamics(
+                q,
+                chiA_PN_at_idx_coorb,
+                chiB_PN_at_idx_coorb,
+                quat_PN_copr_at_idx,
+                phi_PN_at_idx,
+                omega_switch_IG,
+                unlimited_extrapolation,
+            )
+        )
         omega_sur = np.gradient(orbphase_sur, dyn_times)
 
         # Get surrogate orbital frequency at t_sur_switch, which is
@@ -225,20 +283,40 @@ class NRSur7dq4Remnant(NRFits):
         # expects the inputs in the LAL convention which agrees with the
         # coorbital frame.
         idx = np.argmin(np.abs(omega_PN - omega_init_sur))
-        chiA_PN_at_idx_coorb, chiB_PN_at_idx_coorb, quat_PN_copr_at_idx, \
-            phi_PN_at_idx, omega_PN_at_idx \
-            = self._get_coorbital_frame_spins_at_idx(chiA_PN, chiB_PN, \
-            omega_PN, lNhat_PN, phi_PN, idx)
+        (
+            chiA_PN_at_idx_coorb,
+            chiB_PN_at_idx_coorb,
+            quat_PN_copr_at_idx,
+            phi_PN_at_idx,
+            omega_PN_at_idx,
+        ) = self._get_coorbital_frame_spins_at_idx(
+            chiA_PN, chiB_PN, omega_PN, lNhat_PN, phi_PN, idx
+        )
 
-        return chiA_PN_at_idx_coorb, chiB_PN_at_idx_coorb, \
-            quat_PN_copr_at_idx, phi_PN_at_idx, omega_PN_at_idx, \
-            chiA_PN, chiB_PN, omega_PN
+        return (
+            chiA_PN_at_idx_coorb,
+            chiB_PN_at_idx_coorb,
+            quat_PN_copr_at_idx,
+            phi_PN_at_idx,
+            omega_PN_at_idx,
+            chiA_PN,
+            chiB_PN,
+            omega_PN,
+        )
 
-    #-------------------------------------------------------------------------
-    def _evolve_spins(self, q, chiA0, chiB0, omega0, omega_switch_IG=0.03, \
-            t_sur_switch=-4000, return_spin_evolution=False, \
-            unlimited_extrapolation=False):
-        """ Uses PN and surrogate spin evolution to evolve spins of the
+    # -------------------------------------------------------------------------
+    def _evolve_spins(
+        self,
+        q,
+        chiA0,
+        chiB0,
+        omega0,
+        omega_switch_IG=0.03,
+        t_sur_switch=-4000,
+        return_spin_evolution=False,
+        unlimited_extrapolation=False,
+    ):
+        """Uses PN and surrogate spin evolution to evolve spins of the
         component BHs from an initial orbital frequency = omega0 until t=-100 M
         from the peak of the waveform.
 
@@ -313,11 +391,24 @@ class NRSur7dq4Remnant(NRFits):
         # that should go into the surrogate such that the initial time is
         # t_sur_switch.
         if omega0 < omega_switch_IG:
-            chiA0_nrsur_coorb, chiB0_nrsur_coorb, quat0_nrsur_copr, \
-                phi0_nrsur, omega_init_sur, chiA_PN, chiB_PN, omega_PN \
-                = self._get_pn_spins_at_surrogate_start(q, \
-                chiA0, chiB0, omega0, omega_switch_IG, t_sur_switch,
-                unlimited_extrapolation)
+            (
+                chiA0_nrsur_coorb,
+                chiB0_nrsur_coorb,
+                quat0_nrsur_copr,
+                phi0_nrsur,
+                omega_init_sur,
+                chiA_PN,
+                chiB_PN,
+                omega_PN,
+            ) = self._get_pn_spins_at_surrogate_start(
+                q,
+                chiA0,
+                chiB0,
+                omega0,
+                omega_switch_IG,
+                t_sur_switch,
+                unlimited_extrapolation,
+            )
 
         # If omega0 >= omega_switch_IG, we evolve spins directly with NRSur7dq4
         # waveform model. We set the coprecessing frame quaternion to identity
@@ -325,15 +416,29 @@ class NRSur7dq4Remnant(NRFits):
         # the same as the inertial frame here.
         else:
             # Note that here we set omega_init_sur to omega0
-            chiA0_nrsur_coorb, chiB0_nrsur_coorb, quat0_nrsur_copr, \
-                phi0_nrsur, omega_init_sur, chiA_PN, chiB_PN, omega_PN \
-                = chiA0, chiB0, [1,0,0,0], 0, omega0, None, None, None
+            (
+                chiA0_nrsur_coorb,
+                chiB0_nrsur_coorb,
+                quat0_nrsur_copr,
+                phi0_nrsur,
+                omega_init_sur,
+                chiA_PN,
+                chiB_PN,
+                omega_PN,
+            ) = (chiA0, chiB0, [1, 0, 0, 0], 0, omega0, None, None, None)
 
         # Now evaluate the surrogate dynamics using PN spins at omega_init_sur
-        dyn_times, quat_sur, orbphase_sur, chiA_copr_sur, chiB_copr_sur \
-            = self._get_surrogate_dynamics(q, chiA0_nrsur_coorb, \
-            chiB0_nrsur_coorb, quat0_nrsur_copr, phi0_nrsur, \
-            omega_init_sur, unlimited_extrapolation)
+        dyn_times, quat_sur, orbphase_sur, chiA_copr_sur, chiB_copr_sur = (
+            self._get_surrogate_dynamics(
+                q,
+                chiA0_nrsur_coorb,
+                chiB0_nrsur_coorb,
+                quat0_nrsur_copr,
+                phi0_nrsur,
+                omega_init_sur,
+                unlimited_extrapolation,
+            )
+        )
 
         # get data at time node where remnant fits are done
         fitnode_time = -100
@@ -343,36 +448,44 @@ class NRSur7dq4Remnant(NRFits):
 
         # get coorbital frame spins at the time node
         chiA_coorb_fitnode = quaternion_utils.rotate_in_plane(
-                chiA_copr_sur[nodeIdx], orbphase_fitnode)
+            chiA_copr_sur[nodeIdx], orbphase_fitnode
+        )
         chiB_coorb_fitnode = quaternion_utils.rotate_in_plane(
-                chiB_copr_sur[nodeIdx], orbphase_fitnode)
+            chiB_copr_sur[nodeIdx], orbphase_fitnode
+        )
 
         if return_spin_evolution:
             # Transform spins to the reference inertial frame
             chiA_sur = quaternion_utils.transform_time_dependent_vector(
-                    quat_sur, chiA_copr_sur.T).T
+                quat_sur, chiA_copr_sur.T
+            ).T
             chiB_sur = quaternion_utils.transform_time_dependent_vector(
-                    quat_sur, chiB_copr_sur.T).T
+                quat_sur, chiB_copr_sur.T
+            ).T
             spin_evolution = {
-                    't_sur': dyn_times,
-                    'chiA_sur': chiA_sur,
-                    'chiB_sur': chiB_sur,
-                    'orbphase_sur': orbphase_sur,
-                    'quat_sur': quat_sur,
-                    'omega_PN': omega_PN,
-                    'chiA_PN': chiA_PN,
-                    'chiB_PN': chiB_PN,
-                    'omega_init_sur': omega_init_sur,
-                }
+                "t_sur": dyn_times,
+                "chiA_sur": chiA_sur,
+                "chiB_sur": chiB_sur,
+                "orbphase_sur": orbphase_sur,
+                "quat_sur": quat_sur,
+                "omega_PN": omega_PN,
+                "chiA_PN": chiA_PN,
+                "chiB_PN": chiB_PN,
+                "omega_init_sur": omega_init_sur,
+            }
         else:
             spin_evolution = None
 
-        return chiA_coorb_fitnode, chiB_coorb_fitnode, quat_fitnode, \
-                orbphase_fitnode, spin_evolution
+        return (
+            chiA_coorb_fitnode,
+            chiB_coorb_fitnode,
+            quat_fitnode,
+            orbphase_fitnode,
+            spin_evolution,
+        )
 
     # ------------------------------------------------------------------------
-    def _get_fit_params(self, m1, m2, chiA_vec, chiB_vec, f_ref,
-            extra_params_dict):
+    def _get_fit_params(self, m1, m2, chiA_vec, chiB_vec, f_ref, extra_params_dict):
         """
         If f_ref = -1, assumes the reference epoch is at t=-100M and
             just returns the input spins, which are expected to be in
@@ -387,8 +500,8 @@ class NRSur7dq4Remnant(NRFits):
 
         unlimited_extrapolation = extra_params_dict["unlimited_extrapolation"]
 
-        q = m1/m2
-        M = m1 + m2     # m1, m2 are assumed to be in kgs
+        q = m1 / m2
+        M = m1 + m2  # m1, m2 are assumed to be in kgs
 
         if f_ref == -1:
             # If f_ref = -1, assume the reference epoch is at t=-100M from the
@@ -404,21 +517,35 @@ class NRSur7dq4Remnant(NRFits):
             # Else, evolve the spins from f_ref to t = -100 M from the peak.
 
             # reference orbital angular frequency times the total mass (M*omega)
-            omega_ref = f_ref*np.pi*M*lal.G_SI/lal.C_SI**3
+            omega_ref = f_ref * np.pi * M * lal.G_SI / lal.C_SI**3
 
-            chiA_coorb_fitnode, chiB_coorb_fitnode, quat_fitnode, \
-                orbphase_fitnode, spin_evolution = self._evolve_spins(q, \
-                chiA_vec, chiB_vec, omega_ref, \
-                unlimited_extrapolation=unlimited_extrapolation)
+            (
+                chiA_coorb_fitnode,
+                chiB_coorb_fitnode,
+                quat_fitnode,
+                orbphase_fitnode,
+                spin_evolution,
+            ) = self._evolve_spins(
+                q,
+                chiA_vec,
+                chiB_vec,
+                omega_ref,
+                unlimited_extrapolation=unlimited_extrapolation,
+            )
 
-        fit_params = [q, chiA_coorb_fitnode, chiB_coorb_fitnode, quat_fitnode, \
-            orbphase_fitnode]
+        fit_params = [
+            q,
+            chiA_coorb_fitnode,
+            chiB_coorb_fitnode,
+            quat_fitnode,
+            orbphase_fitnode,
+        ]
 
         return fit_params
 
     # ------------------------------------------------------------------------
     def _eval_fit(self, fit_params, fit_type, extra_params_dict):
-        """ Evaluates a particular fit for NRSur7dq4Remnant using the fit_params
+        """Evaluates a particular fit for NRSur7dq4Remnant using the fit_params
         returned by _get_fit_params().
 
         fit_type can be one of "FinalMass", "FinalSpin" or "RecoilKick".
@@ -434,24 +561,47 @@ class NRSur7dq4Remnant(NRFits):
 
         if fit_type == "FinalMass":
             # FinalMass is given as a fraction of total mass
-            val = lalsim.NRSur7dq4Remnant(q,
-                chiA_vec[0], chiA_vec[1], chiA_vec[2],
-                chiB_vec[0], chiB_vec[1], chiB_vec[2], "mf",
-                LALParams).data[0]
+            val = lalsim.NRSur7dq4Remnant(
+                q,
+                chiA_vec[0],
+                chiA_vec[1],
+                chiA_vec[2],
+                chiB_vec[0],
+                chiB_vec[1],
+                chiB_vec[2],
+                "mf",
+                LALParams,
+            ).data[0]
         else:
             if fit_type == "FinalSpin":
-                val = lalsim.NRSur7dq4Remnant(q,
-                    chiA_vec[0], chiA_vec[1], chiA_vec[2],
-                    chiB_vec[0], chiB_vec[1], chiB_vec[2], "chif",
-                    LALParams).data
+                val = lalsim.NRSur7dq4Remnant(
+                    q,
+                    chiA_vec[0],
+                    chiA_vec[1],
+                    chiA_vec[2],
+                    chiB_vec[0],
+                    chiB_vec[1],
+                    chiB_vec[2],
+                    "chif",
+                    LALParams,
+                ).data
             elif fit_type == "RecoilKick":
-                val = lalsim.NRSur7dq4Remnant(q,
-                    chiA_vec[0], chiA_vec[1], chiA_vec[2],
-                    chiB_vec[0], chiB_vec[1], chiB_vec[2], "vf",
-                    LALParams).data
+                val = lalsim.NRSur7dq4Remnant(
+                    q,
+                    chiA_vec[0],
+                    chiA_vec[1],
+                    chiA_vec[2],
+                    chiB_vec[0],
+                    chiB_vec[1],
+                    chiB_vec[2],
+                    "vf",
+                    LALParams,
+                ).data
             else:
-                raise ValueError("Invalid fit_type=%s. This model only allows "
-                    "'FinalMass', 'FinalSpin' and 'RecoilKick'."%fit_type)
+                raise ValueError(
+                    "Invalid fit_type=%s. This model only allows "
+                    "'FinalMass', 'FinalSpin' and 'RecoilKick'." % fit_type
+                )
 
             # The fits are constructed in the coorbital frame at t=-100M.
             # If quat_fitnode is None, this means that no spin evolution
@@ -464,7 +614,8 @@ class NRSur7dq4Remnant(NRFits):
                 # coprecessing frame quaternion and orbital phase at t=-100M.
                 # These are defined w.r.t. the reference LAL inertial frame
                 # defined at omega0.
-                val = quaternion_utils.transform_vector_coorb_to_inertial(val, \
-                    orbphase_fitnode, quat_fitnode)
+                val = quaternion_utils.transform_vector_coorb_to_inertial(
+                    val, orbphase_fitnode, quat_fitnode
+                )
 
         return np.atleast_1d(val)
