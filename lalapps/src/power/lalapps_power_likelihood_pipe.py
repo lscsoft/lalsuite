@@ -33,20 +33,18 @@ Excess power offline pipeline's likelihood stage construction script.
 
 from __future__ import print_function
 
-
 import itertools
-from optparse import OptionParser
 import sys
 import tempfile
 from configparser import ConfigParser
-
+from optparse import OptionParser
 
 from igwn_segments import utils as segmentsUtils
+from lal.utils import CacheEntry
+
 import lal
 from lal import pipeline
-from lal.utils import CacheEntry
 from lalburst import power
-
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __date__ = "$Date$"
