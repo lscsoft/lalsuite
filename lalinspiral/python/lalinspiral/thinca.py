@@ -28,17 +28,15 @@ import itertools
 import math
 import operator
 
+from igwn_ligolw import ligolw, lsctables
 
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
-from lalburst import offsetvector
-from lalburst import snglcoinc
-from . import _thinca
+from lalburst import offsetvector, snglcoinc
 
+from . import _thinca, git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from .git_version import date as __date__
-from .git_version import version as __version__
+__date__ = git_version.date
+__version__ = git_version.version
 
 
 def mchirp(m1, m2):
