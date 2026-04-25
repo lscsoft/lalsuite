@@ -73,7 +73,7 @@ def MultiIter(*sequences):
 
     >>> lengths = range(1, 12)
     >>> for x in MultiIter(*map(range, lengths)):
-    ...	pass
+    ...    pass
     ...
 
     runs approximately 5 times faster if the lengths list is reversed.
