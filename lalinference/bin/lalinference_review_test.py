@@ -1,13 +1,13 @@
 ##python
 import argparse
-import shutil
-import os
-import sys
-import subprocess
 import glob
-import lalinference
-
+import os
+import shutil
+import subprocess
+import sys
 from configparser import ConfigParser
+
+import lalinference
 
 prefix=''
 try:
