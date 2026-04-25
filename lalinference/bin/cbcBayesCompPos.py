@@ -146,7 +146,8 @@ def open_url(url,username,password):
 def all_pairs(L):
     while L:
         i = L.pop()
-        for j in L: yield i, j
+        for j in L:
+            yield i, j
 
 def open_url_curl(url,args=[]):
     import subprocess
@@ -304,7 +305,8 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
             print('Skipping '+param)
             continue
         locmaxy=max(n)
-        if locmaxy>max_y: max_y=locmaxy
+        if locmaxy>max_y:
+            max_y=locmaxy
 #(n, bins, patches)=plt.hist(posterior[param].samples,bins=bins,facecolor='white',label=name,normed=True,hold=True,color=color_by_name[name])#range=(min_pos,max_pos)
         (n, bins, patches)=plt.hist(posterior[param].samples,bins=bins,histtype='step',label=name,density=True,hold=True,color=color_by_name[name])
         patch_list.append(patches[0])
@@ -759,7 +761,8 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
                     slinestyles=['solid', 'dashed', 'dashdot', 'dotted']
 
                     fig=bppu.plot_two_param_kde_greedy_levels(pos_list,greedy2Params,TwoDconfidenceLevels,color_by_name,figsize=contour_figsize,dpi=contour_dpi,figposition=contour_figposition,legend=ldg,line_styles=slinestyles,hatches_by_name=hatches_by_name,Npixels=Npixels2D)
-                    if fig is None: continue
+                    if fig is None:
+                            continue
                     #fig=bppu.plot_two_param_greedy_bins_contour(pos_list,greedy2Params,TwoDconfidenceLevels,color_by_name,figsize=contour_figsize,dpi=contour_dpi,figposition=contour_figposition)
                     greedy2savepaths.append('%s-%s.png'%(pplst[0],pplst[1]))
                     fig.savefig(os.path.join(outdir,'%s-%s.png'%(pplst[0],pplst[1])),bbox_inches='tight')
