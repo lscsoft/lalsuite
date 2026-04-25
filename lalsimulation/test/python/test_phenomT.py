@@ -18,10 +18,12 @@
 #Simple test to see if the PhenomT family models have changed: IMRPhenomT, IMRPhenomTHM, IMRPhenomTP and IMRPhenomTPHM.
 
 import sys
+
+import numpy as np
 import pytest
+
 import lal
 import lalsimulation
-import numpy as np
 
 # -- utility functions ---------------------
 
