@@ -35,26 +35,30 @@ import lalsimulation as lalsim
 def get_name(f):
     return f.__name__
 
+
 # Set of functions to test
 func_list = [
     lalsim.SimInspiralGetSpinSupportFromApproximant,
     lalsim.SimInspiralGetSpinFreqFromApproximant,
-    lalsim.SimInspiralApproximantAcceptTestGRParams
+    lalsim.SimInspiralApproximantAcceptTestGRParams,
 ]
 
 # Loop over all implemented TD or FD approximants
 
 IMPLEMENTED = [
-    k for k in range(lalsim.NumApproximants) if
-    lalsim.SimInspiralImplementedTDApproximants(k) or
-    lalsim.SimInspiralImplementedFDApproximants(k)
+    k
+    for k in range(lalsim.NumApproximants)
+    if lalsim.SimInspiralImplementedTDApproximants(k)
+    or lalsim.SimInspiralImplementedFDApproximants(k)
 ]
+
 
 @pytest.mark.parametrize("func", func_list, ids=get_name)
 @pytest.mark.parametrize("k", IMPLEMENTED, ids=lalsim.GetStringFromApproximant)
 def test_wf_property_lists(k, func):
     func(k)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-wf_property_lists.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
