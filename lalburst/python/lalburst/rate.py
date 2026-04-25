@@ -36,8 +36,9 @@ smoothing contour plots.
 
 
 from functools import reduce
+
 try:
-	from fpconst import PosInf, NegInf
+	from fpconst import NegInf, PosInf
 except ImportError:
 	# fpconst is not part of the standard library and might not
 	# be available
@@ -45,9 +46,11 @@ except ImportError:
 	NegInf = float("-inf")
 import itertools
 import math
-import numpy
 import random
+
+import numpy
 import scipy
+
 __numpy__version__ = tuple(map(int, numpy.__version__.strip().split(".")[:2]))
 __scipy__version__ = tuple(map(int, scipy.__version__.strip().split(".")[:2]))
 # FIXME Uncomment these lines when the interpolator problem is fixed or when we
@@ -60,16 +63,15 @@ else:
 	# replacements are provided below
 	pass
 '''
-from scipy.signal import signaltools
-
 import igwn_segments as segments
-
 from igwn_ligolw import ligolw
 from igwn_ligolw import types as ligolw_types
+from scipy.signal import signaltools
+
 import lal
 from lal import iterutils
-from . import git_version
 
+from . import git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id
