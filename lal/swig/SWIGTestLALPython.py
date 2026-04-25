@@ -19,6 +19,7 @@ except ImportError:
     # FIXME: Remove this once we require at least Numpy >= 1.25.0.
     from numpy import ComplexWarning
 
+
 # return if 'x' has both value 'v' and type 't'
 def is_value_and_type(x, v, t):
     return x == v and type(x) is t
@@ -35,6 +36,7 @@ print("PASSED module load", file=sys.stderr)
 
 
 # -- configure error handling
+
 
 # set error handlers
 def set_nice_error_handlers():
@@ -194,9 +196,9 @@ def test_string_conversions():
 def test_static_vector_matrix_conversions():
     """check static vector/matrix conversions"""
     print("checking static vector/matrix conversions ...", file=sys.stderr)
-    lalglobalvar.swig_lal_test_struct_vector[
-        0
-    ] = lalglobalvar.swig_lal_test_struct_const
+    lalglobalvar.swig_lal_test_struct_vector[0] = (
+        lalglobalvar.swig_lal_test_struct_const
+    )
     assert (
         lalglobalvar.swig_lal_test_struct_vector[0].n
         == lalglobalvar.swig_lal_test_struct_const.n
@@ -217,9 +219,9 @@ def test_static_vector_matrix_conversions():
         lalglobalvar.swig_lal_test_struct_vector[0].vec,
         lalglobalvar.swig_lal_test_struct_const.vec,
     )
-    lalglobalvar.swig_lal_test_struct_matrix[
-        0, 0
-    ] = lalglobalvar.swig_lal_test_struct_const
+    lalglobalvar.swig_lal_test_struct_matrix[0, 0] = (
+        lalglobalvar.swig_lal_test_struct_const
+    )
     assert (
         lalglobalvar.swig_lal_test_struct_matrix[0, 0].n
         == lalglobalvar.swig_lal_test_struct_const.n
