@@ -29,13 +29,14 @@ The KNOwn Pulsar pipelinE - lalpulsar_knope
 DAG generation code for running the known pulsar search pipeline
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function
+
+import argparse
+import pickle
+import sys
+from configparser import ConfigParser
 
 from lalpulsar import knope_utils as knope
-import argparse
-from configparser import ConfigParser
-import sys
-import pickle
 
 description = """Setup a Condor DAG file to run the known pulsar search pipeline based on information given in config.ini.
 The user must specify the configuration file for the script to run.
