@@ -22,13 +22,16 @@ class GravitationalWavePolarizations(NamedTuple):
     ----------
     hp, hc : GwPy `TimeSeries` or `FrequencySeries` objects
     """
+
     def domain(self):
         if isinstance(self.hp, TimeSeries) and isinstance(self.hc, TimeSeries):
-            return 'time'
-        elif isinstance(self.hp, FrequencySeries) and isinstance(self.hc, FrequencySeries):
-            return 'frequency'
+            return "time"
+        elif isinstance(self.hp, FrequencySeries) and isinstance(
+            self.hc, FrequencySeries
+        ):
+            return "frequency"
         else:
-            return 'mixed'
+            return "mixed"
 
     def strain(self, det, ra, dec, psi, tgps):
         """
@@ -55,40 +58,52 @@ class GravitationalWavePolarizations(NamedTuple):
 
         # Might change it later; for now keeping it as used by ligo.
         warnings.warn("This code is currently UNREVIEWED, use with caution!!")
-        pos = SkyCoord(ra = ra, dec = dec)
+        pos = SkyCoord(ra=ra, dec=dec)
         psi = Angle(psi)
-        t = Time(tgps, format='gps', scale='utc')
+        t = Time(tgps, format="gps", scale="utc")
 
         if isinstance(det, str):
             det = lalsim.DetectorPrefixToLALDetector(det)
 
-        if self.domain() == 'time':
+        if self.domain() == "time":
             hp = self.hp.to_lal()
             hc = self.hc.to_lal()
             hp.epoch += t.gps
             hc.epoch += t.gps
-            h = lalsim.SimDetectorStrainREAL8TimeSeries(hp, hc, pos.ra.rad, pos.dec.rad, psi.rad, det)
+            h = lalsim.SimDetectorStrainREAL8TimeSeries(
+                hp, hc, pos.ra.rad, pos.dec.rad, psi.rad, det
+            )
             h = TimeSeries.from_lal(h)
             return h
 
-        elif self.domain() == 'frequency':
+        elif self.domain() == "frequency":
             # WARNING: does not account for Earth rotation or non-LWL effects
 
             epoch = lal.LIGOTimeGPS(t.gps)
-            dt = lal.TimeDelayFromEarthCenter(det.location, pos.ra.rad, pos.dec.rad, epoch)
-            fp, fc = lal.ComputeDetAMResponse(det.response, pos.ra.rad, pos.dec.rad, psi.rad, lal.GreenwichMeanSiderealTime(epoch))
+            dt = lal.TimeDelayFromEarthCenter(
+                det.location, pos.ra.rad, pos.dec.rad, epoch
+            )
+            fp, fc = lal.ComputeDetAMResponse(
+                det.response,
+                pos.ra.rad,
+                pos.dec.rad,
+                psi.rad,
+                lal.GreenwichMeanSiderealTime(epoch),
+            )
 
             # Shouldn't this have a overall time shift due to time-delay from earth center? or does epoch take care of it?
             # TODO: adress during phase 2 of review
 
-            h = (fp * self.hp + fc * self.hc)
-            h.epoch = Time(t.gps + dt, format='gps', scale='utc')
+            h = fp * self.hp + fc * self.hc
+            h.epoch = Time(t.gps + dt, format="gps", scale="utc")
             return h
         else:
-            return ValueError('hp and hc must both be either TimeSeries or FrequencySeries')
+            return ValueError(
+                "hp and hc must both be either TimeSeries or FrequencySeries"
+            )
 
     def add_strain(self, data, det, ra, dec, psi, tgps, response=None):
-         """
+        """
          Add strain to some LAL strain as required
 
          Parameters:
@@ -112,23 +127,24 @@ class GravitationalWavePolarizations(NamedTuple):
         -------
         data : `TimeSeries` object
             Detector response injected in strain data
-         """
-         warnings.warn("This code is currently UNREVIEWED, use with caution!")
-         h = self.strain(det, ra, dec, psi, tgps)
-         # Adding condition to convert FrequencySeries to TimeSeries if strain is in freq domain
-         if isinstance(h, FrequencySeries):
-             h = h.ifft()
-         h = h.to_lal()
-         data = data.to_lal()
-         lalsim.SimAddInjectionREAL8TimeSeries(data, h, response)
-         data = TimeSeries.from_lal(data)
-         return data
+        """
+        warnings.warn("This code is currently UNREVIEWED, use with caution!")
+        h = self.strain(det, ra, dec, psi, tgps)
+        # Adding condition to convert FrequencySeries to TimeSeries if strain is in freq domain
+        if isinstance(h, FrequencySeries):
+            h = h.ifft()
+        h = h.to_lal()
+        data = data.to_lal()
+        lalsim.SimAddInjectionREAL8TimeSeries(data, h, response)
+        data = TimeSeries.from_lal(data)
+        return data
 
 
 class ModePair(NamedTuple):
     """
     Returns a named tuple given the l,m values
     """
+
     l: int
     m: int
 
@@ -141,31 +157,37 @@ class SpinWeightedSphericalHarmonicMode(ModePair):
     def __new__(cls, s, l, m):
         new = super().__new__(cls, l, m)
         if new.l < abs(s):
-            raise ValueError('Require l >= |s|')
+            raise ValueError("Require l >= |s|")
         if abs(new.m) > new.l:
-            raise ValueError('Require |m| <= l')
+            raise ValueError("Require |m| <= l")
         new.s = s
         return new
 
     def __call__(self, theta, phi):
         theta = Angle(theta, u.rad)
         phi = Angle(phi, u.rad)
-        return lal.SpinWeightedSphericalHarmonic(theta.rad, phi.rad, self.s, self.l, self.m)
+        return lal.SpinWeightedSphericalHarmonic(
+            theta.rad, phi.rad, self.s, self.l, self.m
+        )
 
 
 class TensorSphericalHarmonicMode(SpinWeightedSphericalHarmonicMode):
     """
     Class to return spin `-2` weighted spherical harmonic given ModePair
     """
+
     def __new__(cls, l, m):
         return super().__new__(cls, -2, l, m)
 
 
-class GravitationalWaveModes(Dict[SpinWeightedSphericalHarmonicMode, Union[TimeSeries, FrequencySeries]]):
+class GravitationalWaveModes(
+    Dict[SpinWeightedSphericalHarmonicMode, Union[TimeSeries, FrequencySeries]]
+):
     """
     Class for gravitational wave modes which returns the  waveform recomposed with -2 spin weighted spherical harmonics
     given a (theta, phi) value
     """
+
     def __call__(self, theta, phi):
         """
         Return plus and cross polarizations from the gravitational wave modes.
@@ -178,16 +200,17 @@ class GravitationalWaveModes(Dict[SpinWeightedSphericalHarmonicMode, Union[TimeS
             Phi angle (inclination, theta_jn) in units of rad.
         """
         if isinstance(theta, float) and isinstance(phi, float):
-            raise TypeError("Theta and phi should be in units of astropy.units.rad, not float")
+            raise TypeError(
+                "Theta and phi should be in units of astropy.units.rad, not float"
+            )
         elif theta.unit.is_equivalent(u.rad) and phi.unit.is_equivalent(u.rad):
             pass
         else:
             raise TypeError("Theta and phi should be in units of astropy.units.rad")
 
-
-        hpc = 0.
-        hp = 0.
-        hc = 0.
+        hpc = 0.0
+        hp = 0.0
+        hc = 0.0
         for key, hlm in self.items():
             if isinstance(key, str):
                 pass
@@ -203,7 +226,7 @@ class GravitationalWaveModes(Dict[SpinWeightedSphericalHarmonicMode, Union[TimeS
                 l, m = int(key[0]), int(key[1])
                 mode = TensorSphericalHarmonicMode(l, m)
                 ylm = mode(theta, phi)
-                hp  += 0.5*( ylm * hlm + np.conj(ylm) * np.conj(hlm)[::-1])
-                hc  += 1j*0.5*( ylm * hlm - np.conj(ylm)* np.conj(hlm)[::-1])
+                hp += 0.5 * (ylm * hlm + np.conj(ylm) * np.conj(hlm)[::-1])
+                hc += 1j * 0.5 * (ylm * hlm - np.conj(ylm) * np.conj(hlm)[::-1])
 
         return GravitationalWavePolarizations(hp, hc)
