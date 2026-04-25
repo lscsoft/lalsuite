@@ -22,6 +22,7 @@ functions. By default the class uses its own implementation of the antenna
 response functions, but it also provides a wrapper to the equivalent
 functions within LAL.
 """
+
 # \author Matthew Pitkin (<matthew.pitkin@ligo.org>)
 #
 # ### Synopsis ###
@@ -153,40 +154,57 @@ __date__ = git_version.date
 
 
 ## mapping between detector names and LALCachedDetectors
-DETMAP = {'H1': LALDetectorIndexLHODIFF,
-          'H2': LALDetectorIndexLHODIFF,
-          'LHO': LALDetectorIndexLHODIFF,
-          'L1': LALDetectorIndexLLODIFF,
-          'LLO': LALDetectorIndexLLODIFF,
-          'G1': LALDetectorIndexGEO600DIFF,
-          'GEO': LALDetectorIndexGEO600DIFF,
-          'GEO600': LALDetectorIndexGEO600DIFF,
-          'V1': LALDetectorIndexVIRGODIFF,
-          'VIRGO': LALDetectorIndexVIRGODIFF,
-          'T1': LALDetectorIndexTAMA300DIFF,
-          'TAMA': LALDetectorIndexTAMA300DIFF,
-          'TAMA300': LALDetectorIndexTAMA300DIFF,
-          'K1': LALDetectorIndexKAGRADIFF,
-          'KAGRA': LALDetectorIndexKAGRADIFF,
-          'LCGT': LALDetectorIndexKAGRADIFF,
-          'I1': LALDetectorIndexLIODIFF,
-          'LIO': LALDetectorIndexLIODIFF,
-          'E1': LALDetectorIndexE1DIFF,
-          'E2': LALDetectorIndexE2DIFF,
-          'E3': LALDetectorIndexE3DIFF}
+DETMAP = {
+    "H1": LALDetectorIndexLHODIFF,
+    "H2": LALDetectorIndexLHODIFF,
+    "LHO": LALDetectorIndexLHODIFF,
+    "L1": LALDetectorIndexLLODIFF,
+    "LLO": LALDetectorIndexLLODIFF,
+    "G1": LALDetectorIndexGEO600DIFF,
+    "GEO": LALDetectorIndexGEO600DIFF,
+    "GEO600": LALDetectorIndexGEO600DIFF,
+    "V1": LALDetectorIndexVIRGODIFF,
+    "VIRGO": LALDetectorIndexVIRGODIFF,
+    "T1": LALDetectorIndexTAMA300DIFF,
+    "TAMA": LALDetectorIndexTAMA300DIFF,
+    "TAMA300": LALDetectorIndexTAMA300DIFF,
+    "K1": LALDetectorIndexKAGRADIFF,
+    "KAGRA": LALDetectorIndexKAGRADIFF,
+    "LCGT": LALDetectorIndexKAGRADIFF,
+    "I1": LALDetectorIndexLIODIFF,
+    "LIO": LALDetectorIndexLIODIFF,
+    "E1": LALDetectorIndexE1DIFF,
+    "E2": LALDetectorIndexE2DIFF,
+    "E3": LALDetectorIndexE3DIFF,
+}
 
 
 ## The ranges of variables required for the antenna response (for look-up table generation)
-VAR_RANGES = {'psi': [0., 2.*np.pi],
-              'time': [0., DAYSID_SI],
-              'ra': [0., 2.*np.pi],
-              'dec': [-1., 1.]}  # this range is actually in sin(dec)
+VAR_RANGES = {
+    "psi": [0.0, 2.0 * np.pi],
+    "time": [0.0, DAYSID_SI],
+    "ra": [0.0, 2.0 * np.pi],
+    "dec": [-1.0, 1.0],
+}  # this range is actually in sin(dec)
 
 
 class AntennaResponse(object):
-    def __init__(self, detector, ra, dec, psi=0., times=None, tensor=True,
-                 vector=False, scalar=False, use_lal=False, lookup=False,
-                 lookuppair=None, bins1=100, bins2=100):
+    def __init__(
+        self,
+        detector,
+        ra,
+        dec,
+        psi=0.0,
+        times=None,
+        tensor=True,
+        vector=False,
+        scalar=False,
+        use_lal=False,
+        lookup=False,
+        lookuppair=None,
+        bins1=100,
+        bins2=100,
+    ):
         """
         Calculate the long-wavelength limit antenna response functions for a given
         ground-based gravitational wave detector. The response can include tensor,
@@ -272,15 +290,17 @@ class AntennaResponse(object):
         """
 
         # response function dictionary
-        self.response = {'plus': None,   # tensor plus polarization
-                         'cross': None,  # tensor cross polarization
-                         'x': None,      # vector "x" polarization
-                         'y': None,      # vector "y" polarization
-                         'b': None,      # scalar breathing mode polarizarion
-                         'l': None}      # scalar longitudinal mode polarization
+        self.response = {
+            "plus": None,  # tensor plus polarization
+            "cross": None,  # tensor cross polarization
+            "x": None,  # vector "x" polarization
+            "y": None,  # vector "y" polarization
+            "b": None,  # scalar breathing mode polarizarion
+            "l": None,
+        }  # scalar longitudinal mode polarization
 
         # parameter names and order in arrays
-        self.parameters = ['ra', 'dec', 'psi', 'time']
+        self.parameters = ["ra", "dec", "psi", "time"]
 
         # set values
         self.detector = detector
@@ -372,16 +392,17 @@ class AntennaResponse(object):
             self._ra = None
             return
         elif isinstance(raval, float) or isinstance(raval, int):
-            self._ra = np.array([raval], dtype='float64')
+            self._ra = np.array([raval], dtype="float64")
         elif isinstance(raval, list) or isinstance(raval, np.ndarray):
-            self._ra = np.copy(raval).astype('float64')
+            self._ra = np.copy(raval).astype("float64")
         elif isinstance(raval, str):
             try:
                 rarad = TranslateHMStoRAD(raval)
-                self._ra = np.array([rarad], dtype='float64')
+                self._ra = np.array([rarad], dtype="float64")
             except RuntimeError:
-                raise ValueError("Could not convert '{}' to a right "
-                                 "ascension".format(raval))
+                raise ValueError(
+                    "Could not convert '{}' to a right " "ascension".format(raval)
+                )
         else:
             raise TypeError("Right ascension must be an array")
 
@@ -409,21 +430,22 @@ class AntennaResponse(object):
             self._sintheta = None
             return
         elif isinstance(decval, float) or isinstance(decval, int):
-            self._dec = np.array([decval], dtype='float64')
+            self._dec = np.array([decval], dtype="float64")
         elif isinstance(decval, list) or isinstance(decval, np.ndarray):
-            self._dec = np.copy(decval).astype('float64')
+            self._dec = np.copy(decval).astype("float64")
         elif isinstance(decval, str):
             try:
                 decrad = TranslateDMStoRAD(decval)
-                self._dec = np.array([decrad], dtype='float64')
+                self._dec = np.array([decrad], dtype="float64")
             except RuntimeError:
-                raise ValueError("Could not convert '{}' to a "
-                                 "declination".format(decval))
+                raise ValueError(
+                    "Could not convert '{}' to a " "declination".format(decval)
+                )
         else:
             raise TypeError("Declination must be an array")
 
-        self._costheta = np.cos(0.5*np.pi - self._dec)
-        self._sintheta = np.sin(0.5*np.pi - self._dec)
+        self._costheta = np.cos(0.5 * np.pi - self._dec)
+        self._sintheta = np.sin(0.5 * np.pi - self._dec)
 
     @property
     def psi(self):
@@ -451,13 +473,13 @@ class AntennaResponse(object):
             self._sinpsi = None
             return
         elif isinstance(psival, float) or isinstance(psival, int):
-            self._psi = np.array([psival], dtype='float64')
+            self._psi = np.array([psival], dtype="float64")
         elif isinstance(psival, list) or isinstance(psival, np.ndarray):
-            self._psi = np.copy(psival).astype('float64')
+            self._psi = np.copy(psival).astype("float64")
         else:
             raise TypeError("Polarization must be an array")
 
-        self._psi = np.mod(self._psi, 2.*np.pi)  # wrap at 0 and 2pi
+        self._psi = np.mod(self._psi, 2.0 * np.pi)  # wrap at 0 and 2pi
         self._cospsi = np.cos(self._psi)
         self._sinpsi = np.sin(self._psi)
 
@@ -484,14 +506,16 @@ class AntennaResponse(object):
             self._gmsttimes = None
             return
         elif isinstance(timearr, float) or isinstance(timearr, int):
-            self._times = np.array([timearr], dtype='float64')
+            self._times = np.array([timearr], dtype="float64")
         elif isinstance(timearr, list) or isinstance(timearr, np.ndarray):
-            self._times = np.copy(timearr).astype('float64')
+            self._times = np.copy(timearr).astype("float64")
         else:
             raise TypeError("Times must be an array")
 
         # get an array of GMSTs
-        self._gmsttimes = np.ones_like(self._times) * np.nan  # Greenwich Mean Siderial time (radians)
+        self._gmsttimes = (
+            np.ones_like(self._times) * np.nan
+        )  # Greenwich Mean Siderial time (radians)
         for i, time in enumerate(self._times):
             gps = LIGOTimeGPS(time)  # GPS time
             gmstrad = GreenwichMeanSiderealTime(gps)
@@ -502,10 +526,13 @@ class AntennaResponse(object):
         try:
             return self._ra_mesh.shape
         except Exception:
-            if (self.ra is not None and self.dec is not None and
-                    self.psi is not None and self.times is not None):
-                return (len(self.ra), len(self.dec), len(self.psi),
-                        len(self.times))
+            if (
+                self.ra is not None
+                and self.dec is not None
+                and self.psi is not None
+                and self.times is not None
+            ):
+                return (len(self.ra), len(self.dec), len(self.psi), len(self.times))
             else:
                 return ()
 
@@ -584,29 +611,29 @@ class AntennaResponse(object):
     @lookup_pair.setter
     def lookup_pair(self, pair):
         if not isinstance(pair, (list, tuple)):
-            raise TypeError('Pair must be a list or tuple')
+            raise TypeError("Pair must be a list or tuple")
 
         if len(pair) != 2:
-            raise ValueError('Pair must only contain two values')
+            raise ValueError("Pair must only contain two values")
 
         for val in pair:
             if val.lower() not in self.parameters:
-                raise ValueError('Parameter {} in pair not '
-                                 'recognized'.format(val))
+                raise ValueError("Parameter {} in pair not " "recognized".format(val))
 
         self._lookup_pair = [val.lower() for val in pair]
 
         # make sure pair is in same order as parameters
-        self._lookup_pair = [val for val in self.parameters
-                             if val in self._lookup_pair]
+        self._lookup_pair = [val for val in self.parameters if val in self._lookup_pair]
 
         # set parameters that are not in the look-up pair
-        self._not_lookup_pair = [val.lower() for val in self.parameters
-                                 if val not in self._lookup_pair]
-        self._not_lookup_pair_idx = [self.parameters.index(val)
-                                     for val in self._not_lookup_pair]
+        self._not_lookup_pair = [
+            val.lower() for val in self.parameters if val not in self._lookup_pair
+        ]
+        self._not_lookup_pair_idx = [
+            self.parameters.index(val) for val in self._not_lookup_pair
+        ]
 
-    def set_lookup_pair(self, pair=['psi', 'time'], bins1=100, bins2=100):
+    def set_lookup_pair(self, pair=["psi", "time"], bins1=100, bins2=100):
         """
         Set the pair of parameters to use for the look-up table.
         """
@@ -626,31 +653,31 @@ class AntennaResponse(object):
             vrange = VAR_RANGES[val]
 
             # set array of bins
-            if val == 'dec':
+            if val == "dec":
                 # range is in sin(dec) to give uniform grid on sky sphere, so
                 # convert into dec
                 vararray = np.arcsin(np.linspace(vrange[0], vrange[1], nbins))
             else:
                 vararray = np.linspace(vrange[0], vrange[1], nbins)
 
-            self._lookup_pair_dict[val]['array'] = vararray
-            self._lookup_pair_dict[val]['nbins'] = nbins
+            self._lookup_pair_dict[val]["array"] = vararray
+            self._lookup_pair_dict[val]["nbins"] = nbins
 
     @property
     def bins1(self):
-        return self._lookup_pair_dict[self.lookup_pair[0]]['nbins']
+        return self._lookup_pair_dict[self.lookup_pair[0]]["nbins"]
 
     @property
     def array1(self):
-        return self._lookup_pair_dict[self.lookup_pair[0]]['array']
+        return self._lookup_pair_dict[self.lookup_pair[0]]["array"]
 
     @property
     def bins2(self):
-        return self._lookup_pair_dict[self.lookup_pair[1]]['nbins']
+        return self._lookup_pair_dict[self.lookup_pair[1]]["nbins"]
 
     @property
     def array2(self):
-        return self._lookup_pair_dict[self.lookup_pair[1]]['array']
+        return self._lookup_pair_dict[self.lookup_pair[1]]["array"]
 
     @property
     def lookup(self):
@@ -662,7 +689,7 @@ class AntennaResponse(object):
         Set the 2d look-up table.
         """
 
-        self._timeepoch = 1000000000.  # a GPS epoch
+        self._timeepoch = 1000000000.0  # a GPS epoch
 
         if not isinstance(val, bool):
             raise TypeError("Value must be a boolean")
@@ -676,93 +703,116 @@ class AntennaResponse(object):
             except ImportError:
                 raise ImportError("Cannot import scipy")
 
-            curra = self.ra        # save current RA value
-            curdec = self.dec      # save current dec value
-            curpsi = self.psi      # save current psi value
+            curra = self.ra  # save current RA value
+            curdec = self.dec  # save current dec value
+            curpsi = self.psi  # save current psi value
             try:
                 curtimes = self.times  # save current times
             except AttributeError:
                 raise AttributeError("A time must be set for the look-up table")
 
-            if 'psi' in self.lookup_pair:
-                self.psi = self._lookup_pair_dict['psi']['array']
-            if 'time' in self.lookup_pair:
-                self.times = (self._timeepoch +
-                              self._lookup_pair_dict['time']['array'])
-            if 'ra' in self.lookup_pair:
-                self.ra = self._lookup_pair_dict['ra']['array']
-            if 'dec' in self.lookup_pair:
-                self.dec = self._lookup_pair_dict['dec']['array']
+            if "psi" in self.lookup_pair:
+                self.psi = self._lookup_pair_dict["psi"]["array"]
+            if "time" in self.lookup_pair:
+                self.times = self._timeepoch + self._lookup_pair_dict["time"]["array"]
+            if "ra" in self.lookup_pair:
+                self.ra = self._lookup_pair_dict["ra"]["array"]
+            if "dec" in self.lookup_pair:
+                self.dec = self._lookup_pair_dict["dec"]["array"]
 
             self._not_lookup_pair_lens = []  # lengths of the non-look-up table values
             for val in self._not_lookup_pair:
-                if val == 'ra':
+                if val == "ra":
                     self._not_lookup_pair_lens.append(len(curra))
-                if val == 'dec':
+                if val == "dec":
                     self._not_lookup_pair_lens.append(len(curdec))
-                if val == 'psi':
+                if val == "psi":
                     self._not_lookup_pair_lens.append(len(curpsi))
-                if val in 'time':
+                if val in "time":
                     self._not_lookup_pair_lens.append(len(curtimes))
 
             # set look-up table functions
             self._lookup_func = {}
             if self.tensor:
-                self._lookup_func['plus'] = np.empty(self._not_lookup_pair_lens, dtype=object)
-                self._lookup_func['cross'] = np.empty(self._not_lookup_pair_lens, dtype=object)
+                self._lookup_func["plus"] = np.empty(
+                    self._not_lookup_pair_lens, dtype=object
+                )
+                self._lookup_func["cross"] = np.empty(
+                    self._not_lookup_pair_lens, dtype=object
+                )
 
             if self.vector:
-                self._lookup_func['x'] = np.empty(self._not_lookup_pair_lens, dtype=object)
-                self._lookup_func['y'] = np.empty(self._not_lookup_pair_lens, dtype=object)
+                self._lookup_func["x"] = np.empty(
+                    self._not_lookup_pair_lens, dtype=object
+                )
+                self._lookup_func["y"] = np.empty(
+                    self._not_lookup_pair_lens, dtype=object
+                )
 
             if self.scalar:
-                self._lookup_func['b'] = np.empty(self._not_lookup_pair_lens, dtype=object)
-                self._lookup_func['l'] = np.empty(self._not_lookup_pair_lens, dtype=object)
+                self._lookup_func["b"] = np.empty(
+                    self._not_lookup_pair_lens, dtype=object
+                )
+                self._lookup_func["l"] = np.empty(
+                    self._not_lookup_pair_lens, dtype=object
+                )
 
             for i in range(self._not_lookup_pair_lens[0]):
-                if self._not_lookup_pair[0] == 'ra':
+                if self._not_lookup_pair[0] == "ra":
                     self.ra = curra[i]
-                if self._not_lookup_pair[0] == 'dec':
+                if self._not_lookup_pair[0] == "dec":
                     self.dec = curdec[i]
-                if self._not_lookup_pair[0] == 'psi':
+                if self._not_lookup_pair[0] == "psi":
                     self.psi = curpsi[i]
-                if self._not_lookup_pair[0] == 'time':
+                if self._not_lookup_pair[0] == "time":
                     self.times = curtimes[i]
 
                 for j in range(self._not_lookup_pair_lens[1]):
-                    if self._not_lookup_pair[1] == 'ra':
+                    if self._not_lookup_pair[1] == "ra":
                         self.ra = curra[j]
-                    if self._not_lookup_pair[1] == 'dec':
+                    if self._not_lookup_pair[1] == "dec":
                         self.dec = curdec[j]
-                    if self._not_lookup_pair[1] == 'psi':
+                    if self._not_lookup_pair[1] == "psi":
                         self.psi = curpsi[j]
-                    if self._not_lookup_pair[1] == 'time':
+                    if self._not_lookup_pair[1] == "time":
                         self.times = curtimes[j]
 
                     self.compute_response()
                     if self.tensor:
-                        self._lookup_func['plus'][i, j] = RectBivariateSpline(self._lookup_pair_dict[self.lookup_pair[0]]['array'],
-                                                                             self._lookup_pair_dict[self.lookup_pair[1]]['array'],
-                                                                             self.plus)
-                        self._lookup_func['cross'][i, j] = RectBivariateSpline(self._lookup_pair_dict[self.lookup_pair[0]]['array'],
-                                                                              self._lookup_pair_dict[self.lookup_pair[1]]['array'],
-                                                                              self.cross)
+                        self._lookup_func["plus"][i, j] = RectBivariateSpline(
+                            self._lookup_pair_dict[self.lookup_pair[0]]["array"],
+                            self._lookup_pair_dict[self.lookup_pair[1]]["array"],
+                            self.plus,
+                        )
+                        self._lookup_func["cross"][i, j] = RectBivariateSpline(
+                            self._lookup_pair_dict[self.lookup_pair[0]]["array"],
+                            self._lookup_pair_dict[self.lookup_pair[1]]["array"],
+                            self.cross,
+                        )
 
                     if self.vector:
-                        self._lookup_func['x'][i, j] = RectBivariateSpline(self._lookup_pair_dict[self.lookup_pair[0]]['array'],
-                                                                          self._lookup_pair_dict[self.lookup_pair[1]]['array'],
-                                                                          self.x)
-                        self._lookup_func['y'][i, j] = RectBivariateSpline(self._lookup_pair_dict[self.lookup_pair[0]]['array'],
-                                                                          self._lookup_pair_dict[self.lookup_pair[1]]['array'],
-                                                                          self.y)
+                        self._lookup_func["x"][i, j] = RectBivariateSpline(
+                            self._lookup_pair_dict[self.lookup_pair[0]]["array"],
+                            self._lookup_pair_dict[self.lookup_pair[1]]["array"],
+                            self.x,
+                        )
+                        self._lookup_func["y"][i, j] = RectBivariateSpline(
+                            self._lookup_pair_dict[self.lookup_pair[0]]["array"],
+                            self._lookup_pair_dict[self.lookup_pair[1]]["array"],
+                            self.y,
+                        )
 
                     if self.scalar:
-                        self._lookup_func['b'][i, j] = RectBivariateSpline(self._lookup_pair_dict[self.lookup_pair[0]]['array'],
-                                                                          self._lookup_pair_dict[self.lookup_pair[1]]['array'],
-                                                                          self.b)
-                        self._lookup_func['l'][i, j] = RectBivariateSpline(self._lookup_pair_dict[self.lookup_pair[0]]['array'],
-                                                                          self._lookup_pair_dict[self.lookup_pair[1]]['array'],
-                                                                          self.l)
+                        self._lookup_func["b"][i, j] = RectBivariateSpline(
+                            self._lookup_pair_dict[self.lookup_pair[0]]["array"],
+                            self._lookup_pair_dict[self.lookup_pair[1]]["array"],
+                            self.b,
+                        )
+                        self._lookup_func["l"][i, j] = RectBivariateSpline(
+                            self._lookup_pair_dict[self.lookup_pair[0]]["array"],
+                            self._lookup_pair_dict[self.lookup_pair[1]]["array"],
+                            self.l,
+                        )
 
             # reset values
             self.psi = curpsi
@@ -773,7 +823,7 @@ class AntennaResponse(object):
 
     @property
     def plus(self):
-        return self.response['plus']
+        return self.response["plus"]
 
     @property
     def tensor_plus(self):
@@ -782,11 +832,11 @@ class AntennaResponse(object):
     @plus.setter
     def plus(self, resp):
         if self.tensor:
-            self.response['plus'] = resp
+            self.response["plus"] = resp
 
     @property
     def cross(self):
-        return self.response['cross']
+        return self.response["cross"]
 
     @property
     def tensor_cross(self):
@@ -795,11 +845,11 @@ class AntennaResponse(object):
     @cross.setter
     def cross(self, resp):
         if self.tensor:
-            self.response['cross'] = resp
+            self.response["cross"] = resp
 
     @property
     def x(self):
-        return self.response['x']
+        return self.response["x"]
 
     @property
     def vector_x(self):
@@ -808,11 +858,11 @@ class AntennaResponse(object):
     @x.setter
     def x(self, resp):
         if self.vector:
-            self.response['x'] = resp
+            self.response["x"] = resp
 
     @property
     def y(self):
-        return self.response['y']
+        return self.response["y"]
 
     @property
     def vector_y(self):
@@ -821,11 +871,11 @@ class AntennaResponse(object):
     @y.setter
     def y(self, resp):
         if self.vector:
-            self.response['y'] = resp
+            self.response["y"] = resp
 
     @property
     def b(self):
-        return self.response['b']
+        return self.response["b"]
 
     @property
     def scalar_b(self):
@@ -834,11 +884,11 @@ class AntennaResponse(object):
     @b.setter
     def b(self, resp):
         if self.scalar:
-            self.response['b'] = resp
+            self.response["b"] = resp
 
     @property
     def l(self):
-        return self.response['l']
+        return self.response["l"]
 
     @property
     def scalar_l(self):
@@ -847,7 +897,7 @@ class AntennaResponse(object):
     @l.setter
     def l(self, resp):
         if self.scalar:
-            self.response['l'] = resp
+            self.response["l"] = resp
 
     def _set_mesh(self):
         """
@@ -856,14 +906,17 @@ class AntennaResponse(object):
         """
 
         # mesh order RA, dec, psi, time
-        if (self.ra is None or self.dec is None or
-                self.psi is None or self.times is None):
+        if (
+            self.ra is None
+            or self.dec is None
+            or self.psi is None
+            or self.times is None
+        ):
             return
 
-        ramesh, decmesh, psimesh, timemesh = np.meshgrid(self.ra, self.dec,
-                                                         self.psi,
-                                                         self.gmsttimes,
-                                                         indexing='ij')
+        ramesh, decmesh, psimesh, timemesh = np.meshgrid(
+            self.ra, self.dec, self.psi, self.gmsttimes, indexing="ij"
+        )
 
         self.ra_mesh = ramesh
         self.time_mesh = timemesh
@@ -883,7 +936,7 @@ class AntennaResponse(object):
             self._ra_mesh = val
 
         try:
-            self._phi_mesh = np.mod(self._ra_mesh, 2.*np.pi) - self._time_mesh
+            self._phi_mesh = np.mod(self._ra_mesh, 2.0 * np.pi) - self._time_mesh
         except Exception:
             return
 
@@ -922,8 +975,8 @@ class AntennaResponse(object):
         else:
             self._dec_mesh = val
 
-        self._costheta_mesh = np.cos(0.5*np.pi - self.dec_mesh)
-        self._sintheta_mesh = np.sin(0.5*np.pi - self.dec_mesh)
+        self._costheta_mesh = np.cos(0.5 * np.pi - self.dec_mesh)
+        self._sintheta_mesh = np.sin(0.5 * np.pi - self.dec_mesh)
 
     @property
     def psi_mesh(self):
@@ -952,8 +1005,12 @@ class AntennaResponse(object):
         if times is not None:
             self.times = times
 
-        if (self.ra is None or self.dec is None or self.psi is None or
-                self.times is None):
+        if (
+            self.ra is None
+            or self.dec is None
+            or self.psi is None
+            or self.times is None
+        ):
             return
 
         if self.use_lal:  # use the internal LAL functions
@@ -971,21 +1028,33 @@ class AntennaResponse(object):
         self._set_mesh()
 
         # set any required additional einsum indices
-        einsum_indices = ''
-        eindices = 'klmn'  # up to four indices
+        einsum_indices = ""
+        eindices = "klmn"  # up to four indices
         for i in range(len(self.shape)):
             einsum_indices += eindices[i]
 
         # numpy einsum string inputs
-        einstr1 = 'i{},j{}->ij{}'.format(*3*[einsum_indices])
-        einstr2 = 'ij{},ij->{}'.format(*2*[einsum_indices])
+        einstr1 = "i{},j{}->ij{}".format(*3 * [einsum_indices])
+        einstr2 = "ij{},ij->{}".format(*2 * [einsum_indices])
 
-        M = np.array([self._sinphi_mesh*self._cospsi_mesh - self._cosphi_mesh*self._costheta_mesh*self._sinpsi_mesh,
-                      -self._cosphi_mesh*self._cospsi_mesh - self._sinphi_mesh*self._costheta_mesh*self._sinpsi_mesh,
-                      self._sintheta_mesh*self._sinpsi_mesh])
-        N = np.array([-self._sinphi_mesh*self._sinpsi_mesh - self._cosphi_mesh*self._costheta_mesh*self._cospsi_mesh,
-                      self._cosphi_mesh*self._sinpsi_mesh - self._sinphi_mesh*self._costheta_mesh*self._cospsi_mesh,
-                      self._sintheta_mesh*self._cospsi_mesh])
+        M = np.array(
+            [
+                self._sinphi_mesh * self._cospsi_mesh
+                - self._cosphi_mesh * self._costheta_mesh * self._sinpsi_mesh,
+                -self._cosphi_mesh * self._cospsi_mesh
+                - self._sinphi_mesh * self._costheta_mesh * self._sinpsi_mesh,
+                self._sintheta_mesh * self._sinpsi_mesh,
+            ]
+        )
+        N = np.array(
+            [
+                -self._sinphi_mesh * self._sinpsi_mesh
+                - self._cosphi_mesh * self._costheta_mesh * self._cospsi_mesh,
+                self._cosphi_mesh * self._sinpsi_mesh
+                - self._sinphi_mesh * self._costheta_mesh * self._cospsi_mesh,
+                self._sintheta_mesh * self._cospsi_mesh,
+            ]
+        )
 
         mm = np.einsum(einstr1, M, M)
         mn = np.einsum(einstr1, M, N)
@@ -999,9 +1068,13 @@ class AntennaResponse(object):
 
         if self.vector or self.scalar:
             # set scalar and/or vector polarization components
-            Q = np.array([-self._sintheta_mesh*self._cosphi_mesh,
-                          -self._sintheta_mesh*self._sinphi_mesh,
-                          -self._costheta_mesh])
+            Q = np.array(
+                [
+                    -self._sintheta_mesh * self._cosphi_mesh,
+                    -self._sintheta_mesh * self._sinphi_mesh,
+                    -self._costheta_mesh,
+                ]
+            )
 
             if self.vector:
                 mq = np.einsum(einstr1, M, Q)
@@ -1037,20 +1110,24 @@ class AntennaResponse(object):
             antenna_func = ComputeDetAMResponse
 
             if slen == 1:
-                fp, fc = antenna_func(self.laldetector,
-                                      self._ra_mesh.item(),
-                                      self._dec_mesh.item(),
-                                      self._psi_mesh.item(),
-                                      self._time_mesh.item())
+                fp, fc = antenna_func(
+                    self.laldetector,
+                    self._ra_mesh.item(),
+                    self._dec_mesh.item(),
+                    self._psi_mesh.item(),
+                    self._time_mesh.item(),
+                )
             else:
                 for i in range(slen):
                     idxs = np.unravel_index(i, self.shape)
 
-                    fp[idxs], fc[idxs] = antenna_func(self.laldetector,
-                                                      self._ra_mesh[idxs],
-                                                      self._dec_mesh[idxs],
-                                                      self._psi_mesh[idxs],
-                                                      self._time_mesh[idxs])
+                    fp[idxs], fc[idxs] = antenna_func(
+                        self.laldetector,
+                        self._ra_mesh[idxs],
+                        self._dec_mesh[idxs],
+                        self._psi_mesh[idxs],
+                        self._time_mesh[idxs],
+                    )
 
             self.plus = fp
             self.cross = fc
@@ -1058,11 +1135,13 @@ class AntennaResponse(object):
             antenna_func = ComputeDetAMResponseExtraModes
 
             if slen == 1:
-                fp, fc, fb, fl, fx, fy = antenna_func(self.laldetector,
-                                                      self._ra_mesh.item(),
-                                                      self._dec_mesh.item(),
-                                                      self._psi_mesh.item(),
-                                                      self._time_mesh.item())
+                fp, fc, fb, fl, fx, fy = antenna_func(
+                    self.laldetector,
+                    self._ra_mesh.item(),
+                    self._dec_mesh.item(),
+                    self._psi_mesh.item(),
+                    self._time_mesh.item(),
+                )
             else:
                 fb = np.zeros(self.shape)
                 fl = np.zeros(self.shape)
@@ -1072,11 +1151,13 @@ class AntennaResponse(object):
                 for i in range(slen):
                     idxs = np.unravel_index(i, self.shape)
 
-                    F = antenna_func(self.laldetector,
-                                     self._ra_mesh[idxs],
-                                     self._dec_mesh[idxs],
-                                     self._psi_mesh[idxs],
-                                     self._time_mesh[idxs])
+                    F = antenna_func(
+                        self.laldetector,
+                        self._ra_mesh[idxs],
+                        self._dec_mesh[idxs],
+                        self._psi_mesh[idxs],
+                        self._time_mesh[idxs],
+                    )
 
                     fp[idxs] = F[0]
                     fc[idxs] = F[1]
@@ -1117,13 +1198,13 @@ class AntennaResponse(object):
         pairs = []
         unsorted_idxs = None
         for i, val in enumerate(self.lookup_pair):
-            if val == 'ra':
+            if val == "ra":
                 pairs.append(self.ra)
-            if val == 'dec':
+            if val == "dec":
                 pairs.append(self.dec)
-            if val == 'psi':
+            if val == "psi":
                 pairs.append(self.psi)
-            if val == 'time':
+            if val == "time":
                 # times mod-ed by a sidereal day
                 mtimes = np.mod(self.times - self._timeepoch, DAYSID_SI)
                 unsorted_idxs = np.argsort(np.argsort(mtimes))  # unsorted indices
@@ -1137,25 +1218,37 @@ class AntennaResponse(object):
         sshape = tuple(sshape)
 
         # create slice
-        pos = 4*[slice(None)]
+        pos = 4 * [slice(None)]
         for i in range(self._not_lookup_pair_lens[0]):
             # set slice
-            pos[self._not_lookup_pair_idx[0]] = slice(i, i+1)
+            pos[self._not_lookup_pair_idx[0]] = slice(i, i + 1)
             for j in range(self._not_lookup_pair_lens[1]):
                 # set slice
-                pos[self._not_lookup_pair_idx[1]] = slice(j, j+1)
+                pos[self._not_lookup_pair_idx[1]] = slice(j, j + 1)
 
                 if self.tensor:
-                    fp[tuple(pos)] = self._lookup_func['plus'][i, j](*pairs).reshape(sshape)
-                    fc[tuple(pos)] = self._lookup_func['cross'][i, j](*pairs).reshape(sshape)
+                    fp[tuple(pos)] = self._lookup_func["plus"][i, j](*pairs).reshape(
+                        sshape
+                    )
+                    fc[tuple(pos)] = self._lookup_func["cross"][i, j](*pairs).reshape(
+                        sshape
+                    )
 
                 if self.scalar:
-                    fb[tuple(pos)] = self._lookup_func['b'][i, j](*pairs).reshape(sshape)
-                    fl[tuple(pos)] = self._lookup_func['l'][i, j](*pairs).reshape(sshape)
+                    fb[tuple(pos)] = self._lookup_func["b"][i, j](*pairs).reshape(
+                        sshape
+                    )
+                    fl[tuple(pos)] = self._lookup_func["l"][i, j](*pairs).reshape(
+                        sshape
+                    )
 
                 if self.vector:
-                    fx[tuple(pos)] = self._lookup_func['x'][i, j](*pairs).reshape(sshape)
-                    fy[tuple(pos)] = self._lookup_func['y'][i, j](*pairs).reshape(sshape)
+                    fx[tuple(pos)] = self._lookup_func["x"][i, j](*pairs).reshape(
+                        sshape
+                    )
+                    fy[tuple(pos)] = self._lookup_func["y"][i, j](*pairs).reshape(
+                        sshape
+                    )
 
         if unsorted_idxs is not None:
             if self.tensor:
@@ -1208,5 +1301,6 @@ class AntennaResponse(object):
         self.compute_response()
 
         return self.response
+
 
 ## @}
