@@ -122,16 +122,28 @@ functions within LAL.
 
 import numpy as np
 
-
 # import SWIG-wrapped LAL
-from lal import (LALDetectorIndexLHODIFF, LALDetectorIndexLLODIFF,
-                 LALDetectorIndexGEO600DIFF, LALDetectorIndexVIRGODIFF,
-                 LALDetectorIndexTAMA300DIFF, LALDetectorIndexKAGRADIFF,
-                 LALDetectorIndexLIODIFF, LALDetectorIndexE1DIFF,
-                 LALDetectorIndexE2DIFF, LALDetectorIndexE3DIFF,
-                 CachedDetectors, LIGOTimeGPS, GreenwichMeanSiderealTime,
-                 ComputeDetAMResponse, ComputeDetAMResponseExtraModes,
-                 DAYSID_SI, Detector, TranslateHMStoRAD, TranslateDMStoRAD)
+from lal import (
+    DAYSID_SI,
+    CachedDetectors,
+    ComputeDetAMResponse,
+    ComputeDetAMResponseExtraModes,
+    Detector,
+    GreenwichMeanSiderealTime,
+    LALDetectorIndexE1DIFF,
+    LALDetectorIndexE2DIFF,
+    LALDetectorIndexE3DIFF,
+    LALDetectorIndexGEO600DIFF,
+    LALDetectorIndexKAGRADIFF,
+    LALDetectorIndexLHODIFF,
+    LALDetectorIndexLIODIFF,
+    LALDetectorIndexLLODIFF,
+    LALDetectorIndexTAMA300DIFF,
+    LALDetectorIndexVIRGODIFF,
+    LIGOTimeGPS,
+    TranslateDMStoRAD,
+    TranslateHMStoRAD,
+)
 
 from . import git_version
 
