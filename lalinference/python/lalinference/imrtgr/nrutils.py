@@ -6,6 +6,7 @@ Archisman Ghosh, Nathan K. Johnson-McDaniel, P. Ajith, 2015-04-09
 
 import numpy as np
 import scipy.optimize as so
+
 try:
     import lal
 except ImportError:
