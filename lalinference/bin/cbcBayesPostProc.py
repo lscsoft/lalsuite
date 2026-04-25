@@ -31,17 +31,18 @@
 #===============================================================================
 
 #standard library imports
-import sys
 import os
-import socket
 import pickle
+import socket
+import sys
 from time import strftime
+
+import matplotlib
 
 #related third party imports
 import numpy as np
-from numpy import (exp, cos, sin, size, cov, unique, hsplit, log, squeeze)
+from numpy import cos, cov, exp, hsplit, log, sin, size, squeeze, unique
 
-import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 
@@ -69,17 +70,17 @@ matplotlib.rcParams.update(
 
 #local application/library specific imports
 import lalinference.plot
+from igwn_ligolw import lsctables, utils
+
 from lalinference import bayespputils as bppu
 from lalinference import git_version
-
-from igwn_ligolw import lsctables
-from igwn_ligolw import utils
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Ben Farr <bfarr@u.northwestern.edu>, Will M. Farr <will.farr@ligo.org>, John Veitch <john.veitch@ligo.org>"
 __version__= "git id %s"%git_version.id
 __date__= git_version.date
 
 from lalinference.lalinference_pipe_utils import guess_url
+
 
 def email_notify(address,path):
     import subprocess
@@ -1157,7 +1158,25 @@ if __name__=='__main__':
             fixedBurnins = [int(fixedBurnin) for fixedBurnin in opts.fixedBurnin]
     else:
         fixedBurnins = None
-    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,fourPiecePolyParams,spectralParams
+    from lalinference.bayespputils import (
+        calibParams,
+        cosmoParam,
+        distParams,
+        endTimeParams,
+        fourPiecePolyParams,
+        incParams,
+        massParams,
+        phaseParams,
+        polParams,
+        skyParams,
+        snrParams,
+        spectralParams,
+        spinParams,
+        statsParams,
+        strongFieldParams,
+        tidalParams,
+        timeParams,
+    )
 
 
     oneDMenus={'Masses':None,'SourceFrame':None,'Timing':None,'Extrinsic':None,'Spins':None,'StrongField':None,'Others':None}
