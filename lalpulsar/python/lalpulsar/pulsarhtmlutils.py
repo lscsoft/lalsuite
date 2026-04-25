@@ -943,7 +943,7 @@ class latextable:
 
     def addhrule(self, rowidx=None):
         # add horizontal rule
-        if rowidx == None:  # add horizontal rule as new row
+        if rowidx is None:  # add horizontal rule as new row
             self.addrow(underline=True)
         else:
             self._rows[rowidx]["underline"] = True
