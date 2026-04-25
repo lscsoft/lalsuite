@@ -46,6 +46,8 @@ doxygen-doc:
     when: always
   rules:
     - if: >-
+        $LCI_PIPE_TYPE == "push"
+    - if: >-
         $LCI_PIPE_TYPE == "merge"
     - if: >-
         $LCI_PIPE_TYPE == "sched-devimg"
