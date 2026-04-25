@@ -15,9 +15,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import sys
-import pytest
 
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose
 
 
