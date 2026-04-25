@@ -6,10 +6,12 @@ P. Ajith, Abhirup Ghosh, 2015-09-15
 $Id:$
 """
 
+from functools import partial
+from multiprocessing import Pool
+
 import numpy as np
 import scipy.ndimage.filters as filter
-from multiprocessing import Pool
-from functools import partial
+
 from . import nrutils as nr
 
 """ calculate the mass and spin of the final black hole using an NR-inspired fitting formula """
