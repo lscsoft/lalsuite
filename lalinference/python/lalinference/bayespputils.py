@@ -38,31 +38,36 @@ of the Bayesian parameter estimation codes.
 import os
 import sys
 import warnings
-from math import cos,ceil,floor,sqrt,pi as pi_constant
-from xml.dom import minidom
+from math import ceil, cos, floor, sqrt
+from math import pi as pi_constant
 from operator import itemgetter
+from xml.dom import minidom
 
 #related third party imports
 import matplotlib
+
 matplotlib.use('agg')
-from .io import read_samples
-import healpy as hp
 import astropy.table
+import healpy as hp
 import numpy as np
+
+from .io import read_samples
+
 np.random.seed(42)
-from numpy import fmod
-from matplotlib import pyplot as plt,lines as mpl_lines
-from scipy import stats
-from scipy import special
-from scipy import signal
-from scipy.optimize import newton
-from scipy import interpolate
-from scipy import integrate
 import random
+import re
 import socket
 from itertools import combinations
-from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
-import re
+
+from matplotlib import lines as mpl_lines
+from matplotlib import pyplot as plt
+from numpy import fmod
+from scipy import integrate, interpolate, signal, special, stats
+from scipy.optimize import newton
+
+from lalinference import (
+    LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name,
+)
 
 try:
     import lalsimulation as lalsim
@@ -87,11 +92,12 @@ if hostname_short=='ligo.caltech.edu' or hostname_short=='cluster.ldas.cit': #Th
                                'mathtext.fallback' : 'cm'
                                })
 
-from xml.etree.cElementTree import Element, SubElement, tostring, XMLParser
+from xml.etree.cElementTree import Element, SubElement, XMLParser, tostring
 
 #local application/library specific imports
 import lal
 from lal import LIGOTimeGPS, TimeDelayFromEarthCenter
+
 from . import git_version
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Ben Farr <bfarr@u.northwestern.edu>, Will M. Farr <will.farr@ligo.org>, John Veitch <john.veitch@ligo.org>, Vivien Raymond <vivien.raymond@ligo.org>"
@@ -1091,8 +1097,9 @@ class Posterior(object):
             if ('ra' in pos.names or 'rightascension' in pos.names) \
             and ('declination' in pos.names or 'dec' in pos.names) \
             and 'time' in pos.names:
-                from lal import LIGOTimeGPS, TimeDelayFromEarthCenter
                 from numpy import array
+
+                from lal import LIGOTimeGPS, TimeDelayFromEarthCenter
                 detMap = {'H1': 'LHO_4k', 'H2': 'LHO_2k', 'L1': 'LLO_4k',
                         'G1': 'GEO_600', 'V1': 'VIRGO', 'T1': 'TAMA_300'}
                 if 'ra' in pos.names:
@@ -5248,8 +5255,7 @@ def effectiveSampleSize(samples, Nskip=1):
 def readCoincXML(xml_file, trignum):
     triggers=None
 
-    from igwn_ligolw import lsctables
-    from igwn_ligolw import utils
+    from igwn_ligolw import lsctables, utils
     coincXML = utils.load_filename(xml_file)
     coinc = lsctables.CoincTable.get_table(coincXML)
     coincMap = lsctables.CoincMapTable.get_table(coincXML)
@@ -5667,7 +5673,7 @@ class PEOutputParser(object):
         posfilename : Posterior output file name (default: 'posterior_samples.dat')
         """
         try:
-            from lalinference.nest2pos import draw_N_posterior_many,draw_posterior_many
+            from lalinference.nest2pos import draw_N_posterior_many, draw_posterior_many
         except ImportError:
             print("Need lalinference.nest2pos to convert nested sampling output!")
             raise
@@ -6049,9 +6055,9 @@ def vo_nest2pos(nsresource,Nlive=None):
     This can be added to an existing tree by the user.
     Nlive will be read from the nsresource, unless specified
     """
-    from xml.etree import ElementTree as ET
     import copy
-    from math import log, exp
+    from math import exp, log
+    from xml.etree import ElementTree as ET
     xmlns='http://www.ivoa.net/xml/VOTable/v1.1'
     try:
         register_namespace=ET.register_namespace
@@ -6239,20 +6245,33 @@ def confidence_interval_uncertainty(cl, cl_bounds, posteriors):
 
 def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V1']):
     #import sim inspiral table content handler
-    from igwn_ligolw import lsctables,ligolw
-    from lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
-    from lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
-    from lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT
-    from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime
-    from lal import LIGOTimeGPS
+    import os
+    from math import cos, sin, sqrt
+
+    import numpy as np
+    from igwn_ligolw import lsctables, utils
+    from numpy import arange
+
+    import lalsimulation as lalsim
     from lal import MSUN_SI as LAL_MSUN_SI
     from lal import PC_SI as LAL_PC_SI
-    import lalsimulation as lalsim
-    from math import cos,sin,sqrt
-    from igwn_ligolw import utils
-    import os
-    import numpy as np
-    from numpy import arange
+    from lal import (
+        ComputeDetAMResponse,
+        CreateCOMPLEX16FrequencySeries,
+        CreateForwardREAL8FFTPlan,
+        CreateREAL8TimeSeries,
+        CreateTukeyREAL8Window,
+        DimensionlessUnit,
+        GreenwichMeanSiderealTime,
+        LIGOTimeGPS,
+        REAL8TimeFreqFFT,
+    )
+    from lalsimulation import (
+        SimInspiralChooseFDWaveform,
+        SimInspiralChooseTDWaveform,
+        SimInspiralImplementedFDApproximants,
+        SimInspiralImplementedTDApproximants,
+    )
     if path is None:
         path=os.getcwd()
     if event is None:
@@ -6830,20 +6849,33 @@ def plot_calibration_pos(pos, level=.9, outpath=None):
 
 
 def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1','V1']):
-    from lalinference import SimBurstChooseFDWaveform,SimBurstChooseTDWaveform
-    from lalinference import SimBurstImplementedFDApproximants,SimBurstImplementedTDApproximants
-    from lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CreateReverseREAL8FFTPlan
-    from lal import LIGOTimeGPS
-    import lalinference as lalinf
-    from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS
-
-    from math import cos,sin,sqrt
-    from igwn_ligolw import lsctables
-    from igwn_ligolw import utils
     import os
+    from math import cos, sin, sqrt
+
     import numpy as np
-    from numpy import arange,real,absolute,fabs,pi
+    from igwn_ligolw import lsctables, utils
     from matplotlib import pyplot as plt
+    from numpy import absolute, arange, fabs, pi, real
+
+    import lalinference as lalinf
+    from lal import (
+        ComputeDetAMResponse,
+        CreateCOMPLEX16FrequencySeries,
+        CreateForwardREAL8FFTPlan,
+        CreateREAL8TimeSeries,
+        CreateReverseREAL8FFTPlan,
+        CreateTukeyREAL8Window,
+        DimensionlessUnit,
+        GreenwichMeanSiderealTime,
+        LIGOTimeGPS,
+        REAL8TimeFreqFFT,
+    )
+    from lalinference import (
+        SimBurstChooseFDWaveform,
+        SimBurstChooseTDWaveform,
+        SimBurstImplementedFDApproximants,
+        SimBurstImplementedTDApproximants,
+    )
     if path is None:
         path=os.getcwd()
     if event is None:
@@ -6851,8 +6883,7 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
     colors_inj={'H1':'r','L1':'g','V1':'m','I1':'b','J1':'y'}
     colors_rec={'H1':'k','L1':'k','V1':'k','I1':'k','J1':'k'}
     #import sim inspiral table content handler
-    from igwn_ligolw import ligolw
-    from igwn_ligolw import table
+    from igwn_ligolw import ligolw, table
     class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
         def __init__(self,document):
             ligolw.LIGOLWContentHandler.__init__(self,document)
@@ -7272,7 +7303,7 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
 
 def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,savepdfs,greedy,analyticLikelihood,nDownsample):
 
-    from numpy import unique, sort
+    from numpy import sort, unique
     global confidenceLevels
     confidence_levels=confidenceLevels
 
