@@ -34,17 +34,19 @@ import math
 
 import matplotlib
 
-matplotlib.rcParams.update({
-	"font.size": 8.0,
-	"axes.titlesize": 10.0,
-	"axes.labelsize": 10.0,
-	"xtick.labelsize": 8.0,
-	"ytick.labelsize": 8.0,
-	"legend.fontsize": 8.0,
-	"figure.dpi": 300,
-	"savefig.dpi": 300,
-	"text.usetex": True
-})
+matplotlib.rcParams.update(
+    {
+        "font.size": 8.0,
+        "axes.titlesize": 10.0,
+        "axes.labelsize": 10.0,
+        "xtick.labelsize": 8.0,
+        "ytick.labelsize": 8.0,
+        "legend.fontsize": 8.0,
+        "figure.dpi": 300,
+        "savefig.dpi": 300,
+        "text.usetex": True,
+    }
+)
 from optparse import OptionParser
 
 import numpy
@@ -59,14 +61,15 @@ __date__ = git_version.date
 
 
 def parse_command_line():
-    parser = OptionParser(
-        version = "Name: %%prog\n%s" % git_version.verbose_msg
+    parser = OptionParser(version="Name: %%prog\n%s" % git_version.verbose_msg)
+    parser.add_option("-v", "--verbose", action="store_true", help="Be verbose.")
+    parser.add_option(
+        "-t",
+        "--live-time",
+        dest="livetime",
+        type="float",
+        help="The total amount of live time in the run",
     )
-    parser.add_option("-v", "--verbose", action = "store_true",
-                      help = "Be verbose.")
-    parser.add_option("-t", "--live-time", dest="livetime",
-                      type = "float",
-                      help = "The total amount of live time in the run")
 
     options, filenames = parser.parse_args()
     if options.livetime is None:
@@ -80,29 +83,30 @@ def cosmo_contour(x, y, avg, min, max, p, neventsUL, filename):
     fig = Figure()
     FigureCanvas(fig)
     fig.set_size_inches(4.5, 4.5 / ((1 + math.sqrt(5)) / 2))
-    axes = fig.add_axes((.12, .15, .98 - .12, .90 - .15))
+    axes = fig.add_axes((0.12, 0.15, 0.98 - 0.12, 0.90 - 0.15))
     axes.loglog()
-    #axes.contourf(x, y, numpy.log(avg/p), 100, cmap = cm.bone)
-    #axes.contourf(x, y, numpy.log(min/p), 100, cmap = cm.bone)
-    #axes.contourf(x, y, numpy.log(max/p), 100, cmap = cm.bone)
-    axes.contour(x, y, avg/p, [neventsUL], linestyles='solid', colors='r')
-    axes.contour(x, y, min/p, [neventsUL], linestyles='dashed', colors='r')
-    axes.contour(x, y, max/p, [neventsUL], linestyles='dashed', colors='r')
-    axes.set_xlim([x.min(),x.max()])
-    axes.set_ylim([y.min(),y.max()])
+    # axes.contourf(x, y, numpy.log(avg/p), 100, cmap = cm.bone)
+    # axes.contourf(x, y, numpy.log(min/p), 100, cmap = cm.bone)
+    # axes.contourf(x, y, numpy.log(max/p), 100, cmap = cm.bone)
+    axes.contour(x, y, avg / p, [neventsUL], linestyles="solid", colors="r")
+    axes.contour(x, y, min / p, [neventsUL], linestyles="dashed", colors="r")
+    axes.contour(x, y, max / p, [neventsUL], linestyles="dashed", colors="r")
+    axes.set_xlim([x.min(), x.max()])
+    axes.set_ylim([y.min(), y.max()])
     axes.set_title(r"$P = %g$" % p)
     axes.set_xlabel(r"$G\mu$")
     axes.set_ylabel(r"$\epsilon$")
     fig.savefig(filename)
 
-#main
+
+# main
 
 options, filenames = parse_command_line()
 
-#read cs_gamma file output
-#the columns should be p,index,epsilon,Gmu,gammaAverage,gammaMin,gammaMax
+# read cs_gamma file output
+# the columns should be p,index,epsilon,Gmu,gammaAverage,gammaMin,gammaMax
 p, n, eps, gmu, avg, min, max = [], [], [], [], [], [], []
-for line in open(filenames[0], 'r'):
+for line in open(filenames[0], "r"):
     line = line.strip()
     if line[0] in "%#":
         continue
@@ -117,22 +121,22 @@ assert len(epsindex) * len(gmuindex) == len(gmu)
 # program only works if all values in the data file are for the same p and that p is 1
 assert set(p) == set([1])
 
-avgarr = numpy.zeros([len(epsindex), len(gmuindex)], dtype = "double")
-minarr = numpy.zeros([len(epsindex), len(gmuindex)], dtype = "double")
-maxarr = numpy.zeros([len(epsindex), len(gmuindex)], dtype = "double")
+avgarr = numpy.zeros([len(epsindex), len(gmuindex)], dtype="double")
+minarr = numpy.zeros([len(epsindex), len(gmuindex)], dtype="double")
+maxarr = numpy.zeros([len(epsindex), len(gmuindex)], dtype="double")
 
 for e, g, val in zip(eps, gmu, avg):
-	avgarr[epsindex[e], gmuindex[g]] = val
+    avgarr[epsindex[e], gmuindex[g]] = val
 for e, g, val in zip(eps, gmu, min):
-	minarr[epsindex[e], gmuindex[g]] = val
+    minarr[epsindex[e], gmuindex[g]] = val
 for e, g, val in zip(eps, gmu, max):
-	maxarr[epsindex[e], gmuindex[g]] = val
+    maxarr[epsindex[e], gmuindex[g]] = val
 
 avgarr *= options.livetime
 minarr *= options.livetime
 maxarr *= options.livetime
 
-numberofeventsUL = -numpy.log(1-0.90)
+numberofeventsUL = -numpy.log(1 - 0.90)
 
 x = numpy.array(sorted(gmuindex.keys()))
 y = numpy.array(sorted(epsindex.keys()))
