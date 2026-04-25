@@ -26,19 +26,17 @@
 #
 
 
-from optparse import OptionParser
 import sys
+from optparse import OptionParser
 
-
-from igwn_ligolw import ligolw
+import igwn_segments as segments
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
-from igwn_ligolw.utils import segments as ligolw_segments
 from igwn_ligolw.utils import process as ligolw_process
 from igwn_ligolw.utils import search_summary as ligolw_search_summary
-from lalburst import git_version
-import igwn_segments as segments
+from igwn_ligolw.utils import segments as ligolw_segments
 
+from lalburst import git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id
