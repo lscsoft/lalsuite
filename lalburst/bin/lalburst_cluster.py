@@ -48,27 +48,51 @@ __date__ = git_version.date
 
 
 def parse_command_line():
-	parser = OptionParser(
-		version = "Name: %%prog\n%s" % git_version.verbose_msg,
-		usage = "%prog [options] [file ...]",
-		description = "Run a single-instrument burst clustering algorithm on the sngl_burst events contained in LIGO Light Weight XML files.  Files can be listed on the command line and/or in one or more LAL cache files.  If no files are named, then input is read from stdin and written to stdout."
-	)
-	parser.add_option("--comment", metavar = "text", help = "Set the comment string to be recorded in the process table (default = None).")
-	parser.add_option("-c", "--cluster-algorithm", metavar = "[excesspower]", help = "Set clustering method (required).")
-	parser.add_option("-i", "--input-cache", metavar = "filename", action = "append", default = [], help = "Process the files listed in this LAL cache.")
-	parser.add_option("-p", "--program", metavar = "name", default = "lalapps_power", help = "Set the name of the program that generated the events as it appears in the process table (default = \"lalapps_power\").")
-	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
-	options, filenames = parser.parse_args()
+    parser = OptionParser(
+        version="Name: %%prog\n%s" % git_version.verbose_msg,
+        usage="%prog [options] [file ...]",
+        description="Run a single-instrument burst clustering algorithm on the sngl_burst events contained in LIGO Light Weight XML files.  Files can be listed on the command line and/or in one or more LAL cache files.  If no files are named, then input is read from stdin and written to stdout.",
+    )
+    parser.add_option(
+        "--comment",
+        metavar="text",
+        help="Set the comment string to be recorded in the process table (default = None).",
+    )
+    parser.add_option(
+        "-c",
+        "--cluster-algorithm",
+        metavar="[excesspower]",
+        help="Set clustering method (required).",
+    )
+    parser.add_option(
+        "-i",
+        "--input-cache",
+        metavar="filename",
+        action="append",
+        default=[],
+        help="Process the files listed in this LAL cache.",
+    )
+    parser.add_option(
+        "-p",
+        "--program",
+        metavar="name",
+        default="lalapps_power",
+        help='Set the name of the program that generated the events as it appears in the process table (default = "lalapps_power").',
+    )
+    parser.add_option("-v", "--verbose", action="store_true", help="Be verbose.")
+    options, filenames = parser.parse_args()
 
-	if options.cluster_algorithm is None:
-		raise ValueError("missing required argument --cluster-algorithm")
-	if options.cluster_algorithm not in ("excesspower",):
-		raise ValueError("unrecognized --cluster-algorithm %s" % options.cluster_algorithm)
+    if options.cluster_algorithm is None:
+        raise ValueError("missing required argument --cluster-algorithm")
+    if options.cluster_algorithm not in ("excesspower",):
+        raise ValueError(
+            "unrecognized --cluster-algorithm %s" % options.cluster_algorithm
+        )
 
-	for cache in options.input_cache:
-		filenames += [CacheEntry(line).path for line in file(cache)]
+    for cache in options.input_cache:
+        filenames += [CacheEntry(line).path for line in file(cache)]
 
-	return options, (filenames or [None])
+    return options, (filenames or [None])
 
 
 #
@@ -83,70 +107,66 @@ def parse_command_line():
 options, filenames = parse_command_line()
 
 
-prefunc = {
-	"excesspower": bucluster.ExcessPowerPreFunc
-}[options.cluster_algorithm]
-postfunc = {
-	"excesspower": bucluster.ExcessPowerPostFunc
-}[options.cluster_algorithm]
-testfunc = {
-	"excesspower": bucluster.ExcessPowerTestFunc
-}[options.cluster_algorithm]
-sortkeyfunc = {
-	"excesspower": bucluster.ExcessPowerSortKeyFunc
-}[options.cluster_algorithm]
-bailoutfunc = {
-	"excesspower": bucluster.ExcessPowerBailoutFunc
-}[options.cluster_algorithm]
-clusterfunc = {
-	"excesspower": bucluster.ExcessPowerClusterFunc
-}[options.cluster_algorithm]
+prefunc = {"excesspower": bucluster.ExcessPowerPreFunc}[options.cluster_algorithm]
+postfunc = {"excesspower": bucluster.ExcessPowerPostFunc}[options.cluster_algorithm]
+testfunc = {"excesspower": bucluster.ExcessPowerTestFunc}[options.cluster_algorithm]
+sortkeyfunc = {"excesspower": bucluster.ExcessPowerSortKeyFunc}[
+    options.cluster_algorithm
+]
+bailoutfunc = {"excesspower": bucluster.ExcessPowerBailoutFunc}[
+    options.cluster_algorithm
+]
+clusterfunc = {"excesspower": bucluster.ExcessPowerClusterFunc}[
+    options.cluster_algorithm
+]
 
 
 for filename in filenames:
-	#
-	# Load document
-	#
+    #
+    # Load document
+    #
 
-	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose)
+    xmldoc = ligolw_utils.load_filename(filename, verbose=options.verbose)
 
-	# FIXME:  don't do this:  fix lalapps_power's output
-	if options.cluster_algorithm in ("excesspower",):
-		bucluster.add_ms_columns(xmldoc)
+    # FIXME:  don't do this:  fix lalapps_power's output
+    if options.cluster_algorithm in ("excesspower",):
+        bucluster.add_ms_columns(xmldoc)
 
-	#
-	# Add process information
-	#
+    #
+    # Add process information
+    #
 
-	process = bucluster.append_process(xmldoc, cluster_algorithm = options.cluster_algorithm, comment = options.comment)
+    process = bucluster.append_process(
+        xmldoc, cluster_algorithm=options.cluster_algorithm, comment=options.comment
+    )
 
-	#
-	# Call clustering library
-	#
+    #
+    # Call clustering library
+    #
 
-	xmldoc, changed = bucluster.bucluster(
-		xmldoc,
-		program = options.program,
-		process = process,
-		prefunc = prefunc,
-		postfunc = postfunc,
-		testfunc = testfunc,
-		clusterfunc = clusterfunc,
-		sortkeyfunc = sortkeyfunc,
-		bailoutfunc = bailoutfunc,
-		verbose = options.verbose
-	)
+    xmldoc, changed = bucluster.bucluster(
+        xmldoc,
+        program=options.program,
+        process=process,
+        prefunc=prefunc,
+        postfunc=postfunc,
+        testfunc=testfunc,
+        clusterfunc=clusterfunc,
+        sortkeyfunc=sortkeyfunc,
+        bailoutfunc=bailoutfunc,
+        verbose=options.verbose,
+    )
 
-	#
-	# Finish process information
-	#
+    #
+    # Finish process information
+    #
 
-	process.set_end_time_now()
+    process.set_end_time_now()
 
-	#
-	# Write document
-	#
+    #
+    # Write document
+    #
 
-	if changed:
-		ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)
-	xmldoc.unlink()
+    if changed:
+        ligolw_utils.write_filename(xmldoc, filename, verbose=options.verbose)
+    xmldoc.unlink()
