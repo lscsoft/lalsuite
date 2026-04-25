@@ -18,4 +18,6 @@ select = [
     # pycodestyle warnings
     "W2",
     "W605",
+    # ruff
+    "RUF016",
 ]
