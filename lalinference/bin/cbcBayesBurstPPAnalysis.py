@@ -52,8 +52,10 @@ class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
       elif self.intable: # We are in the correct table
         ligolw.LIGOLWContentHandler.startElement(self,name,attrs)
     def endElement(self,name):
-      if self.intable: ligolw.LIGOLWContentHandler.endElement(self,name)
-      if self.intable and name==self.tableElementName: self.intable=False
+      if self.intable:
+          ligolw.LIGOLWContentHandler.endElement(self,name)
+      if self.intable and name==self.tableElementName:
+          self.intable=False
 
 posterior_name_to_sim_burst_extractor = {
     'frequency' : lambda sb: sb.frequency,
