@@ -28,7 +28,6 @@
 This module provides bin packing utilities.
 """
 
-
 from . import git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -50,74 +49,75 @@ __version__ = git_version.version
 
 
 class Bin(object):
-	"""
-	Bin object for use in packing algorithm implementations.  A Bin
-	instance has two attributes:  size, which is the total "size" of
-	the contents of the Bin, and objects, which is a list of the Bins
-	contents.
+    """
+    Bin object for use in packing algorithm implementations.  A Bin
+    instance has two attributes:  size, which is the total "size" of
+    the contents of the Bin, and objects, which is a list of the Bins
+    contents.
 
-	Example:
+    Example:
 
-	>>> strings = Bin()
-	>>> s = "hello"
-	>>> strings.add(s, len(s))
-	>>> s.objects
-	['hello']
-	>>> s.size
-	5
-	"""
-	def __init__(self):
-		"""
-		Initialize a new Bin instance.
-		"""
-		self.objects = []
-		self.size = 0
+    >>> strings = Bin()
+    >>> s = "hello"
+    >>> strings.add(s, len(s))
+    >>> s.objects
+    ['hello']
+    >>> s.size
+    5
+    """
 
-	def add(self, obj, size):
-		"""
-		Add the object, whose size is as given, to the bin.
-		"""
-		self.objects.append(obj)
-		self.size += size
-		return self
+    def __init__(self):
+        """
+        Initialize a new Bin instance.
+        """
+        self.objects = []
+        self.size = 0
 
-	def __iadd__(self, other):
-		"""
-		Add the contents of another Bin object to this one.
-		"""
-		self.objects.extend(other.objects)
-		self.size += other.size
-		return self
+    def add(self, obj, size):
+        """
+        Add the object, whose size is as given, to the bin.
+        """
+        self.objects.append(obj)
+        self.size += size
+        return self
 
-	#
-	# Compare two Bin objects by their sizes.
-	#
+    def __iadd__(self, other):
+        """
+        Add the contents of another Bin object to this one.
+        """
+        self.objects.extend(other.objects)
+        self.size += other.size
+        return self
 
-	def __lt__(self, other):
-		return self.size < other.size
+    #
+    # Compare two Bin objects by their sizes.
+    #
 
-	def __le__(self, other):
-		return self.size <= other.size
+    def __lt__(self, other):
+        return self.size < other.size
 
-	def __eq__(self, other):
-		return self.size == other.size
+    def __le__(self, other):
+        return self.size <= other.size
 
-	def __ne__(self, other):
-		return self.size != other.size
+    def __eq__(self, other):
+        return self.size == other.size
 
-	def __ge__(self, other):
-		return self.size >= other.size
+    def __ne__(self, other):
+        return self.size != other.size
 
-	def __gt__(self, other):
-		return self.size > other.size
+    def __ge__(self, other):
+        return self.size >= other.size
 
-	def __repr__(self):
-		"""
-		A representation of the Bin object.
-		"""
-		return "Bin(size=%s, %s)" % (str(self.size), str(self.objects))
+    def __gt__(self, other):
+        return self.size > other.size
 
-	__str__ = __repr__
+    def __repr__(self):
+        """
+        A representation of the Bin object.
+        """
+        return "Bin(size=%s, %s)" % (str(self.size), str(self.objects))
+
+    __str__ = __repr__
 
 
 #
@@ -131,42 +131,45 @@ class Bin(object):
 
 # FIXME:  this should probably also be a subclass of list.
 
+
 class Packer(object):
-	"""
-	Parent class for packing algorithms.  Specific packing algorithms
-	should sub-class this, providing implementations of the pack() and
-	packlist() methods.
-	"""
-	def __init__(self, bins):
-		"""
-		Set the list of bins on which we shall operate
-		"""
-		self.bins = bins
+    """
+    Parent class for packing algorithms.  Specific packing algorithms
+    should sub-class this, providing implementations of the pack() and
+    packlist() methods.
+    """
 
-	def pack(self, size, obj):
-		"""
-		Pack an object of given size into the bins.
-		"""
-		raise NotImplementedError
+    def __init__(self, bins):
+        """
+        Set the list of bins on which we shall operate
+        """
+        self.bins = bins
 
-	def packlist(self, size_object_pairs):
-		"""
-		Pack a list of (size, object) tuples into the bins.
+    def pack(self, size, obj):
+        """
+        Pack an object of given size into the bins.
+        """
+        raise NotImplementedError
 
-		Default implementation invokes self.pack() on each pair in
-		the the order given.
-		"""
-		for size, obj in size_object_pairs:
-			self.pack(size, obj)
+    def packlist(self, size_object_pairs):
+        """
+        Pack a list of (size, object) tuples into the bins.
+
+        Default implementation invokes self.pack() on each pair in
+        the the order given.
+        """
+        for size, obj in size_object_pairs:
+            self.pack(size, obj)
 
 
 class BiggestIntoEmptiest(Packer):
-	"""
-	Packs the biggest object into the emptiest bin.
-	"""
-	def pack(self, size, obj):
-		min(self.bins).add(obj, size)
+    """
+    Packs the biggest object into the emptiest bin.
+    """
 
-	def packlist(self, size_object_pairs):
-		for size, obj in sorted(size_object_pairs, reverse = True):
-			self.pack(size, obj)
+    def pack(self, size, obj):
+        min(self.bins).add(obj, size)
+
+    def packlist(self, size_object_pairs):
+        for size, obj in sorted(size_object_pairs, reverse=True):
+            self.pack(size, obj)
