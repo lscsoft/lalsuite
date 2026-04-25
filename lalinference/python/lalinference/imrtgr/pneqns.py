@@ -29,7 +29,13 @@ def denergy_by_flux(v, eta, delta, chiadL, chisdL, chiasqr, chissqr, chisdchia, 
     ''' Eqs.(3.2) of Ajith (2011) http://arxiv.org/pdf/1107.1267v2.pdf '''
 
     # different powers of v
-    v2 = v*v; v3 = v2*v; v4 = v3*v; v5 = v4*v; v6 = v5*v; v7 = v6*v; v9 = v7*v2
+    v2 = v*v
+    v3 = v2*v
+    v4 = v3*v
+    v5 = v4*v
+    v6 = v5*v
+    v7 = v6*v
+    v9 = v7*v2
 
     # initialize the cofficients
     dEbF0 = dEbF2 = dEbF3 = dEbF4 = dEbF5 = dEbF6 = dEbF6L = dEbF7 = 0.
