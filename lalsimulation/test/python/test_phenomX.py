@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
-"""Simple test to see if the PhenomX family models have changed: IMRPhenomXAS, IMRPhenomXHM, IMRPhenomXP, IMRPhenomXPHM, IMRPhenomXAS_NRTidalv2, IMRPhenomXP_NRTidalv2, and IMRPhenomXO4a.
-"""
+"""Simple test to see if the PhenomX family models have changed: IMRPhenomXAS, IMRPhenomXHM, IMRPhenomXP, IMRPhenomXPHM, IMRPhenomXAS_NRTidalv2, IMRPhenomXP_NRTidalv2, and IMRPhenomXO4a."""
 
 import sys
 
@@ -28,16 +27,27 @@ import lalsimulation
 
 # -- utility functions ---------------------
 
+
 def get_amp_phase(h):
     amp = np.abs(h)
     phase = np.unwrap(np.angle(h))
     return amp, phase
 
+
 def sum_sqr_diff(x, y):
-    return np.sqrt( np.sum( (x-y)**2 )  )
+    return np.sqrt(np.sum((x - y) ** 2))
 
 
-def gen_test_data(spin1x, approximant, mode_array,  lalparams = None, type='bbh', generic_spins=False,deltaF=1./4.,release=None):
+def gen_test_data(
+    spin1x,
+    approximant,
+    mode_array,
+    lalparams=None,
+    type="bbh",
+    generic_spins=False,
+    deltaF=1.0 / 4.0,
+    release=None,
+):
     """
     compute the difference between two waveforms
     and compare to expected value
@@ -48,74 +58,76 @@ def gen_test_data(spin1x, approximant, mode_array,  lalparams = None, type='bbh'
 
     """
 
-    if(lalparams is None):
+    if lalparams is None:
         lalparams = lal.CreateDict()
 
-    if(mode_array is not None):
+    if mode_array is not None:
         ModeArray = lalsimulation.SimInspiralCreateModeArray()
         for mode in mode_array:
             lalsimulation.SimInspiralModeArrayActivateMode(ModeArray, mode[0], mode[1])
         lalsimulation.SimInspiralWaveformParamsInsertModeArray(lalparams, ModeArray)
 
     if release is not None:
-        lalsimulation.SimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(lalparams, release)
+        lalsimulation.SimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(
+            lalparams, release
+        )
 
-    if type == 'bbh':
-        m1_sel = 50*lal.MSUN_SI
-        m2_sel = 30*lal.MSUN_SI
-        m2_sel_prime = 20.*lal.MSUN_SI
-        f_max_sel = 512.
-    elif type == 'bns':
-        m1_sel = 1.6*lal.MSUN_SI
-        m2_sel = 1.4*lal.MSUN_SI
-        m2_sel_prime = 1.3*lal.MSUN_SI
-        f_max_sel = 2048.
+    if type == "bbh":
+        m1_sel = 50 * lal.MSUN_SI
+        m2_sel = 30 * lal.MSUN_SI
+        m2_sel_prime = 20.0 * lal.MSUN_SI
+        f_max_sel = 512.0
+    elif type == "bns":
+        m1_sel = 1.6 * lal.MSUN_SI
+        m2_sel = 1.4 * lal.MSUN_SI
+        m2_sel_prime = 1.3 * lal.MSUN_SI
+        f_max_sel = 2048.0
 
-        lalsimulation.SimInspiralWaveformParamsInsertTidalLambda1(lalparams, 200.)
-        lalsimulation.SimInspiralWaveformParamsInsertTidalLambda2(lalparams, 300.)
+        lalsimulation.SimInspiralWaveformParamsInsertTidalLambda1(lalparams, 200.0)
+        lalsimulation.SimInspiralWaveformParamsInsertTidalLambda2(lalparams, 300.0)
     else:
         raise ValueError("Unknown binary type")
 
     if generic_spins:
-        spin1y = 0.5*spin1x
+        spin1y = 0.5 * spin1x
         spin1z = -0.3
-        spin2x = -0.9*spin1x
-        spin2y = 1.2*spin1x
+        spin2x = -0.9 * spin1x
+        spin2y = 1.2 * spin1x
         spin2z = 0.2
     else:
-        spin1y = 0.
-        spin1z = 0.
-        spin2x = 0.
-        spin2y = 0.
-        spin2z = 0.
+        spin1y = 0.0
+        spin1z = 0.0
+        spin2x = 0.0
+        spin2y = 0.0
+        spin2z = 0.0
 
-    common_pars=dict(
-    m1=m1_sel,
-    m2=m2_sel,
-    S1x=spin1x,
-    S1y=spin1y,
-    S1z=spin1z,
-    S2x=spin2x,
-    S2y=spin2y,
-    S2z=spin2z,
-    distance=1,
-    inclination=np.pi/3.,
-    phiRef=0.,
-    longAscNodes=0.,
-    eccentricity=0.,
-    meanPerAno=0.,
-    deltaF=deltaF,
-    f_min=30.,
-    f_max=f_max_sel,
-    f_ref=30.,
-    LALpars=lalparams,
-    approximant=approximant
+    common_pars = dict(
+        m1=m1_sel,
+        m2=m2_sel,
+        S1x=spin1x,
+        S1y=spin1y,
+        S1z=spin1z,
+        S2x=spin2x,
+        S2y=spin2y,
+        S2z=spin2z,
+        distance=1,
+        inclination=np.pi / 3.0,
+        phiRef=0.0,
+        longAscNodes=0.0,
+        eccentricity=0.0,
+        meanPerAno=0.0,
+        deltaF=deltaF,
+        f_min=30.0,
+        f_max=f_max_sel,
+        f_ref=30.0,
+        LALpars=lalparams,
+        approximant=approximant,
     )
 
-    pars1=common_pars.copy()
+    pars1 = common_pars.copy()
 
-    pars2=common_pars.copy()
-    pars2.update({"m2":m2_sel_prime})
+    pars2 = common_pars.copy()
+    pars2.update({"m2": m2_sel_prime})
 
     hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(**pars1)
     hp2, hc2 = lalsimulation.SimInspiralChooseFDWaveform(**pars2)
@@ -136,8 +148,8 @@ def gen_test_data(spin1x, approximant, mode_array,  lalparams = None, type='bbh'
     return hp_amp_diff, hp_phase_diff, hc_amp_diff, hc_phase_diff
 
 
-
 # -- test functions ---------------------
+
 
 def test_IMRPhenomXAS():
     """
@@ -154,9 +166,14 @@ def test_IMRPhenomXAS():
 
     expected_result = np.array([787.00663452, 165.89210208, 629.60530761, 165.89210208])
 
-    new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomXAS, None, generic_spins=True))
+    new_result = np.array(
+        gen_test_data(0.0, lalsimulation.IMRPhenomXAS, None, generic_spins=True)
+    )
 
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXAS test failed")
+    np.testing.assert_allclose(
+        new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXAS test failed"
+    )
+
 
 def test_IMRPhenomXHM():
     """
@@ -173,32 +190,75 @@ def test_IMRPhenomXHM():
 
     """
 
+    expected_result = np.array(
+        [1005.16009183, 169.88197475, 768.18401876, 169.12711241]
+    )
 
-    expected_result = np.array([1005.16009183, 169.88197475, 768.18401876, 169.12711241])
+    new_result = np.array(
+        gen_test_data(
+            0.0,
+            lalsimulation.IMRPhenomXHM,
+            [[2, 2], [2, -2], [2, 1], [2, -1], [3, 3], [3, -3], [4, 4], [4, -4]],
+            release=122019,
+        )
+    )
 
-    new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomXHM, [[2,2],[2,-2],[2,1],[2,-1],[3,3],[3,-3],[4,4],[4,-4]], release=122019))
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=1e-6,
+        err_msg="IMRPhenomXHM (122019) no 32 mode test failed",
+    )
 
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXHM (122019) no 32 mode test failed")
+    expected_result = np.array([32.17818789, 216.01992794, 4.02227349, 215.97103911])
 
-    expected_result = np.array([ 32.17818789, 216.01992794,   4.02227349, 215.97103911])
-
-    new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomXHM, [[3,2],[3,-2]], release=122019))
+    new_result = np.array(
+        gen_test_data(
+            0.0, lalsimulation.IMRPhenomXHM, [[3, 2], [3, -2]], release=122019
+        )
+    )
 
     # rtol with 32 mode needs to b more lenient
-    np.testing.assert_allclose(new_result, expected_result, rtol=3e-4, err_msg="IMRPhenomXHM (122019) 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=3e-4,
+        err_msg="IMRPhenomXHM (122019) 32 mode test failed",
+    )
 
-    expected_result = np.array([1005.01319319, 169.88945372, 768.34648494, 169.13261004])
+    expected_result = np.array(
+        [1005.01319319, 169.88945372, 768.34648494, 169.13261004]
+    )
 
-    new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomXHM, [[2,2],[2,-2],[2,1],[2,-1],[3,3],[3,-3],[4,4],[4,-4]]))
+    new_result = np.array(
+        gen_test_data(
+            0.0,
+            lalsimulation.IMRPhenomXHM,
+            [[2, 2], [2, -2], [2, 1], [2, -1], [3, 3], [3, -3], [4, 4], [4, -4]],
+        )
+    )
 
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXHM no 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=1e-6,
+        err_msg="IMRPhenomXHM no 32 mode test failed",
+    )
 
     expected_result = np.array([34.62153262, 218.09073730, 4.32769157, 218.09073730])
 
-    new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomXHM, [[3,2],[3,-2]]))
+    new_result = np.array(
+        gen_test_data(0.0, lalsimulation.IMRPhenomXHM, [[3, 2], [3, -2]])
+    )
 
     # rtol with 32 mode needs to b more lenient
-    np.testing.assert_allclose(new_result, expected_result, rtol=3.1e-4, err_msg="IMRPhenomXHM 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=3.1e-4,
+        err_msg="IMRPhenomXHM 32 mode test failed",
+    )
+
 
 def test_IMRPhenomXP():
     """
@@ -216,11 +276,15 @@ def test_IMRPhenomXP():
     lalsimulation.SimInspiralWaveformParamsInsertPhenomXPrecVersion(lalDict, 223)
     lalsimulation.SimInspiralWaveformParamsInsertPhenomXPFinalSpinMod(lalDict, 2)
 
-    expected_result = np.array([1070.22089507,  271.62095671,  533.04876588,  268.4520146])
+    expected_result = np.array([1070.22089507, 271.62095671, 533.04876588, 268.4520146])
 
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXP, None, generic_spins=False))
+    new_result = np.array(
+        gen_test_data(0.5, lalsimulation.IMRPhenomXP, None, generic_spins=False)
+    )
 
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXP test failed")
+    np.testing.assert_allclose(
+        new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXP test failed"
+    )
 
 
 def test_IMRPhenomXP_NNLO():
@@ -243,12 +307,19 @@ def test_IMRPhenomXP_NNLO():
     lalDict = lal.CreateDict()
     lalsimulation.SimInspiralWaveformParamsInsertPhenomXPrecVersion(lalDict, 102)
 
-    expected_result = np.array([1235.47048998, 226.22617618, 1049.4091208, 225.46870308])
+    expected_result = np.array(
+        [1235.47048998, 226.22617618, 1049.4091208, 225.46870308]
+    )
 
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXP, None, lalparams=lalDict, generic_spins=True))
+    new_result = np.array(
+        gen_test_data(
+            0.5, lalsimulation.IMRPhenomXP, None, lalparams=lalDict, generic_spins=True
+        )
+    )
 
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXP_NNLO test failed")
-
+    np.testing.assert_allclose(
+        new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXP_NNLO test failed"
+    )
 
 
 def test_IMRPhenomXP_MB():
@@ -268,11 +339,23 @@ def test_IMRPhenomXP_MB():
     lalDict = lal.CreateDict()
     lalsimulation.SimInspiralWaveformParamsInsertPhenomXPrecVersion(lalDict, 223)
 
-    expected_result = np.array([1468.09702243, 190.76614342, 972.51053189, 189.80404795])
+    expected_result = np.array(
+        [1468.09702243, 190.76614342, 972.51053189, 189.80404795]
+    )
 
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[2,2]], lalparams=lalDict, generic_spins=True))
+    new_result = np.array(
+        gen_test_data(
+            0.5,
+            lalsimulation.IMRPhenomXPHM,
+            [[2, 2]],
+            lalparams=lalDict,
+            generic_spins=True,
+        )
+    )
 
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXP_MB test failed")
+    np.testing.assert_allclose(
+        new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXP_MB test failed"
+    )
 
 
 def test_IMRPhenomXP_SpinTaylor():
@@ -292,15 +375,21 @@ def test_IMRPhenomXP_SpinTaylor():
 
     """
 
-    expected_result = np.array([1570.905974,  190.514064, 1107.696605,  195.697882])
+    expected_result = np.array([1570.905974, 190.514064, 1107.696605, 195.697882])
 
     lalDict = lal.CreateDict()
 
     lalsimulation.SimInspiralWaveformParamsInsertPhenomXPrecVersion(lalDict, 310)
 
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXP, None, lalparams=lalDict, generic_spins=True))
+    new_result = np.array(
+        gen_test_data(
+            0.5, lalsimulation.IMRPhenomXP, None, lalparams=lalDict, generic_spins=True
+        )
+    )
 
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXP test failed")
+    np.testing.assert_allclose(
+        new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXP test failed"
+    )
 
 
 def test_IMRPhenomXPHM():
@@ -318,35 +407,71 @@ def test_IMRPhenomXPHM():
 
     """
 
+    expected_result = np.array([1166.01091848, 334.5693217, 767.82099062, 326.09652364])
 
-    expected_result = np.array([1166.01091848, 334.5693217,  767.82099062, 326.09652364])
-
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[2,2],[2,1],[3,3],[4,4]], release=122019))
+    new_result = np.array(
+        gen_test_data(
+            0.5,
+            lalsimulation.IMRPhenomXPHM,
+            [[2, 2], [2, 1], [3, 3], [4, 4]],
+            release=122019,
+        )
+    )
 
     # rtol here needs to be more lenient to pass on builds with arm64 or MKL
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-5, err_msg="IMRPhenomXPHM (122019) no 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=1e-5,
+        err_msg="IMRPhenomXPHM (122019) no 32 mode test failed",
+    )
 
+    expected_result = np.array(
+        [68.9282789725476, 240.20999880535206, 25.111569754767224, 234.7465084316962]
+    )
 
-    expected_result = np.array([68.9282789725476, 240.20999880535206, 25.111569754767224, 234.7465084316962])
-
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[3,2]], release=122019))
+    new_result = np.array(
+        gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[3, 2]], release=122019)
+    )
 
     # rtol with 32 mode needs to b more lenient
-    np.testing.assert_allclose(new_result, expected_result, rtol=3e-4, err_msg="IMRPhenomXPHM (122019) 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=3e-4,
+        err_msg="IMRPhenomXPHM (122019) 32 mode test failed",
+    )
 
-    expected_result = np.array([1166.77270896, 334.86014307, 768.93672645, 326.38518250])
+    expected_result = np.array(
+        [1166.77270896, 334.86014307, 768.93672645, 326.38518250]
+    )
 
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[2,2],[2,1],[3,3],[4,4]]))
+    new_result = np.array(
+        gen_test_data(
+            0.5, lalsimulation.IMRPhenomXPHM, [[2, 2], [2, 1], [3, 3], [4, 4]]
+        )
+    )
 
     # rtol here needs to be more lenient to pass on builds with arm64 or MKL
-    np.testing.assert_allclose(new_result, expected_result, rtol=1.3e-5, err_msg="IMRPhenomXPHM no 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=1.3e-5,
+        err_msg="IMRPhenomXPHM no 32 mode test failed",
+    )
 
     expected_result = np.array([71.43504434, 242.82287296, 26.54528442, 237.35077401])
 
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[3,2]]))
+    new_result = np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[3, 2]]))
 
     # rtol with 32 mode needs to b more lenient
-    np.testing.assert_allclose(new_result, expected_result, rtol=3e-4, err_msg="IMRPhenomXPHM 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=3e-4,
+        err_msg="IMRPhenomXPHM 32 mode test failed",
+    )
+
 
 def test_IMRPhenomXO4a():
     """
@@ -357,19 +482,37 @@ def test_IMRPhenomXO4a():
 
     """
 
-    expected_result = np.array([1147.6076128830048, 202.16395516656954, 835.6550472580194, 322.56504443715437])
+    expected_result = np.array(
+        [1147.6076128830048, 202.16395516656954, 835.6550472580194, 322.56504443715437]
+    )
 
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXO4a, [[2,2],[2,1],[3,3],[4,4]]))
+    new_result = np.array(
+        gen_test_data(
+            0.5, lalsimulation.IMRPhenomXO4a, [[2, 2], [2, 1], [3, 3], [4, 4]]
+        )
+    )
 
     # rtol here needs to be more lenient to pass on builds with arm64 or MKL
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-5, err_msg="IMRPhenomXO4a no 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=1e-5,
+        err_msg="IMRPhenomXO4a no 32 mode test failed",
+    )
 
-
-    expected_result = np.array([48.56332295620956, 236.22060412141988, 21.61676721381083, 232.43479133460966])
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXO4a, [[3,2]]))
+    expected_result = np.array(
+        [48.56332295620956, 236.22060412141988, 21.61676721381083, 232.43479133460966]
+    )
+    new_result = np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXO4a, [[3, 2]]))
 
     # rtol with 32 mode needs to be more lenient
-    np.testing.assert_allclose(new_result, expected_result, rtol=3e-3, err_msg="IMRPhenomXO4a 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=3e-3,
+        err_msg="IMRPhenomXO4a 32 mode test failed",
+    )
+
 
 def test_IMRPhenomXPHM_SpinTaylor():
     """
@@ -390,24 +533,53 @@ def test_IMRPhenomXPHM_SpinTaylor():
 
     """
 
-    expected_result = np.array([1688.30370786,  274.96949069, 1248.22149474,  279.10374629])
+    expected_result = np.array(
+        [1688.30370786, 274.96949069, 1248.22149474, 279.10374629]
+    )
 
     lalDict = lal.CreateDict()
 
     lalsimulation.SimInspiralWaveformParamsInsertPhenomXPrecVersion(lalDict, 310)
 
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[2,2],[2,1],[3,3],[4,4]], lalparams=lalDict, generic_spins=True,release=122019))
+    new_result = np.array(
+        gen_test_data(
+            0.5,
+            lalsimulation.IMRPhenomXPHM,
+            [[2, 2], [2, 1], [3, 3], [4, 4]],
+            lalparams=lalDict,
+            generic_spins=True,
+            release=122019,
+        )
+    )
 
     # rtol here needs to be more lenient to pass on builds with arm64 or MKL
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-5, err_msg="IMRPhenomXPHM no 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=1e-5,
+        err_msg="IMRPhenomXPHM no 32 mode test failed",
+    )
 
+    expected_result = np.array([12.68276953, 170.44495875, 42.97960664, 142.53609984])
 
-    expected_result = np.array([12.68276953, 170.44495875,  42.97960664, 142.53609984])
-
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[3,2]], lalparams=lalDict, generic_spins=True,release=122019))
+    new_result = np.array(
+        gen_test_data(
+            0.5,
+            lalsimulation.IMRPhenomXPHM,
+            [[3, 2]],
+            lalparams=lalDict,
+            generic_spins=True,
+            release=122019,
+        )
+    )
 
     # rtol with 32 mode needs to be more lenient
-    np.testing.assert_allclose(new_result, expected_result, rtol=5e-4, err_msg="IMRPhenomXPHM 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=5e-4,
+        err_msg="IMRPhenomXPHM 32 mode test failed",
+    )
 
 
 def test_IMRPhenomXAS_NRTidalv2():
@@ -423,11 +595,24 @@ def test_IMRPhenomXAS_NRTidalv2():
 
     """
 
-    expected_result = np.array([10.04639297, 561.5921041 ,8.03711438, 561.62725166])
+    expected_result = np.array([10.04639297, 561.5921041, 8.03711438, 561.62725166])
 
-    new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomXAS_NRTidalv2, None, type='bns', generic_spins=True))
+    new_result = np.array(
+        gen_test_data(
+            0.0,
+            lalsimulation.IMRPhenomXAS_NRTidalv2,
+            None,
+            type="bns",
+            generic_spins=True,
+        )
+    )
 
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXAS_NRTidalv2 test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=1e-6,
+        err_msg="IMRPhenomXAS_NRTidalv2 test failed",
+    )
 
 
 def test_IMRPhenomXP_NRTidalv2():
@@ -445,10 +630,24 @@ def test_IMRPhenomXP_NRTidalv2():
 
     lalDict = lal.CreateDict()
 
-    expected_result = np.array([ 13.9202092 , 561.0238095 ,  19.05392711, 550.93840153])
+    expected_result = np.array([13.9202092, 561.0238095, 19.05392711, 550.93840153])
 
-    new_result  =  np.array(gen_test_data(0.2, lalsimulation.IMRPhenomXP_NRTidalv2, None, type='bns', lalparams=lalDict, generic_spins=True))
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXP_NRTidalv2 test failed")
+    new_result = np.array(
+        gen_test_data(
+            0.2,
+            lalsimulation.IMRPhenomXP_NRTidalv2,
+            None,
+            type="bns",
+            lalparams=lalDict,
+            generic_spins=True,
+        )
+    )
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=1e-6,
+        err_msg="IMRPhenomXP_NRTidalv2 test failed",
+    )
 
 
 def test_IMRPhenomXP_NRTidalv2_SpinTaylor():
@@ -468,15 +667,29 @@ def test_IMRPhenomXP_NRTidalv2_SpinTaylor():
 
     """
 
-    expected_result = np.array([11.92543681, 730.77807026,  13.69906426, 552.53065783])
+    expected_result = np.array([11.92543681, 730.77807026, 13.69906426, 552.53065783])
 
     lalDict = lal.CreateDict()
 
     lalsimulation.SimInspiralWaveformParamsInsertPhenomXPrecVersion(lalDict, 310)
 
-    new_result  =  np.array(gen_test_data(0.2, lalsimulation.IMRPhenomXP_NRTidalv2, None, lalparams=lalDict, type='bns', generic_spins=True))
+    new_result = np.array(
+        gen_test_data(
+            0.2,
+            lalsimulation.IMRPhenomXP_NRTidalv2,
+            None,
+            lalparams=lalDict,
+            type="bns",
+            generic_spins=True,
+        )
+    )
 
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXP_NRTidalv2 test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=1e-6,
+        err_msg="IMRPhenomXP_NRTidalv2 test failed",
+    )
 
 
 def test_IMRPhenomXPNR():
@@ -488,23 +701,51 @@ def test_IMRPhenomXPNR():
 
     """
 
-    expected_result = np.array([1149.25272956272488, 201.90592114484070, 830.22645041272130, 321.89849276096191])
+    expected_result = np.array(
+        [
+            1149.25272956272488,
+            201.90592114484070,
+            830.22645041272130,
+            321.89849276096191,
+        ]
+    )
 
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPNR, [[2,2],[2,1],[3,3],[4,4]]))
+    new_result = np.array(
+        gen_test_data(
+            0.5, lalsimulation.IMRPhenomXPNR, [[2, 2], [2, 1], [3, 3], [4, 4]]
+        )
+    )
 
     # rtol here needs to be more lenient to pass on builds with arm64 or MKL
-    np.testing.assert_allclose(new_result, expected_result, rtol=1e-5, err_msg="IMRPhenomXPNR no 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=1e-5,
+        err_msg="IMRPhenomXPNR no 32 mode test failed",
+    )
 
+    expected_result = np.array(
+        [
+            47.9973923614742546,
+            235.9677577246995384,
+            21.6471155649431743,
+            231.9826404417289041,
+        ]
+    )
 
-    expected_result = np.array([47.9973923614742546, 235.9677577246995384, 21.6471155649431743, 231.9826404417289041])
-
-    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPNR, [[3,2]]))
+    new_result = np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPNR, [[3, 2]]))
 
     # rtol with 32 mode needs to be more lenient
-    np.testing.assert_allclose(new_result, expected_result, rtol=3e-3, err_msg="IMRPhenomXPNR 32 mode test failed")
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=3e-3,
+        err_msg="IMRPhenomXPNR 32 mode test failed",
+    )
+
 
 # -- run the tests ------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-phenomX.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
