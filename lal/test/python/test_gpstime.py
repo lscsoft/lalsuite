@@ -27,25 +27,34 @@ from lal import LIGOTimeGPS, gpstime
 
 @mock.patch("lal.gpstime._gps_time_now", return_value=LIGOTimeGPS(100))
 def test_gps_time_now(_):
-    assert gpstime.gps_time_now() == 100.
+    assert gpstime.gps_time_now() == 100.0
 
 
-@pytest.mark.parametrize('date, gps', [
-    (datetime.datetime(2000, 1, 1, 0, 0, 0), 630720013),
-    (datetime.date(2000, 1, 2), 630806413),
-])
+@pytest.mark.parametrize(
+    "date, gps",
+    [
+        (datetime.datetime(2000, 1, 1, 0, 0, 0), 630720013),
+        (datetime.date(2000, 1, 2), 630806413),
+    ],
+)
 def test_utc_to_gps(date, gps):
     out = gpstime.utc_to_gps(date)
     assert isinstance(out, LIGOTimeGPS)
     assert out == LIGOTimeGPS(gps)
 
 
-@pytest.mark.parametrize('gps, date', [
-    (630720013, datetime.datetime(2000, 1, 1, 0, 0, 0)),
-    (LIGOTimeGPS(630720013, 12345), datetime.datetime(2000, 1, 1, 0, 0, 0, 12)),
-    (LIGOTimeGPS(630720013, 12999), datetime.datetime(2000, 1, 1, 0, 0, 0, 13)),
-    (Decimal("1234567890.123456789"), datetime.datetime(2019, 2, 18, 23, 31, 12, 123457)),
-])
+@pytest.mark.parametrize(
+    "gps, date",
+    [
+        (630720013, datetime.datetime(2000, 1, 1, 0, 0, 0)),
+        (LIGOTimeGPS(630720013, 12345), datetime.datetime(2000, 1, 1, 0, 0, 0, 12)),
+        (LIGOTimeGPS(630720013, 12999), datetime.datetime(2000, 1, 1, 0, 0, 0, 13)),
+        (
+            Decimal("1234567890.123456789"),
+            datetime.datetime(2019, 2, 18, 23, 31, 12, 123457),
+        ),
+    ],
+)
 def test_gps_to_utc(gps, date):
     assert gpstime.gps_to_utc(gps) == date
 
@@ -53,20 +62,28 @@ def test_gps_to_utc(gps, date):
 @mock.patch("lal.gpstime._gps_time_now", return_value=LIGOTimeGPS(100))
 def test_utc_time_now(_):
     assert gpstime.utc_time_now() == datetime.datetime(
-        1980, 1, 6, 0, 1, 40,
+        1980,
+        1,
+        6,
+        0,
+        1,
+        40,
     )
 
 
 @freeze_time("2015-09-14 09:50:45.391")
 @mock.patch("lal.gpstime._gps_time_now", return_value=LIGOTimeGPS(1126259462))
-@pytest.mark.parametrize('text, gps', [
-    (None, 1126259462),
-    ("now", 1126259462),
-    ("today", 1126224017),
-    ("tomorrow", 1126310417),
-    ("yesterday", 1126137617),
-    ("Sep 14 2015 09:50:45.391", LIGOTimeGPS(1126259462, 391000000)),
-])
+@pytest.mark.parametrize(
+    "text, gps",
+    [
+        (None, 1126259462),
+        ("now", 1126259462),
+        ("today", 1126224017),
+        ("tomorrow", 1126310417),
+        ("yesterday", 1126137617),
+        ("Sep 14 2015 09:50:45.391", LIGOTimeGPS(1126259462, 391000000)),
+    ],
+)
 def test_str_to_gps(_, text, gps):
     out = gpstime.str_to_gps(text)
     print(type(out))
@@ -74,11 +91,13 @@ def test_str_to_gps(_, text, gps):
     assert out == LIGOTimeGPS(gps)
 
 
-@pytest.mark.parametrize('gps, text', [
-    (LIGOTimeGPS(1126259462, 391000000),
-     "September 14 2015, 09:50:45.391000 UTC"),
-    (1126259462, "September 14 2015, 09:50:45 UTC"),
-])
+@pytest.mark.parametrize(
+    "gps, text",
+    [
+        (LIGOTimeGPS(1126259462, 391000000), "September 14 2015, 09:50:45.391000 UTC"),
+        (1126259462, "September 14 2015, 09:50:45 UTC"),
+    ],
+)
 def test_gps_to_str(gps, text):
     assert gpstime.gps_to_str(gps) == text
 
@@ -88,17 +107,19 @@ def test_gps_to_str_form():
 
 
 @mock.patch("lal.gpstime._gps_time_now", return_value=LIGOTimeGPS(1126259462))
-@pytest.mark.parametrize('in_, result', [
-    ("now", LIGOTimeGPS(1126259462)),
-    (LIGOTimeGPS(1126259462, 391000000),
-     "September 14 2015, 09:50:45.391000 UTC"),
-])
+@pytest.mark.parametrize(
+    "in_, result",
+    [
+        ("now", LIGOTimeGPS(1126259462)),
+        (LIGOTimeGPS(1126259462, 391000000), "September 14 2015, 09:50:45.391000 UTC"),
+    ],
+)
 def test_tconvert(_, in_, result):
     out = gpstime.tconvert(in_)
     assert type(out) == type(result)
     assert out == result
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-gpstime.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
