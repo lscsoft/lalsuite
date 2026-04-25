@@ -2,9 +2,10 @@
 
 """Write a Docker Compose configuration file."""
 
-import yaml
 import argparse
 from pathlib import Path
+
+import yaml
 
 # parse command line
 parser = argparse.ArgumentParser(description=__doc__)
