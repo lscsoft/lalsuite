@@ -72,7 +72,7 @@ if 'UNCLEAN' in lalinference.InferenceVCSInfo.vcsId:
 else:
     default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSInfo.vcsId+'/'+args.engine.replace(',','_')+'/'
 
-if args.output == None:
+if args.output is None:
     web_outputdir=default_outputdir
     args.output=os.path.abspath(default_outputdir)
 else:
