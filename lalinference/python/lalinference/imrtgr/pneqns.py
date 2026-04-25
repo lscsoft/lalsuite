@@ -4,13 +4,13 @@ Code to use post-Newtonian equations [from Ajith, PRD 84, 084037 (2011), arXiv:1
 P. Ajith, A. Gupta, and N. K. Johnson-McDaniel, 04.2016, based on earlier code
 """
 
-from scipy.integrate import ode
 import numpy as np
-import lalsimulation as lalsim
-from lal import PI, MTSUN_SI, MSUN_SI, GAMMA
 from numpy import log
 from numpy.linalg import norm
+from scipy.integrate import ode
 
+import lalsimulation as lalsim
+from lal import GAMMA, MSUN_SI, MTSUN_SI, PI
 
 """Preccesion frequency spins """
 def Omega(v, m1, m2, S1, S2, Ln): #S1, S2 are full spin vector while Ln is a unit vector
