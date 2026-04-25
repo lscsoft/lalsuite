@@ -19,11 +19,12 @@
 
 import os
 import sys
-import pytest
+
 import numpy as np
+import pytest
+from lalsimulation.nrfits import eval_nrfit
 
 import lal
-from lalsimulation.nrfits import eval_nrfit
 
 # -- regression data ---------------------
 
