@@ -31,20 +31,18 @@ Command-line interface to CBC injection identification code.
 """
 
 
-from optparse import OptionParser
 import sys
-
+from optparse import OptionParser
 
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
-from lalinspiral import inspinjfind
 
+from lalinspiral import inspinjfind
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 from lalinspiral.git_version import date as __date__
 from lalinspiral.git_version import version as __version__
-
 
 process_program_name = "lalapps_inspinjfind"
 
