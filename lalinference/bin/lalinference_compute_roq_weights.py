@@ -1,9 +1,11 @@
 ##python
-import numpy as np
+import os
 from math import ceil
 from optparse import OptionParser
-import os
+
+import numpy as np
 from scipy.linalg import solve_triangular
+
 import lal
 import lalsimulation
 
