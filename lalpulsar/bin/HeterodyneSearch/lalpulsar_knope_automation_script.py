@@ -13,20 +13,20 @@ automatically update the times in the configuration file.
 """
 
 # make print statements python 3-proof
-from __future__ import print_function, division
-
-import sys
-import os
-import ast
-import calendar
-import numpy as np
-import subprocess as sp
-import socket
-import smtplib
-import stat
+from __future__ import division, print_function
 
 import argparse
+import ast
+import calendar
+import os
+import smtplib
+import socket
+import stat
+import subprocess as sp
+import sys
 from configparser import RawConfigParser
+
+import numpy as np
 
 from lalpulsar import git_version
 
