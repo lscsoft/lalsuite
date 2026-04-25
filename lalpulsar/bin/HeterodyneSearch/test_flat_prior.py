@@ -5,11 +5,12 @@ to see if they match the expected flat prior across the range.
 """
 
 import os
-import sys
-import numpy as np
 import subprocess as sp
-import scipy.stats as ss
+import sys
+
 import h5py
+import numpy as np
+import scipy.stats as ss
 
 if os.environ["LALINFERENCE_ENABLED"] == "false":
     print("Skipping test: requires LALInference")
