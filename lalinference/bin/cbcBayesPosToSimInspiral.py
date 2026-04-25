@@ -27,11 +27,12 @@
 Populate a sim_inspiral table with random draws from an ASCII table.
 """
 from optparse import Option, OptionParser
-import numpy as np
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
+
 import igwn_ligolw.utils.process
 import matplotlib
+import numpy as np
+from igwn_ligolw import ligolw, lsctables
+
 matplotlib.use("Agg") # Needed to run on the CIT cluster
 from lalinference import bayespputils as bppu
 
