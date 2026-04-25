@@ -29,31 +29,31 @@ The KNOwn Pulsar pipelinE - lalpulsar_knope_result_page
 Script from creating results pages for pulsars from the known pulsar search
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function
 
 import argparse
-from configparser import ConfigParser
-import sys
 import ast
-import numpy as np
-import re
 import copy
-import os
-import fnmatch
-import ast
 import datetime
-import json
-from scipy import stats
-import h5py
+import fnmatch
 import itertools
+import json
+import os
+import re
+import sys
+from configparser import ConfigParser
 
+import h5py
 import matplotlib
+import numpy as np
+from scipy import stats
 
 matplotlib.use("Agg")
 
-from lalpulsar.pulsarpputils import *
-from lalpulsar.pulsarhtmlutils import *
 from lalinference.bayespputils import Posterior, PosteriorOneDPDF
+from lalpulsar.pulsarhtmlutils import *
+from lalpulsar.pulsarpputils import *
+
 from lalinference import git_version
 
 __author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
