@@ -31,10 +31,10 @@
 Populate a sim_inspiral table with random draws from an ASCII table.
 """
 from optparse import Option, OptionParser
-import numpy as np
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
+
 import igwn_ligolw.utils.process
+import numpy as np
+from igwn_ligolw import ligolw, lsctables
 
 # Create a datatype for all relavent fields to be filled in the sim_inspiral table
 sim_inspiral_dt = [
