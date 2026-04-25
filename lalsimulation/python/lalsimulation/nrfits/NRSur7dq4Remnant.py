@@ -6,12 +6,13 @@ Vijay Varma, 2019.
 """
 
 import numpy as np
-import lalsimulation as lalsim
-import lal
 
-from . import pn_spin_evolution_wrapper
-from . import quaternion_utils
+import lal
+import lalsimulation as lalsim
+
+from . import pn_spin_evolution_wrapper, quaternion_utils
 from .nrfits import NRFits
+
 
 class NRSur7dq4Remnant(NRFits):
     r"""
