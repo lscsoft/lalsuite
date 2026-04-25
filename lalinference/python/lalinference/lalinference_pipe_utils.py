@@ -2,28 +2,30 @@
 #flow DG Class definitions for LALInference Pipeline
 # (C) 2012 John Veitch, Vivien Raymond, Kiersten Ruisard, Kan Wang
 
+import ast
 import itertools
-from lal import pipeline
+import math
+import os
+import random
+import socket
+import sys
+import uuid
+from functools import reduce
+from glob import glob
+from itertools import permutations
+from math import ceil, floor, log, pow
+
 import igwn_segments as segments
+import numpy as np
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
-import os
-import socket
-import uuid
-import ast
-from math import floor,ceil,log,pow
-import sys
-import random
-from itertools import permutations
-import numpy as np
-from glob import glob
-import math
-from functools import reduce
+
+from lal import pipeline
+
 try:
     from configparser import NoOptionError, NoSectionError
 except ImportError:
     from ConfigParser import NoOptionError, NoSectionError
-import numpy
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -47,11 +49,11 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
         GPS period to analyse
     """
     try:
+        import gwpy
+        import gwpy.segments
+        import gwpy.timeseries
         from glue.lal import Cache
         from gwdatafind import find_urls
-        import gwpy
-        import gwpy.timeseries
-        import gwpy.segments
     except ImportError:
         print('Unable to import necessary modules. Querying science segments not possible. Please try installing gwdatafind and gwpy')
         raise
@@ -213,14 +215,14 @@ def create_events_from_coinc_and_psd(
     """
     output=[]
     import lal
-    from lalsimulation import SimInspiralChirpTimeBound, IMRPhenomDGetPeakFreq
+    from lalsimulation import IMRPhenomDGetPeakFreq, SimInspiralChirpTimeBound
     try:
         from gstlal import reference_psd
     except ImportError:
         reference_psd = None
     try:
-        from gwpy.frequencyseries import FrequencySeries
         from gwpy.astro import inspiral_range
+        from gwpy.frequencyseries import FrequencySeries
     except ImportError:
         inspiral_range = None
     coinc_events = lsctables.CoincInspiralTable.get_table(coinc_xml_obj)
@@ -319,8 +321,9 @@ def open_pipedown_database(database_filename,tmp_space):
     """
     if not os.access(database_filename,os.R_OK):
         raise Exception('Unable to open input file: %s'%(database_filename))
-    from igwn_ligolw import dbtables
     import sqlite3
+
+    from igwn_ligolw import dbtables
     working_filename=dbtables.get_connection_filename(database_filename,tmp_path=tmp_space)
     connection = sqlite3.connect(working_filename)
     if tmp_space:
@@ -1181,7 +1184,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Check whether to add spin evolution job
     def spin_evol_checks(self):
         if self.config.has_section('spin_evol'):
-            from lalsimulation import SimInspiralGetApproximantFromString, SimInspiralGetSpinSupportFromApproximant
+            from lalsimulation import (
+                SimInspiralGetApproximantFromString,
+                SimInspiralGetSpinSupportFromApproximant,
+            )
 
             tidal_run_tests = self.config.has_option('engine', 'tidal') or self.config.has_option('engine', 'tidalT')
 
@@ -2258,7 +2264,7 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
         before generating DAG.
         """
         from shutil import copyfile
-        from subprocess import check_output, CalledProcessError
+        from subprocess import CalledProcessError, check_output
 
         try:
             res = check_output(['grid-proxy-info','-path'])
