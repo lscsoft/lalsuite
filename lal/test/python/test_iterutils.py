@@ -2,8 +2,8 @@ import doctest
 import functools
 import math
 import sys
-from lal import iterutils
 
+from lal import iterutils
 
 #
 # check examples in documentation
