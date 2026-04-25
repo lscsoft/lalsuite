@@ -209,9 +209,14 @@ const char * const lalSimNeutronStarEOSNames[111] = {
  */
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
 {
-    eos->free(eos);
+    if (eos == NULL)
+        return;
+
+    if (eos->free != NULL)
+        eos->free(eos);
     return;
 }
+
 
 /**
  * @brief Frees the memory associated with a pointer to an EOSMultiParts structure.
@@ -219,7 +224,11 @@ void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
  */
 void XLALDestroySimNeutronStarEOSMultiParts(EOSMultiParts * eos)
 {
-    eos->free(eos);
+    if (eos == NULL)
+        return;
+
+    if (eos->free != NULL)
+        eos->free(eos);
     return;
 }
 
