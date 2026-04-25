@@ -25,8 +25,11 @@ XLALSimInspiralApproximantAcceptTestGRParams()
 """
 
 import sys
+
 import pytest
+
 import lalsimulation as lalsim
+
 
 # Function to get the name of a function
 def get_name(f):
