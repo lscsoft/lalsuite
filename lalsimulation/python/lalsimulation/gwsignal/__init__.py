@@ -17,5 +17,6 @@ from .core.waveform import (  # noqa: F401
     to_gwpy_Series,
 )
 from .models import *  # noqa: F401
+
 # Cleanup
 # del cmd, bash, p, dir_list, status, output, this_file, basename, dirname, isdir, realpath
