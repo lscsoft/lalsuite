@@ -20,8 +20,10 @@ Simple test to see if SEOBNRv5_ROM and SEOBNRv5HM_ROM have changed
 Adapted from test_SEOBNRv4HM_ROM.py.
 """
 
-import sys, os
+import os
+import sys
 import warnings
+
 try:
     from pathlib import Path
 except ImportError as exc:
@@ -29,10 +31,11 @@ except ImportError as exc:
     warnings.warn(str(exc))
     sys.exit(77)
 
+import numpy as np
 import pytest
+
 import lal
 import lalsimulation
-import numpy as np
 
 # -- utility functions ---------------------
 
