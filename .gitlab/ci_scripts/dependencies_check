@@ -7,8 +7,8 @@ __copyright__ = "Copyright (C) 2022 Karl Wette"
 
 import logging
 import os
-import sys
 import re
+import sys
 from functools import lru_cache as memoize
 from pathlib import Path
 from subprocess import (
@@ -18,9 +18,7 @@ from subprocess import (
 )
 
 import yaml
-
 from debian.deb822 import Deb822, PkgRelation
-
 from pyrpm.spec import Spec, replace_macros
 
 # configure logging
