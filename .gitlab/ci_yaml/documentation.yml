@@ -24,7 +24,7 @@ doxygen-doc:
       if make -j${CPU_COUNT} install-html; then
           mv _inst/share/doc/lalsuite/ html/
       else
-          for path in $(find -name '*.filtered'); do
+          for path in $(find -name '*.doxygen_filtered.txt'); do
               basedir=doxygen_filtered/$(dirname ${path} | sed 's|/doxygen/in/|/|')
               mkdir -p ${basedir}
               mv ${path} ${basedir}
