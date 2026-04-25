@@ -18,11 +18,13 @@
 Tools to estimate Nstar and related functions
 
 """
-from __future__ import division, absolute_import, print_function
 
-import pprint
+from __future__ import absolute_import, division, print_function
+
 import itertools
 import logging
+import pprint
+
 import numpy as np
 
 try:
