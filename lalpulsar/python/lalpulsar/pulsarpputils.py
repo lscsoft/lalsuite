@@ -251,7 +251,7 @@ def p_to_f(p, pd, pdd=None):
     """
     f = 1.0 / p
     fd = -pd / (p * p)
-    if pdd == None:
+    if pdd is None:
         return [f, fd]
     else:
         if pdd == 0.0:
@@ -268,7 +268,7 @@ def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
        Calculate the period or frequency errors and
        the pdot or fdot errors from the opposite one.
     """
-    if pdorfd == None:
+    if pdorfd is None:
         return [1.0 / porf, porferr / porf**2.0]
     else:
         forperr = porferr / porf**2.0
@@ -860,7 +860,7 @@ def plot_posterior_hist(
     if parfile:
         parval = parfile[param.upper()]
 
-    if ifos == None:
+    if ifos is None:
         # default to just output colour for H1
         ifos = ["H1"]
 
@@ -1374,7 +1374,7 @@ def plot_posterior_hist2D(
         parval1 = parfile[params[0].upper()]
         parval2 = parfile[params[1].upper()]
 
-    if ifos == None:
+    if ifos is None:
         ifos = ["H1"]
 
     for idx, ifo in enumerate(ifos):
@@ -1835,7 +1835,7 @@ def plot_limits_hist(
 
             # remove any None's
             for i, val in enumerate(theselims):
-                if val == None:
+                if val is None:
                     del theselims[i]
 
             loglims = np.log10(theselims)
@@ -1857,7 +1857,7 @@ def plot_limits_hist(
 
         # remove any None's
         for i, val in enumerate(theselims):
-            if val == None:
+            if val is None:
                 del theselims[i]
 
         loglims = np.log10(theselims)
@@ -3309,7 +3309,7 @@ def pulsar_posterior_grid(
     from scipy.special import gammaln
 
     # set the likelihood to either Student's or Gaussian
-    if sigmas == None:
+    if sigmas is None:
         liketype = "studentst"
     else:
         liketype = "gaussian"
@@ -3347,7 +3347,7 @@ def pulsar_posterior_grid(
             return
 
         # checks on sigmas
-        if sigmas != None:
+        if sigmas is not None:
             if det not in sigmas:
                 print(
                     "No sigma time series given for detector %s" % det, file=sys.stderr
@@ -3362,7 +3362,7 @@ def pulsar_posterior_grid(
                 file=sys.stderr,
             )
 
-        if sigmas != None:
+        if sigmas is not None:
             if len(ts[det]) != len(sigmas[det]):
                 print(
                     "Length of times stamps array and sigma array are inconsistent for %s"
