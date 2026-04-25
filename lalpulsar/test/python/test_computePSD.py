@@ -16,11 +16,13 @@
 
 import os
 import sys
+
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose
+
 import lal
 import lalpulsar
-import pytest
 
 # load Earth and Sun ephemerides
 earth_ephem_file = os.path.join(
