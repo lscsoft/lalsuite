@@ -25,8 +25,8 @@ import logging
 import numpy as np
 
 from . import basis_functions as bf
-from . import gte_and_other_methods as gom
 from . import errors
+from . import gte_and_other_methods as gom
 
 
 # Returns sample points where a 'ppint' number of points are evenly spaced between each knot
