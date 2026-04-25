@@ -13,6 +13,7 @@ select = [
     "EXE",
     # pyflakes
     "F401",
+    "F631",
     "F632",
     # pycodestyle warnings
     "W2",
