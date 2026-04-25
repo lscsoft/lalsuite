@@ -26,18 +26,14 @@
 #
 
 
-from optparse import OptionParser
-import sys
 import sqlite3
-
+import sys
+from optparse import OptionParser
 
 from igwn_ligolw import dbtables
 from lal.utils import CacheEntry
-from lalburst import git_version
-from lalburst import burca_tailor
-from lalburst import calc_likelihood
-from lalburst import SnglBurstUtils
 
+from lalburst import SnglBurstUtils, burca_tailor, calc_likelihood, git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id
