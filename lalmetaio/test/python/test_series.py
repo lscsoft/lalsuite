@@ -22,10 +22,9 @@ import sys
 
 import igwn_ligolw.ligolw
 import igwn_ligolw.utils
+import lalmetaio.series
 import numpy as np
 import pytest
-
-import lalmetaio.series
 
 
 @pytest.mark.parametrize(
