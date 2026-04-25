@@ -1,11 +1,14 @@
+import warnings
 from operator import xor
-import lal
-import lalsimulation as lalsim
+
 import numpy as np
 from astropy import units as u
 
+import lal
+import lalsimulation as lalsim
+
 from . import parameter_conventions as pc
-import warnings
+
 
 def from_lal_value(val):
     """
