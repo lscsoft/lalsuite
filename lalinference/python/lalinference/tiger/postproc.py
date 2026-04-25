@@ -672,7 +672,7 @@ class TigerRun:
 				p = Popen(command, stdout=PIPE, stderr=PIPE,shell=True)
 				self.bayes.extend(loadtxt(p.stdout, usecols=[0]))
 			self.bayes = reshape(self.bayes, (self.nsources,len(self.subhyp)))
-			savetxt('test.dat',self.bayes);
+			savetxt('test.dat',self.bayes)
 		stdout.write("... pulling Bayes factors: %s\t%s - %d x %d dimension\n" % (self.cluster,self.directory, shape(self.bayes)[0],shape(self.bayes)[1]))
 
 	def pullsnr(self):
