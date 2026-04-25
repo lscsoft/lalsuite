@@ -14,12 +14,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os
-import lalpulsar
 import glob
+import os
 import subprocess
+
 import numpy as np
 from numpy.testing import assert_allclose
+
+import lalpulsar
 
 # run this test with "make check TESTS=testWriteSFTsfromSFDBs"
 # everything will be automatically put into testWriteSFTsfromSFDBs.testdir
