@@ -5951,7 +5951,7 @@ class PEOutputParser(object):
 
         [headerfile,delimiter]=info
 
-        if headerfile==None:
+        if headerfile is None:
             formatstr=infile.readline().lstrip()
         else:
             hf=open(headerfile,'r')
