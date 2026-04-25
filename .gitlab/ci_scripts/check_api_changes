@@ -5,16 +5,17 @@
 __author__ = "Karl Wette"
 __copyright__ = "Copyright (C) 2022 Karl Wette"
 
-import sys
-import json
-import re
 import argparse
+import json
 import logging
-from tempfile import TemporaryDirectory
+import re
+import sys
 from pathlib import Path
-from subprocess import run, PIPE, DEVNULL
+from subprocess import DEVNULL, PIPE, run
+from tempfile import TemporaryDirectory
 from xml.etree.ElementTree import parse
-from py_api_dumper import APIDump, APIDiff
+
+from py_api_dumper import APIDiff, APIDump
 
 # Configure logging
 LOGGER = logging.getLogger(__name__.rsplit(".", 1)[-1])
