@@ -6,7 +6,7 @@ from optparse import OptionParser
 
 import matplotlib
 
-matplotlib.use('Agg')
+matplotlib.use("Agg")
 import matplotlib.pyplot as pp
 import numpy as np
 
@@ -16,49 +16,52 @@ except ImportError:
     # FIXME: Remove this once we require scipy >=1.6.0.
     from scipy.integrate import trapz as trapezoid
 
-matplotlib.rcParams['text.usetex'] = True
+matplotlib.rcParams["text.usetex"] = True
+
 
 def extract_temp(filename):
     """Extracts the PTMCMC temperature from the header lines of the
     given file."""
-    with open(filename, 'r') as inp:
+    with open(filename, "r") as inp:
         for line in inp:
-            line=line.lstrip().split()
+            line = line.lstrip().split()
             try:
-                i=line.index('Tchain')
+                i = line.index("Tchain")
                 #####################################################
                 # WARNING: hardcoded off-by-one adjustment to account
                 # for 'null likelihood' header name that splits into
                 # two list elements
                 #####################################################
-                return float(inp.next().split()[i-1])
+                return float(inp.next().split()[i - 1])
             except ValueError:
                 pass
 
-        raise ValueError('extract_temp: did not find header line with \'Tchain\'')
+        raise ValueError("extract_temp: did not find header line with 'Tchain'")
+
 
 def get_mean_logl(filename):
     """Returns the mean value of log(L) from the given filename,
     excluding the first 50% of samples as burn-in."""
-    with open(filename, 'r') as inp:
-        skip=0
+    with open(filename, "r") as inp:
+        skip = 0
         for line in inp:
-            line=line.lstrip().split()
-            skip+=1
+            line = line.lstrip().split()
+            skip += 1
             try:
-                line.index('cycle')
+                line.index("cycle")
                 break
             except ValueError:
                 pass
 
-    col = line.index('logl')
+    col = line.index("logl")
 
-    data=np.loadtxt(filename, skiprows=skip, usecols=(col,))
-    N=data.shape[0]
+    data = np.loadtxt(filename, skiprows=skip, usecols=(col,))
+    N = data.shape[0]
 
-    return np.mean(data[N/2:])
+    return np.mean(data[N / 2 :])
 
-if __name__=='__main__':
+
+if __name__ == "__main__":
     # Custom usage and help message
     usage = """%s [-h] [--plotfile FILE] [--evfile FILE] OUTPUT_FILE [OUTPUT_FILE ...]
 
@@ -68,16 +71,23 @@ positional arguments:
   OUTPUT_FILE      PTMCMC output files""" % (os.path.basename(sys.argv[0]))
 
     parser = OptionParser(usage=usage)
-    parser.add_option('--plotfile', metavar='FILE', default='evidence-integrand.pdf', help='plot output file')
-    parser.add_option('--evfile', metavar='FILE', default='evidence.dat', help='evidence output file')
+    parser.add_option(
+        "--plotfile",
+        metavar="FILE",
+        default="evidence-integrand.pdf",
+        help="plot output file",
+    )
+    parser.add_option(
+        "--evfile", metavar="FILE", default="evidence.dat", help="evidence output file"
+    )
 
-    (options, args) = parser.parse_args()
+    options, args = parser.parse_args()
 
     # Make positional arguments required
-    if len(args)==0:
-        parser.error('Positional filename argument(s) are required')
+    if len(args) == 0:
+        parser.error("Positional filename argument(s) are required")
 
-    betas = np.array([1.0/extract_temp(f) for f in args])
+    betas = np.array([1.0 / extract_temp(f) for f in args])
     logls = np.array([get_mean_logl(f) for f in args])
 
     inds = np.argsort(betas)[::-1]
@@ -99,12 +109,12 @@ positional arguments:
 
     devidence = np.abs(evidence - evidence2)
 
-    pp.plot(betas, betas*logls)
-    pp.xscale('log')
-    pp.xlabel(r'$\beta$')
-    pp.ylabel(r'$\beta \left\langle \ln \mathcal{L} \right\rangle$')
+    pp.plot(betas, betas * logls)
+    pp.xscale("log")
+    pp.xlabel(r"$\beta$")
+    pp.ylabel(r"$\beta \left\langle \ln \mathcal{L} \right\rangle$")
     pp.savefig(options.plotfile)
 
-    with open(options.evfile, 'w') as out:
-        out.write('# ln-Z delta-ln-Z\n')
-        out.write(str(evidence) + ' ' + str(devidence))
+    with open(options.evfile, "w") as out:
+        out.write("# ln-Z delta-ln-Z\n")
+        out.write(str(evidence) + " " + str(devidence))
