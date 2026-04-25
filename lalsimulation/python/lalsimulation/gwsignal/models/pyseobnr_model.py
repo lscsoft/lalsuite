@@ -1,7 +1,9 @@
 try:
     import pyseobnr.generate_waveform as pyseob_wf
 except ImportError:
-    print("The pyseobnr package has failed to load, you will not be able to employ SEOBNRv5 approximants.")
+    print(
+        "The pyseobnr package has failed to load, you will not be able to employ SEOBNRv5 approximants."
+    )
 
 from astropy.units import Mpc
 from gwpy.frequencyseries import FrequencySeries
@@ -14,7 +16,6 @@ from ..core.waveform import CompactBinaryCoalescenceGenerator
 
 
 class SEOBNRv5EHM(CompactBinaryCoalescenceGenerator):
-
     """
     Implements a wrapper for SEOBNRv5EHM in the pyseob package
 
@@ -90,7 +91,7 @@ class SEOBNRv5EHM(CompactBinaryCoalescenceGenerator):
         # Make sure to update the waveform dictionary with extra parameters
         self.waveform_dict.update(**parameters_extra)
 
-        #print(f"waveform_dict = {self.waveform_dict}")
+        # print(f"waveform_dict = {self.waveform_dict}")
         return self.seobnr.GenerateWaveform(self.waveform_dict)
 
     def _generate_modes(self, **parameters):
@@ -102,7 +103,7 @@ class SEOBNRv5EHM(CompactBinaryCoalescenceGenerator):
 
         hlm_dict = {}
         for k, v in hlm.items():
-            hlm_lal = TimeSeries(v, times=times,  name=k)
+            hlm_lal = TimeSeries(v, times=times, name=k)
             hlm_dict[k] = hlm_lal
 
         return hlm_dict
@@ -156,7 +157,6 @@ class SEOBNRv5EHM(CompactBinaryCoalescenceGenerator):
 
 
 class SEOBNRv5HM(CompactBinaryCoalescenceGenerator):
-
     """
     Implements a wrapper for SEOBNRv5 in the pyseob package
 
@@ -250,7 +250,7 @@ class SEOBNRv5HM(CompactBinaryCoalescenceGenerator):
 
         hlm_dict = {}
         for k, v in hlm.items():
-            hlm_lal = TimeSeries(v, times=times,  name=k)
+            hlm_lal = TimeSeries(v, times=times, name=k)
             hlm_dict[k] = hlm_lal
 
         return hlm_dict
@@ -304,7 +304,6 @@ class SEOBNRv5HM(CompactBinaryCoalescenceGenerator):
 
 
 class SEOBNRv5PHM(CompactBinaryCoalescenceGenerator):
-
     """
     Implements a wrapper for SEOBNRv5 in the pyseob package
 
@@ -400,7 +399,7 @@ class SEOBNRv5PHM(CompactBinaryCoalescenceGenerator):
 
         hlm_dict = {}
         for k, v in hlm.items():
-            hlm_lal = TimeSeries(v, times=times,  name=k)
+            hlm_lal = TimeSeries(v, times=times, name=k)
             hlm_dict[k] = hlm_lal
 
         return hlm_dict
