@@ -21,9 +21,10 @@
 
 
 from .. import git_version
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
 __date__ = git_version.date
 
-from .series import *
 from .cache import *
+from .series import *
