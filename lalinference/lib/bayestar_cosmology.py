@@ -16,11 +16,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 from __future__ import print_function
+
 """
 Generate Chebyshev coefficients for BAYESTAR uniform-in-comoving-volume prior.
 """
 import argparse
 import os
+
 import astropy.cosmology
 import astropy.units as u
 import numpy as np
