@@ -14,8 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Tests for lalframe.frread
-"""
+"""Tests for lalframe.frread"""
 
 import os
 import sys
@@ -24,6 +23,7 @@ try:
     from pathlib import Path
 except ImportError as exc:  # probably macports
     import warnings
+
     warnings.warn(str(exc))
     sys.exit(77)
 
@@ -41,10 +41,16 @@ else:
     Cache.entry_class = CacheEntry
 
 # find test GWF file
-TEST_PATH = Path(os.getenv(
-    "LAL_TEST_SRCDIR",
-    Path(__file__).parent,
-)).absolute().parent
+TEST_PATH = (
+    Path(
+        os.getenv(
+            "LAL_TEST_SRCDIR",
+            Path(__file__).parent,
+        )
+    )
+    .absolute()
+    .parent
+)
 TEST_GWF = TEST_PATH / "F-TEST-600000060-60.gwf"
 
 # parametrize sources
@@ -67,17 +73,20 @@ def test_read_timeseries(source):
     assert ts.deltaT == 6.103515625e-05
 
 
-@pytest.mark.parametrize("instart, induration, outstart, outduration", [
-    (None, None, 600000060, 60),
-    (600000061, None, 600000061, 59),
-    (None, 30, 600000060, 30),
-    (600000061, 1, 600000061, 1),
-])
+@pytest.mark.parametrize(
+    "instart, induration, outstart, outduration",
+    [
+        (None, None, 600000060, 60),
+        (600000061, None, 600000061, 59),
+        (None, 30, 600000060, 30),
+        (600000061, 1, 600000061, 1),
+    ],
+)
 def test_read_timeseries_start_duration(
-        instart,
-        induration,
-        outstart,
-        outduration,
+    instart,
+    induration,
+    outstart,
+    outduration,
 ):
     ts = frread.read_timeseries(
         str(TEST_GWF),
@@ -89,17 +98,19 @@ def test_read_timeseries_start_duration(
     assert ts.data.length * ts.deltaT == outduration
 
 
-@pytest.mark.parametrize("inputs, message", [
-    (("does-not-exist.gwf", "channel"),
-     "Internal function call failed: I/O error"),
-    ((str(TEST_GWF), "bad-channel"), "Wrong name"),
-])
+@pytest.mark.parametrize(
+    "inputs, message",
+    [
+        (("does-not-exist.gwf", "channel"), "Internal function call failed: I/O error"),
+        ((str(TEST_GWF), "bad-channel"), "Wrong name"),
+    ],
+)
 def test_read_timeseries_error(inputs, message):
     with pytest.raises(RuntimeError) as exc:
         frread.read_timeseries(*inputs)
     assert str(exc.value) == message
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-frread.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
