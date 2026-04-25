@@ -36,7 +36,8 @@ package
 # ::str_to_gps.
 #
 # \author Duncan Macleod <duncan.macleod@ligo.org>
-#@{
+
+##@{
 
 import datetime as _datetime
 from decimal import Decimal
