@@ -5,10 +5,10 @@
 __author__ = "Karl Wette"
 __copyright__ = "Copyright (C) 2024 Karl Wette"
 
-import sys
+import json
 import re
 import subprocess
-import json
+import sys
 
 description = sys.argv[1]
 
