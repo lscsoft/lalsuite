@@ -4,7 +4,9 @@ has not been changed in a backward-incompatible way
 by reordering the Approximant enum.
 """
 import sys
+
 import pytest
+
 import lalsimulation as lalsim
 
 known_approximants = {
