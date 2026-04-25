@@ -28,6 +28,7 @@ try:
     from pathlib import Path
 except ImportError as exc:
     import warnings
+
     warnings.warn(str(exc))
     sys.exit(77)
 
@@ -39,13 +40,16 @@ import lalsimulation
 
 # -- utility functions ---------------------
 
+
 def get_amp_phase(h):
     amp = np.abs(h)
     phase = np.unwrap(np.angle(h))
     return amp, phase
 
+
 def sum_sqr_diff(x, y):
-    return np.sqrt( np.sum( (x-y)**2 )  )
+    return np.sqrt(np.sum((x - y) ** 2))
+
 
 def gen_test_data():
     """
@@ -53,33 +57,33 @@ def gen_test_data():
     and compare to expected value
     """
 
-    common_pars=dict(
-    m1=50*lal.MSUN_SI,
-    m2=30*lal.MSUN_SI,
-    S1x=0,
-    S1y=0,
-    S1z=-0.45,
-    S2x=0,
-    S2y=0,
-    S2z=0.98,
-    distance=1,
-    inclination=0.,
-    phiRef=0.,
-    longAscNodes=0.,
-    eccentricity=0.,
-    meanPerAno=0.,
-    deltaF=1./4.,
-    f_min=30.,
-    f_max=512.,
-    f_ref=30.,
-    LALpars=None,
-    approximant=lalsimulation.SEOBNRv4HM_ROM
+    common_pars = dict(
+        m1=50 * lal.MSUN_SI,
+        m2=30 * lal.MSUN_SI,
+        S1x=0,
+        S1y=0,
+        S1z=-0.45,
+        S2x=0,
+        S2y=0,
+        S2z=0.98,
+        distance=1,
+        inclination=0.0,
+        phiRef=0.0,
+        longAscNodes=0.0,
+        eccentricity=0.0,
+        meanPerAno=0.0,
+        deltaF=1.0 / 4.0,
+        f_min=30.0,
+        f_max=512.0,
+        f_ref=30.0,
+        LALpars=None,
+        approximant=lalsimulation.SEOBNRv4HM_ROM,
     )
 
     pars1 = common_pars.copy()
 
     pars2 = common_pars.copy()
-    pars2.update({"m2":20.*lal.MSUN_SI})
+    pars2.update({"m2": 20.0 * lal.MSUN_SI})
 
     hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(**pars1)
     hp2, hc2 = lalsimulation.SimInspiralChooseFDWaveform(**pars2)
@@ -100,8 +104,8 @@ def gen_test_data():
     return hp_amp_diff, hp_phase_diff, hc_amp_diff, hc_phase_diff
 
 
-
 # -- test functions ---------------------
+
 
 @pytest.mark.skipif(
     "LAL_DATA_PATH" not in os.environ,
@@ -118,26 +122,29 @@ def test_SEOBNRv4HM_ROM():
 
     `expected_result  =  np.array(gen_test_data())`
     """
-    LAL_DATA_PATH = os.environ['LAL_DATA_PATH']
-    for D in LAL_DATA_PATH.split(':'):
+    LAL_DATA_PATH = os.environ["LAL_DATA_PATH"]
+    for D in LAL_DATA_PATH.split(":"):
         path = Path(D) / "SEOBNRv4HMROM_v1.0.hdf5"
         if path.is_file():
             have_ROM_data_file = True
             break
     else:
         pytest.skip(
-            "SEOBNRv4HMROM_v1.0.hdf5 not found in $LAL_DATA_PATH:{}".format(LAL_DATA_PATH),
+            "SEOBNRv4HMROM_v1.0.hdf5 not found in $LAL_DATA_PATH:{}".format(
+                LAL_DATA_PATH
+            ),
         )
 
-    expected_result = np.array([1443.7534142,   59.1517559, 1443.7534142,  231.6504798])
-    new_result  =  np.array(gen_test_data())
-    np.testing.assert_almost_equal(new_result, expected_result, 7, "SEOBNRv4HM_ROM test failed")
-
+    expected_result = np.array([1443.7534142, 59.1517559, 1443.7534142, 231.6504798])
+    new_result = np.array(gen_test_data())
+    np.testing.assert_almost_equal(
+        new_result, expected_result, 7, "SEOBNRv4HM_ROM test failed"
+    )
 
 
 # -- run the tests ------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if "LAL_DATA_PATH" not in os.environ:
         warnings.warn("LAL_DATA_PATH not found, cannot execute tests")
         sys.exit(77)
