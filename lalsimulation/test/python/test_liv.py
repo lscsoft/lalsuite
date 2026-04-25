@@ -13,8 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
-"""Simple test to see if the LIV parameters can be read and inserted correctly
-"""
+"""Simple test to see if the LIV parameters can be read and inserted correctly"""
 
 import sys
 
@@ -26,15 +25,19 @@ import lalsimulation
 
 # -- utility functions ---------------------
 
+
 def read_liv_params(LALparams):
     """
     Reads LIV parameters
     """
 
-    logLeff = lalsimulation.SimInspiralWaveformParamsLookupNonGRLIVLogLambdaEff(LALparams)
+    logLeff = lalsimulation.SimInspiralWaveformParamsLookupNonGRLIVLogLambdaEff(
+        LALparams
+    )
     signOfA = lalsimulation.SimInspiralWaveformParamsLookupNonGRLIVASign(LALparams)
     alpha = lalsimulation.SimInspiralWaveformParamsLookupNonGRLIVAlpha(LALparams)
     return logLeff, signOfA, alpha
+
 
 def set_liv_pars(LALparams, logLeff, Asign, alpha):
     """
@@ -45,10 +48,13 @@ def set_liv_pars(LALparams, logLeff, Asign, alpha):
     - alpha: Exponent of momentum in dispersion relation, between 0 and 4.
     """
 
-    lalsimulation.SimInspiralWaveformParamsInsertNonGRLIVLogLambdaEff(LALparams, logLeff)
+    lalsimulation.SimInspiralWaveformParamsInsertNonGRLIVLogLambdaEff(
+        LALparams, logLeff
+    )
     lalsimulation.SimInspiralWaveformParamsInsertNonGRLIVASign(LALparams, Asign)
     lalsimulation.SimInspiralWaveformParamsInsertNonGRLIVAlpha(LALparams, alpha)
     return None
+
 
 def is_liv_enabled_by_default(LALparams):
     """
@@ -56,6 +62,7 @@ def is_liv_enabled_by_default(LALparams):
     """
 
     return lalsimulation.SimInspiralWaveformParamsLookupEnableLIV(LALparams)
+
 
 def enable_liv(LALparams):
     """
@@ -66,7 +73,9 @@ def enable_liv(LALparams):
     lalsimulation.SimInspiralWaveformParamsInsertEnableLIV(LALparams, 1)
     return lalsimulation.SimInspiralWaveformParamsLookupEnableLIV(LALparams)
 
+
 # -- test functions ---------------------
+
 
 def test_correct_liv_pars():
     """
@@ -79,12 +88,17 @@ def test_correct_liv_pars():
     LALpars = lal.CreateDict()
     expected_result = np.array([100.0, 1.0, 0.0])
     actual_result = np.array(read_liv_params(LALpars))
-    np.testing.assert_almost_equal(actual_result, expected_result, 7, "Default LIV values are not set correctly")
+    np.testing.assert_almost_equal(
+        actual_result, expected_result, 7, "Default LIV values are not set correctly"
+    )
     ## Checking if parameters can be inserted properly
-    set_liv_pars(LALpars, 44.,-1.,1.5)
-    expected_result = np.array([44., -1., 1.5])
+    set_liv_pars(LALpars, 44.0, -1.0, 1.5)
+    expected_result = np.array([44.0, -1.0, 1.5])
     actual_result = np.array(read_liv_params(LALpars))
-    np.testing.assert_almost_equal(actual_result, expected_result, 7, "LIV values are not inserted correctly")
+    np.testing.assert_almost_equal(
+        actual_result, expected_result, 7, "LIV values are not inserted correctly"
+    )
+
 
 def test_liv_flag_disabled_by_default():
     """
@@ -96,14 +110,19 @@ def test_liv_flag_disabled_by_default():
     LALpars = lal.CreateDict()
     expected_result = 0
     actual_result = is_liv_enabled_by_default(LALpars)
-    np.testing.assert_approx_equal(actual_result, expected_result, 7, "Incorrect setting of LIV flag by default")
+    np.testing.assert_approx_equal(
+        actual_result, expected_result, 7, "Incorrect setting of LIV flag by default"
+    )
     ## Now check if it can be inserted correctly
     expected_result = 1
     actual_result = enable_liv(LALpars)
-    np.testing.assert_approx_equal(actual_result, expected_result, 7, "LIV flag not inserted correctly")
+    np.testing.assert_approx_equal(
+        actual_result, expected_result, 7, "LIV flag not inserted correctly"
+    )
+
 
 # -- run the tests ------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-liv.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
