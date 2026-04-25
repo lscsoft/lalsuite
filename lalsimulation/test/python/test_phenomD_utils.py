@@ -19,7 +19,9 @@
 """
 
 import sys
+
 import pytest
+
 import lal
 import lalsimulation
 
