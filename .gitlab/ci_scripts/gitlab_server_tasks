@@ -5,16 +5,17 @@
 __author__ = "Karl Wette"
 __copyright__ = "Copyright (C) 2025 Karl Wette"
 
+import argparse
+import logging
 import os
 import sys
 import time
-import argparse
-import logging
-import gitlab
+from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
 from zipfile import ZipFile
-from io import BytesIO
+
+import gitlab
 from natsort import natsorted
 
 # configure logging
