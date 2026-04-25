@@ -16,9 +16,7 @@
 
 ## \defgroup lal_py_utils Utilities
 ## \ingroup lal_python
-"""This module provides utilities for generating LAL objects in python
-"""
-
+"""This module provides utilities for generating LAL objects in python"""
 
 from .. import git_version
 
