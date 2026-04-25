@@ -279,23 +279,25 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
 
 /**
  * @brief Creates a neutron star family structure (FamMultiParts) which can accomodate
- * multiple branches for a given EOSMultiParts equation of state structure.
+ * multiple branches for a given EOSMultiParts equation of state structure and minimum
+ * central pressure.
  * @details
  * The neutron star family contains the astrophysical parameter solution for a
  * given equation of state. When the structure is created, it solves the TOV+Love number
  * ODEs with XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance if min_fam = 0, or with
  * XLALSimNeutronStarTOVODEMiniIntegrate if min_fam=1. The minimum central pressure
- * to solve the neutron star astrophysical parameters is min(Pc) = exp(75.5) Pa.
+ * is an input from the user.
  * The maximum central pressure is that defined as the largest pressure of the equation of state.
  * The neutron star family can accomodate multiple branches and provides interpolating
  * function for astrophysical quantities only for stable branches (continuously increasing
  * mass in a sequence).
  * @param eos Pointer to the Equation of State structure.
  * @param min_fam Flag to choose to construct the neutron star family with only the minimum
+ * @param logPcmin Logarithm of the minimum central pressure
  * of astrophysical parameters, M, R and k2 (using XLALSimNeutronStarTOVODEMiniIntegrate).
  * @return A pointer to the neutron star family structure.
  */
-FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fam){
+FamMultiParts * XLALCreateSimNeutronStarFamilyPTWithPcmin(EOSMultiParts * eos, int min_fam, double logPcmin){
 
     if(min_fam!=0 && min_fam!=1) XLAL_ERROR_NULL(XLAL_EDOM);
 
@@ -304,7 +306,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
 
     int ndat = 100;
     int min_interp_points = 5; // Minimum number of points required for all gls interpolators
-    double logpmin = 75.5; // pmin = 6.16e32
+    double logpmin = logPcmin;
     fam->pmin = exp(logpmin);
     fam->pmax = XLALSimNeutronStarEOSMultiPartsMaxPressure(eos);
     double logpmax = log(fam->pmax);
@@ -511,6 +513,32 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fa
     LALFree(k2dat);
     LALFree(k3dat);
     LALFree(k4dat);
+
+    return fam;
+}
+
+/**
+ * @brief Creates a neutron star family structure (FamMultiParts) which can accomodate
+ * multiple branches for a given EOSMultiParts equation of state structure.
+ * @details
+ * The neutron star family contains the astrophysical parameter solution for a
+ * given equation of state. When the structure is created, it solves the TOV+Love number
+ * ODEs with XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance if min_fam = 0, or with
+ * XLALSimNeutronStarTOVODEMiniIntegrate if min_fam=1. The minimum central pressure
+ * to solve the neutron star astrophysical parameters is min(Pc) = exp(75.5) Pa.
+ * The maximum central pressure is that defined as the largest pressure of the equation of state.
+ * The neutron star family can accomodate multiple branches and provides interpolating
+ * function for astrophysical quantities only for stable branches (continuously increasing
+ * mass in a sequence).
+ * @param eos Pointer to the Equation of State structure.
+ * @param min_fam Flag to choose to construct the neutron star family with only the minimum
+ * of astrophysical parameters, M, R and k2 (using XLALSimNeutronStarTOVODEMiniIntegrate).
+ * @return A pointer to the neutron star family structure.
+ */
+FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fam){
+
+    double logpmin = 75.5; // pmin = 6.16e32
+    FamMultiParts * fam = XLALCreateSimNeutronStarFamilyPTWithPcmin(eos, min_fam, logpmin);
 
     return fam;
 }

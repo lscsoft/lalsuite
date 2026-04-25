@@ -291,6 +291,7 @@ void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam);
 void XLALDestroySimNeutronStarMultiBranchFamily(FamMultiParts * fam);
 LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(LALSimNeutronStarEOS * eos);
 FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fam);
+FamMultiParts * XLALCreateSimNeutronStarFamilyPTWithPcmin(EOSMultiParts * eos, int min_fam, double logPcmin);
 
 int XLALSimNeutronStarFamNumberOfBranches(FamMultiParts *fam);
 double XLALSimNeutronStarFamMassTOVLimit(FamMultiParts *fam);
