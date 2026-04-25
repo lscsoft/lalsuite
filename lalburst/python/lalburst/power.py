@@ -33,16 +33,15 @@ import os
 import sys
 import time
 
-
 import igwn_segments as segments
 from igwn_segments import utils as segmentsUtils
-import lal
-from lal import iterutils
-from lal import pipeline
 from lal.utils import CacheEntry
-import lalburst
-from . import cafe
 
+import lal
+import lalburst
+from lal import iterutils, pipeline
+
+from . import cafe
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __date__ = "$Date$"
