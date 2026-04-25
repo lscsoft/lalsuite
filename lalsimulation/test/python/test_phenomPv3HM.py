@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
-"""Simple test to see if PhenomPv3HM has changed
-"""
+"""Simple test to see if PhenomPv3HM has changed"""
 
 import sys
 
@@ -28,13 +27,16 @@ import lalsimulation
 
 # -- utility functions ---------------------
 
+
 def get_amp_phase(h):
     amp = np.abs(h)
     phase = np.unwrap(np.angle(h))
     return amp, phase
 
+
 def sum_sqr_diff(x, y):
-    return np.sqrt( np.sum( (x-y)**2 )  )
+    return np.sqrt(np.sum((x - y) ** 2))
+
 
 def gen_test_data():
     """
@@ -42,33 +44,33 @@ def gen_test_data():
     and compare to expected value
     """
 
-    common_pars=dict(
-    m1=50*lal.MSUN_SI,
-    m2=30*lal.MSUN_SI,
-    S1x=0.5,
-    S1y=0.,
-    S1z=0.,
-    S2x=0.,
-    S2y=0.,
-    S2z=0.,
-    distance=1,
-    inclination=0.,
-    phiRef=0.,
-    longAscNodes=0.,
-    eccentricity=0.,
-    meanPerAno=0.,
-    deltaF=1./4.,
-    f_min=30.,
-    f_max=512.,
-    f_ref=30.,
-    LALpars=None,
-    approximant=lalsimulation.IMRPhenomPv3HM
+    common_pars = dict(
+        m1=50 * lal.MSUN_SI,
+        m2=30 * lal.MSUN_SI,
+        S1x=0.5,
+        S1y=0.0,
+        S1z=0.0,
+        S2x=0.0,
+        S2y=0.0,
+        S2z=0.0,
+        distance=1,
+        inclination=0.0,
+        phiRef=0.0,
+        longAscNodes=0.0,
+        eccentricity=0.0,
+        meanPerAno=0.0,
+        deltaF=1.0 / 4.0,
+        f_min=30.0,
+        f_max=512.0,
+        f_ref=30.0,
+        LALpars=None,
+        approximant=lalsimulation.IMRPhenomPv3HM,
     )
 
-    pars1=common_pars.copy()
+    pars1 = common_pars.copy()
 
-    pars2=common_pars.copy()
-    pars2.update({"m2":20.*lal.MSUN_SI})
+    pars2 = common_pars.copy()
+    pars2.update({"m2": 20.0 * lal.MSUN_SI})
 
     hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(**pars1)
     hp2, hc2 = lalsimulation.SimInspiralChooseFDWaveform(**pars2)
@@ -89,8 +91,8 @@ def gen_test_data():
     return hp_amp_diff, hp_phase_diff, hc_amp_diff, hc_phase_diff
 
 
-
 # -- test functions ---------------------
+
 
 def test_IMRPhenomPv3HM():
     """
@@ -105,16 +107,19 @@ def test_IMRPhenomPv3HM():
 
     """
 
-    expected_result = np.array([1533.69290062, 324.65008927, 1541.09248084, 323.69338373])
+    expected_result = np.array(
+        [1533.69290062, 324.65008927, 1541.09248084, 323.69338373]
+    )
 
-    new_result  =  np.array(gen_test_data())
+    new_result = np.array(gen_test_data())
 
-    np.testing.assert_almost_equal(new_result, expected_result, 7, "IMRPhenomPv3HM test failed")
-
+    np.testing.assert_almost_equal(
+        new_result, expected_result, 7, "IMRPhenomPv3HM test failed"
+    )
 
 
 # -- run the tests ------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-phenomPv3HM.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
