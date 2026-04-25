@@ -39,20 +39,19 @@ again using the standard coincidence infrastructure.
 import bisect
 import functools
 import sys
+
 import tqdm
-
-
-from lal import iterutils
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw.utils import coincs as ligolw_coincs
 from igwn_ligolw.utils import time_slide as ligolw_time_slide
-from . import thinca
 
+from lal import iterutils
+
+from . import git_version, thinca
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from .git_version import date as __date__
-from .git_version import version as __version__
+__date__ = git_version.date
+__version__ = git_version.version
 
 
 #
