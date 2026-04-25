@@ -12,14 +12,19 @@ from lal.utils import cache
 
 
 class test_docstrings(unittest.TestCase):
-	def test(self):
-		failures = doctest.testmod(cache)[0]
-		if failures:
-			sys.exit(bool(failures))
-		cache_rw_is_identity = filecmp.cmp(os.path.join(os.environ.get("LAL_TEST_SRCDIR", "."), "874000000-20000.cache"), "874000000-20000.cache.new")
-		if cache_rw_is_identity:
-			os.remove("874000000-20000.cache.new")
-		self.assertEqual(True, cache_rw_is_identity)
+    def test(self):
+        failures = doctest.testmod(cache)[0]
+        if failures:
+            sys.exit(bool(failures))
+        cache_rw_is_identity = filecmp.cmp(
+            os.path.join(
+                os.environ.get("LAL_TEST_SRCDIR", "."), "874000000-20000.cache"
+            ),
+            "874000000-20000.cache.new",
+        )
+        if cache_rw_is_identity:
+            os.remove("874000000-20000.cache.new")
+        self.assertEqual(True, cache_rw_is_identity)
 
 
 #
