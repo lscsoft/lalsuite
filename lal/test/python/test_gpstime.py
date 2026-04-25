@@ -20,10 +20,9 @@ from decimal import Decimal
 from unittest import mock
 
 import pytest
-
 from freezegun import freeze_time
 
-from lal import (LIGOTimeGPS, gpstime)
+from lal import LIGOTimeGPS, gpstime
 
 
 @mock.patch("lal.gpstime._gps_time_now", return_value=LIGOTimeGPS(100))
