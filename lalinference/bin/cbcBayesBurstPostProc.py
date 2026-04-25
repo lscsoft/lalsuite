@@ -31,25 +31,23 @@
 #===============================================================================
 
 #standard library imports
-import sys
 import os
 import pickle
+import sys
 from time import strftime
 
-#related third party imports
-from numpy import (exp, cos, sin, size, cov, unique, hsplit, log, squeeze, sort)
-
 import matplotlib
+
+#related third party imports
+from numpy import cos, cov, exp, hsplit, log, sin, size, sort, squeeze, unique
+
 matplotlib.use("Agg")
+from igwn_ligolw import ligolw, lsctables, table
 from matplotlib import pyplot as plt
 
 #local application/library specific imports
 from lalinference import bayespputils as bppu
-
 from lalinference import git_version
-from igwn_ligolw import table
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
 
 try:
   os.environ['PATH'] = os.environ['PATH'] + ':/usr/texbin'
@@ -326,9 +324,8 @@ def cbcBayesBurstPostProc(
     if injfile and eventnum is not None:
         print('Looking for event %i in %s\n'%(eventnum,injfile))
         import itertools
-        from igwn_ligolw import ligolw
-        from igwn_ligolw import lsctables
-        from igwn_ligolw import utils
+
+        from igwn_ligolw import lsctables, utils
         xmldoc = utils.load_filename(injfile,contenthandler=LIGOLWContentHandlerExtractSimBurstTable)
         got_burst_table=1
         try:
@@ -399,8 +396,8 @@ def cbcBayesBurstPostProc(
 
     if eventnum is None and injfile is not None:
         import itertools
-        from igwn_ligolw import lsctables
-        from igwn_ligolw import utils
+
+        from igwn_ligolw import lsctables, utils
         if got_inspiral_table==1:
             injections = lsctables.SimInspiralTable.get_table(
                             utils.load_filename(injfile)
