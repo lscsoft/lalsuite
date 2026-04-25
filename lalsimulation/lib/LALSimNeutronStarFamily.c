@@ -538,6 +538,7 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPTWithPcmin(EOSMultiParts * eos, i
 FamMultiParts * XLALCreateSimNeutronStarFamilyPT(EOSMultiParts * eos, int min_fam){
 
     double logpmin = 75.5; // pmin = 6.16e32
+    if (XLALSimNeutronStarEOSMultiPartsMaxPressure(eos) < exp(logpmin)) XLAL_ERROR_NULL(XLAL_EDOM);
     FamMultiParts * fam = XLALCreateSimNeutronStarFamilyPTWithPcmin(eos, min_fam, logpmin);
 
     return fam;
