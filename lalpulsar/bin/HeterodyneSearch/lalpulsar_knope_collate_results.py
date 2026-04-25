@@ -27,29 +27,30 @@
 The KNOwn Pulsar pipelinE - lalpulsar_knope_collate_results
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function
 
 # standard library imports
 import argparse
 import ast
-import json
 import datetime
+import json
 import os
 import re
 import sys
 from configparser import ConfigParser
 
+import matplotlib
+
 # related third party imports
 import numpy as np
-
-import matplotlib
 
 matplotlib.use("Agg")
 
 # local application/library specific imports
-from lalpulsar import git_version
-from lalpulsar.pulsarpputils import *
 from lalpulsar.pulsarhtmlutils import *
+from lalpulsar.pulsarpputils import *
+
+from lalpulsar import git_version
 
 __author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__ = "git id {}".format(git_version.id)
