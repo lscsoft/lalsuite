@@ -3,15 +3,14 @@
 
 import contextlib
 import datetime
+import gc
+import inspect
 import os
 import pickle
 import sys
-import inspect
-import gc
-
-import pytest
 
 import numpy
+import pytest
 from numpy.testing import assert_array_equal
 
 try:
