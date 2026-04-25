@@ -1,10 +1,10 @@
 # Check SWIG Python bindings for LALFrame
 # Author: Karl Wette, 2011--2014
 
+import gc
+import inspect
 import os
 import sys
-import inspect
-import gc
 
 import pytest
 
@@ -12,8 +12,8 @@ import pytest
 print("checking module load ...", file=sys.stderr)
 import lal
 import lalframe
-from lalframe import globalvar as lalframeglobalvar
 from lal import globalvar as lalglobalvar
+from lalframe import globalvar as lalframeglobalvar
 
 print("PASSED module load", file=sys.stderr)
 
