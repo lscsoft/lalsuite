@@ -36,7 +36,8 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
 __date__ = git_version.date
 
-__all__ = ['CacheEntry', 'lalcache_from_gluecache']
+__all__ = ["CacheEntry", "lalcache_from_gluecache"]
+
 
 def lalcache_from_gluecache(cache):
     """Convert a glue.lal.Cache object to a lal.Cache object.
@@ -146,10 +147,15 @@ class CacheEntry(object):
 
     igwn_segments.utils..fromlalcache()
     """
+
     # How to parse a line in a LAL cache file.  Five white-space
     # delimited columns.
-    _regex = re.compile(r"\A\s*(?P<obs>\S+)\s+(?P<dsc>\S+)\s+(?P<strt>\S+)\s+(?P<dur>\S+)\s+(?P<url>\S+)\s*\Z")
-    _url_regex = re.compile(r"\A((.*/)*(?P<obs>[^/]+)-(?P<dsc>[^/]+)-(?P<strt>[^/]+)-(?P<dur>[^/\.]+)\.[^/]+)\Z")
+    _regex = re.compile(
+        r"\A\s*(?P<obs>\S+)\s+(?P<dsc>\S+)\s+(?P<strt>\S+)\s+(?P<dur>\S+)\s+(?P<url>\S+)\s*\Z"
+    )
+    _url_regex = re.compile(
+        r"\A((.*/)*(?P<obs>[^/]+)-(?P<dsc>[^/]+)-(?P<strt>[^/]+)-(?P<dur>[^/\.]+)\.[^/]+)\Z"
+    )
 
     def __init__(self, *args, **kwargs):
         """
@@ -199,7 +205,9 @@ class CacheEntry(object):
                 self.segment = segments.segment(start, start + coltype(duration))
             self.url = match["url"]
             if kwargs:
-                raise TypeError("unrecognized keyword arguments: %s" % ", ".join(kwargs))
+                raise TypeError(
+                    "unrecognized keyword arguments: %s" % ", ".join(kwargs)
+                )
         elif len(args) == 4:
             # parse arguments as observatory, description,
             # segment, url
@@ -214,7 +222,6 @@ class CacheEntry(object):
             self.observatory = None
         if self.description == "-":
             self.description = None
-
 
     def __str__(self):
         """
@@ -233,7 +240,13 @@ class CacheEntry(object):
         else:
             start = "-"
             duration = "-"
-        return "%s %s %s %s %s" % (self.observatory or "-", self.description or "-", start, duration, self.url)
+        return "%s %s %s %s %s" % (
+            self.observatory or "-",
+            self.description or "-",
+            start,
+            duration,
+            self.url,
+        )
 
     def __lt__(self, other):
         """
@@ -250,7 +263,11 @@ class CacheEntry(object):
         """
         if not isinstance(other, CacheEntry):
             raise TypeError("can only compare CacheEntry to CacheEntry")
-        return (self.observatory, self.description, self.segment) < (other.observatory, other.description, other.segment)
+        return (self.observatory, self.description, self.segment) < (
+            other.observatory,
+            other.description,
+            other.segment,
+        )
 
     def __eq__(self, other):
         """
@@ -267,7 +284,11 @@ class CacheEntry(object):
         """
         if not isinstance(other, CacheEntry):
             raise TypeError("can only compare CacheEntry to CacheEntry")
-        return (self.observatory, self.description, self.segment) == (other.observatory, other.description, other.segment)
+        return (self.observatory, self.description, self.segment) == (
+            other.observatory,
+            other.description,
+            other.segment,
+        )
 
     def __hash__(self):
         """
@@ -340,11 +361,19 @@ class CacheEntry(object):
         if self.observatory is None:
             instruments = (None,)
         else:
-            instruments = {obs for obs in map(str.strip, self.observatory.split(",")) if obs}
-        return segments.segmentlistdict((instrument, segments.segmentlist(self.segment is not None and [self.segment] or [])) for instrument in instruments)
+            instruments = {
+                obs for obs in map(str.strip, self.observatory.split(",")) if obs
+            }
+        return segments.segmentlistdict(
+            (
+                instrument,
+                segments.segmentlist(self.segment is not None and [self.segment] or []),
+            )
+            for instrument in instruments
+        )
 
     @classmethod
-    def from_T050017(cls, url, coltype = LIGOTimeGPS):
+    def from_T050017(cls, url, coltype=LIGOTimeGPS):
         """
         Parse a URL in the style of T050017-00 into a CacheEntry.  The
         T050017-00 file name format is, essentially,
@@ -373,5 +402,7 @@ class CacheEntry(object):
             # no segment information
             segment = None
         else:
-            segment = segments.segment(coltype(start), coltype(start) + coltype(duration))
+            segment = segments.segment(
+                coltype(start), coltype(start) + coltype(duration)
+            )
         return cls(observatory, description, segment, url)
