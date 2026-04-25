@@ -28,15 +28,15 @@ usage="""  omegascans_dag.py config.ini [options]
 #
 ###############################################################################
 
-from lal import pipeline
-from optparse import OptionParser
-import uuid
+import ast
 import os
 import sys
-import ast
-from subprocess import Popen,PIPE
-
+import uuid
 from configparser import ConfigParser
+from optparse import OptionParser
+from subprocess import PIPE, Popen
+
+from lal import pipeline
 
 ###############################################################################
 #
