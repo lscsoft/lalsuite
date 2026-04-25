@@ -31,16 +31,14 @@ Command-line interface to burst injection identification code.
 """
 
 
-from optparse import OptionParser
 import sys
-
+from optparse import OptionParser
 
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
-from lalburst import git_version
-from lalburst import binjfind
 
+from lalburst import binjfind, git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id
