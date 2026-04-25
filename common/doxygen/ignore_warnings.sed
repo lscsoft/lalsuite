@@ -14,5 +14,3 @@
 /warning: explicit link request/d
 
 # -- ignore problematic lines
-
-\|lalpulsar/NstarTools.py:143: warning: '\\code' command is not allowed in section title, ending section title|d
