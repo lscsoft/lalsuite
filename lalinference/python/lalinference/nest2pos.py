@@ -1,7 +1,20 @@
-import numpy as np
-from numpy import log1p, log, logaddexp, digitize, zeros, exp, concatenate, all, cumsum, ones
-from numpy.random import uniform
 from functools import reduce
+
+import numpy as np
+from numpy import (
+        all,
+        concatenate,
+        cumsum,
+        digitize,
+        exp,
+        log,
+        log1p,
+        logaddexp,
+        ones,
+        zeros,
+)
+from numpy.random import uniform
+
 
 def logsubexp(x,y):
         assert all(x >= y), 'cannot take log of negative number %s - %s'%(str(x),str(y))
