@@ -24,20 +24,19 @@
 #
 
 
-from bisect import bisect_left, bisect_right
 import itertools
 import math
 import sys
-
+from bisect import bisect_left, bisect_right
 
 from igwn_ligolw import lsctables
 from igwn_segments import PosInfinity
-from . import snglcoinc
 
+from . import git_version, snglcoinc
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from .git_version import date as __date__
-from .git_version import version as __version__
+__date__ = git_version.date
+__version__ = git_version.version
 
 
 #
