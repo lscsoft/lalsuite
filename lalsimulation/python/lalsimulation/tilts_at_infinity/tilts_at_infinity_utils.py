@@ -5,12 +5,12 @@ hybrid_spin_evolution.py
 N. K. Johnson-McDaniel, 2021
 """
 
-import numpy as np
-
-from lal import G_SI, C_SI, MSUN_SI
-
 import warnings
 from warnings import warn
+
+import numpy as np
+
+from lal import C_SI, G_SI, MSUN_SI
 
 # Define the kg to m and s conversions
 
