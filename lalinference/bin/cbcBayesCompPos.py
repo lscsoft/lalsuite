@@ -527,7 +527,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             pos_folder_parse=urlparse.urlparse(pos_folder)
             pfp_scheme,pfp_netloc,pfp_path,pfp_params,pfp_query,pfp_fragment=pos_folder_parse
             head,tail=os.path.split(pfp_path)
-            if tail is 'posplots.html' or tail:
+            if tail == 'posplots.html' or tail:
                 pos_file_part=head
             else:
                 pos_file_part=pfp_path
@@ -545,7 +545,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
                     os.makedirs(downloads_folder)
                 open_url_curl(pos_file_url,args=["-o","%s"%pos_file])
 
-        elif pfu_scheme is '' or pfu_scheme is 'file':
+        elif pfu_scheme == '' or pfu_scheme == 'file':
             pos_file=os.path.join(pos_folder,'%s.dat'%name)
             # Try looking for posterior_samples.dat if name.dat doesn't exist
             if not os.path.exists(pos_file):
@@ -712,7 +712,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
 
     greedy2savepaths=[]
 
-    if common_params is not [] and common_params is not None: #If there are common parameters....
+    if common_params != [] and common_params is not None: #If there are common parameters....
         colorlst=bppu.__default_color_lst
 
         if len(common_params)>1: #If there is more than one parameter...
