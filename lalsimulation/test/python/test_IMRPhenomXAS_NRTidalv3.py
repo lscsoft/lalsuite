@@ -30,13 +30,16 @@ import lalsimulation
 
 # -- utility functions ---------------------
 
+
 def get_amp_phase(h):
     amp = np.abs(h)
     phase = np.unwrap(np.angle(h))
     return amp, phase
 
+
 def sum_sqr_diff(x, y):
-    return np.sqrt( np.sum( (x-y)**2 )  )
+    return np.sqrt(np.sum((x - y) ** 2))
+
 
 def gen_test_data(approximant):
     """
@@ -49,33 +52,33 @@ def gen_test_data(approximant):
     lambda2 = 600.0
     lalsimulation.SimInspiralWaveformParamsInsertTidalLambda1(LALparams, lambda1)
     lalsimulation.SimInspiralWaveformParamsInsertTidalLambda2(LALparams, lambda2)
-    common_pars=dict(
-    m1=1.4*lal.MSUN_SI,
-    m2=1.2*lal.MSUN_SI,
-    S1x=0,
-    S1y=0,
-    S1z=-0.45,
-    S2x=0,
-    S2y=0,
-    S2z=0.98,
-    distance=1,
-    inclination=0.,
-    phiRef=0.,
-    longAscNodes=0.,
-    eccentricity=0.,
-    meanPerAno=0.,
-    deltaF=1./4.,
-    f_min=30.,
-    f_max=512.,
-    f_ref=30.,
-    LALpars=LALparams,
-    approximant=approximant
+    common_pars = dict(
+        m1=1.4 * lal.MSUN_SI,
+        m2=1.2 * lal.MSUN_SI,
+        S1x=0,
+        S1y=0,
+        S1z=-0.45,
+        S2x=0,
+        S2y=0,
+        S2z=0.98,
+        distance=1,
+        inclination=0.0,
+        phiRef=0.0,
+        longAscNodes=0.0,
+        eccentricity=0.0,
+        meanPerAno=0.0,
+        deltaF=1.0 / 4.0,
+        f_min=30.0,
+        f_max=512.0,
+        f_ref=30.0,
+        LALpars=LALparams,
+        approximant=approximant,
     )
 
     pars1 = common_pars.copy()
 
     pars2 = common_pars.copy()
-    pars2.update({"m2":1.0*lal.MSUN_SI})
+    pars2.update({"m2": 1.0 * lal.MSUN_SI})
     hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(**pars1)
     hp2, hc2 = lalsimulation.SimInspiralChooseFDWaveform(**pars2)
 
@@ -95,7 +98,6 @@ def gen_test_data(approximant):
     return hp_amp_diff, hp_phase_diff, hc_amp_diff, hc_phase_diff
 
 
-
 # -- test functions ---------------------
 
 
@@ -111,12 +113,19 @@ def test_IMRPhenomXAS_NRTidalv3():
     `expected_result  =  np.array(gen_test_data(lalsimulation.IMRPhenomXAS_NRTidalv3))`
     """
 
-    expected_result = np.array([34.9212815 , 1093.36171606,   34.9212815 , 1093.32677719])
-    new_result  =  np.array(gen_test_data(lalsimulation.IMRPhenomXAS_NRTidalv3))
-    np.testing.assert_allclose(new_result, expected_result, rtol=0.002, err_msg="IMRPhenomXAS_NRTidalv3 test failed", verbose=True)
+    expected_result = np.array([34.9212815, 1093.36171606, 34.9212815, 1093.32677719])
+    new_result = np.array(gen_test_data(lalsimulation.IMRPhenomXAS_NRTidalv3))
+    np.testing.assert_allclose(
+        new_result,
+        expected_result,
+        rtol=0.002,
+        err_msg="IMRPhenomXAS_NRTidalv3 test failed",
+        verbose=True,
+    )
 
-#-- run the tests ------------------------------
 
-if __name__ == '__main__':
+# -- run the tests ------------------------------
+
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-IMRPhenomXAS_NRTidalv3.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
