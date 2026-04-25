@@ -24,17 +24,19 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-from igwn_ligolw import lsctables
-from igwn_ligolw import utils
 import matplotlib
+from igwn_ligolw import lsctables, utils
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as pp
-import numpy as np
 import optparse
 import os
 import os.path
-import scipy.stats as ss
 import string
+
+import matplotlib.pyplot as pp
+import numpy as np
+import scipy.stats as ss
+
 from lalinference import bayespputils as bppu
 
 posterior_name_to_latex_name = {
