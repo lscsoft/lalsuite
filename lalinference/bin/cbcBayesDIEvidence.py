@@ -32,39 +32,59 @@ import numpy as np
 from lalinference import bayespputils as bp
 from lalinference import git_version
 
-__author__="Will M. Farr <will.farr@ligo.org>"
-__version__="git id %s"%git_version.id
-__date__=git_version.date
+__author__ = "Will M. Farr <will.farr@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
 
-if __name__=='__main__':
-    parser=OptionParser()
-    parser.add_option("--data",dest="data",action="store",help="file of posterior samples",metavar="FILE")
-    parser.add_option("--Nboxing",dest="Nboxing",action="store",default=64,type="int",metavar="N")
-    parser.add_option("--bootstrap", dest='bootstrap',action='store',default=1,type='int',metavar='N')
-    parser.add_option('--output',dest='output',action='store',default=None,metavar='FILE')
+if __name__ == "__main__":
+    parser = OptionParser()
+    parser.add_option(
+        "--data",
+        dest="data",
+        action="store",
+        help="file of posterior samples",
+        metavar="FILE",
+    )
+    parser.add_option(
+        "--Nboxing", dest="Nboxing", action="store", default=64, type="int", metavar="N"
+    )
+    parser.add_option(
+        "--bootstrap",
+        dest="bootstrap",
+        action="store",
+        default=1,
+        type="int",
+        metavar="N",
+    )
+    parser.add_option(
+        "--output", dest="output", action="store", default=None, metavar="FILE"
+    )
 
-    (opts,args)=parser.parse_args()
+    opts, args = parser.parse_args()
 
-    pos_parser=bp.PEOutputParser('common')
+    pos_parser = bp.PEOutputParser("common")
 
-    f=open(opts.data, "r")
+    f = open(opts.data, "r")
     try:
-        pos=bp.Posterior(pos_parser.parse(f))
+        pos = bp.Posterior(pos_parser.parse(f))
     finally:
         f.close()
 
-    outfile=None
+    outfile = None
     if opts.output:
-        outfile=open(opts.output,'w')
+        outfile = open(opts.output, "w")
     try:
         for i in range(opts.bootstrap):
             if i == 0:
-                log_ev=pos.di_evidence(boxing=opts.Nboxing)
+                log_ev = pos.di_evidence(boxing=opts.Nboxing)
             else:
-                log_ev=pos.bootstrap().di_evidence(boxing=opts.Nboxing)
-            print('log(evidence) with Nboxing = %d is %.1f (evidence is %g)'%(opts.Nboxing,log_ev,np.exp(ev)))
+                log_ev = pos.bootstrap().di_evidence(boxing=opts.Nboxing)
+            print(
+                "log(evidence) with Nboxing = %d is %.1f (evidence is %g)"
+                % (opts.Nboxing, log_ev, np.exp(ev))
+            )
             if outfile:
-                outfile.write('%g\n'%log_ev)
+                outfile.write("%g\n" % log_ev)
     finally:
         if outfile:
             outfile.close()
