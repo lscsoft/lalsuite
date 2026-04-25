@@ -20,8 +20,10 @@
 Some functions copied from test_phenomPv3HM.py.
 """
 
-import sys, os
+import os
+import sys
 import warnings
+
 try:
     from pathlib import Path
 except ImportError as exc:
@@ -29,10 +31,11 @@ except ImportError as exc:
     warnings.warn(str(exc))
     sys.exit(77)
 
+import numpy as np
 import pytest
+
 import lal
 import lalsimulation
-import numpy as np
 
 # -- utility functions ---------------------
 
