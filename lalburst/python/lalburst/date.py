@@ -29,7 +29,6 @@ This module provides a few time-related utilities that have been used in
 burst searches in the past.
 """
 
-
 import math
 
 import lal
@@ -51,55 +50,55 @@ __version__ = git_version.version
 
 
 def utc_midnight(gps):
-	"""
-	Truncate a LIGOTimeGPS to UTC midnight.
-	"""
-	# convert to UTC (as list so we can edit it)
-	tm = list(lal.GPSToUTC(int(gps)))
+    """
+    Truncate a LIGOTimeGPS to UTC midnight.
+    """
+    # convert to UTC (as list so we can edit it)
+    tm = list(lal.GPSToUTC(int(gps)))
 
-	# truncate to midnight
-	tm[3] = 0       # hours
-	tm[4] = 0       # minutes
-	tm[5] = 0       # seconds
+    # truncate to midnight
+    tm[3] = 0  # hours
+    tm[4] = 0  # minutes
+    tm[5] = 0  # seconds
 
-	# convert back to LIGOTimeGPS
-	return lal.LIGOTimeGPS(lal.UTCToGPS(tuple(tm)))
+    # convert back to LIGOTimeGPS
+    return lal.LIGOTimeGPS(lal.UTCToGPS(tuple(tm)))
 
 
 def UTCMidnights(start, end):
-	"""
-	Iterator for generating LIGOTimeGPS objects for UTC midnights.
-	"""
-	# 86402 == more seconds than there are in 1 day, but less than
-	# there are in 2 days.  Can 1 day have more than 1 leap second?  If
-	# so, this constant should be increased.
-	midnight = utc_midnight(start)
-	if midnight < start:
-		midnight = utc_midnight(midnight + 86402)
-	while midnight < end:
-		yield midnight
-		midnight = utc_midnight(midnight + 86402)
+    """
+    Iterator for generating LIGOTimeGPS objects for UTC midnights.
+    """
+    # 86402 == more seconds than there are in 1 day, but less than
+    # there are in 2 days.  Can 1 day have more than 1 leap second?  If
+    # so, this constant should be increased.
+    midnight = utc_midnight(start)
+    if midnight < start:
+        midnight = utc_midnight(midnight + 86402)
+    while midnight < end:
+        yield midnight
+        midnight = utc_midnight(midnight + 86402)
 
 
 def gmst_0h(gps):
-	"""
-	Truncate a LIGOTimeGPS to Greenwich mean sidereal 0 rad.
-	"""
-	gmst = lal.GreenwichMeanSiderealTime(gps)
-	residual = gmst % (2.0 * math.pi)
-	if residual:
-		gmst -= residual
-	return lal.GreenwichMeanSiderealTimeToGPS(gmst)
+    """
+    Truncate a LIGOTimeGPS to Greenwich mean sidereal 0 rad.
+    """
+    gmst = lal.GreenwichMeanSiderealTime(gps)
+    residual = gmst % (2.0 * math.pi)
+    if residual:
+        gmst -= residual
+    return lal.GreenwichMeanSiderealTimeToGPS(gmst)
 
 
 def GMST_0hs(start, end):
-	"""
-	Iterator for generating LIGOTimeGPS objects for Greenwich Mean
-	Sidereal 0h.
-	"""
-	midnight = gmst_0h(start)
-	if midnight < start:
-		midnight = gmst_0h(midnight + 86402)
-	while midnight < end:
-		yield midnight
-		midnight = gmst_0h(midnight + 86402)
+    """
+    Iterator for generating LIGOTimeGPS objects for Greenwich Mean
+    Sidereal 0h.
+    """
+    midnight = gmst_0h(start)
+    if midnight < start:
+        midnight = gmst_0h(midnight + 86402)
+    while midnight < end:
+        yield midnight
+        midnight = gmst_0h(midnight + 86402)
