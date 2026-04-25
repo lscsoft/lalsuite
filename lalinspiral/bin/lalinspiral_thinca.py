@@ -26,23 +26,21 @@
 #
 
 
-from optparse import OptionParser
 import sys
-
+from optparse import OptionParser
 
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
 from igwn_ligolw.utils import segments as ligolw_segments
-import lal
-from lalinspiral import thinca
 from igwn_segments import utils as segmentsUtils
 
+import lal
+from lalinspiral import thinca
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 from lalinspiral.git_version import date as __date__
 from lalinspiral.git_version import version as __version__
-
 
 #
 # =============================================================================
