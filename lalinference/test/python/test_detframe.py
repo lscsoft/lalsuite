@@ -31,7 +31,7 @@ LHO = lal.CachedDetectors[lal.LALDetectorIndexLHODIFF]
 LLO = lal.CachedDetectors[lal.LALDetectorIndexLLODIFF]
 
 RAS = np.random.uniform(low=0, high=lal.TWOPI, size=NTEST)
-DECS = np.random.uniform(low=-lal.PI/2.0, high=lal.PI/2.0, size=NTEST)
+DECS = np.random.uniform(low=-lal.PI / 2.0, high=lal.PI / 2.0, size=NTEST)
 TIMES = np.random.uniform(low=0, high=lal.DAYSID_SI, size=NTEST)
 
 
@@ -44,6 +44,6 @@ def test_invertable():
         assert_allclose(a, b, atol=tol)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-detframe.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
