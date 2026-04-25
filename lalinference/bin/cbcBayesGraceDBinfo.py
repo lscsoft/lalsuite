@@ -90,7 +90,8 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
           outstr+='<td align=left>%.3f &plusmn; %.3f</td></tr>'%(pos[i].samples[which][0],pos[i].stdev)
     if bcifile is not None and os.path.isfile(bcifile):
       bci=np.loadtxt(bcifile)
-    else: bci=None
+    else:
+      bci=None
     if bci is not None:
       outstr+='<tr><td align=left>logBCI</td>'
       outstr+='<td align=center>%.2f</td></tr>'%(bci)
@@ -148,10 +149,12 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
   elif skymap is not None:
     if bcifile is not None and os.path.isfile(bcifile):
       bci=np.loadtxt(bcifile)
-    else: bci=None
+    else:
+      bci=None
     if bsnfile is not None and os.path.isfile(bsnfile):
       bsn=np.loadtxt(bsnfile)
-    else: bsn=None
+    else:
+      bsn=None
     tag=['sky_loc']
     """
     if bci is not None and bsn is not None:
