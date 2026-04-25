@@ -39,7 +39,7 @@
 lal/                            @adam-mercer @jolien-creighton @kipp
 lalframe/                       @adam-mercer @ed-maros @jolien-creighton
 lalmetaio/                      @adam-mercer @jolien-creighton @kipp
-lalsimulation/                  @kipp @antoni.ramos-buades @geraint.pratten @vijay.varma
+lalsimulation/                  @jolien-creighton @kipp @antoni.ramos-buades @geraint.pratten @vijay.varma
 lalburst/                       @adam-mercer @duncanmmacleod @kipp @marco-drago
 lalinspiral/                    @adam-mercer @ian-harry @jolien-creighton @kipp
 lalinference/                   @aaron.zimmerman @bfarr @cjhaster @gregory.ashton @john-veitch @patricia-schmidt @salvatore-vitale @vivien
