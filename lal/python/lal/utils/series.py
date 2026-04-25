@@ -14,8 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Methods to generate LAL Time- and FrequencySeries objects in python
-"""
+"""Methods to generate LAL Time- and FrequencySeries objects in python"""
 
 import re
 
@@ -30,20 +29,21 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 # map LAL type codes to strings (for function factory)
 LAL_TYPE_STR = {
-    lal.I2_TYPE_CODE: 'INT2',
-    lal.I4_TYPE_CODE: 'INT4',
-    lal.I8_TYPE_CODE: 'INT8',
-    lal.U2_TYPE_CODE: 'UINT2',
-    lal.U4_TYPE_CODE: 'UINT4',
-    lal.U8_TYPE_CODE: 'UINT8',
-    lal.S_TYPE_CODE: 'REAL4',
-    lal.D_TYPE_CODE: 'REAL8',
-    lal.C_TYPE_CODE: 'COMPLEX8',
-    lal.Z_TYPE_CODE: 'COMPLEX16',
+    lal.I2_TYPE_CODE: "INT2",
+    lal.I4_TYPE_CODE: "INT4",
+    lal.I8_TYPE_CODE: "INT8",
+    lal.U2_TYPE_CODE: "UINT2",
+    lal.U4_TYPE_CODE: "UINT4",
+    lal.U8_TYPE_CODE: "UINT8",
+    lal.S_TYPE_CODE: "REAL4",
+    lal.D_TYPE_CODE: "REAL8",
+    lal.C_TYPE_CODE: "COMPLEX8",
+    lal.Z_TYPE_CODE: "COMPLEX16",
 }
 LAL_TYPE_FROM_STR = dict((v, k) for k, v in LAL_TYPE_STR.items())
 LAL_TYPE_STR_REGEX = re.compile(
-    '(?P<dtype>(%s))' % ('|'.join(LAL_TYPE_FROM_STR.keys())), re.I)
+    "(?P<dtype>(%s))" % ("|".join(LAL_TYPE_FROM_STR.keys())), re.I
+)
 
 # map numpy dtypes to LAL type codes
 LAL_TYPE_FROM_NUMPY = {
@@ -62,22 +62,25 @@ NUMPY_TYPE_FROM_LAL = dict((v, k) for k, v in LAL_TYPE_FROM_NUMPY.items())
 
 
 # structure definers
-SERIES_OPERATIONS = ['create', 'destroy', 'cut', 'resize', 'shrink', 'add']
-SERIES_TYPES = ['Time', 'Frequency']
-STRUCT_TYPES = ['Sequence', 'Vector']
+SERIES_OPERATIONS = ["create", "destroy", "cut", "resize", "shrink", "add"]
+SERIES_TYPES = ["Time", "Frequency"]
+STRUCT_TYPES = ["Sequence", "Vector"]
 
 SERIES_REGEX = re.compile(
-    r'%s(?P<stype>(%s))Series\Z'
-    % (LAL_TYPE_STR_REGEX.pattern, '|'.join(SERIES_TYPES)), re.I)
+    r"%s(?P<stype>(%s))Series\Z" % (LAL_TYPE_STR_REGEX.pattern, "|".join(SERIES_TYPES)),
+    re.I,
+)
 ARRAY_REGEX = re.compile(
-    r'%sArray(?:(?P<dir>(L|V))?)' % LAL_TYPE_STR_REGEX.pattern, re.I)
+    r"%sArray(?:(?P<dir>(L|V))?)" % LAL_TYPE_STR_REGEX.pattern, re.I
+)
 STRUCT_REGEX = re.compile(
-    r'%s(?P<struct>(%s))\Z'
-    % (LAL_TYPE_STR_REGEX.pattern, '|'.join(STRUCT_TYPES)), re.I)
+    r"%s(?P<struct>(%s))\Z" % (LAL_TYPE_STR_REGEX.pattern, "|".join(STRUCT_TYPES)), re.I
+)
 
 
 # -----------------------------------------------------------------------------
 # utility methods
+
 
 def func_factory(operation, dtype):
     """Returns the LAL function to perform the given operation for the
@@ -96,13 +99,14 @@ def func_factory(operation, dtype):
     try:
         SERIES_OPERATIONS.index(operation.lower())
     except ValueError as e:
-        e.args("Operation '%s' not understood for LAL series. "
-               "Please select one of: %s"
-               % (operation, ", ".join(SERIES_OPERATIONS)),)
+        e.args(
+            "Operation '%s' not understood for LAL series. "
+            "Please select one of: %s" % (operation, ", ".join(SERIES_OPERATIONS)),
+        )
         raise e
     # verify data type
     struct = get_struct_name(dtype)
-    return getattr(lal, ''.join([operation.title(), struct]))
+    return getattr(lal, "".join([operation.title(), struct]))
 
 
 def get_struct_name(series):
@@ -125,7 +129,7 @@ def get_struct_name(series):
     except AttributeError:
         pass
     else:
-        return '%s%sSeries' % (match['dtype'].upper(), match['stype'].title())
+        return "%s%sSeries" % (match["dtype"].upper(), match["stype"].title())
 
     # attempt to match as an array (with optional dimension)
     try:
@@ -133,17 +137,18 @@ def get_struct_name(series):
     except AttributeError:
         pass
     else:
-        return '%sArray%s' % (match['dtype'].upper(),
-                              match['dir'] and match['dir'].upper() or '')
+        return "%sArray%s" % (
+            match["dtype"].upper(),
+            match["dir"] and match["dir"].upper() or "",
+        )
 
     # attempt to match as a structure
     try:
         match = STRUCT_REGEX.match(typestr).groupdict()
     except AttributeError:
-        raise ValueError(
-            "Input %s cannot be parsed into LAL struct name" % series)
+        raise ValueError("Input %s cannot be parsed into LAL struct name" % series)
     else:
-        return '%s%s' % (match['dtype'].upper(), match['struct'].title())
+        return "%s%s" % (match["dtype"].upper(), match["struct"].title())
 
 
 def get_series_type(series):
@@ -157,10 +162,11 @@ def get_series_type(series):
     try:
         match = STRUCT_REGEX.match(type(series).__name__).groupdict()
     except AttributeError:
-        raise ValueError("Data type for series type %r unknown."
-                         % type(series).__name__)
+        raise ValueError(
+            "Data type for series type %r unknown." % type(series).__name__
+        )
     else:
-        return get_lal_type(match['dtype'].upper())
+        return get_lal_type(match["dtype"].upper())
 
 
 def get_lal_type_str(datatype):
@@ -212,7 +218,7 @@ def get_lal_type(datatype):
         pass
     # test again for 'real4' or 'real8' (lower-case)
     #     can't do this with others because they match numpy names
-    if re.match(r'real(4|8)\Z', str(datatype), re.I):
+    if re.match(r"real(4|8)\Z", str(datatype), re.I):
         return LAL_TYPE_FROM_STR[datatype.upper()]
     # format as a numpy data type and parse
     try:
@@ -223,7 +229,7 @@ def get_lal_type(datatype):
         try:
             return LAL_TYPE_FROM_NUMPY[dtype]
         except KeyError as e:
-            e.args = ('LAL has no support for numpy.%s' % dtype.__name__,)
+            e.args = ("LAL has no support for numpy.%s" % dtype.__name__,)
             raise
     raise ValueError("Cannot interpret datatype %r" % datatype)
 
@@ -249,8 +255,10 @@ def get_numpy_type(datatype):
     try:
         return NUMPY_TYPE_FROM_LAL[get_lal_type(datatype)]
     except KeyError as e:
-        e.args('numpy has no support for %s'
-               % get_lal_type(str(get_lal_type_str(datatype))),)
+        e.args(
+            "numpy has no support for %s"
+            % get_lal_type(str(get_lal_type_str(datatype))),
+        )
         raise
 
 
@@ -263,16 +271,30 @@ def duplicate(series):
         series : [ TimeSeries | FrequencySeries ]
             input series to duplicate
     """
-    create = func_factory('create', series)
+    create = func_factory("create", series)
     stype = series.__class__.__name__
-    if stype.endswith('FrequencySeries'):
-        out = create(series.name, series.epoch, series.f0, series.deltaF,
-                     series.sampleUnits, series.data.length)
-    elif stype.endswith('TimeSeries'):
-        out = create(series.name, series.epoch, series.f0, series.deltaT,
-                     series.sampleUnits, series.data.length)
+    if stype.endswith("FrequencySeries"):
+        out = create(
+            series.name,
+            series.epoch,
+            series.f0,
+            series.deltaF,
+            series.sampleUnits,
+            series.data.length,
+        )
+    elif stype.endswith("TimeSeries"):
+        out = create(
+            series.name,
+            series.epoch,
+            series.f0,
+            series.deltaT,
+            series.sampleUnits,
+            series.data.length,
+        )
     else:
-        raise NotImplementedError("A duplicator for the %s has not been "
-                                  "implemented: here's your chance!" % series)
+        raise NotImplementedError(
+            "A duplicator for the %s has not been "
+            "implemented: here's your chance!" % series
+        )
     out.data.data = series.data.data
     return out
