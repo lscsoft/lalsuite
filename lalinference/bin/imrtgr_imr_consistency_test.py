@@ -210,7 +210,7 @@ if __name__ == '__main__':
   chi2z_inj = options.chi2z_inj
   phi12_inj = options.phi12_inj
 
-  if m1_inj == None or m2_inj == None or chi1_inj == None or chi2_inj == None or chi1z_inj == None or chi2z_inj == None or phi12_inj == None:
+  if m1_inj is None or m2_inj is None or chi1_inj is None or chi2_inj is None or chi1z_inj is None or chi2z_inj is None or phi12_inj is None:
     plot_injection_lines = False
   else:
     m1_inj = float(m1_inj)
