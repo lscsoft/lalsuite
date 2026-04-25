@@ -30,6 +30,7 @@
 """
 Populate a sim_inspiral table with random draws from an ASCII table.
 """
+
 from optparse import Option, OptionParser
 
 import igwn_ligolw.utils.process
@@ -38,95 +39,134 @@ from igwn_ligolw import ligolw, lsctables
 
 # Create a datatype for all relavent fields to be filled in the sim_inspiral table
 sim_inspiral_dt = [
-        ('waveform','|S64'),
-        ('frequency', 'f8'),
-        ('q', 'f8'),
-        ('bandwidth', 'f8'),
-        ('duration', 'f8'),
-        ('hrss', 'f8'),
-        ('time_geocent_gps', 'i4'),
-        ('time_geocent_gps_ns', 'i4'),
-        ('ra','f8'),
-        ('dec', 'f8'),
-        ('pol_ellipse_angle', 'f8'),
-        ('pol_ellipse_e', 'f8'),
-        ('psi', 'f8'),
-        ('amplitude', 'f8'),
-        ('egw_over_rsquared', 'f8'),
-        ('waveform_number', 'i8'),
+    ("waveform", "|S64"),
+    ("frequency", "f8"),
+    ("q", "f8"),
+    ("bandwidth", "f8"),
+    ("duration", "f8"),
+    ("hrss", "f8"),
+    ("time_geocent_gps", "i4"),
+    ("time_geocent_gps_ns", "i4"),
+    ("ra", "f8"),
+    ("dec", "f8"),
+    ("pol_ellipse_angle", "f8"),
+    ("pol_ellipse_e", "f8"),
+    ("psi", "f8"),
+    ("amplitude", "f8"),
+    ("egw_over_rsquared", "f8"),
+    ("waveform_number", "i8"),
 ]
+
 
 def get_input_filename(parser, args):
     """Determine name of input: either the sole positional command line argument,
     or /dev/stdin."""
     if len(args) == 0:
-        infilename = '/dev/stdin'
+        infilename = "/dev/stdin"
     elif len(args) == 1:
         infilename = args[0]
     else:
         parser.error("Too many command line arguments.")
     return infilename
 
+
 def standardize_param_name(params, possible_names, desired_name):
     for name in possible_names:
         if name in params:
             params[params.index(name)] = desired_name
 
+
 def standardize_param_names(params):
-    standardize_param_name(params, ['frequency','freq',], 'frequency')
-    standardize_param_name(params, ['q','Q','quality'], 'q')
-    standardize_param_name(params, ['duration', 'tau'], 'duration')
-    standardize_param_name(params, ['ra','longitude','rightascension'],'ra')
-    standardize_param_name(params, ['dec','latitude','declination'],'dec')
-    standardize_param_name(params, ['alpha','polar_angle','pol_ellipse_angle'], 'pol_ellipse_angle')
-    standardize_param_name(params, ['polar_eccentricity','eccentricity','pol_ellipse_e'], 'pol_ellipse_e')
-    standardize_param_name(params, ['psi', 'polarisation','polarization'],'psi')
+    standardize_param_name(
+        params,
+        [
+            "frequency",
+            "freq",
+        ],
+        "frequency",
+    )
+    standardize_param_name(params, ["q", "Q", "quality"], "q")
+    standardize_param_name(params, ["duration", "tau"], "duration")
+    standardize_param_name(params, ["ra", "longitude", "rightascension"], "ra")
+    standardize_param_name(params, ["dec", "latitude", "declination"], "dec")
+    standardize_param_name(
+        params, ["alpha", "polar_angle", "pol_ellipse_angle"], "pol_ellipse_angle"
+    )
+    standardize_param_name(
+        params, ["polar_eccentricity", "eccentricity", "pol_ellipse_e"], "pol_ellipse_e"
+    )
+    standardize_param_name(params, ["psi", "polarisation", "polarization"], "psi")
 
 
 def compute_duration_parameterizations(samples):
     from math import sqrt
+
     params = samples.dtype.names
-    has_q = 'q' in params
-    has_dur='duration' in params
-    has_frequency = 'frequency' in params
+    has_q = "q" in params
+    has_dur = "duration" in params
+    has_frequency = "frequency" in params
     if has_q:
-        q = samples['q']
+        q = samples["q"]
         if has_frequency:
-          duration=[i/sqrt(2)/np.pi/j for (i,j) in zip(q,samples['frequency'])]
+            duration = [
+                i / sqrt(2) / np.pi / j for (i, j) in zip(q, samples["frequency"])
+            ]
         else:
-          duration=np.nan
+            duration = np.nan
     elif has_dur:
-        duration = samples['duration']
+        duration = samples["duration"]
         if has_frequency:
-          q=[sqrt(2)*np.pi*i*j for (i,j) in zip(duration,samples['frequency'])]
+            q = [
+                sqrt(2) * np.pi * i * j
+                for (i, j) in zip(duration, samples["frequency"])
+            ]
         else:
-          q=np.nan
-    return q,duration
+            q = np.nan
+    return q, duration
 
 
 if __name__ == "__main__":
     parser = OptionParser(
-            description = __doc__,
-            usage = "%prog [options] [INPUT]",
-            option_list = [
-                Option("-o", "--output", metavar="FILE.xml",
-                    help="name of output XML file"),
-                Option("--num-of-injs", metavar="NUM", type=int, default=200,
-                    help="number of injections"),
-                Option("--approx", metavar="APPROX", default="SineGaussianF",
-                    help="approximant to be injected"),
-                Option("--taper", metavar="TAPER", default="TAPER_NONE",
-                    help="Taper methods for injections"),
-                Option("--flow", metavar="FLOW", type=float, default=None,
-                    help="Taper methods for injections"),
-            ]
+        description=__doc__,
+        usage="%prog [options] [INPUT]",
+        option_list=[
+            Option(
+                "-o", "--output", metavar="FILE.xml", help="name of output XML file"
+            ),
+            Option(
+                "--num-of-injs",
+                metavar="NUM",
+                type=int,
+                default=200,
+                help="number of injections",
+            ),
+            Option(
+                "--approx",
+                metavar="APPROX",
+                default="SineGaussianF",
+                help="approximant to be injected",
+            ),
+            Option(
+                "--taper",
+                metavar="TAPER",
+                default="TAPER_NONE",
+                help="Taper methods for injections",
+            ),
+            Option(
+                "--flow",
+                metavar="FLOW",
+                type=float,
+                default=None,
+                help="Taper methods for injections",
+            ),
+        ],
     )
 
     opts, args = parser.parse_args()
     infilename = get_input_filename(parser, args)
 
     # Read in ASCII table, assuming column names are the first line
-    with open(infilename, 'r') as inp:
+    with open(infilename, "r") as inp:
         params = inp.readline().split()
         standardize_param_names(params)
         samples = np.loadtxt(inp, dtype=[(p, np.float) for p in params])
@@ -147,60 +187,63 @@ if __name__ == "__main__":
     ids = range(N)
 
     # Compute polar parameters from alpha if given
-    if 'alpha' in params:
-      # LIB may use use the convention that pol_ellipse_angle=alpha).
-        injections['pol_ellipse_angle'] = samples['alpha']
-    elif 'pol_ellipse_angle' in params:
-        injections['pol_ellipse_angle'] = samples['pol_ellipse_angle']
+    if "alpha" in params:
+        # LIB may use use the convention that pol_ellipse_angle=alpha).
+        injections["pol_ellipse_angle"] = samples["alpha"]
+    elif "pol_ellipse_angle" in params:
+        injections["pol_ellipse_angle"] = samples["pol_ellipse_angle"]
     else:
-        injections['pol_ellipse_angle'] = None
+        injections["pol_ellipse_angle"] = None
 
-    if 'polar_eccentricity' in params:
-        injections['pol_ellipse_e']= samples['polar_eccentricity']
-    elif 'pol_ellipse_e' in params:
-        injections['pol_ellipse_e']= samples['pol_ellipse_e']
+    if "polar_eccentricity" in params:
+        injections["pol_ellipse_e"] = samples["polar_eccentricity"]
+    elif "pol_ellipse_e" in params:
+        injections["pol_ellipse_e"] = samples["pol_ellipse_e"]
     else:
-        injections['pol_ellipse_e']=None
+        injections["pol_ellipse_e"] = None
     print(params)
-    print(samples['pol_ellipse_e'])
-    print(injections['pol_ellipse_e'])
-    if 'bandwidth' in params:
-      injections['bandwidth'] = samples['bandwidth']
+    print(samples["pol_ellipse_e"])
+    print(injections["pol_ellipse_e"])
+    if "bandwidth" in params:
+        injections["bandwidth"] = samples["bandwidth"]
     else:
-      injections['bandwidth'] = np.nan
-    if 'time' in params:
-      injections['time_geocent_gps'] = np.modf(samples['time'])[1]
-      injections['time_geocent_gps_ns'] = np.modf(samples['time'])[0] * 10**9
-    elif 'time_min' in params and 'time_max' in params:
-      est_time=samples['time_min']+0.5*(samples['time_max']-samples['time_min'])
-      injections['time_geocent_gps'] = np.modf(est_time)[1]
-      injections['time_geocent_gps_ns'] = np.modf(est_time)[0] * 10**9
+        injections["bandwidth"] = np.nan
+    if "time" in params:
+        injections["time_geocent_gps"] = np.modf(samples["time"])[1]
+        injections["time_geocent_gps_ns"] = np.modf(samples["time"])[0] * 10**9
+    elif "time_min" in params and "time_max" in params:
+        est_time = samples["time_min"] + 0.5 * (
+            samples["time_max"] - samples["time_min"]
+        )
+        injections["time_geocent_gps"] = np.modf(est_time)[1]
+        injections["time_geocent_gps_ns"] = np.modf(est_time)[0] * 10**9
 
     # Populate structured array
-    injections['waveform'] = [opts.approx for i in range(N)]
+    injections["waveform"] = [opts.approx for i in range(N)]
     try:
-      injections['frequency'] = samples['frequency']
+        injections["frequency"] = samples["frequency"]
     except:
-      injections['frequency']=[np.nan for i in samples['ra']]
-    injections['duration'] = dur
-    injections['q'] = q
+        injections["frequency"] = [np.nan for i in samples["ra"]]
+    injections["duration"] = dur
+    injections["q"] = q
     try:
-      injections['hrss'] = samples['hrss']
+        injections["hrss"] = samples["hrss"]
     except:
-      injections['hrss'] = np.exp(samples['loghrss'])
-    injections['ra'] = samples['ra']
-    injections['dec'] = samples['dec']
-    injections['psi'] = samples['psi']
+        injections["hrss"] = np.exp(samples["loghrss"])
+    injections["ra"] = samples["ra"]
+    injections["dec"] = samples["dec"]
+    injections["psi"] = samples["psi"]
 
     # Create a new XML document
     xmldoc = ligolw.Document()
     xmldoc.appendChild(ligolw.LIGO_LW())
     proc = igwn_ligolw.utils.process.register_to_xmldoc(doc, sys.argv[0], {})
 
-    #create timeslide table and set offsets to 0
+    # create timeslide table and set offsets to 0
     timeslide_table = lsctables.TimeSlideTable.new()
     timeslide_id = timeslide_table.append_offsetvector(
-        {'H1':0,'V1':0,'L1':0,'H2':0}, proc)
+        {"H1": 0, "V1": 0, "L1": 0, "H2": 0}, proc
+    )
 
     sim_table = lsctables.SimBurstTable.new()
     xmldoc.childNodes[0].appendChild(timeslide_table)
@@ -214,7 +257,7 @@ if __name__ == "__main__":
         sim_table.append(row)
 
     # Fill in IDs
-    for i,row in enumerate(sim_table):
+    for i, row in enumerate(sim_table):
         row.process_id = proc.process_id
         row.simulation_id = sim_table.get_next_id()
         row.time_slide_id = timeslide_id
@@ -225,6 +268,6 @@ if __name__ == "__main__":
             setattr(row, field, val)
 
     # Write file
-    output_file = open(opts.output, 'w')
+    output_file = open(opts.output, "w")
     xmldoc.write(output_file)
     output_file.close()
