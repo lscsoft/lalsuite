@@ -1,26 +1,21 @@
-from bisect import bisect_left, bisect_right
 import functools
 import itertools
 import math
-import numpy
-from optparse import OptionParser
 import os
 import random
-import sys
-from tqdm import tqdm
-
-from lal import LIGOTimeGPS
-from lalburst import burca
-from lalburst import offsetvector
-from lalburst import snglcoinc
+from bisect import bisect_left, bisect_right
+from optparse import OptionParser
 
 import igwn_segments as segments
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
+import numpy
+from igwn_ligolw import ligolw, lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
 from igwn_ligolw.utils import time_slide as ligolw_time_slide
+from tqdm import tqdm
 
+from lal import LIGOTimeGPS
+from lalburst import burca, offsetvector, snglcoinc
 
 #
 # construct a synthetic burst trigger document
