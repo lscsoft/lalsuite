@@ -28,12 +28,12 @@ from numpy.testing import assert_allclose
 from lal import DAYSID_SI
 
 # set values
-PSI = np.random.uniform(0., 2.*np.pi)
-RA = np.random.uniform(0., 2.*np.pi)
-DEC = np.random.uniform(-np.pi/2., np.pi/2.)
+PSI = np.random.uniform(0.0, 2.0 * np.pi)
+RA = np.random.uniform(0.0, 2.0 * np.pi)
+DEC = np.random.uniform(-np.pi / 2.0, np.pi / 2.0)
 
 # set times over one sidereal day
-T0 = 1234567890.
+T0 = 1234567890.0
 TIMES = np.linspace(T0, T0 + DAYSID_SI, 1000)
 
 
@@ -43,22 +43,46 @@ def test_antenna(detector):
     Test that the default, LAL and lookup table implementations match.
     """
     # default antenna pattern (all tensor, vector and scalar modes)
-    A = AntennaResponse(detector, ra=RA, dec=DEC, psi=PSI, times=TIMES,
-                        use_lal=False, scalar=True, vector=True)
+    A = AntennaResponse(
+        detector,
+        ra=RA,
+        dec=DEC,
+        psi=PSI,
+        times=TIMES,
+        use_lal=False,
+        scalar=True,
+        vector=True,
+    )
 
     # LAL-wrapped antenna pattern
-    B = AntennaResponse(detector, ra=RA, dec=DEC, psi=PSI, times=TIMES,
-                        use_lal=True, scalar=True, vector=True)
+    B = AntennaResponse(
+        detector,
+        ra=RA,
+        dec=DEC,
+        psi=PSI,
+        times=TIMES,
+        use_lal=True,
+        scalar=True,
+        vector=True,
+    )
 
     # look-up table
-    C = AntennaResponse(detector, ra=RA, dec=DEC, psi=PSI, times=TIMES,
-                        lookup=True, scalar=True, vector=True)
+    C = AntennaResponse(
+        detector,
+        ra=RA,
+        dec=DEC,
+        psi=PSI,
+        times=TIMES,
+        lookup=True,
+        scalar=True,
+        vector=True,
+    )
 
-    for key in ['plus', 'cross', 'x', 'y', 'b', 'l']:
+    for key in ["plus", "cross", "x", "y", "b", "l"]:
         assert_allclose(A.response[key], B.response[key])
         assert_allclose(A.response[key], C.response[key], atol=1e-3)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-antenna.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
