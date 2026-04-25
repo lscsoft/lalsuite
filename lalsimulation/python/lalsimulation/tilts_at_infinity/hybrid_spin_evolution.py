@@ -7,12 +7,16 @@ This implementation is described in the paper, <https://dcc.ligo.org/P2100029>, 
 Sumeet Kulkarni, 2021
 """
 
+from warnings import warn
+
 import numpy as np
+
 import lal
+import lalsimulation as lalsim
+
 from .calc_tilts_prec_avg_regularized import prec_avg_tilt_comp
 from .tilts_at_infinity_utils import *
-import lalsimulation as lalsim
-from warnings import warn
+
 
 # Define a function to transform spin basis:
 def get_tilts(chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz):
