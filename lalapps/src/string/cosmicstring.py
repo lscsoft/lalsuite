@@ -14,20 +14,15 @@ Classes needed for the cosmic string analysis pipeline.
 
 from __future__ import print_function
 
-
 import math
 import os
 import sys
 
-
 import igwn_segments as segments
-from lal import iterutils
-from lal import LIGOTimeGPS
-from lal import pipeline
 from lal.utils import CacheEntry
-from lalburst import cafe
-from lalburst import power
 
+from lal import LIGOTimeGPS, iterutils, pipeline
+from lalburst import cafe, power
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
