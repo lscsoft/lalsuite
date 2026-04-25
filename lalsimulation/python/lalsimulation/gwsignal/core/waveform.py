@@ -1,16 +1,19 @@
-import lal
-import lalsimulation as lalsim
+import warnings
+
 import numpy as np
 from astropy import units as u
-from gwpy.timeseries import TimeSeries
 from gwpy.frequencyseries import FrequencySeries
+from gwpy.timeseries import TimeSeries
 
-from . import utils as ut
-from . import parameter_conventions as pc
-from . import gw as gw
-from . import waveform_conditioning as wave_cond
+import lal
+import lalsimulation as lalsim
+
 from . import errors as err
-import warnings
+from . import gw as gw
+from . import parameter_conventions as pc
+from . import utils as ut
+from . import waveform_conditioning as wave_cond
+
 ###################################################################################################
 
 
