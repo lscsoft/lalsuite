@@ -189,7 +189,7 @@ def generateAttributes(datasets, counter = ''):
                 xvals, xvals_ref = [np.linspace(0., dX * (x.size - 1), x.size) \
                                    for x in [h, href]]
 
-                if counter is not '':
+                if counter != '':
                     num = counter
                 else:
                     num = i
