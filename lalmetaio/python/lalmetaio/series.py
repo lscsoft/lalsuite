@@ -26,7 +26,6 @@ LAL's XML I/O code.  The format is also very similar to the format used by
 the DMT to store time- and frequency-series data in XML files,
 """
 
-
 import numpy as np
 from igwn_ligolw import ligolw
 
@@ -45,14 +44,20 @@ Attributes = ligolw.sax.xmlreader.AttributesImpl
 
 
 def _build_series(series, dim_names, comment, delta_name, delta_unit, encoding="Text"):
-    elem = ligolw.LIGO_LW(Attributes({u"Name": str(series.__class__.__name__)}))
+    elem = ligolw.LIGO_LW(Attributes({"Name": str(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
-    elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
-    elem.appendChild(ligolw.Param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
+    elem.appendChild(ligolw.Time.from_gps(series.epoch, "epoch"))
+    elem.appendChild(ligolw.Param.from_pyvalue("f0", series.f0, unit="s^-1"))
     delta = getattr(series, delta_name)
     if np.iscomplexobj(series.data.data):
-        data = np.vstack((np.arange(len(series.data.data)) * delta, series.data.data.real, series.data.data.imag))
+        data = np.vstack(
+            (
+                np.arange(len(series.data.data)) * delta,
+                series.data.data.real,
+                series.data.data.imag,
+            )
+        )
     else:
         data = np.vstack((np.arange(len(series.data.data)) * delta, series.data.data))
     a = ligolw.Array.build(series.name, data, dim_names=dim_names, encoding=encoding)
@@ -66,12 +71,12 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit, encoding="
 
 
 def _parse_series(elem, creatorfunc, delta_target_unit_string):
-    t, = elem.getElementsByTagName(ligolw.Time.tagName)
-    a, = elem.getElementsByTagName(ligolw.Array.tagName)
+    (t,) = elem.getElementsByTagName(ligolw.Time.tagName)
+    (a,) = elem.getElementsByTagName(ligolw.Array.tagName)
     dims = a.getElementsByTagName(ligolw.Dim.tagName)
-    f0 = ligolw.Param.get_param(elem, u"f0")
+    f0 = ligolw.Param.get_param(elem, "f0")
 
-    if t.Type != u"GPS":
+    if t.Type != "GPS":
         raise ValueError("epoch Type must be GPS")
     epoch = t.pcdata
 
@@ -96,7 +101,7 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
         f0.pcdata * float(f0_unit / inverse_seconds_unit),
         dims[0].Scale * float(delta_unit / delta_target_unit),
         sample_unit,
-        len(a.array.T)
+        len(a.array.T),
     )
 
     # Assign data
@@ -111,7 +116,14 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
 
 def build_REAL4FrequencySeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.REAL4FrequencySeries)
-    return _build_series(series, (u"Frequency,Real", u"Frequency"), comment, 'deltaF', 's^-1', encoding=encoding)
+    return _build_series(
+        series,
+        ("Frequency,Real", "Frequency"),
+        comment,
+        "deltaF",
+        "s^-1",
+        encoding=encoding,
+    )
 
 
 def parse_REAL4FrequencySeries(elem):
@@ -120,7 +132,14 @@ def parse_REAL4FrequencySeries(elem):
 
 def build_REAL8FrequencySeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.REAL8FrequencySeries)
-    return _build_series(series, (u"Frequency,Real", u"Frequency"), comment, 'deltaF', 's^-1', encoding=encoding)
+    return _build_series(
+        series,
+        ("Frequency,Real", "Frequency"),
+        comment,
+        "deltaF",
+        "s^-1",
+        encoding=encoding,
+    )
 
 
 def parse_REAL8FrequencySeries(elem):
@@ -129,7 +148,14 @@ def parse_REAL8FrequencySeries(elem):
 
 def build_COMPLEX8FrequencySeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.COMPLEX8FrequencySeries)
-    return _build_series(series, (u"Frequency,Real,Imaginary", u"Frequency"), comment, 'deltaF', 's^-1', encoding=encoding)
+    return _build_series(
+        series,
+        ("Frequency,Real,Imaginary", "Frequency"),
+        comment,
+        "deltaF",
+        "s^-1",
+        encoding=encoding,
+    )
 
 
 def parse_COMPLEX8FrequencySeries(elem):
@@ -138,7 +164,14 @@ def parse_COMPLEX8FrequencySeries(elem):
 
 def build_COMPLEX16FrequencySeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.COMPLEX16FrequencySeries)
-    return _build_series(series, (u"Frequency,Real,Imaginary", u"Frequency"), comment, 'deltaF', 's^-1', encoding=encoding)
+    return _build_series(
+        series,
+        ("Frequency,Real,Imaginary", "Frequency"),
+        comment,
+        "deltaF",
+        "s^-1",
+        encoding=encoding,
+    )
 
 
 def parse_COMPLEX16FrequencySeries(elem):
@@ -147,7 +180,9 @@ def parse_COMPLEX16FrequencySeries(elem):
 
 def build_REAL4TimeSeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.REAL4TimeSeries)
-    return _build_series(series, (u"Time,Real", u"Time"), comment, 'deltaT', 's', encoding=encoding)
+    return _build_series(
+        series, ("Time,Real", "Time"), comment, "deltaT", "s", encoding=encoding
+    )
 
 
 def parse_REAL4TimeSeries(elem):
@@ -156,7 +191,9 @@ def parse_REAL4TimeSeries(elem):
 
 def build_REAL8TimeSeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.REAL8TimeSeries)
-    return _build_series(series, (u"Time,Real", u"Time"), comment, 'deltaT', 's', encoding=encoding)
+    return _build_series(
+        series, ("Time,Real", "Time"), comment, "deltaT", "s", encoding=encoding
+    )
 
 
 def parse_REAL8TimeSeries(elem):
@@ -165,7 +202,14 @@ def parse_REAL8TimeSeries(elem):
 
 def build_COMPLEX8TimeSeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.COMPLEX8TimeSeries)
-    return _build_series(series, (u"Time,Real,Imaginary", u"Time"), comment, 'deltaT', 's', encoding=encoding)
+    return _build_series(
+        series,
+        ("Time,Real,Imaginary", "Time"),
+        comment,
+        "deltaT",
+        "s",
+        encoding=encoding,
+    )
 
 
 def parse_COMPLEX8TimeSeries(elem):
@@ -174,7 +218,14 @@ def parse_COMPLEX8TimeSeries(elem):
 
 def build_COMPLEX16TimeSeries(series, comment=None, encoding="Text"):
     assert isinstance(series, lal.COMPLEX16TimeSeries)
-    return _build_series(series, (u"Time,Real,Imaginary", u"Time"), comment, 'deltaT', 's', encoding=encoding)
+    return _build_series(
+        series,
+        ("Time,Real,Imaginary", "Time"),
+        comment,
+        "deltaT",
+        "s",
+        encoding=encoding,
+    )
 
 
 def parse_COMPLEX16TimeSeries(elem):
@@ -190,7 +241,7 @@ def parse_COMPLEX16TimeSeries(elem):
 #
 
 
-def make_psd_xmldoc(psddict, xmldoc = None, root_name = u"psd", encoding="Text"):
+def make_psd_xmldoc(psddict, xmldoc=None, root_name="psd", encoding="Text"):
     """
     Construct an XML document tree representation of a dictionary of
     frequency series objects containing PSDs.  See also read_psd_xmldoc()
@@ -205,15 +256,15 @@ def make_psd_xmldoc(psddict, xmldoc = None, root_name = u"psd", encoding="Text")
     """
     if xmldoc is None:
         xmldoc = ligolw.Document()
-    lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({u"Name": root_name})))
+    lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({"Name": root_name})))
     for instrument, psd in psddict.items():
         fs = lw.appendChild(build_REAL8FrequencySeries(psd, encoding=encoding))
         if instrument is not None:
-            fs.appendChild(ligolw.Param.from_pyvalue(u"instrument", instrument))
+            fs.appendChild(ligolw.Param.from_pyvalue("instrument", instrument))
     return xmldoc
 
 
-def read_psd_xmldoc(xmldoc, root_name = u"psd"):
+def read_psd_xmldoc(xmldoc, root_name="psd"):
     """
     Parse a dictionary of PSD frequency series objects from an XML
     document.  See also make_psd_xmldoc() for the construction of XML
@@ -226,8 +277,19 @@ def read_psd_xmldoc(xmldoc, root_name = u"psd"):
     value.
     """
     if root_name is not None:
-        xmldoc, = (elem for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == root_name)
-    result = dict((ligolw.Param.get_param(elem, u"instrument").value, parse_REAL8FrequencySeries(elem)) for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == u"REAL8FrequencySeries")
+        (xmldoc,) = (
+            elem
+            for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName)
+            if elem.hasAttribute("Name") and elem.Name == root_name
+        )
+    result = dict(
+        (
+            ligolw.Param.get_param(elem, "instrument").value,
+            parse_REAL8FrequencySeries(elem),
+        )
+        for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName)
+        if elem.hasAttribute("Name") and elem.Name == "REAL8FrequencySeries"
+    )
     # interpret empty frequency series as None
     for instrument in result:
         if len(result[instrument].data.data) == 0:
