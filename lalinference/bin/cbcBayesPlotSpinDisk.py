@@ -2,7 +2,9 @@
 # Ben Farr 2016
 
 import os
-from matplotlib import (use, rc)
+
+from matplotlib import rc, use
+
 use('agg')
 
 rc('text', usetex=True)
@@ -22,6 +24,7 @@ USAGE='What this does is : '
 if __name__=='__main__':
   import sys
   from optparse import OptionParser
+
   from lalinference import bayespputils as bppu
 
   parser=OptionParser(USAGE)
