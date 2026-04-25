@@ -27,16 +27,14 @@ import numpy as np
 import pytest
 
 
-@pytest.mark.parametrize(
-    "scalar_type", ["REAL4", "REAL8", "COMPLEX8", "COMPLEX16"]
-)
+@pytest.mark.parametrize("scalar_type", ["REAL4", "REAL8", "COMPLEX8", "COMPLEX16"])
 @pytest.mark.parametrize("domain", ["Frequency", "Time"])
 @pytest.mark.parametrize(
     "encoding,assert_array_equal",
     [
         ["Text", np.testing.assert_array_almost_equal],
-        ["base64", np.testing.assert_array_equal]
-    ]
+        ["base64", np.testing.assert_array_equal],
+    ],
 )
 def test_build_series(scalar_type, domain, encoding, assert_array_equal):
     class_name = f"{scalar_type}{domain}Series"
@@ -45,18 +43,22 @@ def test_build_series(scalar_type, domain, encoding, assert_array_equal):
     create_series = getattr(lal, f"Create{class_name}")
 
     series = create_series(
-        "name", lal.LIGOTimeGPS(3141, 59), 42.0, 2.5, lal.KiloGramUnit, 1234)
+        "name", lal.LIGOTimeGPS(3141, 59), 42.0, 2.5, lal.KiloGramUnit, 1234
+    )
     series.data.data = np.random.uniform(size=series.data.data.shape)
 
     fileobj = io.BytesIO()
     xmldoc = igwn_ligolw.ligolw.Document()
     xmldoc.appendChild(
-        build_series(series, comment="This is a comment", encoding=encoding))
+        build_series(series, comment="This is a comment", encoding=encoding)
+    )
     igwn_ligolw.utils.write_fileobj(xmldoc, fileobj)
     print(fileobj.getvalue())
     xml_str = fileobj.getvalue().decode()
-    if encoding == igwn_ligolw.ligolw.Encoding.enc(igwn_ligolw.ligolw.Stream.Encoding.default):
-        assert 'Encoding=' not in xml_str
+    if encoding == igwn_ligolw.ligolw.Encoding.enc(
+        igwn_ligolw.ligolw.Stream.Encoding.default
+    ):
+        assert "Encoding=" not in xml_str
     else:
         assert f'Encoding="{encoding}' in xml_str
     assert "This is a comment" in xml_str
@@ -69,6 +71,6 @@ def test_build_series(scalar_type, domain, encoding, assert_array_equal):
     assert_array_equal(new_series.data.data, series.data.data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-test-series.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
