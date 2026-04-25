@@ -81,7 +81,8 @@ def email_notify(address,path):
         while a!=k:
             (a,b)=fslocation.split(a)
             webpath=os.path.join(b,webpath)
-    else: webpath=os.path.join(fslocation,'posplots.html')
+    else:
+      webpath=os.path.join(fslocation,'posplots.html')
 
     if 'atlas.aei.uni-hannover.de' in HOST:
         url="https://atlas1.atlas.aei.uni-hannover.de/"
@@ -121,8 +122,10 @@ class LIGOLWContentHandlerExtractSimInspiralTable(ligolw.LIGOLWContentHandler):
       elif self.intable: # We are in the correct table
         ligolw.LIGOLWContentHandler.startElement(self,name,attrs)
     def endElement(self,name):
-      if self.intable: ligolw.LIGOLWContentHandler.endElement(self,name)
-      if self.intable and name==self.tableElementName: self.intable=False
+      if self.intable:
+        ligolw.LIGOLWContentHandler.endElement(self,name)
+      if self.intable and name==self.tableElementName:
+        self.intable=False
 
 class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
     def __init__(self,document):
@@ -139,8 +142,10 @@ class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
       elif self.intable: # We are in the correct table
         ligolw.LIGOLWContentHandler.startElement(self,name,attrs)
     def endElement(self,name):
-      if self.intable: ligolw.LIGOLWContentHandler.endElement(self,name)
-      if self.intable and name==self.tableElementName: self.intable=False
+      if self.intable:
+        ligolw.LIGOLWContentHandler.endElement(self,name)
+      if self.intable and name==self.tableElementName:
+        self.intable=False
 
 def pickle_to_file(obj,fname):
     """
@@ -182,7 +187,8 @@ def multipleFileCB(opt, opt_str, value, parser):
         args = oldargs
     setattr(parser.values, opt.dest, args)
 def dict2html(d,parent=None):
-    if not d: return ""
+    if not d:
+      return ""
     out=bppu.htmlChunk('div',parent=parent)
     tab=out.tab()
     row=out.insert_row(tab)
@@ -776,7 +782,8 @@ def cbcBayesBurstPostProc(
         figname=par_name+'.png'
         oneDplotPath=os.path.join(onepdfdir,figname)
         plotFig.savefig(oneDplotPath)
-        if(savepdfs): plotFig.savefig(os.path.join(onepdfdir,par_name+'.pdf'))
+        if(savepdfs):
+          plotFig.savefig(os.path.join(onepdfdir,par_name+'.pdf'))
         plt.close(plotFig)
 
         if rbins:
@@ -817,7 +824,8 @@ def cbcBayesBurstPostProc(
             if min(pos_samps)<injpar and max(pos_samps)>injpar:
                 plt.axhline(injpar, color='r', linestyle='-.')
         myfig.savefig(os.path.join(sampsdir,figname.replace('.png','_samps.png')))
-        if(savepdfs): myfig.savefig(os.path.join(sampsdir,figname.replace('.png','_samps.pdf')))
+        if(savepdfs):
+          myfig.savefig(os.path.join(sampsdir,figname.replace('.png','_samps.pdf')))
         plt.close(myfig)
         acfail=0
         if not (noacf):
@@ -841,7 +849,7 @@ def cbcBayesBurstPostProc(
             else:
                 try:
                     acls = []
-                    Nsamps = 0.0;
+                    Nsamps = 0.0
                     for rng, data, Nskip, Ncycles in zip(chainDataRanges, chainData, chainNskips, chainNcycles):
                         (Neff, acl, acf) = bppu.effectiveSampleSize(data, Nskip)
                         acls.append(acl)
@@ -861,7 +869,8 @@ def cbcBayesBurstPostProc(
                     pass
 
             acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
-            if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
+            if(savepdfs):
+              acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
             plt.close(acffig)
 
         if not noacf:
@@ -1001,13 +1010,15 @@ def cbcBayesBurstPostProc(
           greedy2ContourPlot=bppu.plot_two_param_kde_greedy_levels({'Result':pos},greedy2Params,[0.67,0.9,0.95],{'Result':'k'})
           greedy2contourpath=os.path.join(greedytwobinsdir,'%s-%s_greedy2contour.png'%(par1_name,par2_name))
           greedy2ContourPlot.savefig(greedy2contourpath)
-          if(savepdfs): greedy2ContourPlot.savefig(greedy2contourpath.replace('.png','.pdf'))
+          if(savepdfs):
+            greedy2ContourPlot.savefig(greedy2contourpath.replace('.png','.pdf'))
           plt.close(greedy2ContourPlot)
 
           greedy2HistFig=bppu.plot_two_param_greedy_bins_hist(pos,greedy2Params,confidence_levels)
           greedy2histpath=os.path.join(greedytwobinsdir,'%s-%s_greedy2.png'%(par1_name,par2_name))
           greedy2HistFig.savefig(greedy2histpath)
-          if(savepdfs): greedy2HistFig.savefig(greedy2histpath.replace('.png','.pdf'))
+          if(savepdfs):
+            greedy2HistFig.savefig(greedy2histpath.replace('.png','.pdf'))
           plt.close(greedy2HistFig)
         except:
           pass
@@ -1063,7 +1074,8 @@ def cbcBayesBurstPostProc(
                     row_count=0
 
                 myfig.savefig(twoDKdePath)
-                if(savepdfs): myfig.savefig(twoDKdePath.replace('.png','.pdf'))
+                if(savepdfs):
+                    myfig.savefig(twoDKdePath.replace('.png','.pdf'))
                 plt.close(myfig)
 
     #Finish off the BCI table and write it into the etree
