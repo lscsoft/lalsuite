@@ -22,17 +22,22 @@
 
 import argparse
 import os
-import sys
 import shutil
-from contextlib import contextmanager
+import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import contextmanager
+
 from tqdm import tqdm
 
-from lal import LALERRORBIT, LALWARNINGBIT, LALINFOBIT, LALTRACEBIT
-from lal import GetDebugLevel, ClobberDebugLevel
-
-from lalpulsar import git_version
-from lalpulsar import ValidateSFTFile, SFTErrorMessage
+from lal import (
+    LALERRORBIT,
+    LALINFOBIT,
+    LALTRACEBIT,
+    LALWARNINGBIT,
+    ClobberDebugLevel,
+    GetDebugLevel,
+)
+from lalpulsar import SFTErrorMessage, ValidateSFTFile, git_version
 
 __author__ = "Evan Goetz <evan.goetz@ligo.org>"
 __credits__ = "Karl Wette <karl.wette@ligo.org>"
