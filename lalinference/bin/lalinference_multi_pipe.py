@@ -9,7 +9,7 @@ from optparse import OptionParser
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 
-usage=""" %prog [options] config1.ini config2.ini ... configN.ini
+usage = """ %prog [options] config1.ini config2.ini ... configN.ini
 Setup a Condor DAG file to run the LALInference pipeline based on
 N config.ini files.
 
@@ -27,12 +27,14 @@ import os
 def vararg_callback(option, opt_str, value, parser):
     assert value is None
     value = []
+
     def floatable(str):
         try:
             float(str)
             return True
         except ValueError:
             return False
+
     for arg in parser.rargs:
         # stop on --foo like options
         if arg[:2] == "--" and len(arg) > 2:
@@ -41,107 +43,199 @@ def vararg_callback(option, opt_str, value, parser):
         if arg[:1] == "-" and len(arg) > 1 and not floatable(arg):
             break
         value.append(arg)
-    del parser.rargs[:len(value)]
+    del parser.rargs[: len(value)]
     setattr(parser.values, option.dest, value)
 
-parser=OptionParser(usage)
-parser.add_option("-r","--run-path",default=None,action="store",type="string",help="Directory to run pipeline in (default: $PWD)",metavar="RUNDIR")
-parser.add_option("-p","--daglog-path",default=None,action="store",type="string",help="Path to directory to contain DAG log file. SHOULD BE LOCAL TO SUBMIT NODE",metavar="LOGDIR")
-parser.add_option("-g","--gps-time-file",action="store",type="string",default=None,help="Text file containing list of GPS times to analyse",metavar="TIMES.txt")
-parser.add_option("-t","--single-triggers",action="store",type="string",default=None,help="SnglInspiralTable trigger list",metavar="SNGL_FILE.xml")
-parser.add_option("-C","--coinc-triggers",action="store",type="string",default=None,help="CoinInspiralTable trigger list",metavar="COINC_FILE.xml")
-parser.add_option("-L","--lvalert",action="store",type="string",default=None,help="LVAlert coinc file",metavar="coinc_G0000.xml")
-parser.add_option("--gid",action="store",type="string",default=None,help="Optional GraceDB ID for submitting results")
-parser.add_option("-I","--injections",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
-parser.add_option("-P","--pipedown-db",action="store",type="string",default=None,help="Pipedown database to read and analyse",metavar="pipedown.sqlite")
-parser.add_option("-F","--folder-names",dest="fnames",action="callback", callback=vararg_callback,help="Space separated list of folders that will be created, corresponding to the TIGER parameters that are being tested or GR. The order has to be the same used with the ini files!",default=None,metavar="GR phi1")
-parser.add_option("--condor-submit",action="store_true",default=False,help="Automatically submit the condor dag")
 
-(opts,args)=parser.parse_args()
+parser = OptionParser(usage)
+parser.add_option(
+    "-r",
+    "--run-path",
+    default=None,
+    action="store",
+    type="string",
+    help="Directory to run pipeline in (default: $PWD)",
+    metavar="RUNDIR",
+)
+parser.add_option(
+    "-p",
+    "--daglog-path",
+    default=None,
+    action="store",
+    type="string",
+    help="Path to directory to contain DAG log file. SHOULD BE LOCAL TO SUBMIT NODE",
+    metavar="LOGDIR",
+)
+parser.add_option(
+    "-g",
+    "--gps-time-file",
+    action="store",
+    type="string",
+    default=None,
+    help="Text file containing list of GPS times to analyse",
+    metavar="TIMES.txt",
+)
+parser.add_option(
+    "-t",
+    "--single-triggers",
+    action="store",
+    type="string",
+    default=None,
+    help="SnglInspiralTable trigger list",
+    metavar="SNGL_FILE.xml",
+)
+parser.add_option(
+    "-C",
+    "--coinc-triggers",
+    action="store",
+    type="string",
+    default=None,
+    help="CoinInspiralTable trigger list",
+    metavar="COINC_FILE.xml",
+)
+parser.add_option(
+    "-L",
+    "--lvalert",
+    action="store",
+    type="string",
+    default=None,
+    help="LVAlert coinc file",
+    metavar="coinc_G0000.xml",
+)
+parser.add_option(
+    "--gid",
+    action="store",
+    type="string",
+    default=None,
+    help="Optional GraceDB ID for submitting results",
+)
+parser.add_option(
+    "-I",
+    "--injections",
+    action="store",
+    type="string",
+    default=None,
+    help="List of injections to perform and analyse",
+    metavar="INJFILE.xml",
+)
+parser.add_option(
+    "-P",
+    "--pipedown-db",
+    action="store",
+    type="string",
+    default=None,
+    help="Pipedown database to read and analyse",
+    metavar="pipedown.sqlite",
+)
+parser.add_option(
+    "-F",
+    "--folder-names",
+    dest="fnames",
+    action="callback",
+    callback=vararg_callback,
+    help="Space separated list of folders that will be created, corresponding to the TIGER parameters that are being tested or GR. The order has to be the same used with the ini files!",
+    default=None,
+    metavar="GR phi1",
+)
+parser.add_option(
+    "--condor-submit",
+    action="store_true",
+    default=False,
+    help="Automatically submit the condor dag",
+)
 
-if len(args)>1:
-  print('Using %s ini files\n'%len(args))
-elif len(args)==1:
-  inifile=args[0]
+opts, args = parser.parse_args()
 
-inits=args
-ninits=len(inits)
-fnames=opts.fnames
-nfnames=len(fnames)
+if len(args) > 1:
+    print("Using %s ini files\n" % len(args))
+elif len(args) == 1:
+    inifile = args[0]
 
-if not ninits==nfnames:
-  print("You seem to be using %d parser files and %d foldernames. These two numbers must be the same. Exiting...\n"%(ninits,nfnames))
-  sys.exit(1)
+inits = args
+ninits = len(inits)
+fnames = opts.fnames
+nfnames = len(fnames)
 
-fnames_dic={}
+if not ninits == nfnames:
+    print(
+        "You seem to be using %d parser files and %d foldernames. These two numbers must be the same. Exiting...\n"
+        % (ninits, nfnames)
+    )
+    sys.exit(1)
+
+fnames_dic = {}
 for fname in fnames:
-  fnames_dic[fnames.index(fname)]=str(fname)
+    fnames_dic[fnames.index(fname)] = str(fname)
 
-glob_hyp=fnames
-hyp_str=" "
+glob_hyp = fnames
+hyp_str = " "
 
 for hy in glob_hyp:
-  hyp_str+=hy+" "
+    hyp_str += hy + " "
 
-cp=configparser.ConfigParser()
+cp = configparser.ConfigParser()
 cp.optionxform = str
 
-first_dag=True
-common_path=opts.run_path
+first_dag = True
+common_path = opts.run_path
 
 for inifile in inits:
-  try:
-    cp.read_file(open(inifile))
-  except AttributeError:
-    cp.readfp(open(inifile))
-  if opts.run_path is not None:
-    cp.set('paths','basedir',opts.run_path)
-  if opts.daglog_path is not None:
-    cp.set('paths','daglogdir',opts.daglog_path)
-  else:
-    cp.set('paths','daglogdir',opts.run_path)
-  if opts.gps_time_file is not None:
-    cp.set('input','gps-time-file',opts.gps_time_file)
-  if opts.single_triggers is not None:
-    cp.set('input','sngl-inspiral-file',opts.single_triggers)
-  if opts.injections is not None:
-    cp.set('input','injection-file',opts.injections)
-  if opts.coinc_triggers is not None:
-    cp.set('input','coinc-inspiral-file',opts.coinc_triggers)
-  if opts.lvalert is not None:
-    cp.set('input','lvalert-file',opts.lvalert)
-  if opts.gid is not None:
-    cp.set('input','gid',opts.gid)
-  if opts.pipedown_db is not None:
-    cp.set('input','pipedown-db',opts.pipedown_db)
+    try:
+        cp.read_file(open(inifile))
+    except AttributeError:
+        cp.readfp(open(inifile))
+    if opts.run_path is not None:
+        cp.set("paths", "basedir", opts.run_path)
+    if opts.daglog_path is not None:
+        cp.set("paths", "daglogdir", opts.daglog_path)
+    else:
+        cp.set("paths", "daglogdir", opts.run_path)
+    if opts.gps_time_file is not None:
+        cp.set("input", "gps-time-file", opts.gps_time_file)
+    if opts.single_triggers is not None:
+        cp.set("input", "sngl-inspiral-file", opts.single_triggers)
+    if opts.injections is not None:
+        cp.set("input", "injection-file", opts.injections)
+    if opts.coinc_triggers is not None:
+        cp.set("input", "coinc-inspiral-file", opts.coinc_triggers)
+    if opts.lvalert is not None:
+        cp.set("input", "lvalert-file", opts.lvalert)
+    if opts.gid is not None:
+        cp.set("input", "gid", opts.gid)
+    if opts.pipedown_db is not None:
+        cp.set("input", "pipedown-db", opts.pipedown_db)
 
-  if opts.run_path is not None:
-    cp.set('paths','basedir',os.path.join(str(common_path),str(fnames_dic[inits.index(inifile)])))
-    # Create the DAG from the configparser object
-  if first_dag:
-    dag=pipe_utils.LALInferencePipelineDAG(cp)
-    first_dag=False
-    dag.write_sub_files()
-    dag2=dag
-  else:
-    dag2=pipe_utils.LALInferencePipelineDAG(cp,first_dag=False,previous_dag=dag)
-    dag2.write_sub_files()
-    dag=dag2
+    if opts.run_path is not None:
+        cp.set(
+            "paths",
+            "basedir",
+            os.path.join(str(common_path), str(fnames_dic[inits.index(inifile)])),
+        )
+        # Create the DAG from the configparser object
+    if first_dag:
+        dag = pipe_utils.LALInferencePipelineDAG(cp)
+        first_dag = False
+        dag.write_sub_files()
+        dag2 = dag
+    else:
+        dag2 = pipe_utils.LALInferencePipelineDAG(cp, first_dag=False, previous_dag=dag)
+        dag2.write_sub_files()
+        dag = dag2
 
 # Create the DAG from the configparser object
-dag2.set_dag_file(os.path.join(common_path,'common_dag'))
+dag2.set_dag_file(os.path.join(common_path, "common_dag"))
 dag2.write_dag()
 dag2.write_script()
 # End of program
-print('Successfully created DAG file.')
-print('Now run condor_submit_dag %s\n'%(dag2.get_dag_file()))
+print("Successfully created DAG file.")
+print("Now run condor_submit_dag %s\n" % (dag2.get_dag_file()))
 
 if opts.condor_submit:
     import subprocess
 
-    x = subprocess.Popen(['condor_submit_dag',dag.get_dag_file()])
+    x = subprocess.Popen(["condor_submit_dag", dag.get_dag_file()])
     x.wait()
-    if x.returncode==0:
-      print('Submitted DAG file')
+    if x.returncode == 0:
+        print("Submitted DAG file")
     else:
-      print('Unable to submit DAG file')
+        print("Unable to submit DAG file")
