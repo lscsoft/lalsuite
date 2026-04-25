@@ -1,3 +1,3 @@
 from lalinference.bayestar.deprecation import warn
 
-warn('ligo.skymap.bayestar')
+warn("ligo.skymap.bayestar")
