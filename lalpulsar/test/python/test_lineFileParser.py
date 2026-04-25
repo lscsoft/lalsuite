@@ -30,11 +30,9 @@ except ImportError as exc:  # probably macports
     sys.exit(77)
 
 import numpy as np
-from numpy.testing import assert_allclose
-
-from lalpulsar.lineFileParser import LineFileParser
-
 import pytest
+from lalpulsar.lineFileParser import LineFileParser
+from numpy.testing import assert_allclose
 
 
 @pytest.fixture
