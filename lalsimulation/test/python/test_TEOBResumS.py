@@ -33,13 +33,16 @@ import lalsimulation
 
 # -- utility functions ---------------------
 
+
 def get_amp_phase(h):
     amp = np.abs(h)
     phase = np.unwrap(np.angle(h))
     return amp, phase
 
+
 def sum_sqr_diff(x, y):
-    return np.sqrt( np.sum( (x-y)**2 )  )
+    return np.sqrt(np.sum((x - y) ** 2))
+
 
 def gen_test_data():
     """
@@ -47,31 +50,31 @@ def gen_test_data():
     and compare to expected value
     """
 
-    common_pars=dict(
-    m1=50*lal.MSUN_SI,
-    m2=30*lal.MSUN_SI,
-    s1x=0,
-    s1y=0,
-    s1z=-0.45,
-    s2x=0,
-    s2y=0,
-    s2z=0.98,
-    distance=1,
-    inclination=0.,
-    phiRef=0.,
-    longAscNodes=0.,
-    eccentricity=0.,
-    meanPerAno=0.,
-    deltaT=1./4096.,
-    f_min=30.,
-    f_ref=30.,
-    params=None,
-    approximant=lalsimulation.TEOBResumS
+    common_pars = dict(
+        m1=50 * lal.MSUN_SI,
+        m2=30 * lal.MSUN_SI,
+        s1x=0,
+        s1y=0,
+        s1z=-0.45,
+        s2x=0,
+        s2y=0,
+        s2z=0.98,
+        distance=1,
+        inclination=0.0,
+        phiRef=0.0,
+        longAscNodes=0.0,
+        eccentricity=0.0,
+        meanPerAno=0.0,
+        deltaT=1.0 / 4096.0,
+        f_min=30.0,
+        f_ref=30.0,
+        params=None,
+        approximant=lalsimulation.TEOBResumS,
     )
 
     pars1 = common_pars.copy()
     pars2 = common_pars.copy()
-    pars2.update({"m2":20.*lal.MSUN_SI})
+    pars2.update({"m2": 20.0 * lal.MSUN_SI})
 
     hp1, hc1 = lalsimulation.SimInspiralChooseTDWaveform(**pars1)
     hp2, hc2 = lalsimulation.SimInspiralChooseTDWaveform(**pars2)
@@ -89,28 +92,33 @@ def gen_test_data():
     no = min(hp1.data.length - npeak1, hp2.data.length - npeak2)
 
     # Truncate and align waveforms in place w.r.t. peak
-    hp1_amp = hp1_amp[npeak1-ni:npeak1+no]
-    hc1_amp = hc1_amp[npeak1-ni:npeak1+no]
-    hp2_amp = hp2_amp[npeak2-ni:npeak2+no]
-    hc2_amp = hc2_amp[npeak2-ni:npeak2+no]
-    hp1_phase = hp1_phase[npeak1-ni:npeak1+no]
-    hc1_phase = hc1_phase[npeak1-ni:npeak1+no]
-    hp2_phase = hp2_phase[npeak2-ni:npeak2+no]
-    hc2_phase = hc2_phase[npeak2-ni:npeak2+no]
+    hp1_amp = hp1_amp[npeak1 - ni : npeak1 + no]
+    hc1_amp = hc1_amp[npeak1 - ni : npeak1 + no]
+    hp2_amp = hp2_amp[npeak2 - ni : npeak2 + no]
+    hc2_amp = hc2_amp[npeak2 - ni : npeak2 + no]
+    hp1_phase = hp1_phase[npeak1 - ni : npeak1 + no]
+    hc1_phase = hc1_phase[npeak1 - ni : npeak1 + no]
+    hp2_phase = hp2_phase[npeak2 - ni : npeak2 + no]
+    hc2_phase = hc2_phase[npeak2 - ni : npeak2 + no]
 
-    hp_amp_diff   = sum_sqr_diff(hp1_amp, hp2_amp)
+    hp_amp_diff = sum_sqr_diff(hp1_amp, hp2_amp)
     hp_phase_diff = sum_sqr_diff(hp1_phase, hp2_phase)
 
-    hc_amp_diff   = sum_sqr_diff(hc1_amp, hc2_amp)
+    hc_amp_diff = sum_sqr_diff(hc1_amp, hc2_amp)
     hc_phase_diff = sum_sqr_diff(hc1_phase, hc2_phase)
 
     # since we want to compare decimals, we return the above quantities as 0.xxxxx..
     # by dividing them for their order of magnitude +1
-    return hp_amp_diff/1e6, hp_phase_diff/1e3, hc_amp_diff/1e6, hc_phase_diff/1e3
-
+    return (
+        hp_amp_diff / 1e6,
+        hp_phase_diff / 1e3,
+        hc_amp_diff / 1e6,
+        hc_phase_diff / 1e3,
+    )
 
 
 # -- test functions ---------------------
+
 
 def test_TEOBResumS():
     """
@@ -125,14 +133,14 @@ def test_TEOBResumS():
 
     """
 
-
     expected_result = np.array([0.27385, 0.14397, 0.27356, 0.14324])
-    new_result  =  np.array(gen_test_data())
-    np.testing.assert_almost_equal(new_result, expected_result, 5, "TEOBResumS test failed")
-
+    new_result = np.array(gen_test_data())
+    np.testing.assert_almost_equal(
+        new_result, expected_result, 5, "TEOBResumS test failed"
+    )
 
 
 # -- run the tests ------------------------------
 
-if __name__ == '__main__':
-    sys.exit(pytest.main(args=[__file__] + sys.argv[1:] + ['-v']))
+if __name__ == "__main__":
+    sys.exit(pytest.main(args=[__file__] + sys.argv[1:] + ["-v"]))
