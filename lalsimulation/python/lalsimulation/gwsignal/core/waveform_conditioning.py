@@ -1,11 +1,14 @@
-import lal
-import lalsimulation as lalsim
+import math
+import warnings
+
 import numpy as np
 from astropy import units as u
-from . import waveform as wave
+
+import lal
+import lalsimulation as lalsim
+
 from . import conditioning_subroutines as cond
-import warnings
-import math
+from . import waveform as wave
 
 # This is basically the same conditioning as done in LALSimulation.
 # Specifically, what is done in "LALSimInspiralGeneratorConditioning.c".
