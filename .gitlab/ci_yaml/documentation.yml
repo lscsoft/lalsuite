@@ -19,15 +19,18 @@ doxygen-doc:
     - source ${LCI_SCRIPTS}/build_env.sh
     - eval ./configure "${LCI_CONFIGURE_FLAGS}"
     # build and install documentation
-    - make -j${CPU_COUNT} install-html
-    - mv _inst/share/doc/lalsuite html
-    # save outputs from Doxygen documentation filters
+    # - on failure, save outputs from Doxygen documentation filters for debugging
     - |
-      for path in $(find -name '*.filtered'); do
-          basedir=doxygen_filtered/$(dirname ${path} | sed 's|/doxygen/in/|/|')
-          mkdir -p ${basedir}
-          mv ${path} ${basedir}
-      done
+      if make -j${CPU_COUNT} install-html; then
+          mv _inst/share/doc/lalsuite/ html/
+      else
+          for path in $(find -name '*.filtered'); do
+              basedir=doxygen_filtered/$(dirname ${path} | sed 's|/doxygen/in/|/|')
+              mkdir -p ${basedir}
+              mv ${path} ${basedir}
+          done
+          exit 1
+      fi
     # export path prefix
     - echo "PATH_PREFIX=${LCI_DOC_PATH_PREFIX##lalsuite-v}" > path_prefix.env
   artifacts:
@@ -39,6 +42,7 @@ doxygen-doc:
       - doxygen_filtered/
     reports:
       dotenv: path_prefix.env
+    when: always
   rules:
     - if: >
         $LCI_PIPE_TYPE == "merge"
