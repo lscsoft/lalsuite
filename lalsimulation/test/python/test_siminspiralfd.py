@@ -23,10 +23,11 @@ has the expected behaviour.
 
 import sys
 
-import lal
-import lalsimulation
 import numpy as np
 import pytest
+
+import lal
+import lalsimulation
 
 _test_data = [(0.25, 1024.0), (0.25, 600.0), (0.25, 40.0), (0.0, 1024.0), (0.0, 600.0)]
 
