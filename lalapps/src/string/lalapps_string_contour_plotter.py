@@ -31,7 +31,9 @@
 
 
 import math
+
 import matplotlib
+
 matplotlib.rcParams.update({
 	"font.size": 8.0,
 	"axes.titlesize": 10.0,
@@ -43,11 +45,11 @@ matplotlib.rcParams.update({
 	"savefig.dpi": 300,
 	"text.usetex": True
 })
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-from matplotlib.figure import Figure
+from optparse import OptionParser
 
 import numpy
-from optparse import OptionParser
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 from lalburst import git_version
 
