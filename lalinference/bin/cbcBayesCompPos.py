@@ -20,27 +20,27 @@
 #       MA 02110-1301, USA.
 
 #standard library imports
+import copy
+import getpass
 import os
 import sys
 from time import strftime
-import copy
-import getpass
+
+import matplotlib as mpl
 
 #related third party imports
 import numpy as np
+import scipy.stats as ss
 from numpy import floor
 
-import scipy.stats as ss
-
-import matplotlib as mpl
 mpl.use("AGG")
-from matplotlib import pyplot as plt
-from matplotlib import colors as mpl_colors
-from matplotlib import cm as mpl_cm
-from matplotlib.ticker import ScalarFormatter
-
 #local application/library specific imports
 import lalinference.bayespputils as bppu
+from matplotlib import cm as mpl_cm
+from matplotlib import colors as mpl_colors
+from matplotlib import pyplot as plt
+from matplotlib.ticker import ScalarFormatter
+
 from lalinference import git_version
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Will M. Farr <will.farr@ligo.org>"
@@ -101,6 +101,7 @@ allowed_params=['mtotal','m1','m2','mchirp','mc','chirpmass','q','asym_massratio
 def open_url(url,username,password):
 
     import urllib
+
     import urllib2
     import urlparse
 
@@ -492,7 +493,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
 
     if injection_path is not None and os.path.exists(injection_path) and eventnum is not None:
         eventnum=int(eventnum)
-        from igwn_ligolw import ligolw, lsctables, utils
+        from igwn_ligolw import lsctables, utils
         injections = lsctables.SimInspiralTable.get_table(
                 utils.load_filename(injection_path))
         if eventnum is not None:
