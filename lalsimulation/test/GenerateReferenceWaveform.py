@@ -263,7 +263,8 @@ def writeData(filename, polarisations, optsDict):
 
     # Write the waveform data section
     fp.write('\n[waveform-data]\n')
-    line = 'epoch = %.16e\n' % hp.epoch; fp.write(line)
+    line = 'epoch = %.16e\n' % hp.epoch
+    fp.write(line)
     if optsDict['domain']=='TD':
         fp.write('hp =')
         for x in hp.data.data:
