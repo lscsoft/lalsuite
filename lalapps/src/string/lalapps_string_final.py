@@ -33,39 +33,38 @@ String cusp search final output rendering tool.
 
 from __future__ import print_function
 
-
 import bisect
 import copyreg
-import pickle
 import heapq
 import itertools
-from optparse import OptionParser
 import math
-from matplotlib import patches
-import numpy
 import os
+import pickle
 import random
 import select
-from scipy import interpolate
-from scipy import optimize
 import sqlite3
 import sys
 import traceback
+from optparse import OptionParser
 
-
+import igwn_segments as segments
+import numpy
 from igwn_ligolw import dbtables
 from igwn_ligolw.utils import process as ligolwprocess
-import lal
-from lalburst import rate
-from lal.utils import CacheEntry
-from lalburst import git_version
-from lalburst import packing
-from lalburst import SimBurstUtils
-from lalburst import SnglBurstUtils
-from lalburst import stringutils
-import igwn_segments as segments
 from igwn_segments import utils as segmentsUtils
+from lal.utils import CacheEntry
+from matplotlib import patches
+from scipy import interpolate, optimize
 
+import lal
+from lalburst import (
+	SimBurstUtils,
+	SnglBurstUtils,
+	git_version,
+	packing,
+	rate,
+	stringutils,
+)
 
 SnglBurstUtils.matplotlib.rcParams.update({
 	"font.size": 10.0,
