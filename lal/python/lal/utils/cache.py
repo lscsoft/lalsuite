@@ -30,9 +30,7 @@ from urllib.parse import (
 
 import igwn_segments as segments
 
-from .. import git_version
-from .. import CacheImport
-from .. import LIGOTimeGPS
+from .. import CacheImport, LIGOTimeGPS, git_version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
