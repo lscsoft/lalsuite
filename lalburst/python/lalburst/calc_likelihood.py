@@ -51,73 +51,112 @@ __version__ = git_version.version
 #
 
 
-def assign_likelihood_ratios(connection, coinc_def_id, offset_vectors, vetoseglists, events_func, veto_func, ln_likelihood_ratio_func, verbose = False):
-	"""
-	Assigns likelihood ratio values to coincidences.
-	"""
-	#
-	# Create a cursor object for events_func() to reuse
-	#
+def assign_likelihood_ratios(
+    connection,
+    coinc_def_id,
+    offset_vectors,
+    vetoseglists,
+    events_func,
+    veto_func,
+    ln_likelihood_ratio_func,
+    verbose=False,
+):
+    """
+    Assigns likelihood ratio values to coincidences.
+    """
+    #
+    # Create a cursor object for events_func() to reuse
+    #
 
-	cursor = connection.cursor()
+    cursor = connection.cursor()
 
-	#
-	# Construct the in-SQL likelihood ratio function.  Rely on Python's
-	# closure mechanism to retain all local variables at the time of
-	# this function's creation for use inside the function.
-	#
+    #
+    # Construct the in-SQL likelihood ratio function.  Rely on Python's
+    # closure mechanism to retain all local variables at the time of
+    # this function's creation for use inside the function.
+    #
 
-	def ln_likelihood_ratio(coinc_event_id, time_slide_id):
-		try:
-			return ln_likelihood_ratio_func([event for event in events_func(cursor, coinc_event_id) if veto_func(event, vetoseglists)], offset_vectors[time_slide_id])
-		except:
-			traceback.print_exc()
-			raise
+    def ln_likelihood_ratio(coinc_event_id, time_slide_id):
+        try:
+            return ln_likelihood_ratio_func(
+                [
+                    event
+                    for event in events_func(cursor, coinc_event_id)
+                    if veto_func(event, vetoseglists)
+                ],
+                offset_vectors[time_slide_id],
+            )
+        except:
+            traceback.print_exc()
+            raise
 
-	connection.create_function("ln_likelihood_ratio", 2, ln_likelihood_ratio)
+    connection.create_function("ln_likelihood_ratio", 2, ln_likelihood_ratio)
 
-	#
-	# Iterate over all coincs, assigning likelihood ratios.
-	#
+    #
+    # Iterate over all coincs, assigning likelihood ratios.
+    #
 
-	if verbose:
-		print("computing likelihood ratios ...", file=sys.stderr)
+    if verbose:
+        print("computing likelihood ratios ...", file=sys.stderr)
 
-	connection.cursor().execute("""
+    connection.cursor().execute(
+        """
 UPDATE
 	coinc_event
 SET
 	likelihood = ln_likelihood_ratio(coinc_event_id, time_slide_id)
 WHERE
 	coinc_def_id == ?
-	""", (coinc_def_id,))
+	""",
+        (coinc_def_id,),
+    )
 
-	#
-	# Done
-	#
+    #
+    # Done
+    #
 
-	connection.commit()
-	cursor.close()
+    connection.commit()
+    cursor.close()
 
 
-def assign_likelihood_ratios_xml(xmldoc, coinc_def_id, offset_vectors, vetoseglists, events_func, veto_func, ln_likelihood_ratio_func, verbose = False):
-	"""
-	Assigns likelihood ratio values to coincidences (XML version).
-	"""
-	#
-	# Iterate over all coincs, assigning likelihood ratios.
-	#
+def assign_likelihood_ratios_xml(
+    xmldoc,
+    coinc_def_id,
+    offset_vectors,
+    vetoseglists,
+    events_func,
+    veto_func,
+    ln_likelihood_ratio_func,
+    verbose=False,
+):
+    """
+    Assigns likelihood ratio values to coincidences (XML version).
+    """
+    #
+    # Iterate over all coincs, assigning likelihood ratios.
+    #
 
-	for coinc_event in tqdm(lsctables.CoincTable.get_table(xmldoc), desc = "computing ln L", disable = not verbose):
-		if coinc_event.coinc_def_id != coinc_def_id:
-			continue
-		coinc_event.likelihood = ln_likelihood_ratio_func([event for event in events_func(None, coinc_event.coinc_event_id) if veto_func(event, vetoseglists)], offset_vectors[coinc_event.time_slide_id])
+    for coinc_event in tqdm(
+        lsctables.CoincTable.get_table(xmldoc),
+        desc="computing ln L",
+        disable=not verbose,
+    ):
+        if coinc_event.coinc_def_id != coinc_def_id:
+            continue
+        coinc_event.likelihood = ln_likelihood_ratio_func(
+            [
+                event
+                for event in events_func(None, coinc_event.coinc_event_id)
+                if veto_func(event, vetoseglists)
+            ],
+            offset_vectors[coinc_event.time_slide_id],
+        )
 
-	#
-	# Done
-	#
+    #
+    # Done
+    #
 
-	return
+    return
 
 
 #
@@ -126,7 +165,10 @@ def assign_likelihood_ratios_xml(xmldoc, coinc_def_id, offset_vectors, vetosegli
 
 
 def sngl_burst_events_func(cursor, coinc_event_id, row_from_cols):
-	return map(row_from_cols, cursor.execute("""
+    return map(
+        row_from_cols,
+        cursor.execute(
+            """
 SELECT
 	sngl_burst.*
 FROM
@@ -137,9 +179,12 @@ FROM
 	)
 WHERE
 	coinc_event_map.coinc_event_id == ?
-	""", (coinc_event_id,)))
+	""",
+            (coinc_event_id,),
+        ),
+    )
 
 
 def sngl_burst_veto_func(event, vetoseglists):
-	# return True if event should be *retained*
-	return event.ifo not in vetoseglists or event.peak not in vetoseglists[event.ifo]
+    # return True if event should be *retained*
+    return event.ifo not in vetoseglists or event.peak not in vetoseglists[event.ifo]
