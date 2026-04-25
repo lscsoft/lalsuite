@@ -1,7 +1,7 @@
-from . import pyseobnr_model
-
 import lalsimulation as lalsim
+
 from ..core.waveform import LALCompactBinaryCoalescenceGenerator
+from . import pyseobnr_model
 
 
 def gwsignal_get_waveform_generator(waveform_approximant):
