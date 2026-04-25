@@ -21,12 +21,11 @@ Test code for antenna.py.
 import sys
 
 import numpy as np
+import pytest
+from lal.antenna import AntennaResponse
 from numpy.testing import assert_allclose
 
 from lal import DAYSID_SI
-from lal.antenna import AntennaResponse
-
-import pytest
 
 # set values
 PSI = np.random.uniform(0., 2.*np.pi)
