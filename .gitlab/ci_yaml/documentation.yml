@@ -69,8 +69,12 @@ doxygen-index:
       # top-level index
       - html/
   rules:
+    # the `gitlab_server_tasks doxygen-index` command can only run on
+    # the main branch at lscsoft/lalsuite due to GitLab API permissions
     - if: >-
         $LCI_PIPE_TYPE == "sched-doc"
+        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
 
 # -- page deployment jobs ----------------------------------------------
 
