@@ -2,8 +2,9 @@
 
 from __future__ import division
 
-import numpy as np
 import os
+
+import numpy as np
 
 __all__=('make_disk_plot',)
 
