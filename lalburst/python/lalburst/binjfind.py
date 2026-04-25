@@ -39,21 +39,20 @@ again using the standard coincidence infrastructure.
 import bisect
 import sys
 
-
+import igwn_segments as segments
 from igwn_ligolw import lsctables
 from igwn_ligolw.utils import coincs as ligolw_coincs
 from igwn_ligolw.utils import process as ligolw_process
 from igwn_ligolw.utils import search_summary as ligolw_search_summary
 from igwn_ligolw.utils import time_slide as ligolw_time_slide
-import lal
-import igwn_segments as segments
-from . import burca
-from . import SimBurstUtils
 
+import lal
+
+from . import SimBurstUtils, burca, git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from .git_version import date as __date__
-from .git_version import version as __version__
+__date__ = git_version.date
+__version__ = git_version.version
 
 
 #
