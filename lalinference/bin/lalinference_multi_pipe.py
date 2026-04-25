@@ -3,10 +3,11 @@
 # (C) 2012 John Veitch
 # 2013 Salvatore Vitale: extended to work with several ini files
 
-from lalinference import lalinference_pipe_utils as pipe_utils
 import configparser
-from optparse import OptionParser
 import sys
+from optparse import OptionParser
+
+from lalinference import lalinference_pipe_utils as pipe_utils
 
 usage=""" %prog [options] config1.ini config2.ini ... configN.ini
 Setup a Condor DAG file to run the LALInference pipeline based on
@@ -21,6 +22,8 @@ The user must also specify and ini file which will contain the main analysis con
 """
 
 import os
+
+
 def vararg_callback(option, opt_str, value, parser):
     assert value is None
     value = []
