@@ -3,10 +3,11 @@ try:
 except ImportError:
     print("The pyseobnr package has failed to load, you will not be able to employ SEOBNRv5 approximants.")
 
-from numpy import arange
 from astropy.units import Mpc
-from gwpy.timeseries import TimeSeries
 from gwpy.frequencyseries import FrequencySeries
+from gwpy.timeseries import TimeSeries
+from numpy import arange
+
 from lal import LIGOTimeGPS
 
 from ..core.waveform import CompactBinaryCoalescenceGenerator
