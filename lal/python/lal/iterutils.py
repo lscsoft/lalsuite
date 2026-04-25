@@ -31,12 +31,11 @@ A collection of iteration utilities.
 
 import functools
 import math
-import numpy
 import random
 
+import numpy
 
 from . import git_version
-
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id
