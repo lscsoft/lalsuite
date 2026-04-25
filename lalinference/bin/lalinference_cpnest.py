@@ -1,8 +1,9 @@
 ##python
-import sys
 import argparse
-from lalinference.wrapper import LALInferenceCBCWrapper
 import os.path
+import sys
+
+from lalinference.wrapper import LALInferenceCBCWrapper
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Nested sampling for CBC analysis')
