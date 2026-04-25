@@ -1,8 +1,9 @@
 # Import required stuff
+import warnings
+
 import numpy as np
 from astropy import units as u
 from gwpy.timeseries import TimeSeries
-import warnings
 from scipy.signal import butter, sosfiltfilt
 
 # Routine to high-pass time series
