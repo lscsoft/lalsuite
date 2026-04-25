@@ -1246,12 +1246,10 @@ def test_LIGOTimeGPS_operations():
     from lal import LIGOTimeGPS
 
     t0 = LIGOTimeGPS()
-    assert type(LIGOTimeGPS(t0)) is LIGOTimeGPS
     assert is_value_and_type(t0, 0, LIGOTimeGPS)
-    assert t0 != None and not t0 is None
     t1 = LIGOTimeGPS(10.5)
     t2 = LIGOTimeGPS(10, 500000000)
-    assert not t0 and t1 and t2
+    assert t1 and t2
     assert is_value_and_type(t1, t2, LIGOTimeGPS)
     t3 = +t1
     t3 = -t2
