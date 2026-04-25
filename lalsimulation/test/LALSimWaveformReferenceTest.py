@@ -15,14 +15,17 @@
 # or write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import lal
-import lalsimulation as lalsim
-import numpy as np
+import configparser
+import io
+import os
+import sys
 import unittest
 from optparse import OptionParser
-import io
-import sys, os
-import configparser
+
+import numpy as np
+
+import lal
+import lalsimulation as lalsim
 
 NEW_DATA_STR = '######### NEW DATASET #############\n'
 DEFAULT_FILE = 'reviewed_waveforms.asc'
