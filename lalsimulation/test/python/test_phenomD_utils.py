@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
-"""Test PhenomD utility functions
-"""
+"""Test PhenomD utility functions"""
 
 import sys
 
@@ -28,11 +27,12 @@ import lalsimulation
 # -- test functions ---------------------
 
 FDamp0_test_data = [
-    (100,1,2.357052240844003e-21),
-    (110,2,1.4260166057106217e-21),
-    (120,3,1.1313850756051214e-21),
-    (130,4,9.958545717565913e-22)
+    (100, 1, 2.357052240844003e-21),
+    (110, 2, 1.4260166057106217e-21),
+    (120, 3, 1.1313850756051214e-21),
+    (130, 4, 9.958545717565913e-22),
 ]
+
 
 @pytest.mark.parametrize("mtot, distance, expected", FDamp0_test_data)
 def test_SimPhenomUtilsFDamp0(mtot, distance, expected):
@@ -41,14 +41,13 @@ def test_SimPhenomUtilsFDamp0(mtot, distance, expected):
     distance: distance to source in Mpc
     expected: expected value from lalsimulation.SimPhenomUtilsFDamp0
     """
-    value = lalsimulation.SimPhenomUtilsFDamp0(mtot, distance*1e6*lal.PC_SI)
+    value = lalsimulation.SimPhenomUtilsFDamp0(mtot, distance * 1e6 * lal.PC_SI)
 
-    assert value == expected, (
-        "lalsimulation.SimPhenomUtilsFDamp0 test failed"
-    )
+    assert value == expected, "lalsimulation.SimPhenomUtilsFDamp0 test failed"
+
 
 # -- run the tests ------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-phenomD_utils.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
