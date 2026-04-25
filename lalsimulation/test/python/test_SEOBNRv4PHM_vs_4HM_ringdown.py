@@ -17,7 +17,7 @@
 
 """Test that the aligned-spin limit of SEOBNRv4PHM is the same as SEOBNRv4HM
 In particular we consider cases where the final spin is *negative* with respect to the inital
- orbital angular momentum. """
+ orbital angular momentum."""
 
 import sys
 
@@ -41,16 +41,16 @@ def get_SEOBNRv4HM_modes(q, M, chi1, chi2, f_start, distance, deltaT):
     lal.DictInsertUINT4Value(PAparams, "PAFlag", 0)
 
     TGRparams = lal.CreateDict()
-    lal.DictInsertREAL8Value(TGRparams, "domega220", 0.)
-    lal.DictInsertREAL8Value(TGRparams, "dtau220", 0.)
-    lal.DictInsertREAL8Value(TGRparams, "domega210", 0.)
-    lal.DictInsertREAL8Value(TGRparams, "dtau210", 0.)
-    lal.DictInsertREAL8Value(TGRparams, "domega330", 0.)
-    lal.DictInsertREAL8Value(TGRparams, "dtau330", 0.)
-    lal.DictInsertREAL8Value(TGRparams, "domega440", 0.)
-    lal.DictInsertREAL8Value(TGRparams, "dtau440", 0.)
-    lal.DictInsertREAL8Value(TGRparams, "domega550", 0.)
-    lal.DictInsertREAL8Value(TGRparams, "dtau550", 0.)
+    lal.DictInsertREAL8Value(TGRparams, "domega220", 0.0)
+    lal.DictInsertREAL8Value(TGRparams, "dtau220", 0.0)
+    lal.DictInsertREAL8Value(TGRparams, "domega210", 0.0)
+    lal.DictInsertREAL8Value(TGRparams, "dtau210", 0.0)
+    lal.DictInsertREAL8Value(TGRparams, "domega330", 0.0)
+    lal.DictInsertREAL8Value(TGRparams, "dtau330", 0.0)
+    lal.DictInsertREAL8Value(TGRparams, "domega440", 0.0)
+    lal.DictInsertREAL8Value(TGRparams, "dtau440", 0.0)
+    lal.DictInsertREAL8Value(TGRparams, "domega550", 0.0)
+    lal.DictInsertREAL8Value(TGRparams, "dtau550", 0.0)
 
     sphtseries, dyn, dynHI = ls.SimIMRSpinAlignedEOBModes(
         deltaT,
@@ -72,7 +72,7 @@ def get_SEOBNRv4HM_modes(q, M, chi1, chi2, f_start, distance, deltaT):
         1.0,
         1.0,
         nqcCoeffsInput,
-        0, # nqcFlag
+        0,  # nqcFlag
         PAparams,
         TGRparams,
     )
@@ -95,7 +95,8 @@ def get_SEOBNRv4PHM_modes(q, M, chi1, chi2, f_start, distance, deltaT):
     m1SI = lal.MSUN_SI * q * M / (1.0 + q)
     m2SI = lal.MSUN_SI * M / (1.0 + q)
     approx = ls.SEOBNRv4PHM
-    hlm = ls.SimInspiralChooseTDModes(0.,
+    hlm = ls.SimInspiralChooseTDModes(
+        0.0,
         deltaT,
         m1SI,
         m2SI,
@@ -122,7 +123,7 @@ def get_SEOBNRv4PHM_modes(q, M, chi1, chi2, f_start, distance, deltaT):
 
 @pytest.mark.parametrize("q", [5.0, 10.0, 15.0, 20.0])
 def test_aligned_spin_limit_ringdown(q):
-    """ Test that the (2,2) mode frequency in the ringdown is within in 1Hz between v4HM and v4PHM.
+    """Test that the (2,2) mode frequency in the ringdown is within in 1Hz between v4HM and v4PHM.
     In particular, consider cases where the final spin is negative with respect to the initial
     orbital angular momentum. Of course considers only aligned-spin cases"""
     # Step 0: set parameters
@@ -182,5 +183,9 @@ def test_aligned_spin_limit_ringdown(q):
 # -- run the tests ------------------------------
 
 if __name__ == "__main__":
-    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-SEOBNRv4PHM_vs_4HM_ringdown.xml"]
+    args = sys.argv[1:] or [
+        "-v",
+        "-rs",
+        "--junit-xml=junit-SEOBNRv4PHM_vs_4HM_ringdown.xml",
+    ]
     sys.exit(pytest.main(args=[__file__] + args))
