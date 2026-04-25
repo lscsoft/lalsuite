@@ -1,6 +1,8 @@
+import collections.abc
+
 import lal
 import lalinference as li
-import collections.abc
+
 
 class LIVariablesWrap(collections.abc.MutableMapping):
     def __init__(self,init=None):
