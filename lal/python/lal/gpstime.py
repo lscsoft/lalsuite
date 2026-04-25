@@ -45,12 +45,18 @@ from numbers import Number
 from dateutil.parser import parse as str_to_utc
 
 from . import (
-    LIGOTimeGPS,
     GPSTimeNow as _gps_time_now,
+)
+from . import (
     GPSToUTC as _gps_to_utc,
+)
+from . import (
+    LIGOTimeGPS,
+    git_version,
+)
+from . import (
     UTCToGPS as _utc_to_gps,
 )
-from . import git_version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.verbose_msg
