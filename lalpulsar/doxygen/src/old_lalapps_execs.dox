@@ -1,0 +1,56 @@
+/**
+ * \page old_lalapps_execs Old LALApps Pulsar Applications
+ *
+ * All pulsar applications have been moved from LALApps to LALPulsar, and renamed with a \c lalpulsar_... prefix.
+ *
+ * - \c lalapps_combine_crosscorr_toplists has been renamed to \c lalpulsar_combine_crosscorr_toplists
+ * - \c lalapps_compareFstats has been renamed to \c lalpulsar_compareFstats
+ * - \c lalapps_compareSFTs has been renamed to \c lalpulsar_compareSFTs
+ * - \c lalapps_ComputeAntennaPattern has been renamed to \c lalpulsar_ComputeAntennaPattern
+ * - \c lalapps_ComputeFstatBenchmark has been renamed to \c lalpulsar_ComputeFstatBenchmark
+ * - \c lalapps_ComputeFstatistic_v2 has been renamed to \c lalpulsar_ComputeFstatistic_v2
+ * - \c lalapps_ComputeFstatLatticeCount has been renamed to \c lalpulsar_ComputeFstatLatticeCount
+ * - \c lalapps_ComputeFstatMCUpperLimit has been renamed to \c lalpulsar_ComputeFstatMCUpperLimit
+ * - \c lalapps_ComputePSD has been renamed to \c lalpulsar_ComputePSD
+ * - \c lalapps_CopySFTs has been renamed to \c lalpulsar_CopySFTs
+ * - \c lalapps_create_time_correction_ephemeris has been renamed to \c lalpulsar_create_time_correction_ephemeris
+ * - \c lalapps_pulsar_crosscorr_v2 has been renamed to \c lalpulsar_crosscorr_v2
+ * - \c lalapps_DriveHoughMulti has been renamed to \c lalpulsar_DriveHoughMulti
+ * - \c lalapps_dumpSFT has been renamed to \c lalpulsar_dumpSFT
+ * - \c lalapps_fits_header_getval has been renamed to \c lalpulsar_fits_header_getval
+ * - \c lalapps_fits_header_list has been renamed to \c lalpulsar_fits_header_list
+ * - \c lalapps_fits_overview has been renamed to \c lalpulsar_fits_overview
+ * - \c lalapps_fits_table_list has been renamed to \c lalpulsar_fits_table_list
+ * - \c lalapps_pulsar_frequency_evolution has been renamed to \c lalpulsar_frequency_evolution
+ * - \c lalapps_FstatMetric_v2 has been renamed to \c lalpulsar_FstatMetric_v2
+ * - \c lalapps_heterodyne_pulsar has been renamed to \c lalpulsar_heterodyne
+ * - \c lalapps_HierarchicalSearch has been renamed to \c lalpulsar_HierarchicalSearch
+ * - \c lalapps_HierarchSearchGCT has been renamed to \c lalpulsar_HierarchSearchGCT
+ * - \c lalapps_knope has been renamed to \c lalpulsar_knope
+ * - \c lalapps_knope_automation_script has been renamed to \c lalpulsar_knope_automation_script
+ * - \c lalapps_knope_collate_results has been renamed to \c lalpulsar_knope_collate_results
+ * - \c lalapps_knope_result_page has been renamed to \c lalpulsar_knope_result_page
+ * - \c lalapps_Makefakedata_v4 has been renamed to \c lalpulsar_Makefakedata_v4
+ * - \c lalapps_Makefakedata_v5 has been renamed to \c lalpulsar_Makefakedata_v5
+ * - \c lalapps_MakeSFTDAG has been renamed to \c lalpulsar_MakeSFTDAG
+ * - \c lalapps_MakeSFTs has been renamed to \c lalpulsar_MakeSFTs
+ * - \c lalapps_pulsar_parameter_estimation_nested has been renamed to \c lalpulsar_parameter_estimation_nested
+ * - \c lalapps_PredictFstat has been renamed to \c lalpulsar_PredictFstat
+ * - \c lalapps_PrintDetectorState has been renamed to \c lalpulsar_PrintDetectorState
+ * - \c lalapps_run_pulsar_crosscorr_v2 has been renamed to \c lalpulsar_run_crosscorr_v2
+ * - \c lalapps_SFTclean has been renamed to \c lalpulsar_SFTclean
+ * - \c lalapps_SFTvalidate has been renamed to \c lalpulsar_SFTvalidate
+ * - \c lalapps_spec_avg has been renamed to \c lalpulsar_spec_avg
+ * - \c lalapps_spec_avg_long has been renamed to \c lalpulsar_spec_avg_long
+ * - \c lalapps_spec_coherence has been renamed to \c lalpulsar_spec_coherence
+ * - \c lalapps_splitSFTs has been renamed to \c lalpulsar_splitSFTs
+ * - \c lalapps_ssbtodetector has been renamed to \c lalpulsar_ssbtodetector
+ * - \c lalapps_synthesizeBstatMC has been renamed to \c lalpulsar_synthesizeBstatMC
+ * - \c lalapps_synthesizeLVStats has been renamed to \c lalpulsar_synthesizeLVStats
+ * - \c lalapps_synthesizeTransientStats has been renamed to \c lalpulsar_synthesizeTransientStats
+ * - \c lalapps_Weave has been renamed to \c lalpulsar_Weave
+ * - \c lalapps_WeaveCompare has been renamed to \c lalpulsar_WeaveCompare
+ * - \c lalapps_WeaveConcat has been renamed to \c lalpulsar_WeaveConcat
+ * - \c lalapps_WeaveSetup has been renamed to \c lalpulsar_WeaveSetup
+ * - \c lalapps_WriteSFTsfromSFDBs has been renamed to \c lalpulsar_WriteSFTsfromSFDBs
+ */

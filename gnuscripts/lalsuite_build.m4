@@ -1291,6 +1291,14 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
       AC_SUBST([DOXYGEN_LAYOUT_DOCS_TAB_TYPE],["modules"])
     ])
 
+    # configure layout
+    LALSUITE_VERSION_COMPARE([${doxygen_version}],[>=],[1.9.8],[
+      # https://github.com/doxygen/doxygen/issues/10562
+      AC_SUBST([DOXYGEN_LAYOUT_DOCS_TAB_TYPE],["topics"])
+    ],[
+      AC_SUBST([DOXYGEN_LAYOUT_DOCS_TAB_TYPE],["modules"])
+    ])
+
     # build some substituted variables from list of configured LAL libraries
     AC_SUBST([DOXYGEN_ENABLED_SECTIONS])
     AC_SUBST([DOXYGEN_TAGFILES],[""])

@@ -270,6 +270,11 @@ SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
 %constant int swig_version = SWIG_VERSION;
 
 ///
+/// Version of SWIG runtime used by generated wrappers.
+///
+%constant const char *const swig_runtime_version = SWIG_RUNTIME_VERSION;
+
+///
 /// Standard output/error redirection
 /// - In some environments (e.g. IPython Jupyter notebooks) standard output/error within the scripting
 ///   language are redirected in a non-trivial way. These redirections may not capture standard output/error

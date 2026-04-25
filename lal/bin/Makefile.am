@@ -57,7 +57,6 @@ if HAVE_PYTHON
 
 pybin_scripts = \
 	lal_path2cache \
-	lal_searchsum2cache \
 	$(END_OF_LIST)
 
 # Add shell, Python, etc. test scripts to this variable

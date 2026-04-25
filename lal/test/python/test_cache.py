@@ -21,6 +21,7 @@ See utils_cache_verify.py for more tests of the same module
 
 import os
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -62,6 +63,13 @@ class TestCacheEntry():
         """
         a = self.CacheEntry(*args)
         assert a.segmentlistdict == segs
+
+    def test_fspath(self):
+        """Test that `CacheEntry` FSPath protocol works.
+        """
+        a = self.CacheEntry("A", "TEST", segments.segment(0, 1), "/path/to/test.gwf")
+        assert str(Path(a)) == a.path
+        assert os.path.basename(a) == "test.gwf"
 
 
 def test_lalcache_from_gluecache():

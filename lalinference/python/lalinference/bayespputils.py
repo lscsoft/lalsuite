@@ -142,7 +142,7 @@ spinParams=spinParamsPrec+spinParamsEff+spinParamsAli
 cosmoParam=['m1_source','m2_source','mtotal_source','mc_source','redshift','mf_source','mf_source_evol','mf_source_nonevol','m1_source_maxldist','m2_source_maxldist','mtotal_source_maxldist','mc_source_maxldist','redshift_maxldist','mf_source_maxldist','mf_source_maxldist_evol','mf_source_maxldist_nonevol']
 #Strong Field
 ppEParams=['ppEalpha','ppElowera','ppEupperA','ppEbeta','ppElowerb','ppEupperB','alphaPPE','aPPE','betaPPE','bPPE']
-tigerParams= ['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] + ['dxi%d'%(i+1) for i in range(6)] + ['dalpha%i'%(i+1) for i in range(5)] + ['dbeta%i'%(i+1) for i in range(3)] + ['dsigma%i'%(i+1) for i in range(4)] + ['dipolecoeff'] + ['dchiminus%i'%(i) for i in [1,2]] + ['dchiMinus%i'%(i) for i in [1,2]] + ['db1','db2','db3','db4','dc1','dc2','dc4','dcl']
+tigerParams= ['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] + ['dxi%d'%(i+1) for i in range(6)] + ['dalpha%i'%(i+1) for i in range(5)] + ['dbeta%i'%(i+1) for i in range(3)] + ['dsigma%i'%(i+1) for i in range(4)] + ['dipolecoeff'] + ['dchiminus%i'%(i) for i in [1,2]] + ['dchiMinus%i'%(i) for i in [1,2]] + ['db1','db2','db3','db4','dc1','dc2','dc4','dcl'] + ['damp21', 'damp33']
 qnmtestParams=['domega220','dtau220','domega210','dtau210','domega330','dtau330','domega440','dtau440','domega550','dtau550']
 bransDickeParams=['omegaBD','ScalarCharge1','ScalarCharge2']
 massiveGravitonParams=['lambdaG']
@@ -434,7 +434,7 @@ def plot_label(param):
     ra_names = ['rightascension','ra']
     dec_names = ['declination','dec']
     phase_names = ['phi_orb', 'phi', 'phase', 'phi0']
-    gr_test_names = ['dchiMinus2','dchiMinus1'] + ['dchi%d'%i for i in range(8)]+['dchil%d'%i for i in [5,6]]+['dxi%d'%(i+1) for i in range(6)]+['dalpha%d'%(i+1) for i in range(5)]+['dbeta%d'%(i+1) for i in range(3)]+['dsigma%d'%(i+1) for i in range(4)] + ['dipolecoeff'] + ['db1','db2','db3','db4','dc1','dc2','dc4','dcl']
+    gr_test_names = ['dchiMinus2','dchiMinus1'] + ['dchi%d'%i for i in range(8)]+['dchil%d'%i for i in [5,6]]+['dxi%d'%(i+1) for i in range(6)]+['dalpha%d'%(i+1) for i in range(5)]+['dbeta%d'%(i+1) for i in range(3)]+['dsigma%d'%(i+1) for i in range(4)] + ['dipolecoeff'] + ['db1','db2','db3','db4','dc1','dc2','dc4','dcl']+['damp21', 'damp33']
 
     labels={
         'm1':r'$m_1\,(\mathrm{M}_\odot)$',
@@ -598,6 +598,8 @@ def plot_label(param):
         'dtau440':r'$d\tau_{440}$',
         'domega550':r'$d\omega_{550}$',
         'dtau550':r'$d\tau_{550}$',
+        'damp21':r'$\delta A_{21}$',
+        'damp33':r'$\delta A_{33}$',
         'optimal_snr':r'$\rho^{opt}$',
         'h1_optimal_snr':r'$\rho^{opt}_{H1}$',
         'l1_optimal_snr':r'$\rho^{opt}_{L1}$',

@@ -249,11 +249,63 @@ SWIGINTERN int swiglal_output_stdouterr(void) {
 }
 
 //
+// Runtime data
+//
+
+%fragment("SWIG_AsCharPtrAndSize");
+%fragment("SWIG_FromCharPtr");
+%init %{
+
+// Check for consistent SWIG runtime version number between SWIGLAL wrappers.
+{
+  const char* const swig_runtime_version_name = "__SWIGLAL_RUNTIME_DATA_swig_runtime_version__";
+  const char* const last_swiglal_wrapper_name = "__SWIGLAL_RUNTIME_DATA_last_swiglal_wrapper__";
+  octave_value ov = SWIG_Octave_GetGlobalValue(swig_runtime_version_name);
+  octave_value ov2 = SWIG_Octave_GetGlobalValue(last_swiglal_wrapper_name);
+  char *swig_runtime_version_str = NULL;
+  int alloc = 0;
+  int res = SWIG_AsCharPtrAndSize(ov, &swig_runtime_version_str, NULL, &alloc);
+  if (SWIG_IsOK(res)) {
+    char *last_swiglal_wrapper_str = NULL;
+    int alloc2 = 0;
+    int res2 = SWIG_AsCharPtrAndSize(ov2, &last_swiglal_wrapper_str, NULL, &alloc2);
+    assert(SWIG_IsOK(res2));
+    if (strcmp(swig_runtime_version_str, SWIG_RUNTIME_VERSION) != 0) {
+      error(
+	"Mismatch in SWIG runtime versions: %s is version %s, but %s has already been loaded with version %s",
+	SWIGLAL_PACKAGE, SWIG_RUNTIME_VERSION, last_swiglal_wrapper_str, swig_runtime_version_str
+	);
+      if (alloc) {
+	free(swig_runtime_version_str);
+      }
+      if (alloc2) {
+	free(last_swiglal_wrapper_str);
+      }
+      return false;
+    }
+    if (alloc) {
+      free(swig_runtime_version_str);
+    }
+    if (alloc2) {
+      free(last_swiglal_wrapper_str);
+    }
+  } else {
+    ov = SWIG_FromCharPtr(SWIG_RUNTIME_VERSION);
+    SWIG_Octave_SetGlobalValue(swig_runtime_version_name, ov);
+  }
+  ov2 = SWIG_FromCharPtr(SWIGLAL_PACKAGE);
+  SWIG_Octave_SetGlobalValue(last_swiglal_wrapper_name, ov2);
+}
+
+%} // %init
+
+//
 // Interface code to track object parents
 //
 
-// Interface code which tracks the parent structs of SWIG-wrapped struct members, so that the parent
-// struct is not destroyed as long as a SWIG-wrapped object containing any of its members exists.
+// Interface code which tracks the parent structs of SWIG-wrapped struct members, so that the
+// parent struct is not destroyed as long as a SWIG-wrapped object containing any of its
+// members exists.
 %header %{
 
 #include <map>
@@ -281,8 +333,8 @@ SWIGINTERN void swiglal_store_parent(void* ptr, octave_value parent) {
 
 // Check if ptr stored a reference to a parent struct. If there is no parent object, then ptr
 // *really* owns its memory, and it's okay for it to destroy it (so return true). Otherwise,
-// decrement the internal reference count, erase the parent map entry if it reaches zero, and return
-// false to prevent any destructors being called.
+// decrement the internal reference count, erase the parent map entry if it reaches zero, and
+// return false to prevent any destructors being called.
 SWIGINTERN bool swiglal_release_parent(void *ptr) {
   bool retn = true;
   assert(ptr);
@@ -299,12 +351,13 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %} // %header
 %init %{
 
-// Get a pointer to the internal parent map. Look for a global variable ' __SWIGLAL_parent_map__',
-// then try to extract a pointer to the parent map from a SWIG packed object. If the packed object
-// does not yet exist, create a new map, pack its pointer in a SWIG packed object, then assign it to
-// global variable. Thus each binding gets a pointer to the same map.
+// Get a pointer to the internal parent map. Look for a global variable
+// '__SWIGLAL_RUNTIME_DATA_parent_map__', then try to extract a pointer to the parent map from
+// a SWIG packed object. If the packed object does not yet exist, create a new map, pack its
+// pointer in a SWIG packed object, then assign it to global variable. Thus each binding gets a
+// pointer to the same map.
 {
-  const char* const parent_map_name = "__SWIGLAL_parent_map__";
+  const char* const parent_map_name = "__SWIGLAL_RUNTIME_DATA_parent_map__";
   octave_value ov = SWIG_Octave_GetGlobalValue(parent_map_name);
   int res = SWIG_ConvertPacked(ov, &parent_map, sizeof(parent_map), 0);
   if (!SWIG_IsOK(res)) {

@@ -23,8 +23,8 @@ Implements the public SFT directory naming convention detailed in the SFT spec (
 import os
 
 __author__ = "Karl Wette <karl.wette@ligo.org>"
-__version__ = "Consistent with SFT spec LIGO-T040164-v2"
-__date__ = "2022"
+__version__ = "Consistent with SFT spec LIGO-T040164-v4"
+__date__ = "2025"
 
 
 def public_sft_directory(filename):
@@ -63,16 +63,14 @@ def public_sft_directory(filename):
 
     if D5:
         # build narrow-band SFT directory
-        SFT_base_directory += "_NARROWBAND"
-        SFT_subdirectory = D5
+        SFT_base_directory += f"_NARROWBAND-{D5}"
 
     else:
         # build broad-band SFT directory
-        SFT_base_directory += "_BROADBAND"
         G_million = int(G) // 1000000
-        SFT_subdirectory = f"GPS{G_million}M"
+        SFT_base_directory += f"_BROADBAND-{G_million}"
 
-    return os.path.join(SFT_base_directory, SFT_subdirectory)
+    return SFT_base_directory
 
 
 def public_sft_directory_readme_md():

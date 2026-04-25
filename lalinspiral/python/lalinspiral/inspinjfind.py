@@ -163,7 +163,7 @@ class DocContents(object):
 		try:
 			self.coinctable = lsctables.CoincTable.get_table(xmldoc)
 		except ValueError:
-			self.coinctable = lsctables.New(lsctables.CoincTable)
+			self.coinctable = lsctables.CoincTable.new()
 			xmldoc.childNodes[0].appendChild(self.coinctable)
 		self.coinctable.sync_next_id()
 
@@ -174,7 +174,7 @@ class DocContents(object):
 		try:
 			self.coincmaptable = lsctables.CoincMapTable.get_table(xmldoc)
 		except ValueError:
-			self.coincmaptable = lsctables.New(lsctables.CoincMapTable)
+			self.coincmaptable = lsctables.CoincMapTable.new()
 			xmldoc.childNodes[0].appendChild(self.coincmaptable)
 
 		#

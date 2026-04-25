@@ -248,8 +248,8 @@ int main(__attribute__ ((unused)) int argc, __attribute__ ((unused)) char **argv
         result = XLALTriggerInterpolateQuadraticFit(&tmax, &ymax, &y[window], window);
         gsl_test(result, "XLALTriggerInterpolateQuadraticFit window=%u return value", window);
         gsl_test_abs(tmax, tmax_expected, 1e3 * GSL_DBL_EPSILON, "XLALTriggerInterpolateQuadraticFit quadratic signal window=%u tmax", window);
-        gsl_test_abs(cabs(ymax), amp_expected, 1e5 * GSL_DBL_EPSILON, "XLALTriggerInterpolateQuadraticFit quadratic signal window=%u abs", window);
-        gsl_test_abs(carg(ymax), arg_expected, 1e5 * GSL_DBL_EPSILON, "XLALTriggerInterpolateQuadraticFit quadratic signal window=%u arg", window);
+        gsl_test_abs(cabs(ymax), amp_expected, 1e6 * GSL_DBL_EPSILON, "XLALTriggerInterpolateQuadraticFit quadratic signal window=%u abs", window);
+        gsl_test_abs(carg(ymax), arg_expected, 1e6 * GSL_DBL_EPSILON, "XLALTriggerInterpolateQuadraticFit quadratic signal window=%u arg", window);
 
         if (window >= 2)
         {

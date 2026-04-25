@@ -15,5 +15,5 @@
 
 # -- ignore problematic lines
 
-\|lalinference/bayespputils.py:7015: warning: documented symbol 'ligolw LIGOLWContentHandler lalinference::bayespputils::endElement' was not declared or defined|d
+\|lalinference/bayespputils.py:7017: warning: documented symbol 'ligolw LIGOLWContentHandler lalinference::bayespputils::endElement' was not declared or defined|d
 \|lalpulsar/NstarTools.py:143: warning: '\\code' command is not allowed in section title, ending section title|d

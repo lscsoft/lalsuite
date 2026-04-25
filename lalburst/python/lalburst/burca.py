@@ -65,7 +65,7 @@ class ExcessPowerCoincTables(snglcoinc.CoincTables):
 		try:
 			self.multibursttable = lsctables.MultiBurstTable.get_table(xmldoc)
 		except ValueError:
-			self.multibursttable = lsctables.New(lsctables.MultiBurstTable, ("process_id", "duration", "central_freq", "bandwidth", "snr", "confidence", "amplitude", "coinc_event_id"))
+			self.multibursttable = lsctables.MultiBurstTable.new(("process_id", "duration", "central_freq", "bandwidth", "snr", "confidence", "amplitude", "coinc_event_id"))
 			xmldoc.childNodes[0].appendChild(self.multibursttable)
 
 	def make_multi_burst(self, process_id, coinc_event_id, events, offset_vector):

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[7.7.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[7.7.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALConfig.h])
 AC_CONFIG_SRCDIR([lib/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -115,9 +115,6 @@ AM_INIT_AUTOMAKE([ \
   dist-xz \
   no-dist-gzip \
 ])
-
-# version requirements
-AC_SUBST([MIN_PYTHON_IGWN_LIGOLW_VERSION],[2.1.0])
 
 AC_CANONICAL_HOST
 

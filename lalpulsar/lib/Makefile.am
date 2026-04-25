@@ -65,11 +65,6 @@ pkginclude_HEADERS = \
 	Velocity.h \
 	$(END_OF_LIST)
 
-deprecatedpkgincludedir = $(pkgincludedir)
-deprecatedpkginclude_HEADERS = \
-	SFTutils.h \
-	$(END_OF_LIST)
-
 lib_LTLIBRARIES = liblalpulsar.la
 
 liblalpulsar_la_SOURCES = \

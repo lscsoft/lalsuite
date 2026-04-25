@@ -8,12 +8,13 @@ scheme are further described in the [SFT specification][SFTspec].
 
 The SFTs in this directory are organised as follows.
 
-## Top level
+## Common prefix
 
-Top level directories (at the same level at this README file) contain an
-individual SFT dataset. They are named according to the following scheme:
+SFTs are organised into directories with a common prefix, and a
+broadband/narrowband-specific suffix. The common prefix is named according to
+the following scheme:
 
-     {top-level-dir} = {det}_{Tsft}SFT
+     {common-prefix} = {det}_{Tsft}SFT
                        _O{run}{kind}+R{rev}+C{chan}+W{win}
                        _{bandw}
 
@@ -75,19 +76,19 @@ Terms in braces denote the following components:
                   SFT, and each SFT file may therefore span a time much
                   greater than `Tsft`.
 
-## Broadband SFT subdirectories
+## Broadband SFT suffix
 
-Broadband SFT files (where `bandw = BROADBAND`) are organised below the top
-level into subdirectories based on their starting GPS time, as follows:
+Broadband SFT files (where `bandw = BROADBAND`) are organised into directories
+based on their starting GPS time, as follows:
 
-     {broadband-sft-path} = {top-level-dir}/
-                            GPS{start-1e6}M/
+     {broadband-sft-path} = {common-prefix}-{start-1e6}/
                             {broadband-sft-filename}
 
 where `start-1e6` is the starting GPS time of the file divided by 1e6, rounded
 down. For example, an SFT starting at GPS time 1,389,258,149 would be found in
-the `GPS1389M` subdirectory. Within each `GPS...` subdirectory, SFT files are
-named as follows:
+the `-1389/` directory.
+
+Within each directory, SFT files are named as follows:
 
      {broadband-sft-filename} = {site}-{num}
                                 _{det}_{Tsft}SFT
@@ -105,11 +106,10 @@ where, in addition to the top-level directory components:
 
 ## Narrowband SFT subdirectories
 
-Narrowband SFT files (where `bandw = NARROWBAND`) are organised below the top
-level directory into subdirectories based on their frequency bands, as follows:
+Narrowband SFT files (where `bandw = NARROWBAND`) are organised into directories
+based on their frequency bands, as follows:
 
-     {narrowband-sft-path} = {top-level-dir}/
-                             NBF{freq-Hz}Hz{freq-bin}W{width-Hz}Hz{width-bin}/
+     {narrowband-sft-path} = {common-prefix}-NBF{freq-Hz}Hz{freq-bin}W{width-Hz}Hz{width-bin}/
                              {narrowband-sft-filename}
 
 `{freq-Hz}` and `{freq-Hz}` are the result of the integer division of the
@@ -123,7 +123,9 @@ respectively. For example, a `Tsft = 1800` narrowband SFT starting at bin
      starting bin = 100 Hz * 1800 s + 900 bins = bin 180,900
 
 Similarly, `{width-Hz}` and `{width-Hz}` are calculated from the bandwidth of
-the SFT. Within each `NBF...` subdirectory, SFT files are named as follows:
+the SFT.
+
+Within each directory, SFT files are named as follows:
 
      narrowband-sft-filename = {site}-{num}
                                _{det}_{Tsft}SFT
@@ -137,5 +139,5 @@ where the components are as described above.
 
 Please consult the [SFT specification][SFTspec].
 
-[SFTspec]: https://dcc.ligo.org/LIGO-T040164-v2/public
+[SFTspec]: https://dcc.ligo.org/LIGO-T040164-v4/public
 [S5CasA]:  http://doi.org/10.1088/0004-637X/722/2/1504

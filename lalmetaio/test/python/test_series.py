@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Tests for lal.series"""
+"""Tests for lalmetaio.series"""
 
 import io
 import sys
@@ -25,7 +25,7 @@ import igwn_ligolw.utils
 import numpy as np
 import pytest
 
-import lal.series
+import lalmetaio.series
 
 
 @pytest.mark.parametrize(
@@ -35,14 +35,14 @@ import lal.series
 @pytest.mark.parametrize(
     "encoding,assert_array_equal",
     [
-        pytest.param("Text", np.testing.assert_array_almost_equal, marks=pytest.mark.skip("Awaiting container updates; see https://git.ligo.org/computing/sccb/-/issues/1923#note_1642815")),
+        ["Text", np.testing.assert_array_almost_equal],
         ["base64", np.testing.assert_array_equal]
     ]
 )
 def test_build_series(scalar_type, domain, encoding, assert_array_equal):
     class_name = f"{scalar_type}{domain}Series"
-    build_series = getattr(lal.series, f"build_{class_name}")
-    parse_series = getattr(lal.series, f"parse_{class_name}")
+    build_series = getattr(lalmetaio.series, f"build_{class_name}")
+    parse_series = getattr(lalmetaio.series, f"parse_{class_name}")
     create_series = getattr(lal, f"Create{class_name}")
 
     series = create_series(

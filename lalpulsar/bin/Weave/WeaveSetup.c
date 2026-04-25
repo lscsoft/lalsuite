@@ -28,6 +28,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
+#include <lal/UserInputPrint.h>
 
 int main( int argc, char *argv[] )
 {
@@ -45,7 +46,9 @@ int main( int argc, char *argv[] )
     LIGOTimeGPSRange first_segment;
     REAL8 segment_gap;
     UINT4 segment_count, spindowns;
+    int metric_type;
   } uvar_struct = {
+    .metric_type = SUPERSKY_METRIC_TYPE,
     .detector_motion = XLALStringDuplicate( "spin+orbit" ),
     .ephem_earth = XLALStringDuplicate( "earth00-40-DE405.dat.gz" ),
     .ephem_sun = XLALStringDuplicate( "sun00-40-DE405.dat.gz" ),
@@ -95,6 +98,10 @@ int main( int argc, char *argv[] )
   // - Parameter-space metric computation
   //
   lalUserVarHelpOptionSubsection = "Parameter-space metric computation";
+  XLALRegisterUvarAuxDataMember(
+    metric_type, UserEnum, &WeaveMetricTypeChoices, 'T', OPTIONAL,
+    "The type of metric to be computed (all-sky/directed)."
+  );
   XLALRegisterUvarMember(
     ref_time, EPOCH, 'r', NODEFAULT,
     "Reference time for the search, including the parameter-space metrics computed here, and the parameter space and output of lalpulsar_Weave. "
@@ -172,6 +179,10 @@ int main( int argc, char *argv[] )
 
   // Initialise setup data
   WeaveSetupData XLAL_INIT_DECL( setup );
+
+  // Copy metric type name
+  setup.metric_type = XLALPrintStringValueOfUserEnum( &uvar->metric_type, &WeaveMetricTypeChoices );
+  XLAL_CHECK_MAIN( setup.metric_type != NULL, XLAL_EFUNC );
 
   // Copy and sort list of detector names
   setup.detectors = XLALCopyStringVector( uvar->detectors );
@@ -286,7 +297,10 @@ int main( int argc, char *argv[] )
   //   metrics can later be rescaled by search code
   LogPrintf( LOG_NORMAL, "Computing reduced supersky metrics ...\n" );
   const double fiducial_freq = 100.0;
-  setup.metrics = XLALComputeSuperskyMetrics( SUPERSKY_METRIC_TYPE, uvar->spindowns, &setup.ref_time, setup.segments, fiducial_freq, &detector_info, NULL, detector_motion, setup.ephemerides );
+
+  /// Metric type for all-sky/directed search)
+  LogPrintf( LOG_NORMAL, "Metric type: '%s'\n", setup.metric_type );
+  setup.metrics = XLALComputeSuperskyMetrics( uvar->metric_type, uvar->spindowns, &setup.ref_time, setup.segments, fiducial_freq, &detector_info, NULL, detector_motion, setup.ephemerides );
   XLAL_CHECK_MAIN( setup.metrics != NULL, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Finished computing reduced supersky metrics\n" );
 

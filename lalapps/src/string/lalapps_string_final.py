@@ -56,7 +56,7 @@ import traceback
 from igwn_ligolw import dbtables
 from igwn_ligolw.utils import process as ligolwprocess
 import lal
-from lal import rate
+from lalburst import rate
 from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import packing

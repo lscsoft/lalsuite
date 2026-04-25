@@ -96,7 +96,7 @@ def test_ComputePSDandNormSFTPower():
         PSDmthopIFOs=0,  # arithsum
         nSFTmthopIFOs=1,  # arithmean
         nSFTmthopSFTs=0,  # arithsum
-        normalizeByTotalNumSFTs=False,
+        PSDnormByTotalNumSFTs=False,
         FreqMin=f_min,
         FreqBand=f_max - f_min,
         normalizeSFTsInPlace=False,
@@ -146,7 +146,7 @@ def test_ComputePSDandNormSFTPower():
         PSDmthopIFOs=0,  # arithsum
         nSFTmthopIFOs=1,  # arithmean
         nSFTmthopSFTs=0,  # arithsum
-        normalizeByTotalNumSFTs=False,
+        PSDnormByTotalNumSFTs=False,
         FreqMin=f_min,
         FreqBand=f_max - f_min,
         normalizeSFTsInPlace=True,
@@ -169,7 +169,7 @@ def test_ComputePSDandNormSFTPower():
         blocksRngMed=101,
         PSDmthopSFTs=1,  # arithmean
         PSDmthopIFOs=0,  # arithsum
-        normalizeByTotalNumSFTs=False,
+        PSDnormByTotalNumSFTs=False,
         FreqMin=f_min,
         FreqBand=f_max - f_min,
     )
@@ -183,7 +183,7 @@ def test_ComputePSDandNormSFTPower():
         blocksRngMed=101,
         PSDmthopSFTs=1,  # arithmean
         PSDmthopIFOs=0,  # arithsum
-        normalizeByTotalNumSFTs=False,
+        PSDnormByTotalNumSFTs=False,
         FreqMin=f_min,
         FreqBand=f_max - f_min,
     )

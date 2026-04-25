@@ -35,6 +35,7 @@ pybin_scripts = \
 	lalburst_power_meas_likelihood \
 	lalburst_power_plot_binj \
 	lalburst_power_plot_binjtf \
+	lalburst_searchsum2cache \
 	$(END_OF_LIST)
 
 TESTS += \

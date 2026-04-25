@@ -38,9 +38,6 @@
 
 /*---------- global variables ----------*/
 
-// for backwards compatibility, we currently allow calling the same internal
-// enum entries by either human-friendly names or by the old-style numerical
-// arguments. The latter may get deprecated at some point in the future.
 const UserChoices MathOpTypeChoices = {
   { MATH_OP_ARITHMETIC_SUM,    "arithsum" },
   { MATH_OP_ARITHMETIC_MEAN,   "arithmean" },
@@ -51,15 +48,18 @@ const UserChoices MathOpTypeChoices = {
   { MATH_OP_POWERMINUS2_MEAN,  "powerminus2mean" },
   { MATH_OP_MINIMUM,           "min" },
   { MATH_OP_MAXIMUM,           "max" },
-  { MATH_OP_ARITHMETIC_SUM,    "0" },
-  { MATH_OP_ARITHMETIC_MEAN,   "1" },
-  { MATH_OP_ARITHMETIC_MEDIAN, "2" },
-  { MATH_OP_HARMONIC_SUM,      "3" },
-  { MATH_OP_HARMONIC_MEAN,     "4" },
-  { MATH_OP_POWERMINUS2_SUM,   "5" },
-  { MATH_OP_POWERMINUS2_MEAN,  "6" },
-  { MATH_OP_MINIMUM,           "7" },
-  { MATH_OP_MAXIMUM,           "8" },
+  /*
+   * NOTE: these options used to also be available as numerical values:
+   * - MATH_OP_ARITHMETIC_SUM:    0
+   * - MATH_OP_ARITHMETIC_MEAN:   1
+   * - MATH_OP_ARITHMETIC_MEDIAN: 2
+   * - MATH_OP_HARMONIC_SUM:      3
+   * - MATH_OP_HARMONIC_MEAN:     4
+   * - MATH_OP_POWERMINUS2_SUM:   5
+   * - MATH_OP_POWERMINUS2_MEAN:  6
+   * - MATH_OP_MINIMUM:           7
+   * - MATH_OP_MAXIMUM:           8
+   */
 };
 
 /*========== function definitions ==========*/
@@ -487,6 +487,8 @@ XLALComputeSegmentDataQ( const MultiPSDVector *multiPSDVect,   /**< input PSD ma
  * This can be used e.g. for the different established conventions of combining
  * SFTs for a PSD estimate.
  *
+ * See also XLALMathOpOverREAL8Vector().
+ *
  */
 REAL8 XLALMathOpOverArray( const REAL8 *data,      /**< input data array */
                            const size_t length,    /**< length of the input data array */
@@ -507,7 +509,7 @@ REAL8 XLALMathOpOverArray( const REAL8 *data,      /**< input data array */
 
     break;
 
-  case MATH_OP_ARITHMETIC_MEAN: /* sum(data)/length  */
+  case MATH_OP_ARITHMETIC_MEAN: /* sum(data) / length  */
 
     for ( i = 0; i < length; ++i ) {
       res += *( data++ );
@@ -534,7 +536,7 @@ REAL8 XLALMathOpOverArray( const REAL8 *data,      /**< input data array */
 
     break;
 
-  case MATH_OP_POWERMINUS2_SUM: /*   1 / sqrt ( sum(1 / data/data) )*/
+  case MATH_OP_POWERMINUS2_SUM: /* sqrt(1 / sum(1 / (data * data))) */
 
     for ( i = 0; i < length; ++i ) {
       res += 1.0 / ( data[i] * data[i] );
@@ -543,7 +545,7 @@ REAL8 XLALMathOpOverArray( const REAL8 *data,      /**< input data array */
 
     break;
 
-  case MATH_OP_POWERMINUS2_MEAN: /*   1 / sqrt ( sum(1/data/data) / length )*/
+  case MATH_OP_POWERMINUS2_MEAN: /* sqrt(length / sum(1 / (data * data))) */
 
     for ( i = 0; i < length; ++i ) {
       res += 1.0 / ( data[i] * data[i] );
@@ -610,6 +612,30 @@ REAL8 XLALMathOpOverArray( const REAL8 *data,      /**< input data array */
 
 
 /**
+ * Compute various types of "math operations" over the entries of a REAL8Vector.
+ *
+ * The supported optypes (e.g. sums and averages) are defined in \c MathOpType.
+ *
+ * See also XLALMathOpOverArray().
+ */
+REAL8 XLALMathOpOverREAL8Vector(
+  const REAL8Vector *data,    /**< input data array */
+  const MathOpType optype     /**< type of operation */
+)
+{
+
+  XLAL_CHECK_REAL8( data != NULL, XLAL_EINVAL );
+
+  // Call XLALMathOpOverArray()
+  REAL8 res = XLALMathOpOverArray( data->data, data->length, optype );
+  XLAL_CHECK_REAL8( !XLAL_IS_REAL8_FAIL_NAN( res ), XLAL_EFUNC );
+
+  return res;
+
+}
+
+
+/**
  * Compute an additional normalization factor from the total number of SFTs to be applied after a loop of mathops over SFTs and IFOs.
  *
  * Currently only implemented for:
@@ -635,25 +661,25 @@ REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs(
   switch ( optypeSFTs ) {
 
   case MATH_OP_ARITHMETIC_SUM: /* sum(data) */
-  case MATH_OP_ARITHMETIC_MEAN: /* sum(data)/length  */
-  case MATH_OP_HARMONIC_MEAN:
-  case MATH_OP_ARITHMETIC_MEDIAN:
-  case MATH_OP_MINIMUM:
-  case MATH_OP_MAXIMUM:
-  case MATH_OP_POWERMINUS2_MEAN:
-    XLAL_ERROR_REAL8( XLAL_EINVAL, "For math operation '%i' it makes no sense to call this function!", optypeSFTs );
+  case MATH_OP_ARITHMETIC_MEAN: /* sum(data) / length  */
+  case MATH_OP_HARMONIC_MEAN: /* length / sum(1 / data) */
+  case MATH_OP_ARITHMETIC_MEDIAN: /* middle element of sorted data */
+  case MATH_OP_MINIMUM: /* first element of sorted data */
+  case MATH_OP_MAXIMUM: /* last element of sorted data */
+  case MATH_OP_POWERMINUS2_MEAN: /* sqrt(length / sum(1 / (data * data))) */
+    XLALPrintWarning( "%s: no additional normalisation factor defined for math operation '%i'", __func__, optypeSFTs );
+    factor = 1;
     break;
 
-  case MATH_OP_HARMONIC_SUM: /* length / sum(1 / data) */
+  case MATH_OP_HARMONIC_SUM: /* 1 / sum(1 / data) */
     factor = totalNumSFTs;
     break;
 
-  case MATH_OP_POWERMINUS2_SUM: /*   1 / sqrt ( sum(1 / data/data) )*/
+  case MATH_OP_POWERMINUS2_SUM: /* sqrt(1 / sum(1 / (data * data))) */
     factor = sqrt( totalNumSFTs );
     break;
 
   default:
-
     XLAL_ERROR_REAL8( XLAL_EINVAL, "'%i' is not an implemented math. operation", optypeSFTs );
 
   } /* switch (optypeSFTs) */
@@ -686,7 +712,7 @@ XLALComputePSDandNormSFTPower(
   const MathOpType PSDmthopIFOs, /* [in] math operation over IFOs (PSD) */
   const MathOpType nSFTmthopSFTs, /* [in] math operation over SFTs for each IFO (normSFT) */
   const MathOpType nSFTmthopIFOs, /* [in] math operation over IFOs (normSFT) */
-  const BOOLEAN normalizeByTotalNumSFTs, /* [in] whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
+  const BOOLEAN PSDnormByTotalNumSFTs, /* [in] for PSD, whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
   const REAL8 FreqMin, /* [in] starting frequency -> first output bin (if -1: use full SFT data including rngmed bins, else must be >=0) */
   const REAL8 FreqBand, /* [in] frequency band to cover with output bins (must be >=0) */
   const BOOLEAN normalizeSFTsInPlace /* [in] if FALSE, a copy of inputSFTs will be used internally and the original will not be modified */
@@ -699,6 +725,7 @@ XLALComputePSDandNormSFTPower(
   XLAL_CHECK( normSFT, XLAL_EINVAL );
   XLAL_CHECK( inputSFTs && inputSFTs->data && inputSFTs->length > 0, XLAL_EINVAL, "inputSFTs must be pre-allocated." );
   XLAL_CHECK( ( FreqMin >= 0 && FreqBand >= 0 ) || ( FreqMin == -1 && FreqBand == 0 ), XLAL_EINVAL, "Need either both Freqmin>=0 && FreqBand>=0 (truncate PSD band to this range) or FreqMin=-1 && FreqBand=0 (use full band as loaded from SFTs, including rngmed-sidebands." );
+  XLAL_CHECK( !PSDnormByTotalNumSFTs || PSDmthopSFTs == PSDmthopIFOs, XLAL_EINVAL, "when PSDnormByTotalNumSFTs=true, PSDmthopSFTs(=%i) must equal PSDmthopIFOs(=%i)", PSDmthopSFTs, PSDmthopIFOs );
 
   /* get power running-median rngmed[ |data|^2 ] from SFTs *
    * as the output of XLALNormalizeMultiSFTVect(),
@@ -785,13 +812,13 @@ XLALComputePSDandNormSFTPower(
    * which gives equivalent results to if we had rewritten the loop order
    * to allow for calling MATH_OP_[HARMONIC/POWERMINUS2]_MEAN over the combined array.
    */
-  REAL8 totalNumSFTsNormalizingFactor = 1.;
-  if ( normalizeByTotalNumSFTs ) {
+  REAL8 PSDtotalNumSFTsNormalizingFactor = 1.;
+  if ( PSDnormByTotalNumSFTs ) {
     UINT4 totalNumSFTs = 0;
     for ( UINT4 X = 0; X < numIFOs; ++X ) {
       totalNumSFTs += ( *multiPSDVector )->data[X]->length;
     }
-    totalNumSFTsNormalizingFactor = XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs( totalNumSFTs, PSDmthopSFTs );
+    PSDtotalNumSFTsNormalizingFactor = XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs( totalNumSFTs, PSDmthopSFTs );
   }
 
   XLAL_PRINT_INFO( "Computing spectrogram and PSD ..." );
@@ -820,8 +847,8 @@ XLALComputePSDandNormSFTPower(
     ( *finalPSD )->data[k] = XLALMathOpOverArray( overIFOs->data, numIFOs, PSDmthopIFOs );
     XLAL_CHECK( !XLAL_IS_REAL8_FAIL_NAN( ( *finalPSD )->data[k] ), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for finalPSD->data[k=%d]", k );
 
-    if ( normalizeByTotalNumSFTs ) {
-      ( *finalPSD )->data[k] *= totalNumSFTsNormalizingFactor;
+    if ( PSDnormByTotalNumSFTs ) {
+      ( *finalPSD )->data[k] *= PSDtotalNumSFTsNormalizingFactor;
     }
 
   } /* for freq bins k */
@@ -897,7 +924,7 @@ XLALComputePSDfromSFTs(
   const UINT4 blocksRngMed, /* [in] running Median window size */
   const MathOpType PSDmthopSFTs, /* [in] math operation over SFTs for each IFO (PSD) */
   const MathOpType PSDmthopIFOs, /* [in] math operation over IFOs (PSD) */
-  const BOOLEAN normalizeByTotalNumSFTs, /* [in] whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
+  const BOOLEAN PSDnormByTotalNumSFTs, /* [in] for PSD, whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
   const REAL8 FreqMin, /* [in] starting frequency -> first output bin (if -1: use full SFT data including rngmed bins, else must be >=0) */
   const REAL8 FreqBand /* [in] frequency band to cover with output bins (must be >=0) */
 )
@@ -916,7 +943,7 @@ XLALComputePSDfromSFTs(
               PSDmthopIFOs,
               0, // nSFTmthopSFTs
               0, // nSFTmthopIFOs
-              normalizeByTotalNumSFTs,
+              PSDnormByTotalNumSFTs,
               FreqMin,
               FreqBand,
               FALSE // normalizeSFTsInPlace

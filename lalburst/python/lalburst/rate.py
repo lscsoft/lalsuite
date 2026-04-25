@@ -67,7 +67,7 @@ import igwn_segments as segments
 from igwn_ligolw import ligolw
 from igwn_ligolw import types as ligolw_types
 import lal
-from . import iterutils
+from lal import iterutils
 from . import git_version
 
 
@@ -617,13 +617,13 @@ class LinearPlusOverflowBins(LoHiCountBins):
 		raise IndexError(x)
 
 	def lower(self):
-		return numpy.concatenate((numpy.array([NegInf]), numpy.linspace(self.min, self.max - self.delta, len(self) - 1)))
+		return numpy.concatenate((numpy.array([NegInf]), numpy.linspace(self.min, self.max, len(self) - 1)))
 
 	def centres(self):
 		return numpy.concatenate((numpy.array([NegInf]), numpy.linspace(self.min + self.delta / 2., self.max - self.delta / 2., len(self) - 2), numpy.array([PosInf])))
 
 	def upper(self):
-		return numpy.concatenate((numpy.linspace(self.min + self.delta, self.max, len(self) - 1), numpy.array([PosInf])))
+		return numpy.concatenate((numpy.linspace(self.min, self.max, len(self) - 1), numpy.array([PosInf])))
 
 	#
 	# XML I/O related methods and data
@@ -1118,7 +1118,7 @@ class NDBins(tuple):
 		>>> x[10:12, 1]
 		(slice(1, 2, None), 0)
 		>>> type(x[1])
-		<class 'lal.rate.LogarithmicBins'>
+		<class 'lalburst.rate.LogarithmicBins'>
 
 		Note that if the argument is to be interpreted as a
 		co-ordinate it must be a tuple even if it is only a

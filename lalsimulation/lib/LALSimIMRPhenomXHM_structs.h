@@ -35,7 +35,7 @@ extern "C" {
 
 #define N_HIGHERMODES_IMPLEMENTED 4 // lm = (21, 33, 32, 44)
 
-#define N_MAX_COEFFICIENTS_PHASE_INS 13       //Maximun number of coefficients of the inspiral ansatz
+#define N_MAX_COEFFICIENTS_PHASE_INS 15       //Maximun number of coefficients of the inspiral ansatz
 #define N_MAX_COEFFICIENTS_PHASE_INTER 6      //Maximun number of coefficients of the intermediate ansatz
 #define N_MAX_COEFFICIENTS_PHASE_RING 8       //Maximun number of coefficients of the ringdown ansatz. 5 + 3 optional for flattened phi'
 

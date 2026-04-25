@@ -81,16 +81,20 @@ for opt in nopart freqpart f1dotpart allpart; do
     echo "--- Start to first checkpoint ---"
     set -x
     rm -f WeaveCkpt.fits
-    lalpulsar_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.22 \
+    lalpulsar_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-fraction=0.22 --ckpt-output-exit=55 \
         --toplists=all --toplist-limit=232 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-        --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4 --recalc-statistics=all
+        --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4 --recalc-statistics=all \
+        && status=0 || status=$?
+    test ${status} -eq 55
     lalpulsar_fits_overview WeaveCkpt.fits
     set +x
     echo "--- First to second checkpoint ---"
     set -x
-    lalpulsar_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.63 \
+    lalpulsar_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-fraction=0.63 --ckpt-output-exit=55 \
         --toplists=all --toplist-limit=232 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-        --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4 --recalc-statistics=all
+        --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4 --recalc-statistics=all \
+        && status=0 || status=$?
+    test ${status} -eq 55
     lalpulsar_fits_overview WeaveCkpt.fits
     set +x
     echo "--- Second checkpoint to end ---"

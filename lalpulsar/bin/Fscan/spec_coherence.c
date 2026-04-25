@@ -41,7 +41,7 @@ int main( int argc, char **argv )
   int fopenerr = 0;
 
   SFTCatalog *catalog_a = NULL, *catalog_b = NULL;
-  SFTVector *sft_vect_a = NULL, *sft_vect_b = NULL;
+  SFTtype *sft_a = NULL, *sft_b = NULL;
   SFTConstraints XLAL_INIT_DECL( constraints );
   LIGOTimeGPS startTime, endTime;
   REAL8Vector *psd_a = NULL, *psd_b = NULL;
@@ -153,24 +153,24 @@ int main( int argc, char **argv )
   for ( UINT4 j = 0; j < catalog_a->length; j++ ) {
     /* Extract one SFT at a time from the catalog */
     fprintf( stderr, "Extracting SFT %d...\n", j );
-    XLAL_CHECK_MAIN( ( sft_vect_a = extract_one_sft( catalog_a, catalog_a->data[j].header.epoch, f_min, f_max ) ) != NULL, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( ( sft_a = extract_one_sft( catalog_a, catalog_a->data[j].header.epoch, f_min, f_max ) ) != NULL, XLAL_EFUNC );
 
     /* If no SFT from the B list was found, then just continue with the next SFT in the A list */
-    XLAL_TRY( sft_vect_b = extract_one_sft( catalog_b, catalog_a->data[j].header.epoch, f_min, f_max ), errnumB );
+    XLAL_TRY( sft_b = extract_one_sft( catalog_b, catalog_a->data[j].header.epoch, f_min, f_max ), errnumB );
     if ( errnumB != 0 ) {
       LogPrintf( LOG_CRITICAL, "Failed to find B channel SFT at time %d, [%.9f, %.9f) Hz\n", catalog_a->data[j].header.epoch.gpsSeconds, f_min, f_max );
       continue;
     }
 
     /* Check time baseline of the SFTs to confirm they match */
-    XLAL_CHECK_MAIN( sft_vect_a->data[0].deltaF * timebaseline == 1.0, XLAL_EINVAL, "Time baseline of SFTs and the request do not match" );
-    XLAL_CHECK_MAIN( sft_vect_b->data[0].deltaF * timebaseline == 1.0, XLAL_EINVAL, "Time baseline of SFTs and the request do not match" );
+    XLAL_CHECK_MAIN( sft_a->deltaF * timebaseline == 1.0, XLAL_EINVAL, "Time baseline of SFTs and the request do not match" );
+    XLAL_CHECK_MAIN( sft_b->deltaF * timebaseline == 1.0, XLAL_EINVAL, "Time baseline of SFTs and the request do not match" );
 
     /* For the first time through the loop, we allocate some vectors */
     if ( nAve == 0 ) {
-      UINT4 numBins = sft_vect_a->data->data->length;
-      f0 = sft_vect_a->data->f0;
-      deltaF = sft_vect_a->data->deltaF;
+      UINT4 numBins = sft_a->data->length;
+      f0 = sft_a->f0;
+      deltaF = sft_a->deltaF;
 
       XLAL_CHECK_MAIN( ( coh = XLALCreateCOMPLEX16Vector( numBins ) ) != NULL, XLAL_EFUNC );
       XLAL_CHECK_MAIN( ( psd_a = XLALCreateREAL8Vector( numBins ) ) != NULL, XLAL_EFUNC );
@@ -179,22 +179,22 @@ int main( int argc, char **argv )
 
     /* Loop over the SFT bins computing cross spectrum (AB) and auto spectrum (AA and BB) */
     if ( nAve == 0 ) {
-      for ( UINT4 i = 0; i < sft_vect_a->data->data->length; i++ ) {
-        coh->data[i] = sft_vect_a->data[0].data->data[i] * conj( sft_vect_b->data[0].data->data[i] );
-        psd_a->data[i] = sft_vect_a->data[0].data->data[i] * conj( sft_vect_a->data[0].data->data[i] );
-        psd_b->data[i] = sft_vect_b->data[0].data->data[i] * conj( sft_vect_b->data[0].data->data[i] );
+      for ( UINT4 i = 0; i < sft_a->data->length; i++ ) {
+        coh->data[i] = sft_a->data->data[i] * conj( sft_b->data->data[i] );
+        psd_a->data[i] = sft_a->data->data[i] * conj( sft_a->data->data[i] );
+        psd_b->data[i] = sft_b->data->data[i] * conj( sft_b->data->data[i] );
       }
     } else {
-      for ( UINT4 i = 0; i < sft_vect_a->data->data->length; i++ ) {
-        coh->data[i] += sft_vect_a->data[0].data->data[i] * conj( sft_vect_b->data[0].data->data[i] );
-        psd_a->data[i] += sft_vect_a->data[0].data->data[i] * conj( sft_vect_a->data[0].data->data[i] );
-        psd_b->data[i] += sft_vect_b->data[0].data->data[i] * conj( sft_vect_b->data[0].data->data[i] );
+      for ( UINT4 i = 0; i < sft_a->data->length; i++ ) {
+        coh->data[i] += sft_a->data->data[i] * conj( sft_b->data->data[i] );
+        psd_a->data[i] += sft_a->data->data[i] * conj( sft_a->data->data[i] );
+        psd_b->data[i] += sft_b->data->data[i] * conj( sft_b->data->data[i] );
       }
     }
     /* Destroys current SFT Vectors */
-    XLALDestroySFTVector( sft_vect_a );
-    XLALDestroySFTVector( sft_vect_b );
-    sft_vect_a = sft_vect_b = NULL;
+    XLALDestroySFT( sft_a );
+    XLALDestroySFT( sft_b );
+    sft_a = sft_b = NULL;
 
     nAve++;
   }

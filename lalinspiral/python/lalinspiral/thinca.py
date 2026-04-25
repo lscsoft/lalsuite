@@ -111,7 +111,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		try:
 			self.coinc_inspiral_table = lsctables.CoincInspiralTable.get_table(xmldoc)
 		except ValueError:
-			self.coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
+			self.coinc_inspiral_table = lsctables.CoincInspiralTable.new()
 			xmldoc.childNodes[0].appendChild(self.coinc_inspiral_table)
 
 
@@ -446,14 +446,14 @@ class sngl_inspiral_coincs(object):
 		# when making these, we can't use .copy() method of Table
 		# instances because we need to ensure we have a Table
 		# subclass, not a DBTable subclass
-		new_process_table = ligolw_elem.appendChild(lsctables.New(lsctables.ProcessTable, self.process_table.columnnames))
-		new_process_params_table = ligolw_elem.appendChild(lsctables.New(lsctables.ProcessParamsTable, self.process_params_table.columnnames))
-		new_sngl_inspiral_table = ligolw_elem.appendChild(lsctables.New(lsctables.SnglInspiralTable, self.sngl_inspiral_table.columnnames))
-		new_coinc_def_table = ligolw_elem.appendChild(lsctables.New(lsctables.CoincDefTable, self.coinc_def_table.columnnames))
-		new_coinc_event_table = ligolw_elem.appendChild(lsctables.New(lsctables.CoincTable, self.coinc_event_table.columnnames))
-		new_coinc_inspiral_table = ligolw_elem.appendChild(lsctables.New(lsctables.CoincInspiralTable, self.coinc_inspiral_table.columnnames))
-		new_coinc_event_map_table = ligolw_elem.appendChild(lsctables.New(lsctables.CoincMapTable, self.coinc_event_map_table.columnnames))
-		new_time_slide_table = ligolw_elem.appendChild(lsctables.New(lsctables.TimeSlideTable, self.time_slide_table.columnnames))
+		new_process_table = ligolw_elem.appendChild(lsctables.ProcessTable.new(self.process_table.columnnames))
+		new_process_params_table = ligolw_elem.appendChild(lsctables.ProcessParamsTable.new(self.process_params_table.columnnames))
+		new_sngl_inspiral_table = ligolw_elem.appendChild(lsctables.SnglInspiralTable.new(self.sngl_inspiral_table.columnnames))
+		new_coinc_def_table = ligolw_elem.appendChild(lsctables.CoincDefTable.new(self.coinc_def_table.columnnames))
+		new_coinc_event_table = ligolw_elem.appendChild(lsctables.CoincTable.new(self.coinc_event_table.columnnames))
+		new_coinc_inspiral_table = ligolw_elem.appendChild(lsctables.CoincInspiralTable.new(self.coinc_inspiral_table.columnnames))
+		new_coinc_event_map_table = ligolw_elem.appendChild(lsctables.CoincMapTable.new(self.coinc_event_map_table.columnnames))
+		new_time_slide_table = ligolw_elem.appendChild(lsctables.TimeSlideTable.new(self.time_slide_table.columnnames))
 
 		new_coinc_def_table.append(self.coinc_def)
 		coinc_event = self.coinc_event_index[coinc_event_id]

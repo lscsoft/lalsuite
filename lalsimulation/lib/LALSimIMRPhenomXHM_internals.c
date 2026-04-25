@@ -2010,10 +2010,9 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
     /************** Inspiral: rescale PhenX and apply PN corrections *********/
 
     //collect all the phenX inspiral coefficients
-    double phenXnonLog[]={pPhase22->phi0,pPhase22->phi1,pPhase22->phi2,pPhase22->phi3,pPhase22->phi4,pPhase22->phi5,pPhase22->phi6,pPhase22->phi7,pPhase22->phi8,pPhase22->phi9,0.,0,0,0};
-    double phenXLog[]={0.,0.,0.,0.,0.,pPhase22->phi5L,pPhase22->phi6L,0.,pPhase22->phi8L,pPhase22->phi9L,0,0,0,0};
-    double pseudoPN[]={0.,0.,0.,0.,0.,0.,0.,0.,pPhase22->sigma1,pPhase22->sigma2,pPhase22->sigma3,pPhase22->sigma4,pPhase22->sigma5};
-
+    double phenXnonLog[]={pPhase22->phi_minus2, pPhase22->phi_minus1, pPhase22->phi0,pPhase22->phi1,pPhase22->phi2,pPhase22->phi3,pPhase22->phi4,pPhase22->phi5,pPhase22->phi6,pPhase22->phi7,pPhase22->phi8,pPhase22->phi9,0.,0,0,0};
+    double phenXLog[]={0.,0.,0.,0.,0.,0.,0.,pPhase22->phi5L,pPhase22->phi6L,0.,pPhase22->phi8L,pPhase22->phi9L,0,0,0,0};
+    double pseudoPN[]={0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,pPhase22->sigma1,pPhase22->sigma2,pPhase22->sigma3,pPhase22->sigma4,pPhase22->sigma5};
 
 
     //rescale the coefficients of phenX by applying phi_lm(f)~m/2 *phi_22(2/m f)
@@ -2029,8 +2028,8 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
       pseudoPN[i]=pseudoPN[i]*fact;
 
       // scaling the logarithmic terms introduces some extra contributions in the non-log terms
-      pPhase->phi[i]=(phenXnonLog[i]+pseudoPN[i]-phenXLog[i]*log(m_over_2))*pow(m_over_2,(8-i)/3.);
-      pPhase->phiL[i]=phenXLog[i]*pow(m_over_2,(8-i)/3.);
+      pPhase->phi[i]=(phenXnonLog[i]+pseudoPN[i]-phenXLog[i]*log(m_over_2))*pow(m_over_2,(10-i)/3.);
+      pPhase->phiL[i]=phenXLog[i]*pow(m_over_2,(10-i)/3.);
     }
 
 
@@ -2052,7 +2051,7 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
       #endif
     }
 
-    pPhase->phi[8]= pPhase->phi[8]+ pPhase->LambdaPN;
+    pPhase->phi[10]= pPhase->phi[10]+ pPhase->LambdaPN;
 
 
     /****************************************

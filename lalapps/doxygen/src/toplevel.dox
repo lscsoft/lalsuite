@@ -5,8 +5,6 @@
 
 \defgroup lalapps_frametools		Frame Tools
 
-\defgroup lalapps_hwinjection		Hardware Injection Tools
-
 \defgroup lalapps_burst			Burst Applications
 
 \defgroup lalapps_inspiral		Inspiral Applications

@@ -40,7 +40,7 @@ from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
 import lal
-from lal import rate
+from lalburst import rate
 from igwn_segments import utils as segmentsUtils
 from .offsetvector import offsetvector
 from . import snglcoinc

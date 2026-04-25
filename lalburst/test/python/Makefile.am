@@ -9,4 +9,5 @@ test_scripts += \
 	date_verify.py \
 	snglcoinc_coincs_verify.py \
 	snglcoinc_coincrates_verify.py \
+	test_rate.py \
 	$(END_OF_LIST)

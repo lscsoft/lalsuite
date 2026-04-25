@@ -27,6 +27,12 @@ import argparse
 import os
 import re
 from pathlib import Path
+from urllib.parse import urlparse
+
+from gwdatafind import find_urls
+from gwdatafind.utils import filename_metadata, file_segment
+
+from igwn_segments import segment, segmentlist
 
 from lalpulsar import (
     git_version,
@@ -38,6 +44,8 @@ from lalpulsar import (
 __author__ = "Evan Goetz <evan.goetz@ligo.org>, Greg Mendell"
 __version__ = git_version.id
 __date__ = git_version.date
+
+cache_re = re.compile(r"^([A-Z])(\s+)(\w+)(\s+)(\d+)(\s+)(\d+)(\s+)(.+gwf)")
 
 
 # REVISIONS:
@@ -87,6 +95,8 @@ __date__ = git_version.date
 #               workflow
 # 12/2024  eag; Modify workflow to use lalpulsar_MoveSFTs script instead of
 #               remapping files
+# 03/2025  eag; Rewrite to generate cache files running lalpulsar_MakeSFTDAG
+#               enabling frame files on /home or OSDF
 
 
 def sft_name_from_vars(
@@ -125,21 +135,88 @@ def sft_name_from_vars(
     return BuildSFTFilenameFromSpec(spec)
 
 
-#
-# FUNCTION THAT WRITE ONE JOB TO DAG FILE
-#
-def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args):
-    datafind = f"datafind_{nodeCount}"
-    MakeSFTs = f"MakeSFTs_{nodeCount}"
-    startTimeDatafind = startTimeThisNode - args.extra_datafind_time
-    endTimeDatafind = endTimeThisNode + args.extra_datafind_time
-    tagStringOut = f"{args.tag_string}_{nodeCount}"
-    if args.cache_file:
-        cacheFile = args.cache_file
-    else:
-        cacheFile = (
-            args.cache_path / f"{site}-{startTimeDatafind}-{endTimeDatafind}.cache"
+def get_urls(args):
+    """Get frame file URL list from gwdatafind or cache file"""
+
+    if not args.cache_file:
+        urls = find_urls(
+            site,
+            args.input_data_type,
+            segList[0][0],
+            segList[-1][-1],
+            match=args.datafind_match,
+            urltype=args.datafind_urltype,
         )
+    else:
+        urls = []
+        with open(args.cache_file, "r") as f:
+            for line in f:
+                m = cache_re.match(line)
+                if m:
+                    framefile = m.group(9)
+                    urls.append(framefile)
+
+    # sort the urls by gps time since find_urls() may not return a sorted list
+    sorted_urls = sorted(urls, key=lambda x: file_segment(x)[0])
+
+    return sorted_urls
+
+
+def make_cache(
+    urls,
+    job_seg,
+):
+    """Make a frame list and cache list from a list of URLs"""
+
+    cache = []  # list of lines for the cache file
+    frames = []  # list of frame filenames used in the job
+    for idx, url in enumerate(urls):
+        obs, desc, dataseg = filename_metadata(url)
+        dataseg = segment(dataseg)
+        if dataseg.disjoint(job_seg) < 0:
+            continue
+        if dataseg.disjoint(job_seg) > 0:
+            break
+        if dataseg.intersects(job_seg):
+            framefileurl = urlparse(url)
+            framefilepath = Path(framefileurl.path)
+
+            # list in cache file if files not visible on execute node
+            # otherwise use file url
+            if "/home" in str(framefilepath.parent) or "osdf" in framefileurl.scheme:
+                newcache = (
+                    f"{obs}\t{desc}\t{dataseg[0]}\t{abs(dataseg)}\t{framefilepath.name}"
+                )
+            else:
+                newcache = f"{obs}\t{desc}\t{dataseg[0]}\t{abs(dataseg)}\t{url}"
+            cache.append(newcache)
+
+            if "/home" in str(framefilepath.parent):
+                frames.append(framefilepath)
+            else:
+                frames.append(url)
+
+    return frames, cache
+
+
+def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, urls, args):
+    """Write one job to DAG file"""
+
+    MakeSFTs = f"MakeSFTs_{nodeCount}"
+    tagStringOut = f"{args.tag_string}_{nodeCount}"
+
+    job_segment = segment(
+        startTimeThisNode - args.extra_datafind_time,
+        endTimeThisNode + args.extra_datafind_time,
+    )
+
+    frames, cache = make_cache(urls, job_segment)
+
+    obs, desc, dataseg = filename_metadata(urls[0])
+    cacheFile = args.cache_path / f"{obs}-{job_segment[0]}-{job_segment[1]}.cache"
+    with open(cacheFile, "w") as f:
+        for l in cache:
+            f.write(f"{l}\n")
 
     argList = []
     argList.append(f"-O {args.observing_run}")
@@ -210,25 +287,14 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
             sft_start += args.time_baseline
         sft_end = sft_start + args.time_baseline
 
-    # gw_data_find job
-    if not args.cache_file:
-        dagFID.write(f"JOB {datafind} {Path(dagFID.name).parent / 'datafind.sub'}\n")
-        dagFID.write(f"RETRY {datafind} 1\n")
-        dagFID.write(
-            f'VARS {datafind} gpsstarttime="{startTimeDatafind}" '
-            f'gpsendtime="{endTimeDatafind}" observatory="{site}" '
-            f'inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n'
-        )
-
     # MakeSFT job
     dagFID.write(f"JOB {MakeSFTs} {Path(dagFID.name).parent / 'MakeSFTs.sub'}\n")
     dagFID.write(f"RETRY {MakeSFTs} 1\n")
-    dagFID.write(
-        f'VARS {MakeSFTs} argList="{argStr}" cachefile="{cacheFile}" '
-        f'tagstring="{tagStringOut}"\n'
-    )
-    if not args.cache_file:
-        dagFID.write(f"PARENT {datafind} CHILD {MakeSFTs}\n")
+    dagFID.write(f'VARS {MakeSFTs} argList="{argStr}" cachefile="{cacheFile}" ')
+    if args.transfer_frame_files:
+        framefiles = ",".join([str(fr) for fr in frames])
+        dagFID.write(f'framefiles="{framefiles}" ')
+    dagFID.write(f'tagstring="{tagStringOut}"\n')
 
 
 #
@@ -236,11 +302,196 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
 #
 
 parser = argparse.ArgumentParser(
-    description="This script creates datafind.sub, MakeSFTs.sub, and a dag \
+    description="This script creates MakeSFTs.sub, MoveSFTs.sub, and a dag \
                  file that generates SFTs based on the options given.",
     fromfile_prefix_chars="@",
 )
-parser.add_argument(
+
+dag_group = parser.add_argument_group(
+    "DAG organization", "Options for workflow control"
+)
+datafind_group = parser.add_argument_group(
+    "Datafind", "Options for locating frame files"
+)
+makesfts_group = parser.add_argument_group(
+    "SFT creation", "Options for SFT creation and output"
+)
+deprecated_group = parser.add_argument_group("DEPRECATED")
+
+dag_group.add_argument(
+    "-f",
+    "--dag-file",
+    required=True,
+    type=Path,
+    help="filename for .dag file (should end in .dag)",
+)
+dag_group.add_argument(
+    "-G",
+    "--tag-string",
+    required=True,
+    type=str,
+    help="tag string used in names of various files unique to \
+          jobs that will run under the DAG",
+)
+dag_group.add_argument(
+    "-a",
+    "--analysis-start-time",
+    type=int,
+    help="GPS start time of data from which to generate \
+          SFTs (optional and unused if a segment file is given)",
+)
+dag_group.add_argument(
+    "-b",
+    "--analysis-end-time",
+    type=int,
+    help="GPS end time of data from which to generate SFTs \
+          (optional and unused if a segment file is given)",
+)
+dag_group.add_argument(
+    "-L",
+    "--max-length-all-jobs",
+    type=int,
+    help="maximum total amount of data to process, in seconds \
+          (optional and unused if a segment file is given)",
+)
+dag_group.add_argument(
+    "-g",
+    "--segment-file",
+    type=Path,
+    help="alternative file with segments to use, rather than \
+          the input times",
+)
+dag_group.add_argument(
+    "-l",
+    "--min-seg-length",
+    type=int,
+    default=0,
+    help="minimum length segments to process in seconds (used \
+          only if a segment file is given)",
+)
+dag_group.add_argument(
+    "-y",
+    "--synchronize-start",
+    action="store_true",
+    help="synchronize the start times of the SFTs so that the \
+          start times are synchronized when there are gaps in the \
+          data",
+)
+dag_group.add_argument(
+    "-o",
+    "--log-path",
+    type=Path,
+    default="logs",
+    help="path to log, output, and error files (default \
+          is $PWD/logs; this directory is created if it does not \
+          exist and usually should be under a local file system)",
+)
+dag_group.add_argument(
+    "-m",
+    "--max-num-per-node",
+    type=int,
+    default=1,
+    help="maximum number of SFTs to generate on one node",
+)
+dag_group.add_argument(
+    "-J",
+    "--makesfts-path",
+    type=Path,
+    help="string specifying the lalpulsar_MakeSFTs executable, \
+          or a path to it; if not set, will use \
+          MAKESFTS_PATH env variable or system default (in that \
+          order)",
+)
+dag_group.add_argument(
+    "--movesfts-path",
+    type=Path,
+    help="string specifying the lalpulsar_MoveSFTs executable, \
+          or a path to it; if not set, will use \
+          MOVESFTS_PATH env variable or system default (in that \
+          order)",
+)
+dag_group.add_argument(
+    "-Y",
+    "--request-memory",
+    type=int,
+    default=4096,
+    help="memory allocation in MB to request from condor for \
+          lalpulsar_MakeSFTs step",
+)
+dag_group.add_argument(
+    "-s",
+    "--request-disk",
+    type=int,
+    default=4096,
+    help="disk space allocation in MB to request from condor \
+          for lalpulsar_MakeSFTs step",
+)
+dag_group.add_argument(
+    "-A",
+    "--accounting-group",
+    required=True,
+    type=str,
+    help="Condor tag for the production of SFTs",
+)
+dag_group.add_argument(
+    "-U",
+    "--accounting-group-user",
+    required=True,
+    type=str,
+    help="albert.einstein username (do not add @LIGO.ORG)",
+)
+dag_group.add_argument(
+    "-t",
+    "--transfer-frame-files",
+    action="store_true",
+    help="Transfer frame files via HTCondor file transfer system. \
+          This should be specified if frames are not visible to the \
+          compute node file system. Ex. this should be specified if \
+          frames are on /home or running on the open science grid. \
+          Usually frame files are visible on CIT, LHO, LLO clusters \
+          so that this does not need to be specified in that case.",
+)
+
+datafind_group.add_argument(
+    "-d",
+    "--input-data-type",
+    required=True,
+    type=str,
+    help="input data type for use with the gw_data_find --type \
+          option",
+)
+datafind_group.add_argument(
+    "-x",
+    "--extra-datafind-time",
+    type=int,
+    default=0,
+    help="extra time to subtract/add from/to start/end time \
+          arguments of gw_data_find",
+)
+datafind_group.add_argument(
+    "-M",
+    "--datafind-match",
+    type=str,
+    help="string to use with the gw_data_find --match option",
+)
+datafind_group.add_argument(
+    "--datafind-urltype",
+    type=str,
+    default="file",
+    choices=["file", "osdf"],
+    help="String for the gw_data_find --urltype option. \
+          Use 'file' if creating SFTs on a local LDG cluster. \
+          Use 'osdf' if creating SFTs on the open science grid",
+)
+datafind_group.add_argument(
+    "-e",
+    "--cache-file",
+    type=Path,
+    help="path and filename to frame cache file to use instead \
+          of gw_data_find",
+)
+
+makesfts_group.add_argument(
     "-O",
     "--observing-run",
     required=True,
@@ -249,7 +500,7 @@ parser.add_argument(
           (in the case of mock data challenge data) the observing \
           run on which the data is most closely based",
 )
-parser.add_argument(
+makesfts_group.add_argument(
     "-K",
     "--observing-kind",
     type=str,
@@ -259,7 +510,7 @@ parser.add_argument(
           "SIM" for mock data challenge or other simulated data; or \
           "DEV" for development/testing purposes',
 )
-parser.add_argument(
+makesfts_group.add_argument(
     "-R",
     "--observing-revision",
     type=int,
@@ -269,73 +520,14 @@ parser.add_argument(
           in the initial SFT production run after they have been published, \
           regenerated SFTs should have a revision number of at least 2",
 )
-parser.add_argument(
+makesfts_group.add_argument(
     "-X",
     "--misc-desc",
     type=str,
     help="For private SFTs, miscellaneous part of the SFT \
           description field in the filename",
 )
-parser.add_argument(
-    "-a",
-    "--analysis-start-time",
-    type=int,
-    help="GPS start time of data from which to generate \
-          SFTs (optional and unused if a segment file is given)",
-)
-parser.add_argument(
-    "-b",
-    "--analysis-end-time",
-    type=int,
-    help="GPS end time of data from which to generate SFTs \
-          (optional and unused if a segment file is given)",
-)
-parser.add_argument(
-    "-f",
-    "--dag-file",
-    required=True,
-    type=Path,
-    help="filename for .dag file (should end in .dag)",
-)
-parser.add_argument(
-    "-G",
-    "--tag-string",
-    required=True,
-    type=str,
-    help="tag string used in names of various files unique to \
-          jobs that will run under the DAG",
-)
-parser.add_argument(
-    "-d",
-    "--input-data-type",
-    required=True,
-    type=str,
-    help="input data type for use with the gw_data_find --type \
-          option",
-)
-parser.add_argument(
-    "-x",
-    "--extra-datafind-time",
-    type=int,
-    default=0,
-    help="extra time to subtract/add from/to start/end time \
-          arguments of gw_data_find",
-)
-parser.add_argument(
-    "-M",
-    "--datafind-match",
-    type=str,
-    help="string to use with the gw_data_find --match option",
-)
-parser.add_argument(
-    "-y",
-    "--synchronize-start",
-    action="store_true",
-    help="synchronize the start times of the SFTs so that the \
-          start times are synchronized when there are gaps in the \
-          data",
-)
-parser.add_argument(
+makesfts_group.add_argument(
     "-k",
     "--filter-knee-freq",
     required=True,
@@ -343,14 +535,14 @@ parser.add_argument(
     help="high pass filter knee frequency used on time domain \
           data before generating SFTs",
 )
-parser.add_argument(
+makesfts_group.add_argument(
     "-T",
     "--time-baseline",
     required=True,
     type=int,
     help="time baseline of SFTs  (e.g., 60 or 1800 seconds)",
 )
-parser.add_argument(
+makesfts_group.add_argument(
     "-p",
     "--output-sft-path",
     nargs="+",
@@ -364,7 +556,7 @@ parser.add_argument(
           then --observing-run must be >= 1 and --observing-kind and \
           --observing-revision must be set",
 )
-parser.add_argument(
+makesfts_group.add_argument(
     "-C",
     "--cache-path",
     type=Path,
@@ -374,23 +566,7 @@ parser.add_argument(
           created if it does not exist and must agree with that \
           given in .sub files)",
 )
-parser.add_argument(
-    "-e",
-    "--cache-file",
-    type=Path,
-    help="path and filename to frame cache file to use instead \
-          of gw_data_find",
-)
-parser.add_argument(
-    "-o",
-    "--log-path",
-    type=Path,
-    default="logs",
-    help="path to log, output, and error files (default \
-          is $PWD/logs; this directory is created if it does not \
-          exist and usually should be under a local file system)",
-)
-parser.add_argument(
+makesfts_group.add_argument(
     "-N",
     "--channel-name",
     nargs="+",
@@ -402,20 +578,16 @@ parser.add_argument(
           output-sft-path. Can only specify one channel when generating \
           private SFTs (--observing-run=0)",
 )
-parser.add_argument(
-    "--allow-skipping",
-    action="store_true",
-    help="allow channels to be skipped if not in frames or too low sampling \
-          frequency",
+makesfts_group.add_argument(
+    "-c", "--comment-field", type=str, help="comment for SFT header"
 )
-parser.add_argument("-c", "--comment-field", type=str, help="comment for SFT header")
-parser.add_argument(
+makesfts_group.add_argument(
     "-F", "--start-freq", type=int, default=10, help="start frequency of the SFTs"
 )
-parser.add_argument(
+makesfts_group.add_argument(
     "-B", "--band", type=int, default=1990, help="frequency band of the SFTs"
 )
-parser.add_argument(
+makesfts_group.add_argument(
     "-w",
     "--window-type",
     type=str,
@@ -425,7 +597,7 @@ parser.add_argument(
           "hann", "tukey:<beta in [0,1], required>"; \
           (default is "tukey:0.001", standard choice for LVK production SFTs)',
 )
-parser.add_argument(
+makesfts_group.add_argument(
     "-P",
     "--overlap-fraction",
     type=float,
@@ -433,125 +605,18 @@ parser.add_argument(
     help="overlap fraction (for use with windows; e.g., use \
           --overlap-fraction 0.5 with --window-type hann windows)",
 )
-parser.add_argument(
-    "-m",
-    "--max-num-per-node",
-    type=int,
-    default=1,
-    help="maximum number of SFTs to generate on one node",
+makesfts_group.add_argument(
+    "--allow-skipping",
+    action="store_true",
+    help="allow channels to be skipped if not in frames or too low sampling \
+          frequency",
 )
-parser.add_argument(
-    "-L",
-    "--max-length-all-jobs",
-    type=int,
-    help="maximum total amount of data to process, in seconds \
-          (optional and unused if a segment file is given)",
-)
-parser.add_argument(
-    "-g",
-    "--segment-file",
-    type=Path,
-    help="alternative file with segments to use, rather than \
-          the input times",
-)
-parser.add_argument(
-    "-l",
-    "--min-seg-length",
-    type=int,
-    default=0,
-    help="minimum length segments to process in seconds (used \
-          only if a segment file is given)",
-)
-parser.add_argument(
-    "-q",
-    "--list-of-nodes",
-    type=str,
-    help="file with list of nodes on which to output SFTs",
-)
-parser.add_argument(
-    "-Q",
-    "--node-path",
-    type=Path,
-    help="path to nodes to output SFTs; the node name is \
-          appended to this path, followed by path given by the -p \
-          option; for example, if -q point to file with the list \
-          node1 node2 ... and the -Q /data/ -p /frames/S5/sfts/LHO \
-          options are given, the first output file will go into \
-          /data/node1/frames/S5/sfts/LHO; the next node in the list \
-          is used in constructing the path when the number of jobs \
-          given by the -r option reached, and so on",
-)
-parser.add_argument(
-    "-r",
-    "--output-jobs-per-node",
-    type=int,
-    default=0,
-    help="number of jobs to output per node in the list of \
-          nodes given with the -q option",
-)
-parser.add_argument(
-    "-j",
-    "--datafind-path",
-    type=Path,
-    help="string specifying the gw_data_find executable, \
-          or a path to it; if not set, will use \
-          LSC_DATAFIND_PATH env variable or system default (in \
-          that order)",
-)
-parser.add_argument(
-    "-J",
-    "--makesfts-path",
-    type=Path,
-    help="string specifying the lalpulsar_MakeSFTs executable, \
-          or a path to it; if not set, will use \
-          MAKESFTS_PATH env variable or system default (in that \
-          order)",
-)
-parser.add_argument(
-    "--movesfts-path",
-    type=Path,
-    help="string specifying the lalpulsar_MoveSFTs executable, \
-          or a path to it; if not set, will use \
-          MOVESFTS_PATH env variable or system default (in that \
-          order)",
-)
-parser.add_argument(
+makesfts_group.add_argument(
     "--no-validate",
     dest="validate",
     action="store_false",
     help="do not validate created SFTs",
 )
-parser.add_argument(
-    "-Y",
-    "--request-memory",
-    type=int,
-    default=2048,
-    help="memory allocation in MB to request from condor for \
-          lalpulsar_MakeSFTs step",
-)
-parser.add_argument(
-    "-s",
-    "--request-disk",
-    type=int,
-    default=1024,
-    help="disk space allocation in MB to request from condor \
-          for lalpulsar_MakeSFTs step",
-)
-parser.add_argument(
-    "-A",
-    "--accounting-group",
-    required=True,
-    type=str,
-    help="Condor tag for the production of SFTs",
-)
-parser.add_argument(
-    "-U",
-    "--accounting-group-user",
-    required=True,
-    type=str,
-    help="albert.einstein username (do not add @LIGO.ORG)",
-)
-
 
 ##### DEPRECATED OPTIONS #####
 class DeprecateAction(argparse.Action):
@@ -561,7 +626,7 @@ class DeprecateAction(argparse.Action):
         )
 
 
-parser.add_argument(
+deprecated_group.add_argument(
     "-u",
     "--frame-struct-type",
     nargs=0,
@@ -569,15 +634,15 @@ parser.add_argument(
     help="DEPRECATED. No longer required; \
           the frame channel type is determined automatically",
 )
-parser.add_argument(
+deprecated_group.add_argument(
     "-H",
-    "--use-hot",
+    "--use-hoft",
     nargs=0,
     action=DeprecateAction,
     help="DEPRECATED. No longer required; \
           the frame channel type is determined automatically",
 )
-parser.add_argument(
+deprecated_group.add_argument(
     "-i",
     "--ifo",
     nargs=0,
@@ -585,31 +650,53 @@ parser.add_argument(
     help="DEPRECATED. No longer required; \
           the detector prefix is deduced from the channel name",
 )
-parser.add_argument(
+deprecated_group.add_argument(
     "-D",
     "--make-gps-dirs",
     nargs=0,
     action=DeprecateAction,
     help="DEPRECATED. No longer supported",
 )
-parser.add_argument(
+deprecated_group.add_argument(
     "-Z",
     "--make-tmp-file",
     nargs=0,
     action=DeprecateAction,
     help="DEPRECATED. Default behaviour",
 )
-parser.add_argument(
+deprecated_group.add_argument(
     "-v",
     "--sft-version",
     nargs=0,
     action=DeprecateAction,
     help="DEPRECATED. No longer supported",
 )
-parser.add_argument(
+deprecated_group.add_argument(
     "-S",
     "--use-single",
     nargs=0,
+    action=DeprecateAction,
+    help="DEPRECATED. No longer supported",
+)
+deprecated_group.add_argument(
+    "-q",
+    "--list-of-nodes",
+    type=str,
+    action=DeprecateAction,
+    help="DEPCRECATED. No longer supported",
+)
+deprecated_group.add_argument(
+    "-Q",
+    "--node-path",
+    type=Path,
+    action=DeprecateAction,
+    help="DEPCRECATED. No longer supported",
+)
+deprecated_group.add_argument(
+    "-r",
+    "--output-jobs-per-node",
+    type=int,
+    default=0,
     action=DeprecateAction,
     help="DEPRECATED. No longer supported",
 )
@@ -677,18 +764,12 @@ if len(args.channel_name) > 1 and args.observing_run == 0:
         "--observing-kind and --observing-revision"
     )
 
-# Set executables for gw_data_find, lalpulsar_MakeSFTs, and lalpulsar_MoveSFTs
-dataFindExe = "gw_data_find"
-if args.datafind_path:
-    if args.datafind_path.is_file():
-        dataFindExe = args.datafind_path
-    else:
-        dataFindExe = args.datafind_path / dataFindExe
-elif "LSC_DATAFIND_PATH" in os.environ:
-    dataFindExe = Path("$ENV(LSC_DATAFIND_PATH)") / dataFindExe
-else:
-    dataFindExe = Path("/usr/bin") / dataFindExe
+if args.datafind_urltype == "osdf" and not args.transfer_frame_files:
+    raise parser.error(
+        "--transfer-frame-files must be specified when --datafind-urltype=osdf"
+    )
 
+# Set executables for lalpulsar_MakeSFTs, and lalpulsar_MoveSFTs
 makeSFTsExe = "lalpulsar_MakeSFTs"
 if args.makesfts_path:
     if args.makesfts_path.is_file():
@@ -711,50 +792,18 @@ elif "MOVESFTS_PATH" in os.environ:
 else:
     moveSFTsExe = Path("@LALSUITE_BINDIR@") / moveSFTsExe
 
-# try and make a directory to store the cache files and job logs
-try:
-    args.log_path.mkdir()
-except:
-    pass
-if not args.cache_file:
-    try:
-        args.cache_path.mkdir()
-    except:
-        pass
-
-# Check if list of nodes is given, on which to output SFTs.
-nodeList = []
-useNodeList = False
-savedOutputSFTPath = None
-if args.list_of_nodes is not None:
-    if args.node_path is None:
-        raise argparse.error("Node file list given, but no node path specified")
-
-    if args.output_jobs_per_node < 1:
-        raise argparse.error(
-            "Node file list given, but invalid output jobs per node specified"
-        )
-
-    with open(args.list_of_nodes) as fp_nodelist:
-        for idx, line in enumerate(fp_nodelist):
-            splitLine = line.split()
-            nodeList.append(splitLine[0])
-        if len(nodeList) < 1:
-            raise ValueError(
-                "No nodes found in node list file: {}".format(args.list_of_nodes)
-            )
-
-    # Set flag to use list of nodes in constructing output files
-    useNodeList = True
-    savedOutputSFTPath = args.output_sft_path
-# END if (args.list_of_nodes != None)
+# make directories to store the cache files, job logs, and SFTs
+args.log_path.mkdir(exist_ok=True)
+args.cache_path.mkdir(exist_ok=True)
+for p in args.output_sft_path:
+    p.mkdir(exist_ok=True)
 
 # Check if segment file was given, else set up one segment from the command line
-segList = []
+segList = segmentlist()
 adjustSegExtraTime = False
 if args.segment_file is not None:
     if args.min_seg_length < 0:
-        raise argparse.error("--min-seg-length must be >= 0")
+        raise parser.error("--min-seg-length must be >= 0")
 
     # the next flag causes extra time that cannot be processes to be trimmed
     # from the start and end of a segment
@@ -763,47 +812,60 @@ if args.segment_file is not None:
     with open(args.segment_file) as fp_segfile:
         for idx, line in enumerate(fp_segfile):
             splitLine = line.split()
-            oneSeg = []
-            oneSeg.append(int(splitLine[0]))
-            oneSeg.append(int(splitLine[1]))
-            if (oneSeg[1] - oneSeg[0]) >= args.min_seg_length:
+            oneSeg = segment(int(splitLine[0]), int(splitLine[1]))
+            if abs(oneSeg) >= args.min_seg_length:
                 segList.append(oneSeg)
 
     if len(segList) < 1:
-        raise ValueError(
-            "No segments found in segment file: {}".format(args.segment_file)
-        )
+        raise ValueError(f"No segments found in segment file: {args.segment_file}")
 else:
     if args.analysis_start_time is None:
-        raise argparse.error(
-            "--analysis-start-time must be specified if no segment file is \
-            given"
+        raise parser.error(
+            "--analysis-start-time must be specified if no segment file is " "given"
         )
 
     if args.analysis_end_time is None:
-        raise argparse.error(
-            "--analysis-start-time must be specified if no segment file is \
-            given"
+        raise parser.error(
+            "--analysis-start-time must be specified if no segment file is " "given"
         )
 
     if args.max_length_all_jobs is None:
-        raise argparse.error(
-            "--max-length-all-jobs must be specified if no segment file is \
-            given"
+        raise parser.error(
+            "--max-length-all-jobs must be specified if no segment file is " "given"
         )
 
     # Make sure not to exceed maximum allow analysis
     if args.analysis_end_time > (args.analysis_start_time + args.max_length_all_jobs):
         args.analysis_end_time = args.analysis_start_time + args.max_length_all_jobs
 
-    oneSeg = []
-    oneSeg.append(args.analysis_start_time)
-    oneSeg.append(args.analysis_end_time)
+    oneSeg = segment(args.analysis_start_time, args.analysis_end_time)
     segList.append(oneSeg)
 # END if (args.segment_file != None)
+segList.coalesce()
 
 # Get the IFO site, which is the first letter of the channel name.
 site = args.channel_name[0][0]
+
+# Get the frame file URL list
+urls = get_urls(args)
+
+# Basic check that the frame file url list are traditionally visible on EPs
+if not args.transfer_frame_files:
+    for f in urls:
+        if "/home" in f:
+            raise parser.error(
+                "--transfer-frame-files must be specified when frame files are in /home"
+            )
+
+# data segments created from the list of frame URLs
+dataSegs = segmentlist()
+for url in urls:
+    dataSegs.append(file_segment(url))
+dataSegs.coalesce()
+
+# intersection of segList with dataSegs
+segList &= dataSegs
+segList.coalesce()  # just in case
 
 # initialize count of nodes
 nodeCount = 0
@@ -811,37 +873,8 @@ nodeCount = 0
 # Create .sub files
 path_to_dag_file = args.dag_file.parent
 dag_filename = args.dag_file.name
-datafind_sub = path_to_dag_file / "datafind.sub"
 makesfts_sub = path_to_dag_file / "MakeSFTs.sub"
 movesfts_sub = path_to_dag_file / "MoveSFTs.sub"
-
-# create datafind.sub
-if not args.cache_file:
-    with open(datafind_sub, "w") as datafindFID:
-        datafindLogFile = f"{args.log_path}/datafind_{dag_filename}.log"
-        datafindFID.write("universe = vanilla\n")
-        datafindFID.write(f"executable = {dataFindExe}\n")
-        datafindFID.write("arguments = ")
-        datafindFID.write("--observatory $(observatory) --url-type file ")
-        datafindFID.write("--gps-start-time $(gpsstarttime) ")
-        datafindFID.write("--gps-end-time $(gpsendtime) --lal-cache --gaps ")
-        datafindFID.write(f"--type $(inputdatatype)")
-        if args.datafind_match:
-            datafindFID.write(f" --match {args.datafind_match}\n")
-        else:
-            datafindFID.write("\n")
-        datafindFID.write("getenv = *DATAFIND*\n")
-        datafindFID.write("request_disk = 5MB\n")
-        datafindFID.write("request_memory = 2000MB\n")
-        datafindFID.write(f"accounting_group = {args.accounting_group}\n")
-        datafindFID.write(f"accounting_group_user = {args.accounting_group_user}\n")
-        datafindFID.write(f"log = {datafindLogFile}\n")
-        datafindFID.write(f"error = {args.log_path}/datafind_$(tagstring).err\n")
-        datafindFID.write(f"output = {args.cache_path}/")
-        datafindFID.write("$(observatory)-$(gpsstarttime)-$(gpsendtime).cache\n")
-        datafindFID.write("should_transfer_files = yes\n")
-        datafindFID.write("notification = never\n")
-        datafindFID.write("queue 1\n")
 
 # create MakeSFTs.sub
 with open(makesfts_sub, "w") as MakeSFTsFID:
@@ -859,9 +892,17 @@ with open(makesfts_sub, "w") as MakeSFTsFID:
     MakeSFTsFID.write(f"request_disk = {args.request_disk}MB\n")
     MakeSFTsFID.write("RequestCpus = 1\n")
     MakeSFTsFID.write("should_transfer_files = yes\n")
-    MakeSFTsFID.write("transfer_input_files = $(cachefile)\n")
+    if args.transfer_frame_files:
+        MakeSFTsFID.write("transfer_input_files = $(cachefile),$(framefiles)\n")
+    else:
+        MakeSFTsFID.write("transfer_input_files = $(cachefile)\n")
     if "MAKESFTS_PATH" in os.environ and not args.makesfts_path:
         MakeSFTsFID.write("getenv = MAKESFTS_PATH\n")
+    if args.datafind_urltype == "osdf":
+        MakeSFTsFID.write("use_oauth_services = scitokens\n")
+        MakeSFTsFID.write(
+            "environment = BEARER_TOKEN_FILE=$$(CondorScratchDir)/.condor_creds/scitokens.use\n"
+        )
     MakeSFTsFID.write("queue 1\n")
 
 # create MoveSFTs.sub
@@ -890,7 +931,6 @@ with open(movesfts_sub, "w") as MoveSFTsFID:
 with open(args.dag_file, "w") as dagFID:
     startTimeAllNodes = None
     firstSFTstartTime = 0  # need this for the synchronized start option
-    nodeListIndex = 0
 
     # Loop over the segment list to generate the SFTs for each segment
     for seg in segList:
@@ -1035,17 +1075,6 @@ with open(args.dag_file, "w") as dagFID:
                     # write jobs to dag for this node
                     nodeCount = nodeCount + 1
 
-                    if useNodeList:
-                        args.output_sft_path = (
-                            args.node_path
-                            + nodeList[nodeListIndex]
-                            + savedOutputSFTPath
-                        )
-                        if (nodeCount % args.output_jobs_per_node) == 0:
-                            nodeListIndex = nodeListIndex + 1
-                        # END if ((nodeCount % args.output_jobs_per_node) == 0L)
-                    # END if (useNodeList)
-
                     if nodeCount == 1:
                         startTimeAllNodes = startTimeThisNode
                     writeToDag(
@@ -1053,7 +1082,7 @@ with open(args.dag_file, "w") as dagFID:
                         nodeCount,
                         startTimeThisNode,
                         endTimeThisNode,
-                        site,
+                        urls,
                         args,
                     )
                     # Update for next node
@@ -1073,19 +1102,10 @@ with open(args.dag_file, "w") as dagFID:
                 # write jobs to dag for this node
                 nodeCount = nodeCount + 1
 
-                if useNodeList:
-                    args.output_sft_path = (
-                        args.node_path + nodeList[nodeListIndex] + savedOutputSFTPath
-                    )
-                    if (nodeCount % args.output_jobs_per_node) == 0:
-                        nodeListIndex = nodeListIndex + 1
-                    # END if ((nodeCount % args.output_jobs_per_node) == 0L)
-                # END if (useNodeList)
-
                 if nodeCount == 1:
                     startTimeAllNodes = startTimeThisNode
                 writeToDag(
-                    dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
+                    dagFID, nodeCount, startTimeThisNode, endTimeThisNode, urls, args
                 )
         # END while (endTimeAllNodes < args.analysis_end_time)
     # END for seg in segList
