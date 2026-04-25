@@ -180,7 +180,7 @@ def generateAttributes(datasets, counter = ''):
                                 for name in ['m1', 'm2', 'spin1z', 'spin2z']]
                 iota = conf.getfloat('parameters', 'inclination')
                 cfac = np.cos(iota)
-                pfac = 0.5 * (1. + cfac*cfac);
+                pfac = 0.5 * (1. + cfac*cfac)
 
                 href = hpref / pfac + 1.j * hcref / cfac
                 h = hp.data.data / pfac + 1.j * hc.data.data / cfac
