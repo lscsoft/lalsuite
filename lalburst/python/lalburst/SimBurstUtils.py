@@ -27,17 +27,14 @@
 import math
 import sys
 
-
 import lal
 from lalburst import rate
 
-
-from . import SnglBurstUtils
-
+from . import SnglBurstUtils, git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from .git_version import date as __date__
-from .git_version import version as __version__
+__date__ = git_version.date
+__version__ = git_version.version
 
 
 #
