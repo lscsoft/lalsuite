@@ -1,8 +1,9 @@
-""" Evaluates Numerical Relativity fits such as remnant BH mass, spin, etc, for
+"""Evaluates Numerical Relativity fits such as remnant BH mass, spin, etc, for
     various models.
 
 Vijay Varma, 2019.
 """
+
 import warnings
 
 import numpy as np
@@ -14,29 +15,34 @@ from .NRSur3dq8Remnant import NRSur3dq8Remnant
 from .NRSur7dq4Remnant import NRSur7dq4Remnant
 
 
-#=============================================================================
+# =============================================================================
 class FitAttributes(object):
-    """ Saves attributes of a particular fit.
-    """
-    #-------------------------------------------------------------------------
-    def __init__(self, fit_class, desc, refs, model_keywords):
-        """ Initializes a FitAttributes object. See usage examples below.
+    """Saves attributes of a particular fit."""
 
-            - fit_class: Class to load for a given model. type: should be a
-                daughter class of nrfits.NRFits.
-            - desc: A brief description of the model, type: str.
-            - refs: Paper reference, type: str.
-            - model_keywords: List of strings, with one or more of
-                allowed_model_keywords.
+    # -------------------------------------------------------------------------
+    def __init__(self, fit_class, desc, refs, model_keywords):
+        """Initializes a FitAttributes object. See usage examples below.
+
+        - fit_class: Class to load for a given model. type: should be a
+            daughter class of nrfits.NRFits.
+        - desc: A brief description of the model, type: str.
+        - refs: Paper reference, type: str.
+        - model_keywords: List of strings, with one or more of
+            allowed_model_keywords.
         """
 
         # Types of model keywords allowed (add more if required)
-        allowed_model_keywords = ['nonspinning', 'aligned_spin', 'precessing', \
-            'eccentric', 'tidal']
+        allowed_model_keywords = [
+            "nonspinning",
+            "aligned_spin",
+            "precessing",
+            "eccentric",
+            "tidal",
+        ]
 
         for key in model_keywords:
             if key not in allowed_model_keywords:
-                raise Exception("Invalid model_keyword: %s"%key)
+                raise Exception("Invalid model_keyword: %s" % key)
 
         self.fit_class = fit_class
         self.desc = desc
@@ -44,31 +50,31 @@ class FitAttributes(object):
         self.model_keywords = model_keywords
 
 
-#=============================================================================
+# =============================================================================
 
 # Collection of all implemented fits
 fits_collection = {}
 
-fits_collection['NRSur3dq8Remnant'] = FitAttributes( \
-    fit_class = NRSur3dq8Remnant(),
-    desc = 'Fits for remnant mass, spin and kick velocity for nonprecessing'
-        ' BBH systems, trained on mass ratios q <= 8 and dimensionless spin '
-        'magnitudes <= 0.81. This model was called surfinBH3dq8 in the paper.',
-    refs = 'arxiv:1809.09125',
-    model_keywords = ['aligned_spin'],
-    )
+fits_collection["NRSur3dq8Remnant"] = FitAttributes(
+    fit_class=NRSur3dq8Remnant(),
+    desc="Fits for remnant mass, spin and kick velocity for nonprecessing"
+    " BBH systems, trained on mass ratios q <= 8 and dimensionless spin "
+    "magnitudes <= 0.81. This model was called surfinBH3dq8 in the paper.",
+    refs="arxiv:1809.09125",
+    model_keywords=["aligned_spin"],
+)
 
-fits_collection['NRSur7dq4Remnant'] = FitAttributes( \
-    fit_class = NRSur7dq4Remnant(),
-    desc = 'Fits for remnant mass, spin and kick velocity for generically'
-        ' precessing BBH systems, trained on mass ratios q <= 4.01 and '
-        'dimensionless spin magnitudes <= 0.81.',
-    refs = 'arxiv:1905.09300',
-    model_keywords = ['precessing'],
-    )
+fits_collection["NRSur7dq4Remnant"] = FitAttributes(
+    fit_class=NRSur7dq4Remnant(),
+    desc="Fits for remnant mass, spin and kick velocity for generically"
+    " precessing BBH systems, trained on mass ratios q <= 4.01 and "
+    "dimensionless spin magnitudes <= 0.81.",
+    refs="arxiv:1905.09300",
+    model_keywords=["precessing"],
+)
 
 
-#=============================================================================
+# =============================================================================
 def truncate_output_to_physical_limits(val_dict, behavior):
     """
     Function to truncate fit values when they go beyond the following physical
@@ -98,16 +104,20 @@ def truncate_output_to_physical_limits(val_dict, behavior):
     if behavior == "IGNORE":
         return val_dict
 
-    allowed_behaviors = ["ERROR","IGNORE","KEEP","TRUNCATE","TRUNCATESILENT"]
+    allowed_behaviors = ["ERROR", "IGNORE", "KEEP", "TRUNCATE", "TRUNCATESILENT"]
     if behavior not in allowed_behaviors:
-        raise ValueError("Invalid physical_limit_violation_behavior=%s"%behavior
-            + ". Should be one of ["+ ", ".join(allowed_behaviors) + "].")
+        raise ValueError(
+            "Invalid physical_limit_violation_behavior=%s" % behavior
+            + ". Should be one of ["
+            + ", ".join(allowed_behaviors)
+            + "]."
+        )
 
     physical_limits = {
-        "FinalMass": 1,     # Remnant can't be heavier than the total mass
-        "FinalSpin": 1,     # Kerr limit
-        "RecoilKick": 1,    # Speed of light limit
-        }
+        "FinalMass": 1,  # Remnant can't be heavier than the total mass
+        "FinalSpin": 1,  # Kerr limit
+        "RecoilKick": 1,  # Speed of light limit
+    }
 
     for fit_type in val_dict.keys():
         limit = physical_limits[fit_type]
@@ -116,19 +126,21 @@ def truncate_output_to_physical_limits(val_dict, behavior):
             # Error/Warning message
             message = ""
             if fit_type in ["FinalSpin", "RecoilKick"]:
-                message += "%s magnitude=%.7e"%(fit_type, magnitude)
+                message += "%s magnitude=%.7e" % (fit_type, magnitude)
             else:
-                message += "Dimensionless %s=%.7e"%(fit_type, magnitude)
-            message += " is over max limit=%.2e."%(limit)
+                message += "Dimensionless %s=%.7e" % (fit_type, magnitude)
+            message += " is over max limit=%.2e." % (limit)
 
-            if behavior == "ERROR":             # raise error
-                raise RuntimeError(message + " Adapt " \
-                "extra_params_dict['physical_limit_violation_behavior'] to "\
-                "continue without an error.")
+            if behavior == "ERROR":  # raise error
+                raise RuntimeError(
+                    message + " Adapt "
+                    "extra_params_dict['physical_limit_violation_behavior'] to "
+                    "continue without an error."
+                )
 
-            elif behavior in ["TRUNCATE", "TRUNCATESILENT"]: # rescale magnitude
+            elif behavior in ["TRUNCATE", "TRUNCATESILENT"]:  # rescale magnitude
                 message += " Setting to max limit."
-                val_dict[fit_type] *= limit/magnitude
+                val_dict[fit_type] *= limit / magnitude
 
             # Only these cases get a warning
             if behavior in ["KEEP", "TRUNCATE"]:
@@ -136,9 +148,10 @@ def truncate_output_to_physical_limits(val_dict, behavior):
 
     return val_dict
 
-#=============================================================================
+
+# =============================================================================
 def check_extra_params_and_set_defaults(extra_params_dict):
-    """ Does some sanity checks on extra_params_dict.
+    """Does some sanity checks on extra_params_dict.
     If any of the default_keywords are not specified, sets them to the
     default values.
     """
@@ -146,13 +159,13 @@ def check_extra_params_and_set_defaults(extra_params_dict):
     # NOTE: To add a new key to extra_params_dict, set a default value here
     # and update the documentation of eval_nrfit
     default_keywords = {
-        'Lambda1': None,
-        'Lambda2': None,
-        'eccentricity': None,
-        'mean_anomaly': None,
-        'unlimited_extrapolation': False,
-        'physical_limit_violation_behavior': "ERROR",
-        }
+        "Lambda1": None,
+        "Lambda2": None,
+        "eccentricity": None,
+        "mean_anomaly": None,
+        "unlimited_extrapolation": False,
+        "physical_limit_violation_behavior": "ERROR",
+    }
 
     if extra_params_dict is None:
         extra_params_dict = {}
@@ -160,8 +173,12 @@ def check_extra_params_and_set_defaults(extra_params_dict):
     # Sanity checks
     for key in extra_params_dict.keys():
         if key not in default_keywords.keys():
-            raise ValueError('Invalid key %s in extra_params_dict. '%(key)
-            + "Should be one of ["+ ", ".join(default_keywords.keys()) + "].")
+            raise ValueError(
+                "Invalid key %s in extra_params_dict. " % (key)
+                + "Should be one of ["
+                + ", ".join(default_keywords.keys())
+                + "]."
+            )
 
     # set to default if keyword is not specified
     for key in default_keywords:
@@ -171,10 +188,17 @@ def check_extra_params_and_set_defaults(extra_params_dict):
     return extra_params_dict
 
 
-
-#=============================================================================
-def eval_nrfit(m1, m2, chiA_vec, chiB_vec, model_name, fit_types_list, f_ref=-1,
-        extra_params_dict=None):
+# =============================================================================
+def eval_nrfit(
+    m1,
+    m2,
+    chiA_vec,
+    chiB_vec,
+    model_name,
+    fit_types_list,
+    f_ref=-1,
+    extra_params_dict=None,
+):
     r"""
     Evaluates Numerical Relativity fits for a given model.
 
@@ -266,21 +290,29 @@ def eval_nrfit(m1, m2, chiA_vec, chiB_vec, model_name, fit_types_list, f_ref=-1,
 
     ### Sanity checks
     if model_name not in fits_collection.keys():
-        raise ValueError("Invalid model_name=%s. "%model_name \
-            + "Should be one of ["+ ", ".join(fits_collection.keys()) + "].")
+        raise ValueError(
+            "Invalid model_name=%s. " % model_name
+            + "Should be one of ["
+            + ", ".join(fits_collection.keys())
+            + "]."
+        )
 
     if m1 < 0.09 * MSUN_SI and f_ref != -1:
-        warnings.warn("Small value of m1 = %e (kg) = %e (Msun) requested. "
+        warnings.warn(
+            "Small value of m1 = %e (kg) = %e (Msun) requested. "
             "When f_ref != -1, component masses must be in kgs, perhaps you "
-            "are using different units?"%(m1, m1/MSUN_SI))
+            "are using different units?" % (m1, m1 / MSUN_SI)
+        )
 
     if m2 < 0.09 * MSUN_SI and f_ref != -1:
-        warnings.warn("Small value of m2 = %e (kg) = %e (Msun) requested. "
+        warnings.warn(
+            "Small value of m2 = %e (kg) = %e (Msun) requested. "
             "When f_ref != -1, component masses must be in kgs, perhaps you "
-            "are using different units?"%(m2, m2/MSUN_SI))
+            "are using different units?" % (m2, m2 / MSUN_SI)
+        )
 
     if m1 <= 0 or m2 <= 0:
-        raise ValueError("Got nonpositive mass: m1=%.3e, m2=%.3e"%(m1,m2))
+        raise ValueError("Got nonpositive mass: m1=%.3e, m2=%.3e" % (m1, m2))
 
     chiA_vec = np.atleast_1d(chiA_vec)
     chiB_vec = np.atleast_1d(chiB_vec)
@@ -288,16 +320,17 @@ def eval_nrfit(m1, m2, chiA_vec, chiB_vec, model_name, fit_types_list, f_ref=-1,
         raise TypeError("Expected input spins to be 3-vectors.")
 
     if np.linalg.norm(chiA_vec) > 1:
-        raise ValueError("Invalid spin magnitude |chiA_vec|=%.3f."%( \
-            np.linalg.norm(chiA_vec)))
+        raise ValueError(
+            "Invalid spin magnitude |chiA_vec|=%.3f." % (np.linalg.norm(chiA_vec))
+        )
 
     if np.linalg.norm(chiB_vec) > 1:
-        raise ValueError("Invalid spin magnitude |chiB_vec|=%.3f."%( \
-            np.linalg.norm(chiB_vec)))
+        raise ValueError(
+            "Invalid spin magnitude |chiB_vec|=%.3f." % (np.linalg.norm(chiB_vec))
+        )
 
     if not type(fit_types_list) == list:
         raise TypeError("fit_types_list should be a list.")
-
 
     # do sanity checks on extra_params_dict and set default values if
     # required.
@@ -305,25 +338,27 @@ def eval_nrfit(m1, m2, chiA_vec, chiB_vec, model_name, fit_types_list, f_ref=-1,
 
     # Some further sanity checks to makes sure extra_params_dict is
     # compatible with the given model
-    if (extra_params_dict['Lambda1'] is not None) \
-            or (extra_params_dict['Lambda2'] is not None):
-        if 'tidal' not in fits_collection[model_name].model_keywords:
+    if (extra_params_dict["Lambda1"] is not None) or (
+        extra_params_dict["Lambda2"] is not None
+    ):
+        if "tidal" not in fits_collection[model_name].model_keywords:
             raise ValueError("This model does not allow Lambda1/Lambda2.")
 
-    if (extra_params_dict['eccentricity'] is not None) \
-            or (extra_params_dict['mean_anomaly'] is not None):
-        if 'eccentric' not in fits_collection[model_name].model_keywords:
-            raise ValueError("This model does not allow eccentricity or "
-                    "mean_anomaly.")
+    if (extra_params_dict["eccentricity"] is not None) or (
+        extra_params_dict["mean_anomaly"] is not None
+    ):
+        if "eccentric" not in fits_collection[model_name].model_keywords:
+            raise ValueError(
+                "This model does not allow eccentricity or " "mean_anomaly."
+            )
 
-    if 'aligned_spin' in fits_collection[model_name].model_keywords:
+    if "aligned_spin" in fits_collection[model_name].model_keywords:
         if np.linalg.norm(chiA_vec[:2]) > 0 or np.linalg.norm(chiB_vec[:2]) > 0:
             raise ValueError("This model only allows nonprecessing spins")
 
-    if 'nonspinning' in fits_collection[model_name].model_keywords:
+    if "nonspinning" in fits_collection[model_name].model_keywords:
         if np.linalg.norm(chiA_vec) > 0 or np.linalg.norm(chiB_vec) > 0:
             raise ValueError("This model only allows zero spins")
-
 
     swapped_labels = False
     # If m1 < m2, we switch the labels of the two objects, and then rotate the
@@ -343,24 +378,28 @@ def eval_nrfit(m1, m2, chiA_vec, chiB_vec, model_name, fit_types_list, f_ref=-1,
         swapped_labels = True
 
     # Compute NR fit quantities
-    val_dict = fits_collection[model_name].fit_class(m1, m2, chiA_vec, chiB_vec,
-            f_ref, fit_types_list, extra_params_dict)
+    val_dict = fits_collection[model_name].fit_class(
+        m1, m2, chiA_vec, chiB_vec, f_ref, fit_types_list, extra_params_dict
+    )
 
     # If the output breaks physical limits, truncate it if requested.
-    val_dict = truncate_output_to_physical_limits(val_dict, \
-        extra_params_dict['physical_limit_violation_behavior'])
+    val_dict = truncate_output_to_physical_limits(
+        val_dict, extra_params_dict["physical_limit_violation_behavior"]
+    )
 
     # So far FinalMass was dimless, now rescale to same units as total mass
-    if 'FinalMass' in val_dict.keys():
-        val_dict['FinalMass'] *= (m1 + m2)
+    if "FinalMass" in val_dict.keys():
+        val_dict["FinalMass"] *= m1 + m2
 
     # Rotate remnant vectors by pi if the component lables were swapped
     if swapped_labels:
-        if 'FinalSpin' in val_dict.keys():
-            val_dict['FinalSpin'] = quaternion_utils.rotate_in_plane( \
-                val_dict['FinalSpin'], np.pi)
-        if 'RecoilKick' in val_dict.keys():
-            val_dict['RecoilKick'] = quaternion_utils.rotate_in_plane( \
-                val_dict['RecoilKick'], np.pi)
+        if "FinalSpin" in val_dict.keys():
+            val_dict["FinalSpin"] = quaternion_utils.rotate_in_plane(
+                val_dict["FinalSpin"], np.pi
+            )
+        if "RecoilKick" in val_dict.keys():
+            val_dict["RecoilKick"] = quaternion_utils.rotate_in_plane(
+                val_dict["RecoilKick"], np.pi
+            )
 
     return val_dict
