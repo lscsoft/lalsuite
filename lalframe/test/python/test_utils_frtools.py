@@ -16,8 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""Tests for lalframe.utils.frtools
-"""
+"""Tests for lalframe.utils.frtools"""
 
 import os
 import sys
@@ -26,6 +25,7 @@ try:
     from pathlib import Path
 except ImportError as exc:  # probably macports
     import warnings
+
     warnings.warn(str(exc))
     sys.exit(77)
 
@@ -34,10 +34,16 @@ import pytest
 from lalframe import utils
 
 # find test GWF file
-TEST_PATH = Path(os.getenv(
-    "LAL_TEST_SRCDIR",
-    Path(__file__).parent,
-)).absolute().parent
+TEST_PATH = (
+    Path(
+        os.getenv(
+            "LAL_TEST_SRCDIR",
+            Path(__file__).parent,
+        )
+    )
+    .absolute()
+    .parent
+)
 TEST_GWF = TEST_PATH / "F-TEST-600000060-60.gwf"
 
 # test result
@@ -50,6 +56,6 @@ def test_get_channels():
     assert utils.get_channels(TEST_GWF) == TEST_CHANNELS
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-utils.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
