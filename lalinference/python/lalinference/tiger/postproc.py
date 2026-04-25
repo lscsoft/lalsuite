@@ -149,14 +149,14 @@ def main():
 				type=str, help='preprocess data before sending to main script (NB: NOT WORKING!)')
 		args = parser.parse_args()
 
-	if (args.configfile == None) and (args.examplecfg == None) and (args.preprocessfile == None):
+	if (args.configfile is None) and (args.examplecfg is None) and (args.preprocessfile is None):
 		exit("Specify either -c/--config, -g/--generate or -p/--preprocess")
-	elif (args.configfile != None):
+	elif (args.configfile is not None):
 		stdout.write("****************************************\nTIGER post-process\n%s\n****************************************\n" % args.configfile)
 		TigerPostProcess(args.configfile)
-	elif (args.examplecfg != None):
+	elif (args.examplecfg is not None):
 		TigerCreateExampleConfigFile(args.examplecfg)
-	elif (args.preprocessfile != None):
+	elif (args.preprocessfile is not None):
 		TigerPreProcess(args.preprocessfile)
 	else:
 		exit('Unknown options - check input')
