@@ -32,10 +32,6 @@ import random
 import signal
 import time
 
-import numpy as np
-
-import lal
-import lalpulsar as lp
 import lalpulsar.piecewise_model.basis_functions as bf
 import lalpulsar.piecewise_model.class_definitions as cd
 import lalpulsar.piecewise_model.estimating_knots as ek
@@ -44,6 +40,10 @@ import lalpulsar.piecewise_model.pw_fstat as pwf
 import lalpulsar.piecewise_model.pw_model_simulations as pwsim
 import lalpulsar.piecewise_model.semicoherent_metric_methods as scmm
 import lalpulsar.piecewise_model.tbank_estimates as tbe
+import numpy as np
+
+import lal
+import lalpulsar as lp
 
 start_time = time.time()
 
