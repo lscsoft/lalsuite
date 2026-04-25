@@ -51,7 +51,8 @@ def from_lal_value(val):
     if ltype == lal.Z_TYPE_CODE:
         return lal.ValueGetCOMPLEX16(val)
     else:
-        raise TypeError('invalid lal typecode %d' % ltype)
+        raise TypeError("invalid lal typecode %d" % ltype)
+
 
 def to_lal_dict(d):
     """
@@ -71,10 +72,12 @@ def to_lal_dict(d):
         return None
     ldict = lal.CreateDict()
     for k, v in d.items():
-        if k == 'ModeArray':
+        if k == "ModeArray":
             lalsim.SimInspiralWaveformParamsInsertModeArrayFromModeString(ldict, v)
-        elif k =='ModeArrayJframe':
-            lalsim.SimInspiralWaveformParamsInsertModeArrayJframeFromModeString(ldict, v)
+        elif k == "ModeArrayJframe":
+            lalsim.SimInspiralWaveformParamsInsertModeArrayJframeFromModeString(
+                ldict, v
+            )
         else:
             if isinstance(v, np.generic):
                 v = v.item()
@@ -89,9 +92,10 @@ def to_lal_dict(d):
             elif type(v) is str:
                 lal.DictInsertStringValue(ldict, k, v)
             else:
-                #TODO: handle other types?
+                # TODO: handle other types?
                 raise TypeError
     return ldict
+
 
 def from_lal_dict(ldict):
     """
@@ -118,8 +122,10 @@ def from_lal_dict(ldict):
         lal_item = lal.ListPop(vals)
         # The ModeArray has LAL_CHAR_TYPE_CODE, but it is not a literal string
         # from_lal_value would get confused and print weird characters, so we do the distinction below
-        if 'ModeArray' in key:
-            val = lalsim.SimInspiralModeArrayToModeString(lal.ListItemGetValue(lal_item))
+        if "ModeArray" in key:
+            val = lalsim.SimInspiralModeArrayToModeString(
+                lal.ListItemGetValue(lal_item)
+            )
         else:
             val = from_lal_value(lal.ListItemGetValue(lal_item))
         d[key] = val
@@ -128,7 +134,8 @@ def from_lal_dict(ldict):
 
 # Functions to check the parameters and/or add units to them
 
-def check_dict_parameters(waveform_dict,generic_param_dict=None):
+
+def check_dict_parameters(waveform_dict, generic_param_dict=None):
     """Checks the parameters used in the waveform generation routine.
 
     Parameters
@@ -146,52 +153,79 @@ def check_dict_parameters(waveform_dict,generic_param_dict=None):
                    is passed as dimensionless.
 
     """
-    #Check that masses are correctly input
+    # Check that masses are correctly input
     CheckDeterminationOfMasses(waveform_dict)
-    #Check that spins are correctly input
+    # Check that spins are correctly input
     CheckDeterminationOfSpins(waveform_dict)
-    #Check the units of the different quantities
-    default_unit_sys = 'S.I.' #International System by default
+    # Check the units of the different quantities
+    default_unit_sys = "S.I."  # International System by default
 
-
-    #Check and extend parameter list if applicable
+    # Check and extend parameter list if applicable
     if generic_param_dict is not None:
-        full_parameter_list = np.concatenate([pc.full_parameter_list,list(generic_param_dict.keys())])
+        full_parameter_list = np.concatenate(
+            [pc.full_parameter_list, list(generic_param_dict.keys())]
+        )
     else:
         full_parameter_list = pc.full_parameter_list
 
     # Check if python dictionary contains any key not included in this list & units of selected parameters
     for k in waveform_dict.keys():
-    #Check all parameters are in joint list otherwise gives error
+        # Check all parameters are in joint list otherwise gives error
         if k not in full_parameter_list:
-            raise(TypeError( ("Parameter %s not in accepted list of parameters"%(k))))
-    #Check the units of the parameteres are correct
+            raise (TypeError(("Parameter %s not in accepted list of parameters" % (k))))
+        # Check the units of the parameteres are correct
         elif k in pc.units_dict[default_unit_sys].keys():
             try:
-                waveform_dict[k].unit #Check if it has units at all. Otherwise will give no clue about the parameter giving error
+                waveform_dict[
+                    k
+                ].unit  # Check if it has units at all. Otherwise will give no clue about the parameter giving error
             except:
-                raise(TypeError( ("Parameter {} does not have units, please pass a parameter with astropy units equivalent to u.[{}]".format(k,pc.units_dict[default_unit_sys][k]))))
-            assert waveform_dict[k].unit.is_equivalent(pc.units_dict[default_unit_sys][k]), "Parameter {} does not have proper units, units should be equivalent to u.[{}]".format(k,pc.units_dict[default_unit_sys][k])
-        elif k=='condition':
-            if int(waveform_dict[k])==0 or int(waveform_dict[k])==1:
+                raise (
+                    TypeError(
+                        (
+                            "Parameter {} does not have units, please pass a parameter with astropy units equivalent to u.[{}]".format(
+                                k, pc.units_dict[default_unit_sys][k]
+                            )
+                        )
+                    )
+                )
+            assert waveform_dict[k].unit.is_equivalent(
+                pc.units_dict[default_unit_sys][k]
+            ), "Parameter {} does not have proper units, units should be equivalent to u.[{}]".format(
+                k, pc.units_dict[default_unit_sys][k]
+            )
+        elif k == "condition":
+            if int(waveform_dict[k]) == 0 or int(waveform_dict[k]) == 1:
                 continue
             else:
-                raise(TypeError("Condition should only be 0 or 1"))
-        elif k=='lmax':
-            if waveform_dict[k]<0:
-                raise(ValueError("lmax must be >=0"))
+                raise (TypeError("Condition should only be 0 or 1"))
+        elif k == "lmax":
+            if waveform_dict[k] < 0:
+                raise (ValueError("lmax must be >=0"))
             continue
         elif generic_param_dict is not None:
             try:
-                waveform_dict[k].unit #Check if it has units at all. Otherwise will give no clue about the parameter giving error
+                waveform_dict[
+                    k
+                ].unit  # Check if it has units at all. Otherwise will give no clue about the parameter giving error
             except:
-                raise(TypeError( ("Parameter {} does not have units, please pass a parameter with astropy units equivalent to u.[{}]".format(k,generic_param_dict[k]))))
-            assert waveform_dict[k].unit.is_equivalent(generic_param_dict[k]), "Parameter {} does not have proper units, units should be equivalent to u.[{}]".format(k,generic_param_dict[k])
+                raise (
+                    TypeError(
+                        (
+                            "Parameter {} does not have units, please pass a parameter with astropy units equivalent to u.[{}]".format(
+                                k, generic_param_dict[k]
+                            )
+                        )
+                    )
+                )
+            assert waveform_dict[k].unit.is_equivalent(
+                generic_param_dict[k]
+            ), "Parameter {} does not have proper units, units should be equivalent to u.[{}]".format(
+                k, generic_param_dict[k]
+            )
 
 
-
-
-def add_params_units(waveform_dict,units_sys='S.I.',generic_param_dict=None):
+def add_params_units(waveform_dict, units_sys="S.I.", generic_param_dict=None):
     """Add units or convert to desired units system to the waveform parameters dictionary
 
     Parameters
@@ -218,28 +252,53 @@ def add_params_units(waveform_dict,units_sys='S.I.',generic_param_dict=None):
     # Main purpose is to check parameters names/units and convert them to astropy SI units
     # we keep all parameter names and conventions in a separate file
 
-    if units_sys in pc.units_dict.keys():#If units system is in units_dict we give units/convert to given units
-        dict_tmp = {key:u.Quantity(value,pc.units_dict[units_sys][key]) for (key,value) in waveform_dict.items() if key in pc.units_dict[units_sys].keys()}
+    if (
+        units_sys in pc.units_dict.keys()
+    ):  # If units system is in units_dict we give units/convert to given units
+        dict_tmp = {
+            key: u.Quantity(value, pc.units_dict[units_sys][key])
+            for (key, value) in waveform_dict.items()
+            if key in pc.units_dict[units_sys].keys()
+        }
     else:
-        raise(TypeError('The units system specified is not available. Available systems are {}'.format([key for key in pc.units_dict.keys()])))
+        raise (
+            TypeError(
+                "The units system specified is not available. Available systems are {}".format(
+                    [key for key in pc.units_dict.keys()]
+                )
+            )
+        )
 
     # Adding units also to the non-standard parameters
 
     if generic_param_dict is not None:
-        dict_tmp = {**dict_tmp, **{key:u.Quantity(value,generic_param_dict[key]) for (key,value) in waveform_dict.items() if key in generic_param_dict.keys()}}
+        dict_tmp = {
+            **dict_tmp,
+            **{
+                key: u.Quantity(value, generic_param_dict[key])
+                for (key, value) in waveform_dict.items()
+                if key in generic_param_dict.keys()
+            },
+        }
 
-    #Merge dictionaries keeping those values of dict_tmp as they have been given units
-    dict_tmp = {**waveform_dict,**dict_tmp}
+    # Merge dictionaries keeping those values of dict_tmp as they have been given units
+    dict_tmp = {**waveform_dict, **dict_tmp}
 
-    #Some sanity checks
+    # Some sanity checks
     for par in pc.mass_params_[0:4]:
         if par in dict_tmp.keys():
-            if dict_tmp[par]>=2*10**30*u.solMass:
-                warn_string = "Are you sure you want to have a {} of {} Solar Masses?".format(par,u.Quantity(dict_tmp[par],u.solMass).value)
+            if dict_tmp[par] >= 2 * 10**30 * u.solMass:
+                warn_string = (
+                    "Are you sure you want to have a {} of {} Solar Masses?".format(
+                        par, u.Quantity(dict_tmp[par], u.solMass).value
+                    )
+                )
                 warnings.warn(warn_string)
-        if 'mass_ratio' in dict_tmp.keys():
-            if (dict_tmp['mass_ratio']<0.001) or (dict_tmp['mass_ratio']>1000.0):
-                warn_string = "Are you sure you want to have a q of {}?".format(dict_tmp['mass_ratio'])
+        if "mass_ratio" in dict_tmp.keys():
+            if (dict_tmp["mass_ratio"] < 0.001) or (dict_tmp["mass_ratio"] > 1000.0):
+                warn_string = "Are you sure you want to have a q of {}?".format(
+                    dict_tmp["mass_ratio"]
+                )
                 warnings.warn(warn_string)
     # Extremely high mass 2*10^30 Msol
     # Extreme mass ratio
@@ -247,9 +306,7 @@ def add_params_units(waveform_dict,units_sys='S.I.',generic_param_dict=None):
     return dict_tmp
 
 
-
 def CheckDeterminationOfMasses(waveform_dict):
-
     """Check mass parameters are consistent and enough to fully characterize the binary masses
 
     Parameters
@@ -262,15 +319,28 @@ def CheckDeterminationOfMasses(waveform_dict):
 
     """
 
-    dim_number =  0 # dimensionful-mass counter
-    nodim_number = 0 # dimensionless-mass counter
-    sym_number = 0 # symmetric masses counter
+    dim_number = 0  # dimensionful-mass counter
+    nodim_number = 0  # dimensionless-mass counter
+    sym_number = 0  # symmetric masses counter
 
-    #Dictionaries
+    # Dictionaries
     dimensionless_masses = ["mass_ratio", "sym_mass_ratio"]
-    dimensionful_masses = ["mass1", "mass2", "total_mass","chirp_mass", "mass_difference", "reduced_mass"]
-    symetric_masses = ["mass1", "mass2", "total_mass", "chirp_mass", "sym_mass_ratio", "reduced_mass"]
-
+    dimensionful_masses = [
+        "mass1",
+        "mass2",
+        "total_mass",
+        "chirp_mass",
+        "mass_difference",
+        "reduced_mass",
+    ]
+    symetric_masses = [
+        "mass1",
+        "mass2",
+        "total_mass",
+        "chirp_mass",
+        "sym_mass_ratio",
+        "reduced_mass",
+    ]
 
     for param in dimensionful_masses:
         if param in waveform_dict.keys():
@@ -284,16 +354,27 @@ def CheckDeterminationOfMasses(waveform_dict):
     if ("mass1" in waveform_dict.keys()) & ("mass2" in waveform_dict.keys()):
         sym_number = 0
 
-    if ((dim_number == 2 and nodim_number == 0) or (dim_number == 1 and nodim_number == 1)):
-        if(sym_number == 2):
+    if (dim_number == 2 and nodim_number == 0) or (
+        dim_number == 1 and nodim_number == 1
+    ):
+        if sym_number == 2:
             warn_string = "The larger object cannot be determined, assuming m1 >= m2."
             warnings.warn(warn_string)
-    elif ((dim_number == 1 and nodim_number == 0) or dim_number == 0):
-        raise(TypeError( "Mass parameters are underspecified. Please include" \
-        " one dimensionless and one dimensionful mass parameters, or two dimensionful masses."))
+    elif (dim_number == 1 and nodim_number == 0) or dim_number == 0:
+        raise (
+            TypeError(
+                "Mass parameters are underspecified. Please include"
+                " one dimensionless and one dimensionful mass parameters, or two dimensionful masses."
+            )
+        )
     else:
-        raise(TypeError( "Mass parameters are overspecified. Please include" \
-        " one dimensionless and one dimensionful mass parameters, or two dimensionful masses."))
+        raise (
+            TypeError(
+                "Mass parameters are overspecified. Please include"
+                " one dimensionless and one dimensionful mass parameters, or two dimensionful masses."
+            )
+        )
+
 
 def CheckDeterminationOfSpins(waveform_dict):
     """Check spin parameters are consistent and enough to fully characterize the binary spins
@@ -307,44 +388,47 @@ def CheckDeterminationOfSpins(waveform_dict):
         TypeError: whenever spin parameters are over or underspecified or system of coordinates is mixed
 
     """
-    #Counters
+    # Counters
     spin1_number = 0
     spin2_number = 0
-    #Logical variables
+    # Logical variables
     cartesian_1 = False
     cartesian_2 = False
     spherical_1 = False
     spherical_2 = False
 
-
-    #Suffixes for the spin parameters in the 2 different coordinates systems
-    cartesian = ['x','y','z']
-    spherical = ['_norm','_tilt','_phi']
+    # Suffixes for the spin parameters in the 2 different coordinates systems
+    cartesian = ["x", "y", "z"]
+    spherical = ["_norm", "_tilt", "_phi"]
 
     for sfx in cartesian:
-        if 'spin1'+sfx in waveform_dict.keys():
+        if "spin1" + sfx in waveform_dict.keys():
             spin1_number += 1
-        if 'spin2'+sfx in waveform_dict.keys():
+        if "spin2" + sfx in waveform_dict.keys():
             spin2_number += 1
 
-    if spin1_number >0:
-        cartesian_1=True
-    if spin2_number >0:
-        cartesian_2=True
+    if spin1_number > 0:
+        cartesian_1 = True
+    if spin2_number > 0:
+        cartesian_2 = True
 
     spin1_number = 0
     spin2_number = 0
 
     for sfx in spherical:
-        if 'spin1'+sfx in waveform_dict.keys():
+        if "spin1" + sfx in waveform_dict.keys():
             spin1_number += 1
-        if 'spin2'+sfx in waveform_dict.keys():
+        if "spin2" + sfx in waveform_dict.keys():
             spin2_number += 1
 
-    if spin1_number >0:
-        spherical_1=True
-    if spin2_number >0:
-        spherical_2=True
+    if spin1_number > 0:
+        spherical_1 = True
+    if spin2_number > 0:
+        spherical_2 = True
 
-    if not(xor(cartesian_1,spherical_1)) or not(xor(cartesian_2,spherical_2)):
-        raise(TypeError( "Please specify the 3 spin parameters in either spherical or cartesian coordinates."))
+    if not (xor(cartesian_1, spherical_1)) or not (xor(cartesian_2, spherical_2)):
+        raise (
+            TypeError(
+                "Please specify the 3 spin parameters in either spherical or cartesian coordinates."
+            )
+        )
