@@ -673,12 +673,12 @@ def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
     mc_min = min([prange[0] for prange in mc_priors.values()])
     mc_max = max([prange[1] for prange in mc_priors.values()])
     scale_factor = 1.
-    if force_flow == None and trigger_mchirp != None:
+    if force_flow is None and trigger_mchirp is not None:
         if trigger_mchirp >= mc_max:
             scale_factor = 2.**(floor(trigger_mchirp/mc_max))
         if trigger_mchirp <= mc_min:
             scale_factor = (2./3.2)**(ceil(trigger_mchirp/mc_min))
-    elif force_flow != None:
+    elif force_flow is not None:
         scale_factor = 20./force_flow
     return scale_factor
 
