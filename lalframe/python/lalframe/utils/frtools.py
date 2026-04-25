@@ -16,8 +16,7 @@
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA  02110-1301  USA
 
-"""Native python versions of LIGOTools and FrXXX frame utilities
-"""
+"""Native python versions of LIGOTools and FrXXX frame utilities"""
 
 import lalframe
 
