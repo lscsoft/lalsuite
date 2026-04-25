@@ -1,5 +1,6 @@
 import numpy as np
 
+
 #-----------------------------------------------------------------------------
 def multiply_quats(q1, q2):
     """q1, q2 must be [scalar, x, y, z] but those may be arrays or scalars"""
