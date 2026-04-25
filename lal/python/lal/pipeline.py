@@ -20,13 +20,12 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from . import git_version
+
 __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __version__ = "git id %s" % git_version.id
 __date__ = git_version.date
 
-from collections import OrderedDict
 import configparser
-import igwn_segments as segments
 import itertools
 import math
 import os
@@ -35,7 +34,10 @@ import re
 import stat
 import sys
 import time
+from collections import OrderedDict
 from hashlib import md5
+
+import igwn_segments as segments
 
 
 class CondorError(Exception):
