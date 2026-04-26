@@ -41,6 +41,8 @@ doxygen-doc:
       EOF
     # export path prefix
     - echo "PATH_PREFIX=${LCI_DOC_PATH_PREFIX##lalsuite-v}" > path_prefix.env
+    # show exported environment
+    - cat path_prefix.env
   artifacts:
     expose_as: html
     paths:
