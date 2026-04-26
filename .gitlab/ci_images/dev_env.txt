@@ -20,8 +20,8 @@ libhdf5-dev                     # |debian|ubuntu|
 
 help2man                        # |el|debian|ubuntu|
 
+ldas-tools-framecpp-c-dev       # |debian|ubuntu|
 ldas-tools-framecpp-c-devel     # |el|
-# ldas-tools-framecpp-c-devel   # |debian|ubuntu| - TOFIX when available on Debian/Ubuntu
 
 less                            # |el|debian|ubuntu|
 
