@@ -650,6 +650,8 @@ double XLALSimNeutronStarFamBranchRadius(double m, int branch, FamMultiParts * f
 {
     if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    if (!b || !b->r_of_m_interp || !b->r_of_m_acc || !b->mdat || !b->rdat)
+        XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
     double r;
     r = gsl_interp_eval(b->r_of_m_interp, b->mdat, b->rdat, m,
         b->r_of_m_acc);
@@ -669,6 +671,8 @@ double XLALSimNeutronStarFamBranchCentralPressure(double m, int branch, FamMulti
 {
     if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    if (!b || !b->p_of_m_interp || !b->p_of_m_acc || !b->mdat || !b->pdat)
+        XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
     double p;
     p = gsl_interp_eval(b->p_of_m_interp, b->mdat, b->pdat, m,
         b->p_of_m_acc);
@@ -688,6 +692,8 @@ double XLALSimNeutronStarFamBranchMass(double p, int branch, FamMultiParts * fam
 {
     if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    if (!b || !b->m_of_p_interp || !b->m_of_p_acc || !b->mdat || !b->pdat)
+        XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
     double m;
     m = gsl_interp_eval(b->m_of_p_interp, b->pdat, b->mdat, p,
         b->m_of_p_acc);
@@ -707,8 +713,8 @@ double XLALSimNeutronStarFamBranchBaryonicMass(double m, int branch, FamMultiPar
     if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
     /* In case user used mini solver */
-    if (b == NULL || b->mb_of_m_interp == NULL)
-        XLAL_ERROR_REAL8(XLAL_EINVAL,"branch does not exist or mb never evaluated");
+    if (!b || !b->mb_of_m_interp || !b->mb_of_m_acc || !b->mdat || !b->mbdat)
+        XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
     double mb;
     mb = gsl_interp_eval(b->mb_of_m_interp, b->mdat, b->mbdat, m,
         b->mb_of_m_acc);
@@ -727,6 +733,8 @@ double XLALSimNeutronStarFamBranchLoveNumberK2(double m, int branch, FamMultiPar
 {
     if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
+    if (!b || !b->k2_of_m_interp || !b->k2_of_m_acc || !b->mdat || !b->k2dat)
+        XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
     double k2;
     k2 = gsl_interp_eval(b->k2_of_m_interp, b->mdat, b->k2dat, m,
         b->k2_of_m_acc);
@@ -746,8 +754,8 @@ double XLALSimNeutronStarFamBranchLoveNumberK3(double m, int branch, FamMultiPar
     if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
     /* In case user used mini solver */
-    if (b == NULL || b->k3_of_m_interp == NULL)
-	XLAL_ERROR_REAL8(XLAL_EINVAL,"branch does not exist or k3 never evaluated");
+    if (!b || !b->k3_of_m_interp || !b->k3_of_m_acc || !b->mdat || !b->k3dat)
+        XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
     double k3;
     k3 = gsl_interp_eval(b->k3_of_m_interp, b->mdat, b->k3dat, m,
         b->k3_of_m_acc);
@@ -767,8 +775,8 @@ double XLALSimNeutronStarFamBranchLoveNumberK4(double m, int branch, FamMultiPar
     if (branch < 0 || branch >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
     LALSimNeutronStarFamily * b = fam->fam_branch[branch];
     /* In case user used mini solver */
-    if (b == NULL || b->k4_of_m_interp == NULL)
-        XLAL_ERROR_REAL8(XLAL_EINVAL,"branch does not exist or k4 never evaluated");
+    if (!b || !b->k4_of_m_interp || !b->k4_of_m_acc || !b->mdat || !b->k4dat)
+        XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
     double k4;
     k4 = gsl_interp_eval(b->k4_of_m_interp, b->mdat, b->k4dat, m,
         b->k4_of_m_acc);

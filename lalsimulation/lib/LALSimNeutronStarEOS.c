@@ -224,11 +224,16 @@ void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
  */
 void XLALDestroySimNeutronStarEOSMultiParts(EOSMultiParts * eos)
 {
-    if (eos == NULL)
-        return;
+    if (!eos) return;
 
-    if (eos->free != NULL)
-        eos->free(eos);
+    if (eos->eos_piece) {
+        for (int i = 0; i < eos->number_of_parts; i++) {
+            if (eos->eos_piece[i] && eos->eos_piece[i]->free) eos->eos_piece[i]->free(eos->eos_piece[i]);
+        }
+        LALFree(eos->eos_piece);
+    }
+
+    LALFree(eos);
     return;
 }
 

@@ -303,43 +303,49 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 
 static void eos_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
 {
-    if (data) {
-        gsl_interp_free(data->log_e_of_log_p_interp);
-        gsl_interp_free(data->log_e_of_log_h_interp);
-        gsl_interp_free(data->log_p_of_log_h_interp);
-        gsl_interp_free(data->log_h_of_log_p_interp);
-        gsl_interp_free(data->log_rho_of_log_h_interp);
-        gsl_interp_free(data->log_p_of_log_e_interp);
-        gsl_interp_free(data->log_p_of_log_rho_interp);
-        gsl_interp_free(data->log_cs2_of_log_h_interp);
-        gsl_interp_accel_free(data->log_e_of_log_p_acc);
-        gsl_interp_accel_free(data->log_e_of_log_h_acc);
-        gsl_interp_accel_free(data->log_p_of_log_h_acc);
-        gsl_interp_accel_free(data->log_h_of_log_p_acc);
-        gsl_interp_accel_free(data->log_rho_of_log_h_acc);
-        gsl_interp_accel_free(data->log_p_of_log_e_acc);
-        gsl_interp_accel_free(data->log_p_of_log_rho_acc);
-        gsl_interp_accel_free(data->log_cs2_of_log_h_acc);
-        LALFree(data->log_edat);
-        LALFree(data->log_pdat);
-        LALFree(data->mubdat);
-        LALFree(data->muedat);
-        LALFree(data->log_hdat);
-        LALFree(data->yedat);
-        LALFree(data->log_cs2dat);
-        LALFree(data->log_rhodat);
-        LALFree(data);
-    }
-    return;
+    if (!data) return;
+
+    gsl_interp_free(data->log_e_of_log_p_interp);
+    gsl_interp_free(data->log_e_of_log_h_interp);
+    gsl_interp_free(data->log_p_of_log_h_interp);
+    gsl_interp_free(data->log_h_of_log_p_interp);
+    gsl_interp_free(data->log_rho_of_log_h_interp);
+    gsl_interp_free(data->log_p_of_log_e_interp);
+    gsl_interp_free(data->log_p_of_log_rho_interp);
+    gsl_interp_free(data->log_cs2_of_log_h_interp);
+
+    gsl_interp_accel_free(data->log_e_of_log_p_acc);
+    gsl_interp_accel_free(data->log_e_of_log_h_acc);
+    gsl_interp_accel_free(data->log_p_of_log_h_acc);
+    gsl_interp_accel_free(data->log_h_of_log_p_acc);
+    gsl_interp_accel_free(data->log_rho_of_log_h_acc);
+    gsl_interp_accel_free(data->log_p_of_log_e_acc);
+    gsl_interp_accel_free(data->log_p_of_log_rho_acc);
+    gsl_interp_accel_free(data->log_cs2_of_log_h_acc);
+
+    LALFree(data->nbdat);
+    LALFree(data->log_edat);
+    LALFree(data->log_pdat);
+    LALFree(data->mubdat);
+    LALFree(data->muedat);
+    LALFree(data->log_hdat);
+    LALFree(data->yedat);
+    LALFree(data->log_cs2dat);
+    LALFree(data->log_rhodat);
+
+    LALFree(data);
 }
 
 static void eos_free_tabular(LALSimNeutronStarEOS * eos)
 {
-    if (eos) {
+    if (!eos) return;
+
+    if (eos->data.tabular) {
         eos_free_tabular_data(eos->data.tabular);
-        LALFree(eos);
+        eos->data.tabular = NULL;
     }
-    return;
+
+    LALFree(eos);
 }
 
 /* Finding density where EOS becomes acausal */
@@ -542,14 +548,30 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
 
 static void eos_multi_part_free_tabular(EOSMultiParts * eos)
 {
-    if (eos) {
-	for (int i = 0; i < eos->number_of_parts; i++){
-	    LALSimNeutronStarEOS * eos_piece = eos->eos_piece[i];
-            eos_free_tabular_data(eos_piece->data.tabular);
-	}
-        LALFree(eos);
+    if (!eos) return;
+
+    if (eos->eos_piece) {
+        for (int i = 0; i < eos->number_of_parts; i++) {
+
+            if (eos->eos_piece[i]) {
+
+                // ALWAYS use the EOS own destructor
+                if (eos->eos_piece[i]->free) {
+                    eos->eos_piece[i]->free(eos->eos_piece[i]);
+                } else {
+                    // fallback only (should rarely happen)
+                    LALFree(eos->eos_piece[i]);
+                }
+
+                eos->eos_piece[i] = NULL;
+            }
+        }
+
+        LALFree(eos->eos_piece);
+        eos->eos_piece = NULL;
     }
-    return;
+
+    LALFree(eos);
 }
 
 /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
@@ -630,14 +652,21 @@ static void eos_correct_phase_transition(double *edat, double *pdat, double *hda
 static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
 {
     int number_phase_transition = 0;
-    int *id_phase_transition;
+    int *id_phase_transition = NULL;
     double gradient = 0.0;
     double old_gradient = 0.0;
     double delta_gradient = 0.0;
     double pt_tolerance = 2.;
     double eps_min_pt = 1.5e14 * 1e3 * LAL_G_C2_SI;
-    bool *pt_occurence;
-    pt_occurence = LALMalloc(ndat * sizeof(*pt_occurence));
+
+    if (ndat < 4) {
+        id_phase_transition = LALMalloc(2 * sizeof(int));
+        id_phase_transition[0] = 0;
+        id_phase_transition[1] = ndat - 1;
+        return id_phase_transition;
+    }
+
+    bool *pt_occurence = LALMalloc(ndat * sizeof(*pt_occurence));
 
     for (size_t i = 1; i < ndat; i++){
         pt_occurence[i] = false;
@@ -649,11 +678,13 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
                 number_phase_transition += 1;
                 pt_occurence[i] = true;
             } else if (fabs(delta_gradient) >= pt_tolerance) { // dirty phase transition
-                double delP_im2 = pdat[i-1] - pdat[i-2];
-                double delP_im3 = pdat[i-2] - pdat[i-3];
-                if (delP_im2 /delP_im3 < 3.0){ // avoids idenfying pressure jumps around the PT that could false flag
-                    number_phase_transition += 1;
-                    pt_occurence[i] = true;
+                if (i >= 3) { // prevent invalid memory access
+                    double delP_im2 = pdat[i-1] - pdat[i-2];
+                    double delP_im3 = pdat[i-2] - pdat[i-3];
+                    if (delP_im2 /delP_im3 < 3.0){ // avoids idenfying pressure jumps around the PT that could false flag
+                        number_phase_transition += 1;
+                        pt_occurence[i] = true;
+                    }
                 }
             }
         }
@@ -1172,19 +1203,33 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat)
 {
-    EOSMultiParts *eos;
+
+    EOSMultiParts *eos = NULL;
+    int *indices_phase_transition = NULL;
+
     eos = LALCalloc(1, sizeof(*eos));
+    if (!eos) return NULL;
     eos->free = eos_multi_part_free_tabular;
 
     /* Inquire about phase transitions in the equation of state */
-    int * indices_phase_transition = eos_find_phase_transition(ndat, edat, pdat);
+    indices_phase_transition = eos_find_phase_transition(ndat, edat, pdat);
+    if (!indices_phase_transition) goto cleanup;
     int number_pt = indices_phase_transition[0] ;
     int number_eos = number_pt + 1 ;
+
+    eos->number_of_parts = number_eos;
+    eos->pmin = pdat[0];
+    eos->pmax = pdat[ndat - 1];
+    /* Allocate each piece of the equation of state separated by a phase transition */
+    eos->eos_piece = XLALCalloc(number_eos, sizeof(LALSimNeutronStarEOS *));
+    if (!eos->eos_piece) goto cleanup;
+
+
     if (number_pt != 0) {
         for (int i = 1; i <= number_pt; i++){
             if (indices_phase_transition[i+1] - indices_phase_transition[i] < 4) {
                 XLALPrintError("EoS Piece contains too few points.");
-                XLAL_ERROR_NULL(XLAL_EDOM); // if the EoS piece contains too few points
+                goto cleanup;
             }
             if (pdat[indices_phase_transition[i]] == pdat[indices_phase_transition[i]+1]){
                 printf("\t Phase transition found at index %d. This phase transition is clean.\n", indices_phase_transition[i]);
@@ -1201,17 +1246,29 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
 
     /* Construct the multiple part equation of state */
     size_t bottom_index = 0, upper_index = 0;
-    eos->number_of_parts = number_eos;
-    eos->pmin = pdat[0];
-    eos->pmax = pdat[ndat-1];
-
-    /* Allocate each piece of the equation of state separated by a phase transition */
-    eos->eos_piece = (LALSimNeutronStarEOS **) XLALMalloc(sizeof(LALSimNeutronStarEOS *) * (number_eos));
-
     for (int i = 0; i <= number_pt; i++){
-        upper_index = indices_phase_transition[i+1];
+        upper_index = indices_phase_transition[i + 1];
+        if (upper_index <= bottom_index + 2 || upper_index >= ndat) {
+            printf("Skipping invalid EOS segment [%zu,%zu]\n",
+                   bottom_index, upper_index);
+            goto cleanup;
+        }
+
+        if (eos->eos_piece[i] != NULL) {
+            eos->eos_piece[i]->free(eos->eos_piece[i]);
+            eos->eos_piece[i] = NULL;
+        }
         eos->eos_piece[i] = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
-        bottom_index = indices_phase_transition[i+1] + 1;
+        if (!eos->eos_piece[i]) goto cleanup;
+        size_t next_index = indices_phase_transition[i + 1];
+
+        if (next_index <= bottom_index + 2 || next_index >= ndat) {
+            printf("Skipping invalid EOS segment: [%zu, %zu]\n",
+                bottom_index, next_index);
+            continue;   // IMPORTANT: do NOT advance bottom_index
+        }
+
+        bottom_index = next_index + 1;
     }
 
     // If the enthalpy was not provided and the EoS has a Phase Transition,
@@ -1221,17 +1278,16 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     if (hdat == NULL && number_pt > 0){
         double *hdat_recal = XLALMalloc(ndat * sizeof(*hdat_recal));
         double *nbdat_recal  = XLALMalloc(ndat * sizeof(*nbdat_recal));
+        double *edat_recal = XLALMalloc(ndat * sizeof(*edat_recal));
+        double *pdat_recal = XLALMalloc(ndat * sizeof(*pdat_recal));
         double *mubdat_recal = XLALMalloc(ndat * sizeof(*mubdat_recal));
         double *muedat_recal = XLALMalloc(ndat * sizeof(*muedat_recal));
         double *yedat_recal  = XLALMalloc(ndat * sizeof(*yedat_recal));
         double *cs2dat_recal = XLALMalloc(ndat * sizeof(*cs2dat_recal));
-        memset(nbdat_recal,  0.0, ndat * sizeof(*nbdat_recal));
-        memset(mubdat_recal, 0.0, ndat * sizeof(*mubdat_recal));
-        memset(muedat_recal, 0.0, ndat * sizeof(*muedat_recal));
-        memset(yedat_recal,  0.0, ndat * sizeof(*yedat_recal));
-        memset(cs2dat_recal, 0.0, ndat * sizeof(*cs2dat_recal));
-        double *edat_recal = XLALMalloc(ndat * sizeof(*edat_recal));
-        double *pdat_recal = XLALMalloc(ndat * sizeof(*pdat_recal));
+        if (!hdat_recal || !nbdat_recal || !mubdat_recal ||
+            !muedat_recal || !yedat_recal || !cs2dat_recal ||
+            !edat_recal || !pdat_recal) goto cleanup;
+
         size_t ndat_total = 0;
         for (int i = 0; i <= number_pt; i++){
             size_t ndat_piece = eos->eos_piece[i]->data.tabular->ndat;
@@ -1260,17 +1316,34 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
         bottom_index = 0, upper_index = 0;
         for (int i = 0; i <= number_pt; i++){
             upper_index = indices_phase_transition[i+1];
-            eos->eos_piece[i] = eos_piece_alloc_tabular(nbdat_recal, edat_recal, pdat_recal, mubdat_recal, muedat_recal, hdat_recal, yedat_recal, cs2dat_recal, bottom_index, upper_index);
-            bottom_index = indices_phase_transition[i+1] + 1;
+            if (eos->eos_piece[i] != NULL) {
+                eos->eos_piece[i]->free(eos->eos_piece[i]);
+                eos->eos_piece[i] = NULL;
+            }
+            eos->eos_piece[i] = eos_piece_alloc_tabular(
+                nbdat, edat, pdat,
+                mubdat, muedat, hdat,
+                yedat, cs2dat,
+                bottom_index, upper_index
+            );
+            if (!eos->eos_piece[i]) goto cleanup;
+            size_t next_index = indices_phase_transition[i + 1];
+            if (next_index <= bottom_index + 2 || next_index >= ndat) {
+                printf("Skipping invalid EOS segment: [%zu, %zu]\n",
+                    bottom_index, next_index);
+                continue;   // IMPORTANT: do NOT advance bottom_index
+            }
+
+            bottom_index = next_index + 1;
         }
-        XLALFree(edat_recal);
-        XLALFree(pdat_recal);
         XLALFree(hdat_recal);
         XLALFree(nbdat_recal);
         XLALFree(mubdat_recal);
         XLALFree(muedat_recal);
         XLALFree(yedat_recal);
         XLALFree(cs2dat_recal);
+        XLALFree(edat_recal);
+        XLALFree(pdat_recal);
     }
 
     eos->hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos->eos_piece[0]);
@@ -1279,7 +1352,36 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
 
     char name[LALNameLength] = "unknown_eos_name";
     snprintf(eos->name, sizeof(eos->name), "%s", name);
+    XLALFree(indices_phase_transition);
     return eos;
+
+cleanup:
+
+    if (eos) {
+        if (eos->eos_piece) {
+            for (int i = 0; i < eos->number_of_parts; i++) {
+                if (eos->eos_piece[i]) {
+
+                    // CRITICAL: use proper destructor
+                    if (eos->eos_piece[i]->free) {
+                        eos->eos_piece[i]->free(eos->eos_piece[i]);
+                    } else {
+                        LALFree(eos->eos_piece[i]);
+                    }
+
+                    eos->eos_piece[i] = NULL;
+                }
+            }
+            LALFree(eos->eos_piece);
+        }
+
+        LALFree(eos);
+    }
+
+    if (indices_phase_transition)
+        XLALFree(indices_phase_transition);
+
+    return NULL;
 }
 
 
