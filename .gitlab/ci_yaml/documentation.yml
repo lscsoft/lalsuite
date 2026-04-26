@@ -31,6 +31,14 @@ doxygen-doc:
           done
           exit 1
       fi
+    # add top-level index, to ease browsing in artifacts
+    - |
+      cat > index.html <<EOF
+      <!DOCTYPE html>
+      <html>
+      <head><meta http-equiv="refresh" content="0; url='html/index.html'"/></head>
+      </html>
+      EOF
     # export path prefix
     - echo "PATH_PREFIX=${LCI_DOC_PATH_PREFIX##lalsuite-v}" > path_prefix.env
   artifacts:
@@ -38,6 +46,7 @@ doxygen-doc:
     paths:
       # documentation
       - html/
+      - index.html
       # outputs from Doxygen documentation filters for debugging
       - doxygen_filtered/
     reports:
