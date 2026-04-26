@@ -13,6 +13,7 @@ import time
 from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
+from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import gitlab
@@ -157,17 +158,14 @@ def get_artifacts(server, repo, args):
 def doxygen_index(server, repo, args):
     """Generate a top-level index for Doxygen documentation"""
 
-    # get list of pages
-    pages = repo.pages.get()
-    deployments = pages.deployments
-    deployments = []
-    path_prefixes = natsorted(
-        [
-            p
-            for p in [d["path_prefix"] for d in deployments]
-            if p is not None and p != "dev"
-        ]
-    )
+    # get Doxygen pages from list of GitLab environments
+    environments = repo.environments.list(all=True)
+    path_prefixes = []
+    for env in environments:
+        if env.state == "available" and env.name.startswith("pages/doc/lalsuite-v"):
+            url = urlparse(env.external_url)
+            path_prefixes.append(Path(url.path).name)
+    path_prefixes = natsorted(path_prefixes)
     LOGGER.info(
         "found Doxygen documentation for releases: %s",
         ", ".join(path_prefixes) if path_prefixes else "none",
@@ -176,7 +174,7 @@ def doxygen_index(server, repo, args):
     # generate index entries
     entry_template = "<li><a href='{}/index.html'>{}</a></li>"
     entries = [entry_template.format("dev", "development version")]
-    for p in path_prefixes:
+    for p in reversed(path_prefixes):
         entries.append(entry_template.format(p, "release version " + p))
 
     # generate index
