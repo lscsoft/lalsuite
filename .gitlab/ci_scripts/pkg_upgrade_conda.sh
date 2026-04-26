@@ -7,7 +7,7 @@ export CONDA_ENVS_PATH="${LCI_TMPDIR}/conda/envs"
 rm -rf ${CONDA_ENVS_PATH}
 
 # install latest release
-${LCI_SCRIPTS}/retry conda create -n upgrade-test "python=${LCI_PYTHON_VERSION}" ${LCI_PKGLIST}
+${LCI_SCRIPTS}/retry conda create --quiet --name upgrade-test "python=${LCI_PYTHON_VERSION}" ${LCI_PKGLIST}
 
 # copy upstream Conda packages to a local channel
 upstream_condas=$(find ${PACKAGE_ROOT_DIR} -name '*.conda')
@@ -23,5 +23,6 @@ conda config --add channels "${local_channel}"
 ${LCI_SCRIPTS}/retry conda search "*lal*" --channel "${local_channel}" --override-channels
 
 # upgrade all packages
-${LCI_SCRIPTS}/retry conda update -n upgrade-test --use-local ${LCI_PKGLIST}
+${LCI_SCRIPTS}/retry conda update --quiet --name upgrade-test --use-local ${LCI_PKGLIST}
+conda activate upgrade-test
 lalapps_version
