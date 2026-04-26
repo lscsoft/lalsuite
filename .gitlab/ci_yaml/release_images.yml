@@ -113,6 +113,8 @@ release-image:
     - echo "LALSUITE_TAG_MAJOR_LATEST=${major}.latest" > lalsuite_tag.env
     # export the release tag: <major-version>.<minor-version>
     - echo "LALSUITE_TAG_MAJOR_MINOR=${major}.${minor}" >> lalsuite_tag.env
+    # show exported environment
+    - cat lalsuite_tag.env
   artifacts:
     paths:
       # packages
