@@ -37,7 +37,6 @@ apt-get -y -q install \
     apt-utils \
     curl \
     gpg \
-    local-apt-repository \
     ;
 
 # cleanup
@@ -65,26 +64,13 @@ apt-get -y -q update
 # upgrade distribution
 apt-get -y -q upgrade
 
-# install latest release
-apt-get -y -q install lalsuite lalsuite-dev
-
-# remove lalsuite meta-packages
-dpkg -r lalsuite lalsuite-dev
-
-# create local repo for upstream .debs
+# install upstream .debs
 upstream_debs=$(find /packages -name '*.deb')
 echo "===== upstream .debs"
 printf "%s\n" ${upstream_debs}
 echo "====="
-mkdir -pv /srv/local-apt-repository
-cp -v ${upstream_debs} /srv/local-apt-repository
-/usr/lib/local-apt-repository/rebuild
-
-# upgrade all packages
-apt-get -y -q update
-apt-get -y dist-upgrade
-apt-mark manual 'lal*' 'liblal*' 'python*-lal*'
-apt-get -y autoremove
+apt-get -y -q install ${upstream_debs}
+apt-get -y -q autoremove
 
 # print info
 dpkg-query --list
@@ -92,6 +78,5 @@ dpkg-query --list
 # cleanup
 apt-get clean
 rm -rf /packages
-rm -rf /srv/local-apt-repository
 
 EOF
