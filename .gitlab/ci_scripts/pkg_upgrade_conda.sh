@@ -24,3 +24,4 @@ ${LCI_SCRIPTS}/retry conda search "*lal*" --channel "${local_channel}" --overrid
 
 # upgrade all packages
 ${LCI_SCRIPTS}/retry conda update -n upgrade-test --use-local ${LCI_PKGLIST}
+lalapps_version
