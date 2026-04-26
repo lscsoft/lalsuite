@@ -105,8 +105,14 @@ release-image:
             ${CI_SERVER_URL} lscsoft/lalsuite \
             get-artifacts --latest-tag lalsuite-v --write-ref-name LALSUITE_TAG "${pkg}: [${LCI_PLAT}, ${LCI_ENV}, lalsuite-tag]"
       done
+    # parse the LALSuite version number from the latest release tag
+    - version=$(sed 's/^lalsuite-v//' LALSUITE_TAG)
+    - major=$(echo ${version} | cut -d. -f1)
+    - minor=$(echo ${version} | cut -d. -f2)
+    # export the release tag: <major-version>.latest
+    - echo "LALSUITE_TAG_MAJOR_LATEST=${major}.latest" > lalsuite_tag.env
     # export the release tag: <major-version>.<minor-version>
-    - cat LALSUITE_TAG | sed 's/^lalsuite-v//' | awk -F. '{print "LALSUITE_TAG=" $1 "." $2}' > lalsuite_tag.env
+    - echo "LALSUITE_TAG_MAJOR_MINOR=${major}.${minor}" >> lalsuite_tag.env
   artifacts:
     paths:
       # packages
@@ -134,12 +140,14 @@ release-image:deploy:
             LCI_DOCKER_ARGS: '$[[ matrix.LCI_DOCKER_ARGS ]]'
             LCI_JOB_TYPE: '$[[ matrix.LCI_JOB_TYPE ]]'
   variables:
-    # push release images to the "latest" tag, and a versioned tag
+    # push release images to the "latest" tag, and to versioned tags
     IMG_PATHS: >-
       ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:latest
       ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:latest
-      ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:${LALSUITE_TAG}
-      ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:${LALSUITE_TAG}
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:${LALSUITE_TAG_MAJOR_LATEST}
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:${LALSUITE_TAG_MAJOR_LATEST}
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:${LALSUITE_TAG_MAJOR_MINOR}
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:${LALSUITE_TAG_MAJOR_MINOR}
   environment:
     name: "image/latest/${LCI_PLAT_BASE}"
     url: "${CI_PROJECT_URL}/container_registry"
