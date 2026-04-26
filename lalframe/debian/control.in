@@ -7,7 +7,9 @@ Build-Depends:
  debhelper-compat (= 13),
  dh-python,
  help2man (>= 1.37),
- ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@) | libframel-dev (>= @MIN_FRAMEL_VERSION@),
+ ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
+ libframel-dev (>= @MIN_FRAMEL_VERSION@),
+ libframel-dev (<< 9.0.0),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  pkgconf,
  python3-all-dev,
@@ -16,7 +18,6 @@ Build-Depends:
  python3-pytest,
  rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-Build-Conficts: libframel-dev (<< 9.0.0)
 X-Python3-Version: >= @MIN_PYTHON_VERSION@
 Standards-Version: 3.9.8
 
@@ -38,7 +39,8 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
- ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@) | libframel-dev (>= @MIN_FRAMEL_VERSION@),
+ ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
+ libframel-dev (>= @MIN_FRAMEL_VERSION@),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalframe@LIBMAJOR@ (= ${binary:Version}),
 Description: LVK Algorithm Library Frame Developers
