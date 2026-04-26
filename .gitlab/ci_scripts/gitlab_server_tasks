@@ -41,11 +41,20 @@ def parse_command_line():
 
     # Create parser
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--token-env-var",
+    token_group = parser.add_mutually_exclusive_group()
+    token_group.add_argument(
+        "-p",
+        "--personal-token-env-var",
         type=str,
         default=None,
-        help="Environment variable containing GitLab access token, if required",
+        help="Authenticate using the GitLab personal access token in this environment variable",
+    )
+    token_group.add_argument(
+        "-j",
+        "--job-token-env-var",
+        type=str,
+        default=None,
+        help="Access using the GitLab CI job token in this environment variable",
     )
     parser.add_argument(
         "server",
@@ -205,16 +214,29 @@ def main():
     # parse command line
     args = parse_command_line()
 
-    # interface to GitLab repository
-    if args.token_env_var:
+    # interface to GitLab server
+    if args.personal_token_env_var:
+        LOGGER.info(
+            f"authenticating to {args.server}/{args.repo} with personal access token in {args.private_token_env_var}"
+        )
         server = gitlab.Gitlab(
-            args.server, private_token=os.environ[args.token_env_var]
+            args.server, private_token=os.environ[args.private_token_env_var]
         )
         server.auth()
+        LOGGER.info(f"authenticated to {args.server}/{args.repo}")
+    elif args.job_token_env_var:
+        LOGGER.info(
+            f"accessing {args.server}/{args.repo} with job token in {args.job_token_env_var}"
+        )
+        server = gitlab.Gitlab(
+            args.server, job_token=os.environ[args.job_token_env_var]
+        )
     else:
+        LOGGER.info(f"accessing {args.server}/{args.repo} without token")
         server = gitlab.Gitlab(args.server)
+
+    # get GitLab repository
     repo = server.projects.get(args.repo)
-    LOGGER.info(f"authenticated to {args.server}/{args.repo}")
 
     # execute subcommand
     args.subcommand(server, repo, args)
