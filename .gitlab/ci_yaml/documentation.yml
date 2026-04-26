@@ -40,7 +40,19 @@ doxygen-doc:
       </html>
       EOF
     # export path prefix
-    - echo "PATH_PREFIX=${LCI_DOC_PATH_PREFIX##lalsuite-v}" > path_prefix.env
+    # - for release tags: <major-version>.<minor-version>
+    - |
+      case ${LCI_DOC_PATH_PREFIX} in
+          lalsuite-v*)
+              version=${LCI_DOC_PATH_PREFIX##lalsuite-v}
+              major=$(echo ${version} | cut -d. -f1)
+              minor=$(echo ${version} | cut -d. -f2)
+              echo "PATH_PREFIX=${major}.${minor}" > path_prefix.env
+              ;;
+          *)
+              echo "PATH_PREFIX=${LCI_DOC_PATH_PREFIX}" > path_prefix.env
+              ;;
+      esac
     # show exported environment
     - cat path_prefix.env
   artifacts:
