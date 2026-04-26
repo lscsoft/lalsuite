@@ -24,3 +24,4 @@ EOF
 
 # upgrade all packages
 ${LCI_SCRIPTS}/retry dnf -y upgrade 'lal*' 'python*-lal*'
+lalapps_version
