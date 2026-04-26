@@ -76,7 +76,7 @@ doxygen-index:
     # add top-level index
     - |
       ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
-          ${CI_SERVER_URL} lscsoft/lalsuite \
+          -j CI_JOB_TOKEN ${CI_SERVER_URL} lscsoft/lalsuite \
           doxygen-index
   artifacts:
     expose_as: html
