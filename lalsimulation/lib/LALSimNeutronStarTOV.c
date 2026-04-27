@@ -267,9 +267,13 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     h = h0;
     while (h > h1) {
         int s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
-        if (s != GSL_SUCCESS)
+        if (s != GSL_SUCCESS) {
+            gsl_odeiv_evolve_free(evolv);
+            gsl_odeiv_control_free(ctrl);
+            gsl_odeiv_step_free(step);
             XLAL_ERROR(XLAL_EERR,
                 "Error encountered in GSL's ODE integrator\n");
+        }
     }
 
     /* take one final Euler step to get to surface */
@@ -520,9 +524,13 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     h = h0;
     while (h > h1) {
         int s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
-        if (s != GSL_SUCCESS)
+        if (s != GSL_SUCCESS) {
+            gsl_odeiv_evolve_free(evolv);
+            gsl_odeiv_control_free(ctrl);
+            gsl_odeiv_step_free(step);
             XLAL_ERROR(XLAL_EERR,
                 "Error encountered in GSL's ODE integrator\n");
+        }
     }
 
     /*take one final Euler step to get to surface*/
@@ -828,7 +836,12 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
         hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_part_1);
         while (h > hmin) {
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
-            if (s != GSL_SUCCESS) XLAL_ERROR_VOID(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
+            if (s != GSL_SUCCESS) {
+                gsl_odeiv_evolve_free(evolv);
+                gsl_odeiv_control_free(ctrl);
+                gsl_odeiv_step_free(step);
+                XLAL_ERROR_VOID(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
+            }
         }
 
         // Correction related to the phase transition
@@ -1084,7 +1097,12 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
         hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_part_1);
         while (h > hmin) {
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
-            if (s != GSL_SUCCESS) XLAL_ERROR_VOID(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
+            if (s != GSL_SUCCESS) {
+                gsl_odeiv_evolve_free(evolv);
+                gsl_odeiv_control_free(ctrl);
+                gsl_odeiv_step_free(step);
+                XLAL_ERROR_VOID(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
+            }
         }
         // Correction related to the phase transition
         if (j != 0) {
