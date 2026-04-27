@@ -7,7 +7,6 @@ Build-Depends:
  debhelper-compat (= 13),
  dh-python,
  help2man (>= 1.37),
- ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
  libframel-dev (>= @MIN_FRAMEL_VERSION@),
  libframel-dev (<< 9.0.0),
  liblal-dev (>= @MIN_LAL_VERSION@~),
@@ -39,7 +38,6 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
- ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
  libframel-dev (>= @MIN_FRAMEL_VERSION@),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalframe@LIBMAJOR@ (= ${binary:Version}),
