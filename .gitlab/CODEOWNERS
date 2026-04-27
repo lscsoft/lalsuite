@@ -28,7 +28,6 @@
 # @matthew-pitkin      = Matthew Pitkin
 # @patricia-schmidt    = Patricia Schmidt
 # @salvatore-vitale    = Salvatore Vitale
-# @soichiro.kuwahara   = Soichiro Kuwahara
 # @vijay.varma         = Vijay Varma
 # @vivien              = Vivien Raymond
 
@@ -39,7 +38,7 @@
 lal/                            @adam-mercer @jolien-creighton @kipp
 lalframe/                       @adam-mercer @ed-maros @jolien-creighton
 lalmetaio/                      @adam-mercer @jolien-creighton @kipp
-lalsimulation/                  @kipp @antoni.ramos-buades @geraint.pratten @vijay.varma
+lalsimulation/                  @jolien-creighton @kipp @antoni.ramos-buades @geraint.pratten @vijay.varma
 lalburst/                       @adam-mercer @duncanmmacleod @kipp @marco-drago
 lalinspiral/                    @adam-mercer @ian-harry @jolien-creighton @kipp
 lalinference/                   @aaron.zimmerman @bfarr @cjhaster @gregory.ashton @john-veitch @patricia-schmidt @salvatore-vitale @vivien
@@ -50,7 +49,7 @@ lalapps/src/findchirp/          @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/frametools/         @adam-mercer @ed-maros @jolien-creighton
 lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/lalapps/            @adam-mercer @duncanmmacleod @jolien-creighton
-lalapps/src/power/              @adam-mercer @kipp @soichiro.kuwahara
+lalapps/src/power/              @adam-mercer @kipp @jolien-creighton
 lalapps/src/ring/               @francesco-pannarale @ian-harry @jolien-creighton
 lalapps/src/string/             @adam-mercer @florent-robinet @kipp
 
