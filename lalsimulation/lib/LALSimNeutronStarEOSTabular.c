@@ -855,11 +855,12 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
             edat[i] = f_dat[i * ncol + 1];
         }
 
-        nbdat = NULL;
-        mubdat = NULL;
-        muedat = NULL;
-        yedat = NULL;
-        cs2dat = NULL;
+        LALFree(nbdat);  nbdat  = NULL;
+        LALFree(mubdat); mubdat = NULL;
+        LALFree(muedat); muedat = NULL;
+        LALFree(hdat);   hdat   = NULL;
+        LALFree(yedat);  yedat  = NULL;
+        LALFree(cs2dat); cs2dat = NULL;
     }
     else if (ncol < 2)
     {
@@ -1093,14 +1094,12 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
             edat[i] = f_dat[i * ncol + 1];
         }
 
-        nbdat = NULL;
-        mubdat = NULL;
-        muedat = NULL;
-        hdat = NULL;
-        yedat = NULL;
-        cs2dat = NULL;
-
-
+        LALFree(nbdat);  nbdat  = NULL;
+        LALFree(mubdat); mubdat = NULL;
+        LALFree(muedat); muedat = NULL;
+        LALFree(hdat);   hdat   = NULL;
+        LALFree(yedat);  yedat  = NULL;
+        LALFree(cs2dat); cs2dat = NULL;
     }
     else if (ncol < 2)
     {
