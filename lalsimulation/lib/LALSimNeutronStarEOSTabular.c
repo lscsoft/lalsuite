@@ -1339,7 +1339,17 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyPT(doub
                 yedat, cs2dat,
                 bottom_index, upper_index
             );
-            if (!eos->eos_piece[i]) goto cleanup;
+            if (!eos->eos_piece[i]) {
+                XLALFree(hdat_recal);
+                XLALFree(nbdat_recal);
+                XLALFree(mubdat_recal);
+                XLALFree(muedat_recal);
+                XLALFree(yedat_recal);
+                XLALFree(cs2dat_recal);
+                XLALFree(edat_recal);
+                XLALFree(pdat_recal);
+                goto cleanup;
+            }
             size_t next_index = indices_phase_transition[i + 1];
             if (next_index <= bottom_index + 2 || next_index >= ndat) {
                 printf("Skipping invalid EOS segment: [%zu, %zu]\n",
