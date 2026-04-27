@@ -822,8 +822,10 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
     ndat = XLALSimReadDataFileNCol(&f_dat, &ncol, fp);
     XLALFileClose(fp);
 
-    if (ndat == (size_t) (-1))
+    if (ndat == (size_t) (-1)) {
+        XLALFree(f_dat);
         XLAL_ERROR_NULL(XLAL_EFUNC);
+    }
 
     nbdat = LALMalloc(ndat * sizeof(*nbdat));
     edat = LALMalloc(ndat * sizeof(*edat));
@@ -833,7 +835,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
     hdat = LALMalloc(ndat * sizeof(*hdat));
     yedat = LALMalloc(ndat * sizeof(*yedat));
     cs2dat = LALMalloc(ndat * sizeof(*cs2dat));
-
 
     if (ncol > 2)
     {
@@ -1060,8 +1061,10 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
     ndat = XLALSimReadDataFileNCol(&f_dat, &ncol, fp);
     XLALFileClose(fp);
 
-    if (ndat == (size_t) (-1))
+    if (ndat == (size_t) (-1)) {
+        XLALFree(f_dat);
         XLAL_ERROR_NULL(XLAL_EFUNC);
+    }
 
     nbdat = LALMalloc(ndat * sizeof(*nbdat));
     edat = LALMalloc(ndat * sizeof(*edat));
@@ -1071,7 +1074,6 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
     hdat = LALMalloc(ndat * sizeof(*hdat));
     yedat = LALMalloc(ndat * sizeof(*yedat));
     cs2dat = LALMalloc(ndat * sizeof(*cs2dat));
-
 
     if (ncol > 2)
     {
