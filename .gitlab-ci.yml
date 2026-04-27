@@ -8,6 +8,29 @@
 # the prefix `LCI_` to avoid conflicts
 # ----------------------------------------------------------------------
 
+# ----------------------------------------------------------------------
+# Input parameters
+# ----------------------------------------------------------------------
+
+spec:
+  inputs:
+    pipeline:
+      type: string
+      options:
+        # scheduled CI pipelines
+        - sched-devimg        # build and test Docker development images
+        - sched-snapshot      # build snapshot Docker images and wheels
+        - sched-release       # rebuild release Docker images
+        - sched-doc           # build and deploy Doxygen documentation
+        # other CI pipelines (default)
+        - other
+      default: other
+---
+
+# ----------------------------------------------------------------------
+# Pipeline configuration
+# ----------------------------------------------------------------------
+
 include:
   - local: .gitlab/ci_yaml/dev_images.yml
   - local: .gitlab/ci_yaml/code_quality.yml
@@ -23,8 +46,6 @@ include:
   - local: .gitlab/ci_yaml/wheel_matrix.yml
   - local: .gitlab/ci_yaml/wheel_build.yml
   - local: .gitlab/ci_yaml/release_images.yml
-
-# -- CI pipeline setup -------------------------------------------------
 
 stages:
   - code-quality
@@ -100,6 +121,12 @@ variables:
 
   # --- default pipeline variables -------------------------------------
 
+  # CI pipelines defined in `workflow` section must set $LCI_PIPE_NAME
+  LCI_PIPE_NAME: "UNKNOWN PIPELINE"
+
+  # CI/CD inputs *must* be assigned to variables to be used in rules
+  LCI_PIPE_TYPE: "$[[ inputs.pipeline ]]"
+
   # Docker development image
   LCI_DEV_IMG: "${CI_REGISTRY}/lscsoft/lalsuite/dev"
 
@@ -119,42 +146,19 @@ variables:
   # do not execute deployment actions
   LCI_DEPLOY_EXECUTE: "no"
 
+# -- CI pipelines ------------------------------------------------------
+
 workflow:
   name: "$LCI_PIPE_NAME"
   rules:
 
-    # --- CI scheduled pipelines ---------------------------------------
-
-    # runs if:
-    # - the trigger is a scheduled or manual web pipeline
-    # - the pipeline type does NOT match a known scheduled pipeline
-    # - the branch is the main branch at lscsoft/lalsuite
-    - if: >
-        ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
-        && $LCI_PIPE_TYPE !~ /^sched-(devimg|snapshot|doc)$/
-        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
-        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
-      when: always
-      variables:
-        LCI_PIPE_NAME: "Pipeline error"
-        LCI_PIPE_TYPE: pipeline-error
-        # - pipeline error message
-        LCI_PIPE_ERROR_MESSAGE: |
-          ------------------------------------------------------------------------
-          LCI_PIPE_TYPE must be set to the name of the pipeline to schedule:
-          - sched-devimg: build and test Docker development images
-          - sched-snapshot: build snapshot Docker images and wheels
-          - sched-release: rebuild release Docker images
-          - sched-doc: build and deploy Doxygen documentation
-          ------------------------------------------------------------------------
-
-    # ---- sched-devimg: Build and test Docker development images
+    # --- sched-devimg: Build and test Docker development images
 
     # runs if:
     # - the trigger is a scheduled or manual web pipeline
     # - the pipeline type is "sched-devimg"
     # - the branch is the main branch at lscsoft/lalsuite
-    - if: >
+    - if: >-
         ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
         && $LCI_PIPE_TYPE == "sched-devimg"
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
@@ -171,7 +175,7 @@ workflow:
     # - the trigger is a commit push
     # - the commit message contains "[ci sched devimg]"
     # - the branch is NOT on lscsoft/lalsuite
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci sched devimg\]/i
         && $CI_PROJECT_PATH != "lscsoft/lalsuite"
@@ -183,13 +187,13 @@ workflow:
         LCI_DEV_IMG: "${CI_REGISTRY_IMAGE}/dev"
         LCI_DEV_TAG_SUFFIX: "-testing"
 
-    # ---- sched-snapshot: Build snapshot Docker images and wheels
+    # --- sched-snapshot: Build snapshot Docker images and wheels
 
     # runs if:
     # - the trigger is a scheduled or manual web pipeline
     # - the pipeline type is "sched-snapshot"
     # - the branch is the main branch at lscsoft/lalsuite
-    - if: >
+    - if: >-
         ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
         && $LCI_PIPE_TYPE == "sched-snapshot"
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
@@ -206,7 +210,7 @@ workflow:
     # - the trigger is a commit push
     # - the commit message contains "[ci sched snapshot]"
     # - the branch is NOT on lscsoft/lalsuite
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci sched snapshot\]/i
         && $CI_PROJECT_PATH != "lscsoft/lalsuite"
@@ -217,13 +221,13 @@ workflow:
         # - add shapshot version number based on day
         LCI_CONFIGURE_FLAGS_PIPE: "--with-snapshot-version"
 
-    # ---- sched-release: Rebuild release Docker images
+    # --- sched-release: Rebuild release Docker images
 
     # runs if:
     # - the trigger is a scheduled or manual web pipeline
     # - the pipeline type is "sched-release"
     # - the branch is the main branch at lscsoft/lalsuite
-    - if: >
+    - if: >-
         ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
         && $LCI_PIPE_TYPE == "sched-release"
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
@@ -238,7 +242,7 @@ workflow:
     # - the trigger is a commit push
     # - the commit message contains "[ci sched release]"
     # - the branch is NOT on lscsoft/lalsuite
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci sched release\]/i
         && $CI_PROJECT_PATH != "lscsoft/lalsuite"
@@ -247,13 +251,13 @@ workflow:
         LCI_PIPE_NAME: "[test] Rebuild release Docker images"
         LCI_PIPE_TYPE: sched-release
 
-    # ---- sched-doc: Build and deploy Doxygen documentation
+    # --- sched-doc: Build and deploy Doxygen documentation
 
     # runs if:
     # - the trigger is a scheduled or manual web pipeline
     # - the pipeline type is "sched-doc"
     # - the branch is the main branch at lscsoft/lalsuite
-    - if: >
+    - if: >-
         ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
         && $LCI_PIPE_TYPE == "sched-doc"
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
@@ -268,7 +272,7 @@ workflow:
     # - the trigger is a commit push
     # - the commit message contains "[ci sched doc]"
     # - the branch is NOT on lscsoft/lalsuite
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci sched doc\]/i
         && $CI_PROJECT_PATH != "lscsoft/lalsuite"
@@ -282,7 +286,7 @@ workflow:
     # runs if:
     # - the commit has been tagged, and the tag name begins with "lalsuite-v"
     # - the repository is lscsoft/lalsuite
-    - if: >
+    - if: >-
         $CI_COMMIT_TAG =~ /^lalsuite-v/
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
       when: always
@@ -302,7 +306,7 @@ workflow:
     # runs if:
     # - the trigger is a commit push
     # - the branch is a release branch at lscsoft/lalsuite
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
         && $CI_COMMIT_REF_NAME =~ /^release/
@@ -325,7 +329,7 @@ workflow:
     # runs if:
     # - the trigger is opening a merge request to lscsoft/lalsuite
     # - the pipeline is NOT a merged results pipeline
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "merge_request_event"
         && $CI_MERGE_REQUEST_PROJECT_PATH  == "lscsoft/lalsuite"
         && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == ""
@@ -345,7 +349,7 @@ workflow:
     # runs if:
     # - the trigger is opening a merge request
     # - the pipeline is a merged results pipeline
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "merge_request_event"
         && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA != ""
       when: always
@@ -356,7 +360,7 @@ workflow:
     # runs if:
     # - the trigger is a commit push
     # - the commit message contains "[ci merge]"
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci merge\]/i
       when: always
@@ -369,7 +373,7 @@ workflow:
     # runs if:
     # - the trigger is a commit push
     # - the branch is the main branch at lscsoft/lalsuite
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
         && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
@@ -381,7 +385,7 @@ workflow:
     # runs if:
     # - the trigger is a commit push
     # - the commit message contains "[ci postmerge]"
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci postmerge\]/i
       when: always
@@ -394,7 +398,7 @@ workflow:
     # runs if:
     # - the trigger is a commit push
     # - there are no open merge requests for this branch
-    - if: >
+    - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_BRANCH != "" && $CI_OPEN_MERGE_REQUESTS == null
       when: always
@@ -420,7 +424,7 @@ pipeline-error:
     - echo -e "$LCI_PIPE_ERROR_MESSAGE"
     - exit 1
   rules:
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == "pipeline-error"
 
 # -- CI job defaults ---------------------------------------------------
@@ -596,17 +600,17 @@ default:
 .default-matrix-rule:
   rules:
     # do not run if $LCI_JOB_TYPE matches an excluded job type
-    - if: >
+    - if: >-
         $LCI_JOB_TYPE =~ $LCI_EXCLUDE_JOB_TYPES
       when: never
     # run if $LCI_JOB_TYPE matches the pipeline type
-    - if: >
+    - if: >-
         $LCI_PIPE_TYPE == $LCI_JOB_TYPE
 
 # check LCI_DEPLOY_EXECUTE before running deploy jobs
 .deploy-check-execute:
   rules:
     # do not run if $LCI_DEPLOY_EXECUTE prevent executing deployment actions
-    - if: >
+    - if: >-
         $LCI_DEPLOY_EXECUTE == "no"
       when: never
