@@ -263,6 +263,19 @@ upgrade:
     - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
     # upgrade packages
     - source ${LCI_SCRIPTS}/pkg_upgrade_${LCI_BLD}.sh
+    # check that packages have been upgraded
+    - |
+      echo "CI commit SHA: ${CI_COMMIT_SHA}"
+      for pkg in ${LCI_PKGLIST}; do
+          pkg_sha=$(${pkg}_version --verbose | grep -i "${pkg}-id" | cut -d ' ' -f2)
+          echo "${pkg} commit SHA: ${pkg_sha}"
+          if test "X${pkg_sha}" != "X${CI_COMMIT_SHA}"; then
+              echo "ERROR: commit SHAs do not match"
+              echo "ERROR: output from '${pkg}_version --verbose' is:"
+              ${pkg}_version --verbose
+              exit 1
+          fi
+      done
   rules:
     # do not runs if the job is not a plain make build
     - if: >-
