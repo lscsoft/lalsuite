@@ -649,7 +649,7 @@ static void eos_correct_phase_transition(double *edat, double *pdat, double *hda
 /* This function finds phase transitions in a tabulated equation of state
  * and returns a list of indices at which the phase transitions occur.
  */
-static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
+static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat, int dirty)
 {
     int number_phase_transition = 0;
     int *id_phase_transition = NULL;
@@ -677,7 +677,7 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat)
             if (gradient == 0.0){ // clean phase transition
                 number_phase_transition += 1;
                 pt_occurence[i] = true;
-            } else if (fabs(delta_gradient) >= pt_tolerance) { // dirty phase transition
+            } else if (fabs(delta_gradient) >= pt_tolerance && dirty == 1) { // dirty phase transition
                 if (i >= 3) { // prevent invalid memory access
                     double delP_im2 = pdat[i-1] - pdat[i-2];
                     double delP_im3 = pdat[i-2] - pdat[i-3];
@@ -1166,6 +1166,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
  * transition that is not numerically so: at the upper (+) and lower (-)
  * boundaries of the phase transition (pt), the user input equation of
  * state data has P(pt,+)- P(pt,-) > 0.
+ * The user can choose to test or not for dirty phase transitions.
  * If a "dirty" phase transition is detected, it is corrected as follows:
  * - If hdat is provided: a linear extrapolation is used to correct
  * the two points in the equation of state data grid involved with the
@@ -1197,11 +1198,12 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
  * @param cs2dat Array for the sound speed squared normalized
  * to the speed of light (dimensionless).
  * @param ndat Size of the arrays for equation of state quantities.
+ * @param dirty Integer to test for dirty phase transitions (1) or clean ones only (0).
  * @return A pointer to neutron star equation of state structure EOSMultiParts.
  */
-EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
+EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyPT(double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
-                                                                    double *yedat, double *cs2dat, size_t ndat)
+                                                                    double *yedat, double *cs2dat, size_t ndat, int dirty)
 {
 
     EOSMultiParts *eos = NULL;
@@ -1212,7 +1214,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
     eos->free = eos_multi_part_free_tabular;
 
     /* Inquire about phase transitions in the equation of state */
-    indices_phase_transition = eos_find_phase_transition(ndat, edat, pdat);
+    indices_phase_transition = eos_find_phase_transition(ndat, edat, pdat, dirty);
     if (!indices_phase_transition) goto cleanup;
     int number_pt = indices_phase_transition[0] ;
     int number_eos = number_pt + 1 ;
@@ -1392,6 +1394,94 @@ cleanup:
         XLALFree(indices_phase_transition);
 
     return NULL;
+}
+
+
+
+
+
+
+/**
+ * @brief Reads 9 arrays of neutron star equation of state data to create
+ * the EOSMultiParts equation of state structure that can handle
+ * equations of state with phase transitions (including "dirty" ones).
+ * @details The arrays read contain each ndat lines of equation of state
+ * data. Although the 9 arrays correspond to the physical quantities provided
+ * in the "new" LAL format equation of state files, the units are not the same.
+ *
+ * The energy density (edat) and the pressure (edat) cannot be NULL or zero-filled arrays.
+ * It is highly recommanded that the user provides the pseudo-enthalpy as input,
+ * particularly if the equation of state data contains phase transitions.
+ *
+ * If the pseudo-enthalpy (hdat):
+ * - is NULL, it will be calculated within the function from the pressure and energy
+ * density; in this case, the baryonic density (nbdat), the baryonic and electronic
+ * chemical potentials (mubdat and muedat), the lepton fraction (yedat) and sound
+ * speed squared (cs2dat) can also be NULL as they are calculated within the function
+ * from the pressure and energy density. This is similar to providing an equation of
+ * state in the "old" LAL file format.
+ * - is not NULL, it is necessary to provide non-NULL arrays of the baryonic density
+ * (nbdat), the baryonic and electronic chemical potentials (mubdat and muedat), the
+ * lepton fraction (yedat) and sound speed squared (cs2dat). Note that mubdat, muedat,
+ * yedat can be zero-filled array without consequence, as those quantities are not
+ * used in LALSimulation as of now; this is the same for nbdat, as the rest-mass
+ * density is recalculated from hdat, pdat and edat and used in the related
+ * LALSimulation functions. A zero-filled array for cs2dat will not lead to an error
+ * when constructing the EOS structure and the input of this quantity is not necessary
+ * to solve neutron star's astrophysical parameters; however, any function related to
+ * the speed of sound in LALSimulation will result in errors. This is similar to
+ * providing an equation of state in the "new" LAL file format, although units are different.
+ *
+ * This function builds the EOSMultiParts structure from equation of state
+ * data that can include a first order phase transition. The equation of state data
+ * is tested for phase transitions which are numerically defined by a pressure
+ * plateau or near like plateau associated to a jump in energy density.
+ * If N phase transitions are found, EOSMultiParts contains N+1 LALSimNeutronStarEOS
+ * equation of state pieces.
+ *
+ * We define a "dirty" phase transition by an intended first order phase
+ * transition that is not numerically so: at the upper (+) and lower (-)
+ * boundaries of the phase transition (pt), the user input equation of
+ * state data has P(pt,+)- P(pt,-) > 0.
+ * If a "dirty" phase transition is detected, it is corrected as follows:
+ * - If hdat is provided: a linear extrapolation is used to correct
+ * the two points in the equation of state data grid involved with the
+ * phase transition and define a clean phase transition. The pseudo-enthalpy
+ * and pressure at the boundary of the phase transition are recomputed such
+ * that h(pt,-) = h(pt,+) and P(pt,-) = P(pt,+); the corresponding energy density
+ * at the upper and lower boundaries of the newly defined clean phase transition
+ * are computed also with a linear extrapolation.
+ * - If hdat is NULL: as the pseudo-enthalpy is calculated, its value
+ * at the boundaries of the phase transition is corrected as h(pt,+) -> h(pt,-).
+ * The pressure is also corrected such that P(pt,+) -> P(pt,-) and the energy
+ * density points at the boundary of the phase transition are kept intact.
+ * The existing points of the equation of state data provided by the user
+ * have been modified to obtain a clean phase transition: this implies that
+ * P(pt,+) and eps(pt,+) are not thermodynamically coherent together.
+ * In the event that the user does not wish for the phase transition to be
+ * corrected, use the LALSimNeutronStarEOS structure and the corresponding
+ * XLALSimNeutronStarEOSFromTabData function; note that it cannot be used in the
+ * solver for neutron star's astrophysical parameters that accounts for the
+ * necessary phase transition corrections.
+ *
+ * @param nbdat Array for the baryon density (in /fm^3).
+ * @param edat Array for the energy density (in m^-2).
+ * @param pdat Array for the pressure in (in m^-2).
+ * @param mubdat Array for the baryon chemical potential (in MeV).
+ * @param muedat Array for the electron chemical potential (in MeV).
+ * @param hdat Array for the pseudo enthalpy (dimensionless).
+ * @param yedat Array for the lepton fration (dimensionless).
+ * @param cs2dat Array for the sound speed squared normalized
+ * to the speed of light (dimensionless).
+ * @param ndat Size of the arrays for equation of state quantities.
+ * @return A pointer to neutron star equation of state structure EOSMultiParts.
+ */
+EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
+                                                                    double *mubdat, double *muedat, double *hdat,
+                                                                    double *yedat, double *cs2dat, size_t ndat)
+{
+
+   return XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyPT(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 1);
 }
 
 

@@ -228,6 +228,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
 /* Python users should use XLALSimNeutronStarEOSFromArraysPhaseTransition instead, which takes REAL8Vector inputs */
 EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition(double *nbdat, double *edat, double *pdat,
     double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
+EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyPT(double *nbdat, double *edat, double *pdat,
+    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, int dirty);
 #endif /* SWIG */
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
