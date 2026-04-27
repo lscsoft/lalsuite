@@ -43,7 +43,9 @@ int main(int argc, char *argv[])
     parseargs(argc, argv);
 
     fam = XLALCreateSimNeutronStarFamily(global_eos);
-    printf("Equation of State: %s\n", XLALSimNeutronStarEOSName(global_eos));
+    char *eos_name = XLALSimNeutronStarEOSName(global_eos);
+    printf("Equation of State: %s\n", eos_name);
+    XLALFree(eos_name);
     printf("Maximum Mass (solar) = %g\n",
         XLALSimNeutronStarMaximumMass(fam) / LAL_MSUN_SI);
     if (global_mass != 0.0) {
