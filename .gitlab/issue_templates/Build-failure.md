@@ -22,7 +22,7 @@ echo;
 echo -n 'CC: '; ${CC:-gcc} --version | head -n1;
 automake --version | head -n1;
 autoconf --version | head -n1;
-fftw-wisdom --version | head -n 1 | cut -d\  -f4-;
+fftw-wisdom --version | head -n 1 | cut -d' ' -f4-;
 echo -n 'GSL '; gsl-config --version;
 h5cc -showconfig | grep Version | xargs;
 echo -n 'pkg-config: '; pkg-config --version;
