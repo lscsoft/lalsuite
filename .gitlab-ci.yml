@@ -312,6 +312,11 @@ workflow:
         LCI_PIPE_TYPE: lalsuite-tag
         # - disable Doxygen version suffix for release documentation
         LCI_CONFIGURE_FLAGS_DOC_NOSUFFIX: "--with-doxygen-version-suffix="
+        # - deploy documentation for a fake LALSuite tag
+        LCI_DOC_PATH_PREFIX: "lalsuite-v99.99.99"
+        LCI_DOC_ENV_SUFFIX: "test-lalsuite-tag"
+        # deploy wheels in the "release" folder
+        LCI_WHEEL_ENV_SUBDIV: "release"
         # - simulate executing deployment actions
         LCI_DEPLOY_EXECUTE: "sim"
 
