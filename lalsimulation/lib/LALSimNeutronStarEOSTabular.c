@@ -1286,7 +1286,17 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, d
         double *cs2dat_recal = XLALMalloc(ndat * sizeof(*cs2dat_recal));
         if (!hdat_recal || !nbdat_recal || !mubdat_recal ||
             !muedat_recal || !yedat_recal || !cs2dat_recal ||
-            !edat_recal || !pdat_recal) goto cleanup;
+            !edat_recal || !pdat_recal) {
+            XLALFree(hdat_recal);
+            XLALFree(nbdat_recal);
+            XLALFree(mubdat_recal);
+            XLALFree(muedat_recal);
+            XLALFree(yedat_recal);
+            XLALFree(cs2dat_recal);
+            XLALFree(edat_recal);
+            XLALFree(pdat_recal);
+            goto cleanup;
+        }
 
         size_t ndat_total = 0;
         for (int i = 0; i <= number_pt; i++){
