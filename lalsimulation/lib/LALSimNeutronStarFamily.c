@@ -405,11 +405,21 @@ FamMultiParts * XLALCreateSimNeutronStarFamilyPTWithPcmin(EOSMultiParts * eos, i
                 fam_branch_i->k4dat = LALMalloc(ndat_branch[b] * sizeof(*fam_branch_i->k4dat));
             }
 
-            if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat)
-                    XLAL_ERROR_NULL(XLAL_ENOMEM);
-            if(min_fam==0){
-                if (!fam_branch_i->mbdat || !fam_branch_i->k3dat || !fam_branch_i->k4dat)
-                    XLAL_ERROR_NULL(XLAL_ENOMEM);
+            /* On allocation failure, free everything before returning. */
+            if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat ||
+                (min_fam==0 && (!fam_branch_i->mbdat || !fam_branch_i->k3dat || !fam_branch_i->k4dat))) {
+                XLALDestroySimNeutronStarFamily(fam_branch_i);
+                LALFree(ndat_branch);
+                LALFree(fam->fam_branch);
+                LALFree(fam);
+                LALFree(pdat);
+                LALFree(mdat);
+                LALFree(rdat);
+                LALFree(mbdat);
+                LALFree(k2dat);
+                LALFree(k3dat);
+                LALFree(k4dat);
+                XLAL_ERROR_NULL(XLAL_ENOMEM);
             }
 
             // Append the data into the branch
