@@ -6,7 +6,7 @@
 export CONDA_BLD_PATH="${PWD}/conda-bld"
 
 # render YAML file to use our tarball
-sha256=$(openssl dgst -r -sha256 ${TARBALL} | cut -d\  -f1)
+sha256=$(openssl dgst -r -sha256 ${TARBALL} | cut -d' ' -f1)
 tar -xf ${TARBALL} --wildcards ${PACKAGE}-*/conda/ --strip-components=1
 sed "s|@TARBALL@|${TARBALL}|g;s|@SHA256@|${sha256}|g" conda/meta.yaml.in > conda/meta.yaml
 
