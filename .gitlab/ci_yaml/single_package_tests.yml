@@ -52,8 +52,8 @@ lalpulsar:frame-libs:
     # run tests using available frame libraries
     - |
       for frame_library in $(lalframe_libraries_available); do
-          echo ">>>>>>> Running tests with LAL_FRAME_LIBRARY=${LAL_FRAME_LIBRARY}"
           export LAL_FRAME_LIBRARY=${frame_library}
+          echo ">>>>>>> Running tests with LAL_FRAME_LIBRARY=${LAL_FRAME_LIBRARY}"
           make -j${CPU_COUNT} check -C bin/
           echo "^^^^^^^ Tests above were run with LAL_FRAME_LIBRARY=${LAL_FRAME_LIBRARY}"
       done
