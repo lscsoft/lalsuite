@@ -599,6 +599,8 @@ XLALInitMakefakedata( ConfigVars_t *cfg, UserVariables_t *uvar )
         REAL8 tEnd;
         while ( ( tEnd = XLALGPSGetREAL8( &timestampsX->data[timestampsX->length - 1] ) + timestampsX->deltaT ) > frames_end ) {
           timestampsX->length --;
+          XLAL_CHECK( timestampsX->length > 0, XLAL_ESIZE, "Detector=X: No timestamps generated: ts_start = {%d,%d}, duration=%.0f\n",
+                      ts_startGPS.gpsSeconds, ts_startGPS.gpsNanoSeconds, ts_duration );
         }
       } // if have no timestamps
 
