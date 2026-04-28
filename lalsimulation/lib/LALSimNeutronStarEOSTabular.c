@@ -1207,6 +1207,11 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyPT(doub
                                                                     double *yedat, double *cs2dat, size_t ndat, int dirty)
 {
 
+    if (dirty != 0 && dirty != 1) {
+        printf("Variable dirty should be either 0 or 1.\n");
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+
     EOSMultiParts *eos = NULL;
     int *indices_phase_transition = NULL;
 
