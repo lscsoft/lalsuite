@@ -499,7 +499,7 @@ default:
     - set -e
     # install additional packages
     - apk add --no-interactive --no-progress
-          coreutils python3 py3-yaml
+          bash coreutils python3 py3-yaml
     # make directories
     - mkdir -p ${LCI_TMPDIR}
   # select runner which can runs Docker container
