@@ -122,7 +122,7 @@ dev-image:
     # generate configuration file for docker compose
     - ${LCI_SCRIPTS}/docker_compose_cfg -o compose.yaml
           --file ".gitlab/ci_images/dev_${LCI_PLAT_BASE}.Dockerfile"
-          --build-args ${LCI_DOCKER_ARGS}
+          --build-args ${LCI_DOCKER_ARGS} LCI_PKGLIST_X_LALAPPS
           --tags ${TESTING_IMG_PATH}
     # build image
     - docker compose build

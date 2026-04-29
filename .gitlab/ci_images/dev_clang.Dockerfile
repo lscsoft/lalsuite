@@ -7,15 +7,13 @@ FROM debian:${DEB_VERSION}-slim
 ARG CLANG_VERSION_NAME
 ARG CLANG_VERSION_SUFFIX
 ARG DEB_VERSION
+ARG LCI_PKGLIST_X_LALAPPS
 
 LABEL name="LALSuite CI Image - Clang ${CLANG_VERSION_NAME}"
 LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
 LABEL support="Best Effort"
 
 SHELL ["/bin/bash", "-c"]
-
-# copy list of LALSuite build dependencies
-COPY ./.gitlab/ci_images/dev_env.txt .
 
 # set compilers
 ENV CC="clang${CLANG_VERSION_SUFFIX}"
@@ -91,9 +89,12 @@ apt-get -y -q update
 # upgrade distribution
 apt-get -y -q upgrade
 
-# install LALSuite build dependencies
-apt-get -y -q install $(grep '|debian|' ./dev_env.txt | sed 's/#.*//')
-rm -f ./dev_env.txt
+# install latest LALSuite release, if available
+apt-get -y -q install \
+    $(printf "lib%s-dev " ${LCI_PKGLIST_X_LALAPPS}) \
+    $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
+    lalapps \
+    || true
 
 # install Clang
 apt-get -y -q install clang${CLANG_VERSION_SUFFIX}

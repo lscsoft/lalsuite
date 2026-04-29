@@ -5,15 +5,13 @@ ARG EL_VERSION
 FROM igwn/base:${EL_VERSION}
 
 ARG EL_VERSION
+ARG LCI_PKGLIST_X_LALAPPS
 
 LABEL name="LALSuite CI Image - Enterprise Linux ${EL_VERSION}"
 LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
 LABEL support="Reference Platform"
 
 SHELL ["/bin/bash", "-c"]
-
-# copy list of LALSuite build dependencies
-COPY ./.gitlab/ci_images/dev_env.txt .
 
 # write RPM macros
 COPY <<EOF /root/.rpmmacros
@@ -51,9 +49,12 @@ dnf -y -q install \
 python3 -m pip install --upgrade pip
 python3 -m pip install rpmlint-codeclimate
 
-# install LALSuite build dependencies
-dnf -y -q install $(grep '|el|' ./dev_env.txt | sed 's/#.*//')
-rm -f ./dev_env.txt
+# install latest LALSuite release, if available
+dnf -y -q install \
+    $(printf "lib%s-devel " ${LCI_PKGLIST_X_LALAPPS}) \
+    $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
+    lalapps \
+    || true
 
 # print info
 dnf list installed --quiet

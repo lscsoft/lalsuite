@@ -3,6 +3,7 @@
 FROM igwn/base:conda
 
 ARG PYTHON_VERSION
+ARG LCI_PKGLIST_X_LALAPPS
 
 LABEL name="LALSuite CI Image - Conda - Python ${PYTHON_VERSION}"
 LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
@@ -48,10 +49,6 @@ conda activate lalsuite-ci
 # pin Python version to PYTHON_VERSION
 conda config --add pinned_packages python=="${PYTHON_VERSION}"
 
-# ignore Python version constraints in conda-dev-env.yml
-# - Python version is already pinned above
-sed -i 's/- python .*$/- python/' conda-dev-env.yml
-
 # install required CI packages
 conda install --quiet --name lalsuite-ci \
     "python-gitlab>=5.6.0" \
@@ -82,9 +79,19 @@ python3 -m pip install \
     twine \
     ;
 
+# ignore Python version constraints in conda-dev-env.yml
+# - Python version is already pinned above
+sed -i 's/- python .*$/- python/' conda-dev-env.yml
+
 # install LALSuite build dependencies
 conda env update --quiet --name lalsuite-ci --file ./conda-dev-env.yml
 rm -f ./conda-dev-env.yml
+
+# create environment for testing package upgrade
+conda create --quiet --name lalsuite-ci-upgrade
+
+# install latest LALSuite release, if available
+conda install --quiet --name lalsuite-ci-upgrade ${LCI_PKGLIST_X_LALAPPS} lalapps || true
 
 # print info
 conda info --all
@@ -92,6 +99,7 @@ conda config --show-sources
 conda config --show
 conda list --name base
 conda list --name lalsuite-ci
+conda list --name lalsuite-ci-upgrade
 
 # cleanup
 conda clean --all
