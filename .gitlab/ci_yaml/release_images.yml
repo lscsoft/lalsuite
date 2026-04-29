@@ -47,12 +47,12 @@
           --build-args ${LCI_DOCKER_ARGS}
           --tags ${IMG_PATHS}
     # build image
-    - docker compose build
+    - ${LCI_SCRIPTS}/retry docker compose build
     # test image
     - docker run --rm ${IMG_PATHS%% *} lalapps_version
     # push image to registry
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - docker compose push -q
+    - ${LCI_SCRIPTS}/retry --delay 180 docker compose push -q
 
 snapshot-image:deploy:
   extends:
