@@ -311,39 +311,60 @@ how to trigger then:
             <td>Build and test Docker development images</td>
             <td>
                 Schedule variable: <code>LCI_PIPE_TYPE=sched-devimg</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                <b>Note: this will execute deployment actions</b><br/>
                 <i>or</i><br/>
-                Commit message: <code>[ci sched devimg]</code> (note: only runs on a GitLab fork of LALSuite)
+                Branch name matches: <code>/^devimg/</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                <b>Note: this will execute deployment actions</b><br/>
+                <i>or</i><br/>
+                Commit message: <code>[ci sched devimg]</code><br/>
+                Branch location: not <code>lscsoft/lalsuite</code><br/>
+                Note: this will not execute deployment actions
             </td>
         </tr>
         <tr>
             <td>Build snapshot Docker images and wheels</td>
             <td>
                 Schedule variable: <code>LCI_PIPE_TYPE=sched-snapshot</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                <b>Note: this will execute deployment actions</b><br/>
                 <i>or</i><br/>
-                Commit message: <code>[ci sched snapshot]</code> (note: only runs on a GitLab fork of LALSuite)
+                Commit message: <code>[ci sched snapshot]</code><br/>
+                Branch location: not <code>lscsoft/lalsuite</code><br/>
+                Note: this will not execute deployment actions
             </td>
         </tr>
         <tr>
             <td>Rebuild release Docker images</td>
             <td>
                 Schedule variable: <code>LCI_PIPE_TYPE=sched-release</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                <b>Note: this will execute deployment actions</b><br/>
                 <i>or</i><br/>
-                Commit message: <code>[ci sched release]</code> (note: only runs on a GitLab fork of LALSuite)
+                Commit message: <code>[ci sched release]</code><br/>
+                Branch location: not <code>lscsoft/lalsuite</code><br/>
+                Note: this will not execute deployment actions
             </td>
         </tr>
         <tr>
             <td>Build and deploy Doxygen documentation</td>
             <td>
                 Schedule variable: <code>LCI_PIPE_TYPE=sched-doc</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                <b>Note: this will execute deployment actions</b><br/>
                 <i>or</i><br/>
-                Commit message: <code>[ci sched doc]</code> (note: only runs on a GitLab fork of LALSuite)
+                Commit message: <code>[ci sched doc]</code><br/>
+                Branch location: not <code>lscsoft/lalsuite</code><br/>
+                Note: this will not execute deployment actions
             </td>
         </tr>
         <tr>
             <td>LALSuite release tag</td>
             <td>
                 Branch name matches: <code>/^release/</code><br/>
-                Branch location: <code>lscsoft/lalsuite</code>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                Note: this will not execute deployment actions
             </td>
         </tr>
         <tr>
