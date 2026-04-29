@@ -125,10 +125,10 @@ dev-image:
           --build-args ${LCI_DOCKER_ARGS} LCI_PKGLIST_X_LALAPPS
           --tags ${TESTING_IMG_PATH}
     # build image
-    - docker compose build
+    - ${LCI_SCRIPTS}/retry docker compose build
     # push image to registry
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - docker compose push -q
+    - ${LCI_SCRIPTS}/retry docker compose push -q
   rules:
     - if: >-
         $LCI_PIPE_TYPE == "sched-devimg"
