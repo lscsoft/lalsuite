@@ -179,7 +179,6 @@ workflow:
     - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_COMMIT_MESSAGE =~ /\[ci sched devimg\]/i
-        && $CI_PROJECT_PATH != "lscsoft/lalsuite"
       when: always
       variables:
         LCI_PIPE_NAME: "[test] Build and test Docker development images"
