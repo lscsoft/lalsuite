@@ -181,9 +181,9 @@ dev-image:other:
   script:
     - crane auth login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
     # copy testing image to production image
-    - crane copy ${TESTING_IMG_PATH} ${FINAL_IMG_PATH}
+    - ${LCI_SCRIPTS}/retry --delay 180 crane copy ${TESTING_IMG_PATH} ${FINAL_IMG_PATH}
     # delete testing image
-    - crane delete ${TESTING_IMG_PATH}
+    - ${LCI_SCRIPTS}/retry --delay 180 crane delete ${TESTING_IMG_PATH}
   rules:
     - if: >-
         $LCI_PIPE_TYPE == "sched-devimg"
