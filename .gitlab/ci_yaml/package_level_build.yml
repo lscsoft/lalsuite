@@ -75,7 +75,15 @@ lal:
     - .pkg-level-job
   parallel: !reference [.pkg-level-matrix, parallel]
   needs:
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - job: ci-scripts
+    # tarballs
     - job: tarballs:lal
   variables:
     PACKAGE: lal
@@ -85,8 +93,16 @@ lalframe:
     - .pkg-level-job
   parallel: !reference [.pkg-level-matrix, parallel]
   needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - job: ci-scripts
+    # tarballs
     - job: tarballs:pkg
+    # LALSuite library dependencies
     - job: lal
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
@@ -97,8 +113,16 @@ lalmetaio:
     - .pkg-level-job
   parallel: !reference [.pkg-level-matrix, parallel]
   needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - job: ci-scripts
+    # tarballs
     - job: tarballs:pkg
+    # LALSuite library dependencies
     - job: lal
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
@@ -109,8 +133,16 @@ lalsimulation:
     - .pkg-level-job
   parallel: !reference [.pkg-level-matrix, parallel]
   needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - job: ci-scripts
+    # tarballs
     - job: tarballs:pkg
+    # LALSuite library dependencies
     - job: lal
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
@@ -121,8 +153,16 @@ lalburst:
     - .pkg-level-job
   parallel: !reference [.pkg-level-matrix, parallel]
   needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - job: ci-scripts
+    # tarballs
     - job: tarballs:pkg
+    # LALSuite library dependencies
     - job: lal
       parallel: !reference [.pkg-level-needs, parallel]
     - job: lalmetaio
@@ -137,8 +177,16 @@ lalinspiral:
     - .pkg-level-job
   parallel: !reference [.pkg-level-matrix, parallel]
   needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - job: ci-scripts
+    # tarballs
     - job: tarballs:pkg
+    # LALSuite library dependencies
     - job: lal
       parallel: !reference [.pkg-level-needs, parallel]
     - job: lalframe
@@ -157,8 +205,16 @@ lalinference:
     - .pkg-level-job
   parallel: !reference [.pkg-level-matrix, parallel]
   needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - job: ci-scripts
+    # tarballs
     - job: tarballs:pkg
+    # LALSuite library dependencies
     - job: lal
       parallel: !reference [.pkg-level-needs, parallel]
     - job: lalframe
@@ -179,8 +235,16 @@ lalpulsar:
     - .pkg-level-job
   parallel: !reference [.pkg-level-matrix, parallel]
   needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - job: ci-scripts
+    # tarballs
     - job: tarballs:pkg
+    # LALSuite library dependencies
     - job: lal
       parallel: !reference [.pkg-level-needs, parallel]
     - job: lalframe
@@ -203,8 +267,16 @@ lalapps:
     - .pkg-level-job
   parallel: !reference [.pkg-level-matrix, parallel]
   needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - job: ci-scripts
+    # tarballs
     - job: tarballs:pkg
+    # LALSuite library dependencies
     - job: lal
       parallel: !reference [.pkg-level-needs, parallel]
     - job: lalframe
@@ -234,7 +306,14 @@ upgrade:
     - .tarball-build-job
   parallel: !reference [.pkg-level-matrix, parallel]
   needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - job: ci-scripts
+    # LALSuite library dependencies
     - job: lal
       parallel: !reference [.pkg-level-needs, parallel]
     - job: lalframe

@@ -2,18 +2,6 @@
 # LALSuite GitLab-CI: upgrade .deb packages
 # ----------------------------------------------------------------------
 
-# update APT cache
-${LCI_SCRIPTS}/retry apt-get -y -q update
-
-# upgrade distribution
-${LCI_SCRIPTS}/retry apt-get -y -q upgrade
-
-# install latest release
-${LCI_SCRIPTS}/retry apt-get -y -q install lalsuite lalsuite-dev
-
-# remove lalsuite meta-packages
-dpkg -r lalsuite lalsuite-dev
-
 # create local repo for upstream .debs
 upstream_debs=$(find ${PACKAGE_ROOT_DIR} -name '*.deb')
 echo "===== upstream .debs"
@@ -22,13 +10,11 @@ echo "====="
 mkdir -pv /srv/local-apt-repository
 cp -v ${upstream_debs} /srv/local-apt-repository
 /usr/lib/local-apt-repository/rebuild
+${LCI_SCRIPTS}/retry apt-get -y -q update
 
 # upgrade all packages
-${LCI_SCRIPTS}/retry apt-get -y -q update
-${LCI_SCRIPTS}/retry apt-get -y dist-upgrade
-lalapps_version
-
-# check that packages are not removed
-apt-mark manual 'lal*' 'liblal*' 'python*-lal*'
-apt-get -y autoremove
+${LCI_SCRIPTS}/retry apt-get -y -q install \
+    $(printf "lib%s-dev " ${LCI_PKGLIST_X_LALAPPS}) \
+    $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
+    ${LCI_PKGLIST}
 lalapps_version

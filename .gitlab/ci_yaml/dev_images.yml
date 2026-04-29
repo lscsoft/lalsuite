@@ -4,11 +4,38 @@
 
 # -- CI image matrix ---------------------------------------------------
 
-.dev-image-matrix:
+# --- Conda ------------------------------------------------------------
+
+.dev-image-matrix:conda:
   parallel:
     matrix:
 
-      # --- Platforms --------------------------------------------------
+      # Conda
+      - LCI_PLAT: "conda-py314"
+        LCI_PLAT_BASE: "conda"
+        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.14.*"
+
+      - LCI_PLAT: "conda-py313"
+        LCI_PLAT_BASE: "conda"
+        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.13.*"
+
+      - LCI_PLAT: "conda-py312"
+        LCI_PLAT_BASE: "conda"
+        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.12.*"
+
+      - LCI_PLAT: "conda-py311"
+        LCI_PLAT_BASE: "conda"
+        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.11.*"
+
+      - LCI_PLAT: "conda-py310"
+        LCI_PLAT_BASE: "conda"
+        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.10.*"
+
+# --- Other platforms --------------------------------------------------
+
+.dev-image-matrix:other:
+  parallel:
+    matrix:
 
       # Enterprise Linux
       - LCI_PLAT: "el8"
@@ -33,27 +60,6 @@
       - LCI_PLAT: "cuda12.8"
         LCI_PLAT_BASE: "cuda"
         LCI_DOCKER_ARGS: "CUDA_VERSION=12.8.1 UBU_VERSION=noble UBU_VERSION_N=24.04"
-
-      # Conda
-      - LCI_PLAT: "conda-py314"
-        LCI_PLAT_BASE: "conda"
-        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.14.*"
-
-      - LCI_PLAT: "conda-py313"
-        LCI_PLAT_BASE: "conda"
-        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.13.*"
-
-      - LCI_PLAT: "conda-py312"
-        LCI_PLAT_BASE: "conda"
-        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.12.*"
-
-      - LCI_PLAT: "conda-py311"
-        LCI_PLAT_BASE: "conda"
-        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.11.*"
-
-      - LCI_PLAT: "conda-py310"
-        LCI_PLAT_BASE: "conda"
-        LCI_DOCKER_ARGS: "PYTHON_VERSION=3.10.*"
 
       # --- Compilers --------------------------------------------------
 
@@ -94,21 +100,28 @@
 
 # -- CI image jobs -----------------------------------------------------
 
-.dev-image-job:
+.dev-image-base-job:
   extends:
     - .linux-job
-    - .dev-image-matrix
   variables:
     # push new Docker development image tags here for testing
     TESTING_IMG_PATH: "${CI_REGISTRY_IMAGE}/dev:dev-${LCI_PLAT}-testing"
     # once tested push Docker development image tags here
     FINAL_IMG_PATH: "${CI_REGISTRY_IMAGE}/dev:dev-${LCI_PLAT}"
 
-dev-image:
+.dev-image-job:
   stage: .pre
   extends:
-    - .dev-image-job
+    - .dev-image-base-job
     - .docker-build-job
+  rules:
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-devimg"
+
+dev-image:conda:
+  extends:
+    - .dev-image-job
+    - .dev-image-matrix:conda
   script:
     # build Docker images in a temporary directory
     # - all Docker files, and any input files they require, should reside in the
@@ -122,20 +135,46 @@ dev-image:
     # generate configuration file for docker compose
     - ${LCI_SCRIPTS}/docker_compose_cfg -o compose.yaml
           --file ".gitlab/ci_images/dev_${LCI_PLAT_BASE}.Dockerfile"
-          --build-args ${LCI_DOCKER_ARGS}
+          --build-args ${LCI_DOCKER_ARGS} LCI_PKGLIST_X_LALAPPS
           --tags ${TESTING_IMG_PATH}
     # build image
-    - docker compose build
+    - ${LCI_SCRIPTS}/retry docker compose build
     # push image to registry
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - docker compose push -q
-  rules:
-    - if: >-
-        $LCI_PIPE_TYPE == "sched-devimg"
+    - ${LCI_SCRIPTS}/retry --delay 180 docker compose push -q
 
-dev-image:deploy:
+dev-image:other:
   extends:
     - .dev-image-job
+    - .dev-image-matrix:other
+  needs:
+    - tarballs:top
+  script:
+    # build Docker images in a temporary directory
+    # - all Docker files, and any input files they require, should reside in the
+    #   directory .gitlab/ci_images, with the exception of the LALSuite tarball
+    - |
+      tmpdir=$(mktemp -d -p ${LCI_TMPDIR})
+      TARBALL=$(ls -1 ${CI_PROJECT_DIR}/tarballs/lalsuite-*.tar.*)
+      mv -v ${TARBALL} ${tmpdir}/
+      export TARBALL_NAME=$(basename ${TARBALL})
+      mkdir ${tmpdir}/.gitlab/
+      mv -v .gitlab/ci_images/ ${tmpdir}/.gitlab/
+      cd ${tmpdir}/
+    # generate configuration file for docker compose
+    - ${LCI_SCRIPTS}/docker_compose_cfg -o compose.yaml
+          --file ".gitlab/ci_images/dev_${LCI_PLAT_BASE}.Dockerfile"
+          --build-args ${LCI_DOCKER_ARGS} LCI_PKGLIST_X_LALAPPS TARBALL_NAME
+          --tags ${TESTING_IMG_PATH}
+    # build image
+    - ${LCI_SCRIPTS}/retry docker compose build
+    # push image to registry
+    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - ${LCI_SCRIPTS}/retry --delay 180 docker compose push -q
+
+.dev-image-deploy-job:
+  extends:
+    - .dev-image-base-job
     - .docker-manage-job
     - .deploy-job
   dependencies: []
@@ -148,3 +187,13 @@ dev-image:deploy:
   rules:
     - if: >-
         $LCI_PIPE_TYPE == "sched-devimg"
+
+dev-image:conda:deploy:
+  extends:
+    - .dev-image-deploy-job
+    - .dev-image-matrix:conda
+
+dev-image:other:deploy:
+  extends:
+    - .dev-image-deploy-job
+    - .dev-image-matrix:other

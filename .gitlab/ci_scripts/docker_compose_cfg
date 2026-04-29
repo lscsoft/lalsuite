@@ -3,6 +3,7 @@
 """Write a Docker Compose configuration file."""
 
 import argparse
+import os
 from pathlib import Path
 
 import yaml
@@ -23,7 +24,11 @@ build = {
 if len(args.build_args) > 0:
     build["args"] = {}
     for build_arg in args.build_args:
-        k, v = build_arg.split("=", maxsplit=1)
+        if "=" in build_arg:
+            k, v = build_arg.split("=", maxsplit=1)
+        else:
+            k = build_arg
+            v = os.environ[k]
         build["args"][k] = v
 if len(args.tags) > 1:
     build["tags"] = args.tags[1:]

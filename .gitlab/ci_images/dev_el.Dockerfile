@@ -5,6 +5,8 @@ ARG EL_VERSION
 FROM igwn/base:${EL_VERSION}
 
 ARG EL_VERSION
+ARG LCI_PKGLIST_X_LALAPPS
+ARG TARBALL_NAME
 
 LABEL name="LALSuite CI Image - Enterprise Linux ${EL_VERSION}"
 LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
@@ -12,8 +14,10 @@ LABEL support="Reference Platform"
 
 SHELL ["/bin/bash", "-c"]
 
-# copy list of LALSuite build dependencies
-COPY ./.gitlab/ci_images/dev_env.txt .
+WORKDIR /tmp
+
+# copy tarball for extraction of LALSuite build dependencies
+COPY ./${TARBALL_NAME} .
 
 # write RPM macros
 COPY <<EOF /root/.rpmmacros
@@ -52,8 +56,27 @@ python3 -m pip install --upgrade pip
 python3 -m pip install rpmlint-codeclimate
 
 # install LALSuite build dependencies
-dnf -y -q install $(grep '|el|' ./dev_env.txt | sed 's/#.*//')
-rm -f ./dev_env.txt
+tar xf ./${TARBALL_NAME}
+rm -f ./${TARBALL_NAME}
+cd ./lalsuite-*
+specfiles=
+for subdir in ${LCI_PKGLIST_X_LALAPPS} lalapps; do
+    specfile=$(ls -1 ${subdir}/*.spec)
+    specfiles="${specfiles} ${specfile}"
+done
+dnf builddep -y -q ${specfiles} || true
+
+# install latest LALSuite release, if available
+dnf -y -q install \
+    $(printf "lib%s-devel " ${LCI_PKGLIST_X_LALAPPS}) \
+    $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
+    ${LCI_PKGLIST_X_LALAPPS} lalapps \
+    || true
+
+# disable Python from downloading packages on-the-fly
+# - everything should be specified as BuildRequires
+# - requiring a virtual environment should disable pip install
+python3 -m pip config set global.require-virtualenv True
 
 # print info
 dnf list installed --quiet
@@ -62,10 +85,7 @@ python3 -m pip list
 # cleanup
 dnf clean all
 python3 -m pip cache purge
-
-# disable Python from downloading packages on-the-fly
-# - everything should be specified as BuildRequires
-# - requiring a virtual environment should disable pip install
-python3 -m pip config set global.require-virtualenv True
+cd /tmp
+rm -rf /tmp/*
 
 EOF

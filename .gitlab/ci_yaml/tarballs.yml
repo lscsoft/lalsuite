@@ -16,8 +16,8 @@ ci-scripts:
   extends:
     - .linux-job
   needs:
-    # make sure the development images are built first
-    - job: dev-image
+    # ensure the Docker Conda development images are built first
+    - job: dev-image:conda
       optional: true
   before_script: []
   script:

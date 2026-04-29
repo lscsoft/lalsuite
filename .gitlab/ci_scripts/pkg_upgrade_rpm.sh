@@ -2,9 +2,6 @@
 # LALSuite GitLab-CI: upgrade RPM packages
 # ----------------------------------------------------------------------
 
-# install latest release
-${LCI_SCRIPTS}/retry dnf -y -q install 'lal*' 'python*-lal*' --exclude 'lalsuite*'
-
 # create local repo for upstream RPMs
 local_repo="${CI_PROJECT_DIR}/local_repo"
 upstream_rpms=$(find ${PACKAGE_ROOT_DIR} -name '*.rpm')
@@ -23,5 +20,8 @@ gpgcheck=0
 EOF
 
 # upgrade all packages
-${LCI_SCRIPTS}/retry dnf -y upgrade 'lal*' 'python*-lal*'
+${LCI_SCRIPTS}/retry dnf -y upgrade \
+    $(printf "lib%s-devel " ${LCI_PKGLIST_X_LALAPPS}) \
+    $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
+    ${LCI_PKGLIST}
 lalapps_version

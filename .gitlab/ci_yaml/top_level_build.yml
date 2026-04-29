@@ -8,7 +8,14 @@
   extends:
     - .tarball-build-job
   needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
     - ci-scripts
+    # tarballs
     - tarballs:top
   script:
     # set up builder environment

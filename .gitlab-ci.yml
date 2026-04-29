@@ -116,6 +116,7 @@ variables:
   LCI_PKGLIST_X_LAL_LALAPPS: >-
     lalframe lalmetaio lalsimulation
     lalburst lalinspiral lalinference lalpulsar
+  LCI_PKGLIST_X_LALAPPS: "lal ${LCI_PKGLIST_X_LAL_LALAPPS}"
   LCI_PKGLIST_X_LAL: "${LCI_PKGLIST_X_LAL_LALAPPS} lalapps"
   LCI_PKGLIST: "lal ${LCI_PKGLIST_X_LAL}"
 
@@ -479,8 +480,8 @@ default:
     - .default-timeout
   image: "${LCI_DEV_IMG}:dev-conda-py312${LCI_DEV_TAG_SUFFIX}"
   needs:
-    # ensure the Docker development images are built first
-    - job: dev-image
+    # ensure the Docker Conda development images are built first
+    - job: dev-image:conda
       optional: true
   before_script:
     - !reference [default, before_script]
