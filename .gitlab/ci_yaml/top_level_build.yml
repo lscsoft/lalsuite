@@ -7,6 +7,8 @@
   image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
   extends:
     - .tarball-build-job
+  variables:
+    GIT_STRATEGY: none
   needs:
     # ensure the Docker development images are built first
     - job: dev-image:conda
