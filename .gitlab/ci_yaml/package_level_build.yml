@@ -11,6 +11,7 @@
     - .linux-job
     - .tarball-build-job
   variables:
+    GIT_STRATEGY: none
     PACKAGE_ROOT_DIR: "${CI_PROJECT_DIR}/packages"
     PACKAGE_DIR: "${PACKAGE_ROOT_DIR}/${PACKAGE}"
   script:
@@ -333,7 +334,6 @@ upgrade:
     - job: lalapps
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
-    GIT_STRATEGY: none
     PACKAGE_ROOT_DIR: "${CI_PROJECT_DIR}/packages"
   script:
     # set builder environment
