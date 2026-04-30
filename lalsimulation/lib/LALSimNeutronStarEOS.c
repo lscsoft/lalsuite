@@ -282,6 +282,13 @@ double XLALSimNeutronStarEOSMaxPressureGeometrized(LALSimNeutronStarEOS *
     return eos->pmax;
 }
 
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSMaxPressureGeometrized */
+double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS * eos)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSMaxPressureGeometrized");
+    return XLALSimNeutronStarEOSMaxPressureGeometrized(eos);
+}
+
 /**
  * @brief Returns the minimum pressure of the EOS in geometrized units m^-2.
  * @param eos Pointer to the EOS structure.
@@ -803,6 +810,13 @@ double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(double p,
     return eos->e_of_p(p, eos);
 }
 
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized */
+double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(double p, LALSimNeutronStarEOS * eos)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized");
+    return XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos);
+}
+
 
 /**
  * @brief Returns the dimensionless pseudo-enthalpy at a given pressure in
@@ -815,6 +829,13 @@ double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(double p,
     LALSimNeutronStarEOS * eos)
 {
     return eos->h_of_p(p, eos);
+}
+
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized */
+double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(double p, LALSimNeutronStarEOS * eos)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized");
+    return XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(p, eos);
 }
 
 
@@ -831,6 +852,13 @@ double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(double h,
     return eos->p_of_h(h, eos);
 }
 
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized */
+double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(double h, LALSimNeutronStarEOS * eos)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized");
+    return XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos);
+}
+
 
 /**
  * @brief Returns the energy density in geometrized units (m^-2) at a given
@@ -845,6 +873,13 @@ double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(double
     return eos->e_of_h(h, eos);
 }
 
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized */
+double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(double h, LALSimNeutronStarEOS * eos)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized");
+    return XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h, eos);
+}
+
 
 /**
  * @brief Returns the rest mass density in geometrized units (m^-2) at a given
@@ -857,6 +892,13 @@ double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(double
     h, LALSimNeutronStarEOS * eos)
 {
     return eos->rho_of_h(h, eos);
+}
+
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized */
+double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(double h, LALSimNeutronStarEOS * eos)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized");
+    return XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(h, eos);
 }
 
 /**
@@ -874,6 +916,13 @@ double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(double p,
     return eos->dedp_of_p(p, eos);
 }
 
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized */
+double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(double p, LALSimNeutronStarEOS * eos)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized");
+    return XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos);
+}
+
 
 /**
  * @brief Returns the speed of sound in geometrized units (dimensionless)
@@ -886,6 +935,13 @@ double XLALSimNeutronStarEOSSpeedOfSoundGeometrized(double h,
     LALSimNeutronStarEOS * eos)
 {
     return eos->v_of_h(h, eos);
+}
+
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSSpeedOfSoundGeometrized */
+double XLALSimNeutronStarEOSSpeedOfSoundGeometerized(double h, LALSimNeutronStarEOS * eos)
+{
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSSpeedOfSoundGeometrized");
+    return XLALSimNeutronStarEOSSpeedOfSoundGeometrized(h, eos);
 }
 
 
