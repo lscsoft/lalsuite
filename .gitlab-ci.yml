@@ -523,6 +523,10 @@ default:
   before_script:
     # exit immediately on any error
     - set -e
+    # ensure /bin/sh exists
+    - ln -s /busybox/sh /bin/sh
+    # make directories
+    - mkdir -p ${LCI_TMPDIR}
   # do not retry jobs
   retry: 0
   # do not interrupt
