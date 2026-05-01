@@ -4,7 +4,7 @@
 
 .top-level-job:
   stage: top-level
-  image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
+  image: "${LCI_DEV_IMG}:${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
   extends:
     - .tarball-build-job
   needs:

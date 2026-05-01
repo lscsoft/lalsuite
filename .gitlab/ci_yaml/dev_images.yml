@@ -92,9 +92,9 @@
     - .dev-image-matrix
   variables:
     # push new Docker development image tags here for testing
-    TESTING_IMG_PATH: "${CI_REGISTRY_IMAGE}/dev:dev-${LCI_PLAT}-testing"
+    TESTING_IMG_PATH: "${CI_REGISTRY_IMAGE}/dev:${LCI_PLAT}-testing"
     # once tested push Docker development image tags here
-    FINAL_IMG_PATH: "${CI_REGISTRY_IMAGE}/dev:dev-${LCI_PLAT}"
+    FINAL_IMG_PATH: "${CI_REGISTRY_IMAGE}/dev:${LCI_PLAT}"
 
 dev-image:
   stage: input-sources

@@ -427,7 +427,7 @@ default:
 
 # use Conda environment for generic jobs
 .generic-job:
-  image: "${LCI_DEV_IMG}:dev-conda-py312${LCI_DEV_TAG_SUFFIX}"
+  image: "${LCI_DEV_IMG}:conda-py312${LCI_DEV_TAG_SUFFIX}"
   needs:
     # ensure the Docker development images are built first
     - job: dev-image
