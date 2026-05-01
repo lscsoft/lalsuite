@@ -6,7 +6,7 @@
 
 .pkg-level-job:
   stage: package-level
-  image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
+  image: "${LCI_DEV_IMG}:${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
   extends:
     - .linux-job
     - .tarball-build-job
@@ -301,7 +301,7 @@ lalapps:
 
 upgrade:
   stage: package-level
-  image: "${LCI_DEV_IMG}:dev-${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
+  image: "${LCI_DEV_IMG}:${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
   extends:
     - .linux-job
     - .tarball-build-job

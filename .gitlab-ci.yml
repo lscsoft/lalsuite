@@ -494,7 +494,7 @@ default:
 .generic-job:
   extends:
     - .default-timeout
-  image: "${LCI_DEV_IMG}:dev-conda-py312${LCI_DEV_TAG_SUFFIX}"
+  image: "${LCI_DEV_IMG}:conda-py312${LCI_DEV_TAG_SUFFIX}"
   needs:
     # ensure the Docker Conda development images are built first
     - job: dev-image:conda
