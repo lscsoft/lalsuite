@@ -105,7 +105,7 @@ delay=${delay_base}
 
 while true; do
 
-    tmpdir=$(mktemp -d -p ${LCI_TMPDIR})
+    tmpdir=$(mktemp -d "${LCI_TMPDIR}/retry.XXXXXX")
     fifo="${tmpdir}/fifo"
     mkfifo "${fifo}"
     "$@" >"${fifo}" 2>&1 &

@@ -127,7 +127,7 @@ dev-image:conda:
     # - all Docker files, and any input files they require, should reside in the
     #   directory .gitlab/ci_images, with the exception of conda-dev-env.yml
     - |
-      tmpdir=$(mktemp -d -p ${LCI_TMPDIR})
+      tmpdir=$(mktemp -d "${LCI_TMPDIR}/dev-image.XXXXXX")
       mv -v conda-dev-env.yml ${tmpdir}/
       mkdir ${tmpdir}/.gitlab/
       mv -v .gitlab/ci_images/ ${tmpdir}/.gitlab/
