@@ -401,7 +401,7 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
     double dr = -r * (r - 2.0 * m) / (m + 4.0 * LAL_PI * r * r * r * p);
     double dm = 4.0 * LAL_PI * r * r * e * dr;
     double dH = b * dr;
-    /* Eq.(12) in Hindered paper */
+    /* Eq.(12) of Hinderer et al. Phys. Rev. D 81 123016 (2010). */
     double db = -(C0 * H + C1 * b) * dr;
     double alpha = 1.0 - 2.0 * m / r;
     double beta = (m + 4.0 * LAL_PI * r * r * r * p) / (r * r);
