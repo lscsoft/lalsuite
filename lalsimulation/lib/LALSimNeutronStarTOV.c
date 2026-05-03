@@ -27,6 +27,7 @@
 #include <math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_odeiv.h>
+#include <gsl/gsl_poly.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -42,12 +43,22 @@ static double tidal_Love_number_k2(double c, double y)
     double num;
     double den;
 
-    num = (8.0 / 5.0) * pow(1 - 2 * c, 2.0) * pow(c, 5)
-        * (2 * c * (y - 1) - y + 2);
-    den = 2 * c * (4 * (y + 1) * pow(c, 4) + (6 * y - 4) * pow(c, 3)
-        + (26 - 22 * y) * c * c + 3 * (5 * y - 8) * c - 3 * y + 6);
-    den -= 3 * pow(1 - 2 * c, 2) * (2 * c * (y - 1) - y + 2)
-        * log(1.0 / (1 - 2 * c));
+    double rl = 1.0 - 2.0 * c;
+    double rl2 = rl*rl;
+
+    double coeffs1[] = {0.0, 0.0, 0.0, 0.0, 0.0,
+                        - y + 2.0, 2.0 * (y - 1.0)};
+    num = (8.0 / 5.0) * rl2 * gsl_poly_eval(coeffs1, 7, c);
+
+    double coeffs2[] = {- 3.0 * y + 6.0,
+                        3.0 * (5.0 * y - 8.0),
+                        26.0 - 22.0 * y,
+                        6.0 * y - 4.0,
+                        4.0 * (y + 1.0) };
+    den = 2.0 * c * gsl_poly_eval(coeffs2, 5, c);
+
+    double coeffs3[] = {- y + 2.0, 2.0 * (y - 1.0)};
+    den -= 3.0 * rl2 * gsl_poly_eval(coeffs3, 2, c) * log(1.0 / rl);
 
     return num / den;
 }
@@ -59,19 +70,28 @@ static double tidal_Love_number_k3(double c, double y)
 {
     double num;
     double den;
-    double c2 = c*c;
-    double c3 = c2*c;
-    double c4 = c2*c2;
-    double c5 = c4*c;
-    double c7 = c4*c3;
 
-    num = (8.0 / 7.0) * pow(1 - 2 * c, 2.0) * c7
-        * (2 * (y - 1) * c2 - 3.0 * (y - 2.0) * c + y - 3.0);
-    den = 2.0 * c * (  4*(y + 1)*c5 + 2*(9*y - 2)*c4
-                        - 20*(7*y - 9)*c3 + 5*(37*y - 72)*c2
-                        - 45*(2*y - 5)*c  + 15*(y - 3) ) ;
+    double rl = 1.0 - 2.0 * c;
+    double rl2 = rl*rl;
 
-    den -= 15*pow(1 - 2 * c, 2.0) * ( 2*(y - 1)*c2 - 3*(y-2)*c + y - 3 ) * log(1.0 / (1 - 2 * c));
+    double coeffs1[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                         y - 3.0,
+                         - 3.0 * (y - 2.0),
+                         2.0 * (y - 1.0)};
+    num = (8.0 / 7.0) * rl2 * gsl_poly_eval(coeffs1, 10, c);
+
+    double coeffs2[] = {15.0*(y - 3.0),
+                        - 45.0*(2.0*y - 5.0),
+                        5.0*(37.0*y - 72.0),
+                        - 20.0*(7.0*y - 9.0),
+                        2.0*(9.0*y - 2.0),
+                         4.0*(y + 1.0) };
+    den = 2.0 * c * gsl_poly_eval(coeffs2, 6, c);
+
+    double coeffs3[] = {y - 3.0,
+                        - 3.0*(y-2.0),
+                        2.0*(y - 1.0)};
+    den -= 15.0*rl2 * gsl_poly_eval(coeffs3, 3, c) * log(1.0 / rl);
 
     return num / den;
 }
@@ -83,20 +103,31 @@ static double tidal_Love_number_k4(double c, double y)
 {
     double num;
     double den;
-    double c2 = c*c;
-    double c3 = c2*c;
-    double c4 = c2*c2;
-    double c5 = c4*c;
-    double c6 = c3*c3;
-    double c9 = c6*c3;
 
-    num = (32.0 / 147.0) * pow(1 - 2 * c, 2.0) * c9
-        * ( 12*(y - 1)*c3 - 34*(y - 2)*c2 + 28*(y - 3)*c - 7*(y - 4) );
-    den = 2.0 * c * (  8*(y + 1)*c6 + (68*y - 8)*c5 + (1284 - 996*y)*c4
-                        + 40*(55*y - 116)*c3 + (5360 - 1910*y)*c2
-                        + 105*(7*y - 24)*c - 105*(y - 4) ) ;
+    double rl = 1.0 - 2.0 * c;
+    double rl2 = rl*rl;
 
-    den -= 15*pow(1 - 2 * c, 2.0) * ( 12*(y - 1)*c3 - 34*(y - 2)*c2 + 28*(y - 3)*c - 7*(y - 4) ) * log(1.0 / (1 - 2 * c));
+    double coeffs1[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                        - 7.0*(y - 4.0),
+                        28.0*(y - 3.0),
+                        -34.0*(y - 2.0),
+                        12.0*(y - 1.0)};
+    num = (32.0 / 147.0) * rl2 * gsl_poly_eval(coeffs1, 13, c);
+
+    double coeffs2[] = {- 105.0*(y - 4.0) ,
+                        105.0*(7.0*y - 24.0),
+                        5360.0 - 1910.0*y,
+                        40.0*(55.0*y - 116.0),
+                        1284.0 - 996.0*y,
+                        68.0*y - 8.0,
+                        8.0*(y + 1.0)};
+    den = 2.0 * c * gsl_poly_eval(coeffs2, 7, c) ;
+
+    double coeffs3[] = {- 7.0*(y - 4.0) ,
+                        28.0*(y - 3.0),
+                        - 34.0*(y - 2.0),
+                        12.0*(y - 1.0)};
+    den -= 15*rl2 * gsl_poly_eval(coeffs3, 4, c) * log(1.0 / rl);
 
     return num / den;
 }
