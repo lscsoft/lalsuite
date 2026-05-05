@@ -837,7 +837,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
     else if (ncol < 2)
     {
         fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
-        exit(1);
+        XLAL_ERROR_NULL(XLAL_EDOM);
     }
 
     eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
@@ -1077,7 +1077,7 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fn
     else if (ncol < 2)
     {
         fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
-        exit(1);
+        XLAL_ERROR_NULL(XLAL_EDOM);
     }
 
     eos = XLALSimNeutronStarEOSFromTabDataPhaseTransition(nbdat, edat, pdat, mubdat, muedat, hdat,
