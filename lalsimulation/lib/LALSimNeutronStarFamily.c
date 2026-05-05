@@ -128,33 +128,33 @@ static double get_central_pressure_mext(LALSimEOSMultiParts *eos, int index, dou
  */
 void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam)
 {
-    if (!fam) return;
+    if (fam) {
+        gsl_interp_accel_free(fam->k2_of_m_acc);
+        gsl_interp_accel_free(fam->k3_of_m_acc);
+        gsl_interp_accel_free(fam->k4_of_m_acc);
+        gsl_interp_accel_free(fam->r_of_m_acc);
+        gsl_interp_accel_free(fam->p_of_m_acc);
+        gsl_interp_accel_free(fam->mb_of_m_acc);
+        gsl_interp_accel_free(fam->m_of_p_acc);
 
-    if (fam->k2_of_m_acc) gsl_interp_accel_free(fam->k2_of_m_acc);
-    if (fam->k3_of_m_acc) gsl_interp_accel_free(fam->k3_of_m_acc);
-    if (fam->k4_of_m_acc) gsl_interp_accel_free(fam->k4_of_m_acc);
-    if (fam->r_of_m_acc)  gsl_interp_accel_free(fam->r_of_m_acc);
-    if (fam->p_of_m_acc)  gsl_interp_accel_free(fam->p_of_m_acc);
-    if (fam->mb_of_m_acc) gsl_interp_accel_free(fam->mb_of_m_acc);
-    if (fam->m_of_p_acc)  gsl_interp_accel_free(fam->m_of_p_acc);
+        gsl_interp_free(fam->k2_of_m_interp);
+        gsl_interp_free(fam->k3_of_m_interp);
+        gsl_interp_free(fam->k4_of_m_interp);
+        gsl_interp_free(fam->r_of_m_interp);
+        gsl_interp_free(fam->p_of_m_interp);
+        gsl_interp_free(fam->mb_of_m_interp);
+        gsl_interp_free(fam->m_of_p_interp);
 
-    if (fam->k2_of_m_interp) gsl_interp_free(fam->k2_of_m_interp);
-    if (fam->k3_of_m_interp) gsl_interp_free(fam->k3_of_m_interp);
-    if (fam->k4_of_m_interp) gsl_interp_free(fam->k4_of_m_interp);
-    if (fam->r_of_m_interp)  gsl_interp_free(fam->r_of_m_interp);
-    if (fam->p_of_m_interp)  gsl_interp_free(fam->p_of_m_interp);
-    if (fam->mb_of_m_interp) gsl_interp_free(fam->mb_of_m_interp);
-    if (fam->m_of_p_interp)  gsl_interp_free(fam->m_of_p_interp);
+        LALFree(fam->k2dat);
+        LALFree(fam->k3dat);
+        LALFree(fam->k4dat);
+        LALFree(fam->rdat);
+        LALFree(fam->mdat);
+        LALFree(fam->mbdat);
+        LALFree(fam->pdat);
 
-    if (fam->k2dat) LALFree(fam->k2dat);
-    if (fam->k3dat) LALFree(fam->k3dat);
-    if (fam->k4dat) LALFree(fam->k4dat);
-    if (fam->rdat)  LALFree(fam->rdat);
-    if (fam->mdat)  LALFree(fam->mdat);
-    if (fam->mbdat) LALFree(fam->mbdat);
-    if (fam->pdat)  LALFree(fam->pdat);
-
-    LALFree(fam);
+        LALFree(fam);
+    }
     return ;
 }
 
@@ -164,15 +164,25 @@ void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam)
  */
 void XLALDestroySimNeutronStarMultiBranchFamily(FamMultiParts * fam)
 {
-    if (!fam) return;
-
-    for (int i = 0; i < fam->number_of_branches; i++) {
-        if (fam->fam_branch[i])
-            XLALDestroySimNeutronStarFamily(fam->fam_branch[i]);
+//     if (!fam) return;
+//
+//     for (int i = 0; i < fam->number_of_branches; i++) {
+//         if (fam->fam_branch[i])
+//             XLALDestroySimNeutronStarFamily(fam->fam_branch[i]);
+//     }
+//
+//     if (fam->fam_branch) LALFree(fam->fam_branch);
+//     LALFree(fam);
+    if (fam) {
+        if (fam->fam_branch) {
+            for (int i = 0; i < fam->number_of_branches; ++i)
+                XLALDestroySimNeutronStarFamily(fam->fam_branch[i]);
+            LALFree(fam->fam_branch);
+        }
+        LALFree(fam);
     }
+    return;
 
-    if (fam->fam_branch) LALFree(fam->fam_branch);
-    LALFree(fam);
 }
 
 /**

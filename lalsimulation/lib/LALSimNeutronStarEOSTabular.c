@@ -303,49 +303,47 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 
 static void eos_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
 {
-    if (!data) return;
+    if (data){
+        gsl_interp_free(data->log_e_of_log_p_interp);
+        gsl_interp_free(data->log_e_of_log_h_interp);
+        gsl_interp_free(data->log_p_of_log_h_interp);
+        gsl_interp_free(data->log_h_of_log_p_interp);
+        gsl_interp_free(data->log_rho_of_log_h_interp);
+        gsl_interp_free(data->log_p_of_log_e_interp);
+        gsl_interp_free(data->log_p_of_log_rho_interp);
+        gsl_interp_free(data->log_cs2_of_log_h_interp);
 
-    gsl_interp_free(data->log_e_of_log_p_interp);
-    gsl_interp_free(data->log_e_of_log_h_interp);
-    gsl_interp_free(data->log_p_of_log_h_interp);
-    gsl_interp_free(data->log_h_of_log_p_interp);
-    gsl_interp_free(data->log_rho_of_log_h_interp);
-    gsl_interp_free(data->log_p_of_log_e_interp);
-    gsl_interp_free(data->log_p_of_log_rho_interp);
-    gsl_interp_free(data->log_cs2_of_log_h_interp);
+        gsl_interp_accel_free(data->log_e_of_log_p_acc);
+        gsl_interp_accel_free(data->log_e_of_log_h_acc);
+        gsl_interp_accel_free(data->log_p_of_log_h_acc);
+        gsl_interp_accel_free(data->log_h_of_log_p_acc);
+        gsl_interp_accel_free(data->log_rho_of_log_h_acc);
+        gsl_interp_accel_free(data->log_p_of_log_e_acc);
+        gsl_interp_accel_free(data->log_p_of_log_rho_acc);
+        gsl_interp_accel_free(data->log_cs2_of_log_h_acc);
 
-    gsl_interp_accel_free(data->log_e_of_log_p_acc);
-    gsl_interp_accel_free(data->log_e_of_log_h_acc);
-    gsl_interp_accel_free(data->log_p_of_log_h_acc);
-    gsl_interp_accel_free(data->log_h_of_log_p_acc);
-    gsl_interp_accel_free(data->log_rho_of_log_h_acc);
-    gsl_interp_accel_free(data->log_p_of_log_e_acc);
-    gsl_interp_accel_free(data->log_p_of_log_rho_acc);
-    gsl_interp_accel_free(data->log_cs2_of_log_h_acc);
+        LALFree(data->nbdat);
+        LALFree(data->log_edat);
+        LALFree(data->log_pdat);
+        LALFree(data->mubdat);
+        LALFree(data->muedat);
+        LALFree(data->log_hdat);
+        LALFree(data->yedat);
+        LALFree(data->log_cs2dat);
+        LALFree(data->log_rhodat);
 
-    LALFree(data->nbdat);
-    LALFree(data->log_edat);
-    LALFree(data->log_pdat);
-    LALFree(data->mubdat);
-    LALFree(data->muedat);
-    LALFree(data->log_hdat);
-    LALFree(data->yedat);
-    LALFree(data->log_cs2dat);
-    LALFree(data->log_rhodat);
-
-    LALFree(data);
+        LALFree(data);
+    }
+    return;
 }
 
 static void eos_free_tabular(LALSimNeutronStarEOS * eos)
 {
-    if (!eos) return;
-
-    if (eos->data.tabular) {
+    if (eos) {
         eos_free_tabular_data(eos->data.tabular);
-        eos->data.tabular = NULL;
+        LALFree(eos);
     }
-
-    LALFree(eos);
+    return;
 }
 
 /* Finding density where EOS becomes acausal */
@@ -546,33 +544,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
     return eos;
 }
 
-static void eos_multi_part_free_tabular(LALSimEOSMultiParts * eos)
-{
-    if (!eos) return;
-
-    if (eos->eos_piece) {
-        for (int i = 0; i < eos->number_of_parts; i++) {
-
-            if (eos->eos_piece[i]) {
-
-                // ALWAYS use the EOS own destructor
-                if (eos->eos_piece[i]->free) {
-                    eos->eos_piece[i]->free(eos->eos_piece[i]);
-                } else {
-                    // fallback only (should rarely happen)
-                    LALFree(eos->eos_piece[i]);
-                }
-
-                eos->eos_piece[i] = NULL;
-            }
-        }
-
-        LALFree(eos->eos_piece);
-        eos->eos_piece = NULL;
-    }
-
-    LALFree(eos);
-}
 
 /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
  * If the EOS is always causal, return some large value hmax instead. */
@@ -1217,7 +1188,6 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyP
 
     eos = LALCalloc(1, sizeof(*eos));
     if (!eos) return NULL;
-    eos->free = eos_multi_part_free_tabular;
 
     /* Inquire about phase transitions in the equation of state */
     indices_phase_transition = eos_find_phase_transition(ndat, edat, pdat, dirty);

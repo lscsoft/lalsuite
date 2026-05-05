@@ -209,10 +209,7 @@ const char * const lalSimNeutronStarEOSNames[111] = {
  */
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
 {
-    if (eos == NULL)
-        return;
-
-    if (eos->free != NULL)
+    if (eos)
         eos->free(eos);
     return;
 }
@@ -224,16 +221,15 @@ void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
  */
 void XLALDestroySimNeutronStarEOSMultiParts(LALSimEOSMultiParts * eos)
 {
-    if (!eos) return;
-
-    if (eos->eos_piece) {
-        for (int i = 0; i < eos->number_of_parts; i++) {
-            if (eos->eos_piece[i] && eos->eos_piece[i]->free) eos->eos_piece[i]->free(eos->eos_piece[i]);
+    if(eos){
+        if (eos->eos_piece) {
+            for (int i = 0; i < eos->number_of_parts; i++)
+                if (eos->eos_piece[i]) eos->eos_piece[i]->free(eos->eos_piece[i]);
+            LALFree(eos->eos_piece);
         }
-        LALFree(eos->eos_piece);
+        LALFree(eos);
     }
 
-    LALFree(eos);
     return;
 }
 
@@ -443,8 +439,7 @@ LALSimNeutronStarEOS * XLALSimNeutronStarEOSPart(LALSimEOSMultiParts * eos, int 
     if (piece_id < 0 || piece_id >= eos->number_of_parts) {
         XLAL_ERROR_NULL(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
     }
-    LALSimNeutronStarEOS * eos_piece = eos->eos_piece[piece_id];
-    return eos_piece;
+    return eos->eos_piece[piece_id];
 }
 
 
