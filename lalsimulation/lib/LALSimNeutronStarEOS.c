@@ -418,7 +418,7 @@ char *XLALSimNeutronStarEOSMultiPartsName(LALSimEOSMultiParts * eos)
  * divided by phase transitions in the LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns N+1.
+ * from 0 to N, and the function returns N+1.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @return The number of pieces in the LALSimEOSMultiParts structure.
  */
@@ -431,7 +431,7 @@ int XLALSimNeutronStarEOSMultiPartsNumber(LALSimEOSMultiParts * eos)
  * @brief Returns the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function returns a LALSimNeutronStarEOS
+ * from 0 to N. This function returns a LALSimNeutronStarEOS
  * structure for the equation of piece with ID number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id ID number for the equation of state piece.
@@ -576,7 +576,7 @@ double XLALSimNeutronStarEOSMultiPartsMinRestMassDensityGeometrized(LALSimEOSMul
  * of LALSimEOSMultiParts structure in geometrized units m^-2.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the maximum pressure (geometrized units)
+ * from 0 to N, and the function returns the maximum pressure (geometrized units)
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -597,7 +597,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(LALSimEOSMulti
  * of LALSimEOSMultiParts structure in geometrized units m^-2.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the minimum pressure (geometrized units)
+ * from 0 to N, and the function returns the minimum pressure (geometrized units)
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -618,7 +618,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(LALSimEOSMulti
  * of LALSimEOSMultiParts structure in Pa.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the maximum pressure (Pa)
+ * from 0 to N, and the function returns the maximum pressure (Pa)
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -641,7 +641,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMaxPressure(LALSimEOSMultiParts * eos
  * of LALSimEOSMultiParts structure in Pa.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the minimum pressure (Pa)
+ * from 0 to N, and the function returns the minimum pressure (Pa)
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -664,7 +664,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinPressure(LALSimEOSMultiParts * eos
  * of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the minimum pseudo-enthalpy
+ * from 0 to N, and the function returns the minimum pseudo-enthalpy
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -683,7 +683,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(LALSimEOSMultiParts
  * of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the maximum pseudo-enthalpy
+ * from 0 to N, and the function returns the maximum pseudo-enthalpy
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -702,7 +702,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(LALSimEOSMultiParts
  * of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the minimum acausal pseudo-enthalpy
+ * from 0 to N, and the function returns the minimum acausal pseudo-enthalpy
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -721,7 +721,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinAcausalPseudoEnthalpy(LALSimEOSMul
  * of LALSimEOSMultiParts structure in geometrized units.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the maximum pressure (Pa)
+ * from 0 to N, and the function returns the maximum pressure (Pa)
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -741,7 +741,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMaxEnergyDensityGeometrized(LALSimEOS
  * of LALSimEOSMultiParts structure in geometrized units.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the maximum pressure (Pa)
+ * from 0 to N, and the function returns the maximum pressure (Pa)
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -761,7 +761,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMinEnergyDensityGeometrized(LALSimEOS
  * of LALSimEOSMultiParts structure in geometrized units.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the maximum pressure (Pa)
+ * from 0 to N, and the function returns the maximum pressure (Pa)
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -781,7 +781,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceMaxRestMassDensityGeometrized(LALSimE
  * of LALSimEOSMultiParts structure in geometrized units.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the maximum pressure (Pa)
+ * from 0 to N, and the function returns the maximum pressure (Pa)
  * for the equation of state piece number piece_id.
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
  * @param piece_id Integer to the equation of state piece ID number.
@@ -951,7 +951,7 @@ double XLALSimNeutronStarEOSSpeedOfSoundGeometerized(double h, LALSimNeutronStar
  * of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the energy density interpolated at
+ * from 0 to N, and the function returns the energy density interpolated at
  * a given pressure p, for the equation of state piece number piece_id.
  * @param p Pressure in geometrized units (m^-2)
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
@@ -976,7 +976,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPressureGeometrized(do
  * in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the pseudo-enthalpy interpolated at
+ * from 0 to N, and the function returns the pseudo-enthalpy interpolated at
  * a given pressure p, for the equation of state piece number piece_id.
  * @param p Pressure in geometrized units (m^-2)
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
@@ -1002,7 +1002,7 @@ double XLALSimNeutronStarEOSMultiPartsPiecePseudoEnthalpyOfPressureGeometrized(d
  * given pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the geometrized pressure
+ * from 0 to N, and the function returns the geometrized pressure
  * interpolated at a given pseudo-enthalpy h, for the equation of state piece number piece_id.
  * @param h Pseudo-enthalpy (dimensionless)
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
@@ -1027,7 +1027,7 @@ double XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpyGeometrized(d
  * given pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the geometrized energy density
+ * from 0 to N, and the function returns the geometrized energy density
  * interpolated at a given pseudo-enthalpy h, for the equation of state piece number piece_id.
  * @param h Pseudo-enthalpy (dimensionless)
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
@@ -1053,7 +1053,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometri
  * given pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the geometrized rest-mass density
+ * from 0 to N, and the function returns the geometrized rest-mass density
  * interpolated at a given pseudo-enthalpy h, for the equation of state piece number piece_id.
  * @param h Pseudo-enthalpy (dimensionless).
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
@@ -1080,7 +1080,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeomet
  * units (m^-2), in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the gradient of the energy density
+ * from 0 to N, and the function returns the gradient of the energy density
  * interpolated at a given pressure, for the equation of state piece number piece_id.
  * @param p Pressure in geometrized units (m^-2).
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
@@ -1108,7 +1108,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityDerivOfPressureGeometriz
  * in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the gradient of the energy density
+ * from 0 to N, and the function returns the gradient of the energy density
  * interpolated at a given pseudo-enthalpy h, for the equation of state piece number piece_id.
  * @param h Pseudo-enthalpy (dimensionless).
  * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
@@ -1134,7 +1134,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceSpeedOfSoundGeometrized(double h,
  * pressure in geometrized units (m^-2).
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pressure value belongs to, then it interpolates the energy density
  * at the pressure value p, for the correct equation of state piece.
  * @param p Pressure in geometrized units (m^-2)
@@ -1153,7 +1153,7 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPressureGeometrized(double 
  * @brief Returns the pseudo-enthalpy at a given pressure in geometrized units (m^-2).
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pressure value belongs to, then it interpolates the pseudo-enthalpy
  * at the pressure value p, for the correct equation of state piece.
  * @param p Pressure in geometrized units (m^-2)
@@ -1174,7 +1174,7 @@ double XLALSimNeutronStarEOSMultiPartsPseudoEnthalpyOfPressureGeometrized(double
  * given pseudo-enthalpy.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pseudo-enthalpy value belongs to, then it interpolates the pressure
  * at the pseudo-enthalpy value h, for the correct equation of state piece.
  * @param h Pseudo-enthalpy (dimensionless)
@@ -1194,7 +1194,7 @@ double XLALSimNeutronStarEOSMultiPartsPressureOfPseudoEnthalpyGeometrized(double
  * given pseudo-enthalpy.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pseudo-enthalpy value belongs to, then it interpolates the energy density
  * at the pseudo-enthalpy value h, for the correct equation of state piece.
  * @param h Pseudo-enthalpy (dimensionless)
@@ -1215,7 +1215,7 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPseudoEnthalpyGeometrized(d
  * given pseudo-enthalpy.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pseudo-enthalpy value belongs to, then it interpolates the
  * rest-mass density at the pseudo-enthalpy value h, for the correct
  * equation of state piece.
@@ -1238,7 +1238,7 @@ double XLALSimNeutronStarEOSMultiPartsRestMassDensityOfPseudoEnthalpyGeometrized
  * units (m^-2).
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pressure value belongs to, then it interpolates the
  * energy density at the pressure value p, for the correct
  * equation of state piece.
@@ -1261,7 +1261,7 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressureGeometrized(do
  * at a given value of the pseudo-enthalpy.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pseudo-enthalpy value belongs to, then it interpolates the
  * speed of sound at the pseudo-enthalpy value h, for the correct
  * equation of state piece.
@@ -1408,7 +1408,7 @@ double XLALSimNeutronStarEOSPressureOfRestMassDensity(double rho,
  * @brief Returns the energy density (J m^-3) at a given pressure (Pa), in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the energy density
+ * from 0 to N, and the function returns the energy density
  * interpolated at a given pressure p, for the equation of state
  * piece number piece_id.
  * @param p Pressure (Pa).
@@ -1435,7 +1435,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPressure(double p,
  * @brief Returns the dimensionless pseudo-enthalpy at a given pressure (Pa), in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the pseudo-enthalpy
+ * from 0 to N, and the function returns the pseudo-enthalpy
  * interpolated at a given pressure p, for the equation of state
  * piece number piece_id.
  * @param p Pressure (Pa).
@@ -1462,7 +1462,7 @@ double XLALSimNeutronStarEOSMultiPartsPiecePseudoEnthalpyOfPressure(double p,
  * pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the pressure
+ * from 0 to N, and the function returns the pressure
  * interpolated at a given pseudo-enthalpy h, for the equation of state
  * piece number piece_id.
  * @param h The value of the dimensionless pseudo-enthalpy.
@@ -1488,7 +1488,7 @@ double XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpy(double h,
  * dimensionless pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the energy density
+ * from 0 to N, and the function returns the energy density
  * interpolated at a given pseudo-enthalpy h, for the equation of state
  * piece number piece_id.
  * @param h The value of the dimensionless pseudo-enthalpy.
@@ -1514,7 +1514,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpy(double 
  * dimensionless pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the rest-mass density
+ * from 0 to N, and the function returns the rest-mass density
  * interpolated at a given pseudo-enthalpy h, for the equation of state
  * piece number piece_id.
  * @param h The value of the dimensionless pseudo-enthalpy.
@@ -1542,7 +1542,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpy(doubl
  * in the ith equation of state piece of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the gradient of the energy density
+ * from 0 to N, and the function returns the gradient of the energy density
  * interpolated at a given pressure p, for the equation of state
  * piece number piece_id.
  * @param p Pressure (Pa).
@@ -1571,7 +1571,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityDerivOfPressure(double p
  * of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the speed of sound
+ * from 0 to N, and the function returns the speed of sound
  * interpolated at a given pseudo-enthalpy h, for the equation of state
  * piece number piece_id.
  * @param h The value of the dimensionless pseudo-enthalpy.
@@ -1599,7 +1599,7 @@ double XLALSimNeutronStarEOSMultiPartsPieceSpeedOfSound(double h,
  * of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the pressure
+ * from 0 to N, and the function returns the pressure
  * interpolated at a given energy density e, for the equation of state
  * piece number piece_id.
  * @param e energy density in J/m^3
@@ -1627,7 +1627,7 @@ double XLALSimNeutronStarEOSMultiPartsPiecePressureOfEnergyDensity(double e,
  * of LALSimEOSMultiParts structure.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1, and the function returns the pressure
+ * from 0 to N, and the function returns the pressure
  * interpolated at a given rest-mass density rho, for the equation of state
  * piece number piece_id.
  * @param rho rest-mass density in kg/m^3
@@ -1654,7 +1654,7 @@ double XLALSimNeutronStarEOSMultiPartsPiecePressureOfRestMassDensity(double rho,
  * @brief Returns the energy density (J m^-3) at a given pressure (Pa).
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pressure value belongs to, then it interpolates the energy density
  * at the pressure value p, for the correct equation of state piece.
  * @param p Pressure (Pa).
@@ -1674,7 +1674,7 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPressure(double p,
  * @brief Returns the dimensionless pseudo-enthalpy at a given pressure (Pa).
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pressure value belongs to, then it interpolates the pseudo-enthalpy
  * at the pressure value p, for the correct equation of state piece.
  * @param p Pressure (Pa).
@@ -1696,7 +1696,7 @@ double XLALSimNeutronStarEOSMultiPartsPseudoEnthalpyOfPressure(double p,
  * pseudo-enthalpy.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pseudo-enthalpy value belongs to, then it interpolates the pressure
  * at the pseudo-enthalpy value h, for the correct equation of state piece.
  * @param h The value of the dimensionless pseudo-enthalpy.
@@ -1716,7 +1716,7 @@ double XLALSimNeutronStarEOSMultiPartsPressureOfPseudoEnthalpy(double h,
  * dimensionless pseudo-enthalpy.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pseudo-enthalpy value belongs to, then it interpolates the energy density
  * at the pseudo-enthalpy value h, for the correct equation of state piece.
  * @param h The value of the dimensionless pseudo-enthalpy.
@@ -1737,7 +1737,7 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPseudoEnthalpy(double h,
  * dimensionless pseudo-enthalpy.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pseudo-enthalpy value belongs to, then it interpolates the
  * rest-mass density at the pseudo-enthalpy value h,
  * for the correct equation of state piece.
@@ -1760,7 +1760,7 @@ double XLALSimNeutronStarEOSMultiPartsRestMassDensityOfPseudoEnthalpy(double h,
  * pressure (dimensionless) at a given value of the pressure (Pa).
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pressure value belongs to, then it interpolates the
  * gradient of the energy density with respect to the pressure
  * at the pressure value p, for the correct equation of state piece.
@@ -1784,7 +1784,7 @@ double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressure(double p,
  * pseudo-enthalpy (dimensionless).
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the pseudo-enthalpy value belongs to, then it interpolates the
  * speed of sound at the pseudo-enthalpy value h, for the correct
  * equation of state piece.
@@ -1805,7 +1805,7 @@ double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundOfPseudoEnthalpy(double h, LAL
  * energy density in J/m^3.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the energy density value belongs to, then it interpolates the
  * pressure at the energy density value e, for the correct
  * equation of state piece.
@@ -1828,7 +1828,7 @@ double XLALSimNeutronStarEOSMultiPartsPressureOfEnergyDensity(double e,
  * rest-mass density in kg/m^3.
  * @details If the equation of state contains N phase transitions,
  * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N-1. This function finds automatically which equation of state
+ * from 0 to N. This function finds automatically which equation of state
  * piece the rest-mass density value belongs to, then it interpolates the
  * pressure at the rest-mass density value rho, for the correct
  * equation of state piece.
