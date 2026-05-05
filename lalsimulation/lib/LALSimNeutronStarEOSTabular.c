@@ -546,7 +546,7 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, doub
     return eos;
 }
 
-static void eos_multi_part_free_tabular(EOSMultiParts * eos)
+static void eos_multi_part_free_tabular(LALSimEOSMultiParts * eos)
 {
     if (!eos) return;
 
@@ -577,7 +577,7 @@ static void eos_multi_part_free_tabular(EOSMultiParts * eos)
 /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
  * If the EOS is always causal, return some large value hmax instead. */
 static double eosMultiParts_min_acausal_pseudo_enthalpy_tabular(double hmax,
-    EOSMultiParts * eos)
+    LALSimEOSMultiParts * eos)
 {
     size_t i;
     double h_im1, h_i;
@@ -968,9 +968,9 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
  *
  * @param energy_density Array for the energy density (in m^-2).
  * @param pressure Array for the pressure (in m^-2).
- * @return A pointer to EOSMultiParts equation of state structure.
+ * @return A pointer to LALSimEOSMultiParts equation of state structure.
  */
-EOSMultiParts *XLALSimNeutronStarEOSFromArraysPhaseTransition(
+LALSimEOSMultiParts *XLALSimNeutronStarEOSFromArraysPhaseTransition(
     const REAL8Vector *energy_density, const REAL8Vector *pressure)
 {
     XLAL_CHECK_NULL(energy_density && pressure, XLAL_EFAULT);
@@ -984,7 +984,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromArraysPhaseTransition(
 
 /**
  * @brief Reads a data file containing tabulated equation of state data
- * to create the EOSMultiParts equation of state structure that can handle
+ * to create the LALSimEOSMultiParts equation of state structure that can handle
  * equations of state with phase transitions.
  * @details Read a data file specified by a path fname that contains either
  * i) 2 whitespace separated columns of equation of state data ("old" LAL EoS format)
@@ -1000,11 +1000,11 @@ EOSMultiParts *XLALSimNeutronStarEOSFromArraysPhaseTransition(
  * otherwise, search for the file in paths given in the environment variable
  * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
  *
- * This function builds the EOSMultiParts structure from equation of state
+ * This function builds the LALSimEOSMultiParts structure from equation of state
  * data that can include a first order phase transition. The equation of state data
  * is tested for phase transitions which are numerically defined by a pressure
  * plateau or near like plateau associated to a jump in energy density.
- * If N phase transitions are found, EOSMultiParts contains N+1 LALSimNeutronStarEOS
+ * If N phase transitions are found, LALSimEOSMultiParts contains N+1 LALSimNeutronStarEOS
  * equation of state pieces.
  *
  * We define a "dirty" phase transition by an intended first order phase
@@ -1034,11 +1034,11 @@ EOSMultiParts *XLALSimNeutronStarEOSFromArraysPhaseTransition(
  * solver for neutron star's astrophysical parameters that accounts for the
  * necessary phase transition corrections.
  * @param[in] fname The path of the file to open.
- * @return A pointer to neutron star equation of state structure EOSMultiParts.
+ * @return A pointer to neutron star equation of state structure LALSimEOSMultiParts.
  */
-EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
+LALSimEOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
 
-    EOSMultiParts *eos;
+    LALSimEOSMultiParts *eos;
 
     double *f_dat;
     size_t ncol;
@@ -1127,7 +1127,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
 
 /**
  * @brief Reads 9 arrays of neutron star equation of state data to create
- * the EOSMultiParts equation of state structure that can handle
+ * the LALSimEOSMultiParts equation of state structure that can handle
  * equations of state with phase transitions.
  * @details The arrays read contain each ndat lines of equation of state
  * data. Although the 9 arrays correspond to the physical quantities provided
@@ -1156,11 +1156,11 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
  * the speed of sound in LALSimulation will result in errors. This is similar to
  * providing an equation of state in the "new" LAL file format, although units are different.
  *
- * This function builds the EOSMultiParts structure from equation of state
+ * This function builds the LALSimEOSMultiParts structure from equation of state
  * data that can include a first order phase transition. The equation of state data
  * is tested for phase transitions which are numerically defined by a pressure
  * plateau or near like plateau associated to a jump in energy density.
- * If N phase transitions are found, EOSMultiParts contains N+1 LALSimNeutronStarEOS
+ * If N phase transitions are found, LALSimEOSMultiParts contains N+1 LALSimNeutronStarEOS
  * equation of state pieces.
  *
  * We define a "dirty" phase transition by an intended first order phase
@@ -1200,9 +1200,9 @@ EOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
  * to the speed of light (dimensionless).
  * @param ndat Size of the arrays for equation of state quantities.
  * @param dirty Integer to test for dirty phase transitions (1) or clean ones only (0).
- * @return A pointer to neutron star equation of state structure EOSMultiParts.
+ * @return A pointer to neutron star equation of state structure LALSimEOSMultiParts.
  */
-EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyPT(double *nbdat, double *edat, double *pdat,
+LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyPT(double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat, int dirty)
 {
@@ -1212,7 +1212,7 @@ EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyPT(doub
         XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
-    EOSMultiParts *eos = NULL;
+    LALSimEOSMultiParts *eos = NULL;
     int *indices_phase_transition = NULL;
 
     eos = LALCalloc(1, sizeof(*eos));
@@ -1419,7 +1419,7 @@ cleanup:
 
 /**
  * @brief Reads 9 arrays of neutron star equation of state data to create
- * the EOSMultiParts equation of state structure that can handle
+ * the LALSimEOSMultiParts equation of state structure that can handle
  * equations of state with phase transitions (including "dirty" ones).
  * @details The arrays read contain each ndat lines of equation of state
  * data. Although the 9 arrays correspond to the physical quantities provided
@@ -1448,11 +1448,11 @@ cleanup:
  * the speed of sound in LALSimulation will result in errors. This is similar to
  * providing an equation of state in the "new" LAL file format, although units are different.
  *
- * This function builds the EOSMultiParts structure from equation of state
+ * This function builds the LALSimEOSMultiParts structure from equation of state
  * data that can include a first order phase transition. The equation of state data
  * is tested for phase transitions which are numerically defined by a pressure
  * plateau or near like plateau associated to a jump in energy density.
- * If N phase transitions are found, EOSMultiParts contains N+1 LALSimNeutronStarEOS
+ * If N phase transitions are found, LALSimEOSMultiParts contains N+1 LALSimNeutronStarEOS
  * equation of state pieces.
  *
  * We define a "dirty" phase transition by an intended first order phase
@@ -1490,9 +1490,9 @@ cleanup:
  * @param cs2dat Array for the sound speed squared normalized
  * to the speed of light (dimensionless).
  * @param ndat Size of the arrays for equation of state quantities.
- * @return A pointer to neutron star equation of state structure EOSMultiParts.
+ * @return A pointer to neutron star equation of state structure LALSimEOSMultiParts.
  */
-EOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
+LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat)
 {
@@ -1655,7 +1655,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.
  */
-EOSMultiParts *XLALSimNeutronStarEOSMultiPartsByName(const char *name)
+LALSimEOSMultiParts *XLALSimNeutronStarEOSMultiPartsByName(const char *name)
 {
     static const char fname_base[] = "LALSimNeutronStarEOS_";
     static const char fname_extn[] = ".dat";
@@ -1666,7 +1666,7 @@ EOSMultiParts *XLALSimNeutronStarEOSMultiPartsByName(const char *name)
 
     for (i = 0; i < n ; ++i)
         if (XLALStringCaseCompare(name, lalSimNeutronStarEOSNames[i]) == 0) {
-            EOSMultiParts *eos;
+            LALSimEOSMultiParts *eos;
             snprintf(fname, sizeof(fname), "%s%s%s", fname_base, lalSimNeutronStarEOSNames[i],
                 fname_extn);
             eos = XLALSimNeutronStarEOSFromFilePhaseTransition(fname);

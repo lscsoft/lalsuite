@@ -815,7 +815,7 @@ static double correction_phase_transition(double r, double m, double b_kl, doubl
 void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
-             EOSMultiParts *eos,
+             LALSimEOSMultiParts *eos,
              double epsrel){
 
     /* ode integration variables */
@@ -945,7 +945,7 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
 void XLALSimNeutronStarTOVODEExtendedIntegrate(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
-             EOSMultiParts *eos)
+             LALSimEOSMultiParts *eos)
 {
     const double epsrel = 1e-6;
     XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(radius, mass, baryon_mass, love_number_k2,
@@ -1076,7 +1076,7 @@ static int tov_mini_ode(double h, const double *y, double *dy, void *params)
  */
 void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *mass,
              double *love_number_k2, double central_pressure_si,
-             EOSMultiParts *eos,
+             LALSimEOSMultiParts *eos,
              double epsrel){
 
     /* ode integration variables */
@@ -1192,7 +1192,7 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
  * @param eos Pointer to the multiple-parts Equation of State structure.
  */
 void XLALSimNeutronStarTOVODEMiniIntegrate(double *radius, double *mass, double *love_number_k2,
-                                       double central_pressure_si, EOSMultiParts *eos)
+                                       double central_pressure_si, LALSimEOSMultiParts *eos)
 {
     const double epsrel = 1e-6;
     XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
