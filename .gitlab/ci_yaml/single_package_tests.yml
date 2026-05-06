@@ -6,7 +6,7 @@
 lal:conda-mkl:
   variables:
     LCI_SINGLE_PKG_SELECT: "conda"
-    LCI_SINGLE_PKG_ENV: "LCI_CONDA_CFG_lal=linux_64_fft_implmkl"
+    LCI_SINGLE_PKG_ENV: "LCI_CONDA_PLAT_lal=fft_implmkl"
   extends:
     - .single-pkg:lal
   script:

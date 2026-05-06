@@ -26,30 +26,34 @@ git ls-files
 conda smithy recipe-lint --conda-forge || true  # lint, but don't fail
 
 # specify `--python` to build only the Python version of the Conda container
-export CONDA_BUILD_ARGS="--python \"${LCI_PYTHON_VERSION} *_cp*\""
+export CONDA_BUILD_ARGS="--python \"${LCI_PYTHON_VERSION} *_${LCI_CONDA_ABI}\""
 
 echo "======================== Conda configuration ========================="
 
-# use package-specific configuration
-conda_config_name="LCI_CONDA_CFG_${PACKAGE}"
-if [ "X${!conda_config_name}" != X ]; then
-    LCI_CONDA_CFG="${!conda_config_name}"
-    echo "Using configuration ${LCI_CONDA_CFG} from ${conda_config_name}"
+# try to find configuration file using just platform tag
+plat_tag="${LCI_CONDA_PLAT_BASE}"
+pkg_plat_tag_name="LCI_CONDA_PLAT_${PACKAGE}"
+if [ "X${!pkg_plat_tag_name}" != X ]; then
+    plat_tag="${plat_tag}_${!pkg_plat_tag_name}"
+    echo "Platform tag: ${plat_tag} from LCI_CONDA_PLAT_BASE and ${pkg_plat_tag_name}"
 else
-    echo "Using configuration ${LCI_CONDA_CFG} from LCI_CONDA_CFG"
+    echo "Platform tag: ${plat_tag} from LCI_CONDA_PLAT_BASE"
 fi
-
-conda_config_file=".ci_support/${LCI_CONDA_CFG}.yaml"
-if [ -f ${conda_config_file} ]; then
-    echo "Found configuration file ${conda_config_file}"
+conda_config_file="$(echo .ci_support/${plat_tag}*.yaml)"
+if [ -f "${conda_config_file}" ]; then
+    echo "Found configuration file '${conda_config_file}'"
 else
+    echo "INFO: '${conda_config_file}' does not match a unique configuration file"
 
-    # try to find Python-specific configuration
-    conda_config_file="$(echo .ci_support/${LCI_CONDA_CFG}*python${LCI_PYTHON_VERSION}cp*.yaml)"
-    if [ -f ${conda_config_file} ]; then
-        echo "Found configuration file ${conda_config_file}"
+    # try to find configuration file also using Python and ABI tags
+    echo "Python tag: python${LCI_PYTHON_VERSION}"
+    echo "ABI tag: ${LCI_CONDA_ABI}"
+    conda_config_file="$(echo .ci_support/${plat_tag}_python${LCI_PYTHON_VERSION}*_${LCI_CONDA_ABI}.yaml)"
+    if [ -f "${conda_config_file}" ]; then
+        echo "Found configuration file '${conda_config_file}'"
     else
-        echo "ERROR: ${LCI_CONDA_CFG} does not match any configuration files"
+        echo "INFO: '${conda_config_file}' does not match a unique configuration file"
+        echo "ERROR: could not determine Conda configuration"
         exit 1
     fi
 

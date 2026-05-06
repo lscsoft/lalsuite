@@ -33,17 +33,17 @@
       # --- Conda packages ---------------------------------------------
 
       - LCI_PLAT: "conda-py313"
-        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_ LCI_CONDA_CFG_lal=linux_64_fft_implfftw"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_PLAT_BASE=linux_64 LCI_CONDA_PLAT_lal=fft_implfftw LCI_CONDA_ABI=cp313"
         LCI_JOB_TYPE: ["merge", "sched-devimg"]
 
       - LCI_PLAT: "conda-py312"
-        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_ LCI_CONDA_CFG_lal=linux_64_fft_implfftw"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_PLAT_BASE=linux_64 LCI_CONDA_PLAT_lal=fft_implfftw LCI_CONDA_ABI=cpython"
         LCI_JOB_TYPE: ["sched-devimg"]
 
       - LCI_PLAT: "conda-py311"
-        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_ LCI_CONDA_CFG_lal=linux_64_fft_implfftw"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_PLAT_BASE=linux_64 LCI_CONDA_PLAT_lal=fft_implfftw LCI_CONDA_ABI=cpython"
         LCI_JOB_TYPE: ["sched-devimg"]
 
       - LCI_PLAT: "conda-py310"
-        LCI_ENV: "LCI_BLD=conda LCI_CONDA_CFG=linux_64_ LCI_CONDA_CFG_lal=linux_64_fft_implfftw"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_PLAT_BASE=linux_64 LCI_CONDA_PLAT_lal=fft_implfftw LCI_CONDA_ABI=cpython"
         LCI_JOB_TYPE: ["sched-devimg"]
