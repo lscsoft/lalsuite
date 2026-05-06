@@ -18,7 +18,7 @@ pushd ${PACKAGE}-feedstock/
 
 # handle migrations that are bundled with the tarball
 mkdir -p .ci_support/migrations
-find recipe/migrations -type f -name "*.yaml" -exec cp -nv {} .ci_support/migrations/ \;
+find recipe/migrations -type f -name "*.yaml" -exec cp --update=none --verbose {} .ci_support/migrations/ \;
 
 # regenerate the feedstock
 ${LCI_SCRIPTS}/retry conda smithy regenerate --no-check-uptodate
