@@ -41,7 +41,7 @@ compose_yml = yaml.safe_dump(compose, default_flow_style=False)
 
 # show Compose configuration file
 header = f"---- {args.output} -----".ljust(80, "-")
-print(header, "\n", compose_yml, "-" * len(header))
+print(header + "\n" + compose_yml + "-" * len(header))
 
 # write Compose configuration file
 with args.output.open("w") as f:
