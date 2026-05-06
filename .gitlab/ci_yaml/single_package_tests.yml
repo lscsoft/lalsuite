@@ -10,7 +10,23 @@ lal:conda-mkl:
   extends:
     - .single-pkg:lal
   script:
-    - !reference [lal, script]
+    - !reference [.single-pkg-job, script]
+    # run package-level build
+    - source ${LCI_SCRIPTS}/pkg_build_${LCI_BLD}.sh
+  artifacts:
+    expire_in: 18h
+    paths:
+      # log files
+      - "build/${PACKAGE}-*/**/config.log"
+      - "build/${PACKAGE}-*/**/test-suite.log"
+      # generated sources
+      - "build/${PACKAGE}-*/**/swiglal_lal*_octave.cpp"
+      - "build/${PACKAGE}-*/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "build/${PACKAGE}-*/**/Makefile"
+      - "build/${PACKAGE}-*/**/libtool"
+      # package system files
+      - "build/${PACKAGE}-*/${LCI_BLD}-specific/"
 
 # lalinference - run test nested sampling job
 lalinference:test-job:

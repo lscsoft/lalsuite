@@ -41,6 +41,7 @@
     - eval export "${LCI_SINGLE_PKG_ENV}"
     - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
     - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
+    - mkdir -p ${PACKAGE_DIR}
     # unpack tarball
     - mkdir -p build/
     - cd build/
