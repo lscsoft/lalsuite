@@ -29,7 +29,6 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
-  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalmetaio${LIBMAJOR}.install:debian/liblalmetaio.install.in \
