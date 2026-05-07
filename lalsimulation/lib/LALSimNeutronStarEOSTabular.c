@@ -649,7 +649,7 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat, 
                 number_phase_transition += 1;
                 pt_occurence[i] = true;
             } else if (fabs(delta_gradient) >= pt_tolerance && dirty == 1) { // dirty phase transition
-                if (i >= 3) { // prevent invalid memory access
+                if (i >= 3 && i <= ndat -3 ) { // prevent invalid memory access
                     double delP_im2 = pdat[i-1] - pdat[i-2];
                     double delP_im3 = pdat[i-2] - pdat[i-3];
                     if (delP_im2 /delP_im3 < 3.0){ // avoids idenfying pressure jumps around the PT that could false flag
@@ -1204,6 +1204,7 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyP
 
 
     if (number_pt != 0) {
+
         for (int i = 1; i <= number_pt; i++){
             if (indices_phase_transition[i+1] - indices_phase_transition[i] < 4) {
                 XLALPrintError("EoS Piece contains too few points.");
