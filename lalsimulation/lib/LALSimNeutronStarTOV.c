@@ -217,7 +217,7 @@ static int tov_ode(double h, const double *y, double *dy, void *params)
     return 0;
 }
 
-/**
+/*
  * @brief Integrates the stellar structure system of ordinary differential
  * equations to obtain neutron star's macroscopic parameters.
  * @details
@@ -243,8 +243,8 @@ static int tov_ode(double h, const double *y, double *dy, void *params)
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
-    double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos, double epsrel)
+int XLALSimNeutronStarTOVODEIntegrateWithToleranceEOSPiece(double *radius, double *mass,
+    double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOSPiece * eos, double epsrel)
 {
     /* ode integration variables */
     const double epsabs = 0.0;
@@ -262,11 +262,11 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     /* geometrisized units for variables in length (m) */
     double pc = central_pressure_si * LAL_G_C4_SI;
     double ec =
-        XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(pc, eos);
+        XLALSimNeutronStarEOSPieceEnergyDensityOfPressureGeometrized(pc, eos);
     double hc =
-        XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(pc, eos);
+        XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressureGeometrized(pc, eos);
     double dedp_c =
-        XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(pc, eos);
+        XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(pc, eos);
     double dhdp_c = 1.0 / (ec + pc);
     double dedh_c = dedp_c / dhdp_c;
     double dh = -1e-12 * hc;
@@ -329,6 +329,17 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
 }
 
 
+
+int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
+    double *love_number_k2, double central_pressure_si,
+    LALSimNeutronStarEOS * eos, double epsrel)
+{
+    XLAL_CHECK(XLALSimNeutronStarEOSNumberPieces(eos) == 1, XLAL_EFUNC, "The EOS provided contains multiple piece separated by a phase transition. The Virial TOV solver can only handle a single piece EOS. Use XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance instead.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, 0);
+    return XLALSimNeutronStarTOVODEIntegrateWithToleranceEOSPiece(radius, mass, love_number_k2, central_pressure_si, eos_piece, epsrel);
+}
+
+
 /**
  * @brief Integrates the stellar structure system of ordinary differential
  * equations to obtain neutron star's macroscopic parameters with a solver
@@ -361,6 +372,7 @@ int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     const double epsrel = 1e-6;
     return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
 }
+
 
 /*
  * For convenience, use a structure that provides a dictionary between
@@ -486,10 +498,10 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *mass,
+static int XLALSimNeutronStarVirialODEIntegrateWithToleranceEOSPiece(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
-    LALSimNeutronStarEOS * eos, double epsrel)
+    LALSimNeutronStarEOSPiece * eos, double epsrel)
 {
     /* ode integration variables */
     const double epsabs = 0.0;
@@ -507,11 +519,11 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     /* geometrisized units for variables in length (m) */
     double pc = central_pressure_si * LAL_G_C4_SI;
     double ec =
-        XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(pc, eos);
+        XLALSimNeutronStarEOSPieceEnergyDensityOfPressureGeometrized(pc, eos);
     double hc =
-        XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(pc, eos);
+        XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressureGeometrized(pc, eos);
     double dedp_c =
-        XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(pc, eos);
+        XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(pc, eos);
     double dhdp_c = 1.0 / (ec + pc);
     double dedh_c = dedp_c / dhdp_c;
     double dh = -1e-12 * hc;
@@ -596,6 +608,49 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     return 0;
 }
 
+
+/**
+ * @brief Integrates the stellar structure and virial system of ordinary differential
+ * equations to obtain neutron star's macroscopic parameters and virial parameters.
+ * @details
+ * Solves the Tolman-Oppenheimer-Volkoff stellar structure equations,
+ * the gravito-electric tidal Love number equations and the virial equations,
+ * given an equation of state and a central pressure. The solution to this set
+ * of ODEs provides the neutron star's radius, gravitational mass, second order
+ * gravito-electric tidal Love number and the virial parameters.
+ * It uses the pseudo-enthalpy formalism introduced in Lindblom (1992)
+ * Astrophys. J. 398 569 "Determining the Nuclear Equation of State from
+ * Neutron-Star Masses and Radii".
+ * The surface of the star is defined by a minimum value of the pseudo-enthalpy
+ * h1 = 1e-12 * hc (with hc the central pseudo-enthalpy) ; if the minimum
+ * pseudo-enthalpy of the equation of state is larger, a polytrope
+ * (degenerate non-relativistic gas) is used to extend the model beyond
+ * the EoS minimal value down to h1.
+ * @param[out] radius The radius of the star in m.
+ * @param[out] mass The mass of the star in kg.
+ * @param[out] int1 Virial parameter.
+ * @param[out] int2 Virial parameter.
+ * @param[out] int3 Virial parameter.
+ * @param[out] int4 Virial parameter.
+ * @param[out] int5 Virial parameter.
+ * @param[out] int6 Virial parameter.
+ * @param[out] love_number_k2 The k_2 tidal love number of the star.
+ * @param[in] central_pressure_si The central pressure of the star in Pa.
+ * @param eos Pointer to the Equation of State structure.
+ * @param[in] epsrel The relative error in the TOV solver routine.
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ */
+int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *mass,
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
+    double *love_number_k2, double central_pressure_si,
+    LALSimNeutronStarEOS * eos, double epsrel)
+{
+    XLAL_CHECK(XLALSimNeutronStarEOSNumberPieces(eos) == 1, XLAL_EFUNC, "The EOS provided contains multiple piece separated by a phase transition. The Virial TOV solver can only handle a single piece EOS. Use XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance instead.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, 0);
+    return XLALSimNeutronStarVirialODEIntegrateWithToleranceEOSPiece(radius, mass, int1, int2, int3, int4, int5, int6,
+                                                                         love_number_k2, central_pressure_si, eos_piece, epsrel);
+}
 /**
  * @brief Integrates the stellar structure and virial system of ordinary differential
  * equations to obtain neutron star's macroscopic parameters and virial parameters,
@@ -675,9 +730,9 @@ static struct tov_ext_ode_vars *tov_ext_ode_vars_cast(const double *y)
  * radius and tidal deformability related parameters (H and beta for order 2, 3 and 4)
  * defined for the center of the star.
 */
-static int tov_ext_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_ext_ode_vars *variables){
+static int tov_ext_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOSPiece * eos, struct tov_ext_ode_vars *variables){
 
-    double dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos); // Central energy density derivative
+    double dedp = XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(p, eos); // Central energy density derivative
     double dhdp = 1.0 / (eps + p);
     double dedh = dedp / dhdp;
 
@@ -720,7 +775,7 @@ static int tov_ext_ode(double h, const double *y, double *dy, void *params)
     struct tov_ext_ode_vars *vars = tov_ext_ode_vars_cast(y);
     struct tov_ext_ode_vars *derivs = tov_ext_ode_vars_cast(dy);
 
-    LALSimNeutronStarEOS * eos = *(LALSimNeutronStarEOS **) params;
+    LALSimNeutronStarEOSPiece * eos = *(LALSimNeutronStarEOSPiece **) params;
 
     double r = vars->r;
     double m = vars->m;
@@ -731,10 +786,10 @@ static int tov_ext_ode(double h, const double *y, double *dy, void *params)
     double H_k4 = vars->H_k4;
     double b_k4 = vars->b_k4;
 
-    double p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos);
-    double e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h, eos);
-    double rho = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(h, eos);
-    double dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos);
+    double p = XLALSimNeutronStarEOSPiecePressureOfPseudoEnthalpyGeometrized(h, eos);
+    double e = XLALSimNeutronStarEOSPieceEnergyDensityOfPseudoEnthalpyGeometrized(h, eos);
+    double rho = XLALSimNeutronStarEOSPieceRestMassDensityOfPseudoEnthalpyGeometrized(h, eos);
+    double dedp = XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(p, eos);
     /* Eq. (18) of Damour & Nagar PRD 80 084035 (2009). */
     double A = 1.0 / (1.0 - 2.0 * m / r);
     /* Eq. (28) of Damour & Nagar PRD 80 084035 (2009). */
@@ -771,13 +826,13 @@ static int tov_ext_ode(double h, const double *y, double *dy, void *params)
  * Implements Eq.(41) of Pereira et al. 2020 ApJ 895 28
 */
 static double correction_phase_transition(double r, double m, double b_kl, double H_kl,
-                                          double h, LALSimNeutronStarEOS * eos0, LALSimNeutronStarEOS * eos1){
+                                          double h, LALSimNeutronStarEOSPiece * eos0, LALSimNeutronStarEOSPiece * eos1){
 
     double corrected_term = 0.0;
     double r3 = r*r*r;
-    double pres_pt = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos1);
-    double dpt_eps =  XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h, eos1)
-                    - XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h, eos0) ;
+    double pres_pt = XLALSimNeutronStarEOSPiecePressureOfPseudoEnthalpyGeometrized(h, eos1);
+    double dpt_eps =  XLALSimNeutronStarEOSPieceEnergyDensityOfPseudoEnthalpyGeometrized(h, eos1)
+                    - XLALSimNeutronStarEOSPieceEnergyDensityOfPseudoEnthalpyGeometrized(h, eos0) ;
 
     double rho_bar = (m + 4.0 * LAL_PI * r3 * pres_pt)/ (4.0 / 3.0 * LAL_PI * r3 ) ;
     corrected_term = b_kl - H_kl / r * dpt_eps * 3.0 / rho_bar ;
@@ -815,13 +870,13 @@ static double correction_phase_transition(double r, double m, double b_kl, doubl
 void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
-             LALSimEOSMultiParts *eos,
+             LALSimNeutronStarEOS *eos,
              double epsrel){
 
     /* ode integration variables */
     const double epsabs = 0.0;
     int s;
-    LALSimNeutronStarEOS * params;
+    LALSimNeutronStarEOSPiece * params;
     double y[TOV_EXT_ODE_VARS_DIM];
     double dy[TOV_EXT_ODE_VARS_DIM];
     struct tov_ext_ode_vars *vars = tov_ext_ode_vars_cast(y);
@@ -837,11 +892,11 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
 
     /* Equations of state quantities at the center of the star */
     double pc = central_pressure_si * LAL_G_C4_SI; // convert the pressure from Pascal to geometrized units [/m^2]
-    int number_eos = XLALSimNeutronStarEOSMultiPartsNumber(eos);
+    int number_eos = XLALSimNeutronStarEOSNumberPieces(eos);
     int central_piece = 0; // default to first piece; handles floating-point edge case at pmin
     for(int j = 0; j < number_eos; j++){
-        double pmin_piece = XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, j);
-        double pmax_piece = XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, j);
+        double pmin_piece = XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, j);
+        double pmax_piece = XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, j);
         if (pc >= pmin_piece && pc <= pmax_piece){
             central_piece = j;
             break;
@@ -849,9 +904,9 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
         if (pc > pmax_piece)
             central_piece = j; // track last piece whose range pc exceeded; handles floating-point edge case at pmax
     }
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, central_piece);
-    double ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(pc, eos_part);
-    double hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(pc, eos_part);
+    LALSimNeutronStarEOSPiece * eos_part = XLALSimNeutronStarEOSSelectPiece(eos, central_piece);
+    double ec = XLALSimNeutronStarEOSPieceEnergyDensityOfPressureGeometrized(pc, eos_part);
+    double hc = XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressureGeometrized(pc, eos_part);
 
     /* Initial condition */
     double dh = -1e-12 * hc;
@@ -862,9 +917,9 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     h = h0;
 
     for(int j = central_piece; j >= 0; j--) {
-        LALSimNeutronStarEOS * eos_part_1 = XLALSimNeutronStarEOSPart(eos,j);
+        LALSimNeutronStarEOSPiece * eos_part_1 = XLALSimNeutronStarEOSSelectPiece(eos,j);
         params = eos_part_1;
-        hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_part_1);
+        hmin = XLALSimNeutronStarEOSPieceMinPseudoEnthalpy(eos_part_1);
         while (h > hmin) {
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
             if (s != GSL_SUCCESS) {
@@ -877,7 +932,7 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
 
         // Correction related to the phase transition
         if (j != 0){
-            LALSimNeutronStarEOS * eos_part_0 = XLALSimNeutronStarEOSPart(eos,j-1);
+            LALSimNeutronStarEOSPiece * eos_part_0 = XLALSimNeutronStarEOSSelectPiece(eos,j-1);
             vars->b_k2 = correction_phase_transition(vars->r, vars->m, vars->b_k2, vars->H_k2,
                                           h,  eos_part_0,  eos_part_1);
             vars->b_k3 = correction_phase_transition(vars->r, vars->m, vars->b_k3, vars->H_k3,
@@ -889,7 +944,7 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     }
     /*take one final Euler step to get to surface*/
     for (int w = 0 ; w < 1 ; ++w){
-        eos_part = XLALSimNeutronStarEOSPart(eos,0);
+        eos_part = XLALSimNeutronStarEOSSelectPiece(eos,0);
         tov_ext_ode(h, y, dy, &eos_part);
         for (size_t i = 0; i < TOV_EXT_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
             y[i] += dy[i] * (0.0 - hmin);
@@ -945,7 +1000,7 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
 void XLALSimNeutronStarTOVODEExtendedIntegrate(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
-             LALSimEOSMultiParts *eos)
+             LALSimNeutronStarEOS *eos)
 {
     const double epsrel = 1e-6;
     XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(radius, mass, baryon_mass, love_number_k2,
@@ -986,9 +1041,9 @@ static struct tov_mini_ode_vars *tov_mini_ode_vars_cast(const double *y)
  * radius and tidal deformability related parameters (H and beta)
  * defined for the center of the star.
 */
-static int tov_mini_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOS * eos, struct tov_mini_ode_vars *variables){
+static int tov_mini_initial_condition(double eps, double p, double dh, LALSimNeutronStarEOSPiece * eos, struct tov_mini_ode_vars *variables){
 
-    double dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos); // Central energy density derivative
+    double dedp = XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(p, eos); // Central energy density derivative
     double dhdp = 1.0 / (eps + p);
     double dedh = dedp / dhdp;
 
@@ -1021,16 +1076,16 @@ static int tov_mini_ode(double h, const double *y, double *dy, void *params)
     struct tov_mini_ode_vars *vars = tov_mini_ode_vars_cast(y);
     struct tov_mini_ode_vars *derivs = tov_mini_ode_vars_cast(dy);
 
-    LALSimNeutronStarEOS * eos = *(LALSimNeutronStarEOS **) params;
+    LALSimNeutronStarEOSPiece * eos = *(LALSimNeutronStarEOSPiece **) params;
 
     double r = vars->r;
     double m = vars->m;
     double H_k2 = vars->H_k2;
     double b_k2 = vars->b_k2;
 
-    double p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos);
-    double e = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h, eos);
-    double dedp = XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos);
+    double p = XLALSimNeutronStarEOSPiecePressureOfPseudoEnthalpyGeometrized(h, eos);
+    double e = XLALSimNeutronStarEOSPieceEnergyDensityOfPseudoEnthalpyGeometrized(h, eos);
+    double dedp = XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(p, eos);
     /* Eq. (18) of Damour & Nagar PRD 80 084035 (2009). */
     double A = 1.0 / (1.0 - 2.0 * m / r);
     /* Eq. (28) of Damour & Nagar PRD 80 084035 (2009). */
@@ -1076,13 +1131,13 @@ static int tov_mini_ode(double h, const double *y, double *dy, void *params)
  */
 void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *mass,
              double *love_number_k2, double central_pressure_si,
-             LALSimEOSMultiParts *eos,
+             LALSimNeutronStarEOS *eos,
              double epsrel){
 
     /* ode integration variables */
     const double epsabs = 0.0;
     int s;
-    LALSimNeutronStarEOS * params;
+    LALSimNeutronStarEOSPiece * params;
     double y[TOV_MINI_ODE_VARS_DIM]; // array for the variables of the ODE equations
     double dy[TOV_MINI_ODE_VARS_DIM];
     struct tov_mini_ode_vars *vars = tov_mini_ode_vars_cast(y);
@@ -1097,11 +1152,11 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
 
     /* Equations of state quantities at the center of the star */
     double pc = central_pressure_si * LAL_G_C4_SI; // convert the pressure from Pascal to geometrized units [/m^2]
-    int number_eos = XLALSimNeutronStarEOSMultiPartsNumber(eos);
+    int number_eos = XLALSimNeutronStarEOSNumberPieces(eos);
     int central_piece = 0; // default to first piece; handles floating-point edge case at pmin
     for(int j = 0; j < number_eos; j++){
-        double pmin_piece = XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, j);
-        double pmax_piece = XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, j);
+        double pmin_piece = XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, j);
+        double pmax_piece = XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, j);
         if (pc >= pmin_piece && pc <= pmax_piece){
             central_piece = j;
             break;
@@ -1109,9 +1164,9 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
         if (pc > pmax_piece)
             central_piece = j; // track last piece whose range pc exceeded; handles floating-point edge case at pmax
     }
-    LALSimNeutronStarEOS * eos_part = XLALSimNeutronStarEOSPart(eos, central_piece);
-    double ec = XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(pc, eos_part);
-    double hc = XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(pc, eos_part);
+    LALSimNeutronStarEOSPiece * eos_part = XLALSimNeutronStarEOSSelectPiece(eos, central_piece);
+    double ec = XLALSimNeutronStarEOSPieceEnergyDensityOfPressureGeometrized(pc, eos_part);
+    double hc = XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressureGeometrized(pc, eos_part);
 
 
     /* Initial condition */
@@ -1123,9 +1178,9 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
     h = h0;
 
     for(int j = central_piece; j >= 0; j--) {
-        LALSimNeutronStarEOS * eos_part_1 = XLALSimNeutronStarEOSPart(eos,j);
+        LALSimNeutronStarEOSPiece * eos_part_1 = XLALSimNeutronStarEOSSelectPiece(eos,j);
         params = eos_part_1;
-        hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_part_1);
+        hmin = XLALSimNeutronStarEOSPieceMinPseudoEnthalpy(eos_part_1);
         while (h > hmin) {
             s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
             if (s != GSL_SUCCESS) {
@@ -1137,7 +1192,7 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
         }
         // Correction related to the phase transition
         if (j != 0) {
-            LALSimNeutronStarEOS * eos_part_0 = XLALSimNeutronStarEOSPart(eos,j-1);
+            LALSimNeutronStarEOSPiece * eos_part_0 = XLALSimNeutronStarEOSSelectPiece(eos,j-1);
             vars->b_k2 = correction_phase_transition(vars->r, vars->m, vars->b_k2, vars->H_k2,
                                           h,  eos_part_0,  eos_part_1);
         }
@@ -1145,7 +1200,7 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
     }
     /*take one final Euler step to get to surface*/
     for (int w = 0 ; w < 1 ; ++w){
-        eos_part = XLALSimNeutronStarEOSPart(eos,0);
+        eos_part = XLALSimNeutronStarEOSSelectPiece(eos,0);
         tov_mini_ode(h, y, dy, &eos_part);
         for (size_t i = 0; i < TOV_MINI_ODE_VARS_DIM; ++i) // No need for all Virial variables, only physically relevant ones
             y[i] += dy[i] * (0.0 - hmin);
@@ -1192,7 +1247,7 @@ void XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(double *radius, double *
  * @param eos Pointer to the multiple-parts Equation of State structure.
  */
 void XLALSimNeutronStarTOVODEMiniIntegrate(double *radius, double *mass, double *love_number_k2,
-                                       double central_pressure_si, LALSimEOSMultiParts *eos)
+                                       double central_pressure_si, LALSimNeutronStarEOS *eos)
 {
     const double epsrel = 1e-6;
     XLALSimNeutronStarTOVODEMiniIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
