@@ -301,7 +301,7 @@ static double eos_piece_v_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos
 //      return sqrt(dpdh/dedh);
 //}
 
-static void eos_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
+static void eos_piece_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
 {
     if (data){
         gsl_interp_free(data->log_e_of_log_p_interp);
@@ -337,10 +337,10 @@ static void eos_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
     return;
 }
 
-static void eos_free_tabular(LALSimNeutronStarEOSPiece * eos)
+static void eos_piece_free_tabular(LALSimNeutronStarEOSPiece * eos)
 {
     if (eos) {
-        eos_free_tabular_data(eos->data.tabular);
+        eos_piece_free_tabular_data(eos->data.tabular);
         LALFree(eos);
     }
     return;
@@ -507,7 +507,7 @@ static LALSimNeutronStarEOSPiece *eos_piece_alloc_tabular(double *nbdat, double 
     eos->data.tabular = data;
 
     /* setup function pointers */
-    eos->free = eos_free_tabular;
+    eos->free = eos_piece_free_tabular;
     eos->e_of_p = eos_piece_e_of_p_tabular;
     eos->h_of_p = eos_piece_h_of_p_tabular;
     eos->e_of_h = eos_piece_e_of_h_tabular;
