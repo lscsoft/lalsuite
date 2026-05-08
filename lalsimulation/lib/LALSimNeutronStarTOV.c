@@ -334,7 +334,7 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos, double epsrel)
 {
-    XLAL_CHECK(XLALSimNeutronStarEOSNumberPieces(eos) == 1, XLAL_EFUNC, "The EOS provided contains multiple piece separated by a phase transition. The Virial TOV solver can only handle a single piece EOS. Use XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance instead.");
+    XLAL_CHECK(XLALSimNeutronStarEOSNumberPieces(eos) == 1, XLAL_EFUNC, "The EOS provided contains multiple piece separated by a phase transition. The old TOV solver can only handle a single piece EOS. Use XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance instead.");
     LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, 0);
     return XLALSimNeutronStarTOVODEIntegrateWithToleranceEOSPiece(radius, mass, love_number_k2, central_pressure_si, eos_piece, epsrel);
 }
