@@ -81,7 +81,7 @@ static inline double clamp_to_range_tol(double x, double xmin, double xmax, doub
         return x;
 }
 
-static double eos_p_of_e_tabular(double e, LALSimNeutronStarEOS * eos)
+static double eos_piece_p_of_e_tabular(double e, LALSimNeutronStarEOSPiece * eos)
 {
     double log_e;
     double log_p;
@@ -104,7 +104,7 @@ static double eos_p_of_e_tabular(double e, LALSimNeutronStarEOS * eos)
     return exp(log_p);
 }
 
-static double eos_p_of_rho_tabular(double rho, LALSimNeutronStarEOS * eos)
+static double eos_piece_p_of_rho_tabular(double rho, LALSimNeutronStarEOSPiece * eos)
 {
     double log_rho;
     double log_p;
@@ -127,7 +127,7 @@ static double eos_p_of_rho_tabular(double rho, LALSimNeutronStarEOS * eos)
     return exp(log_p);
 }
 
-static double eos_e_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
+static double eos_piece_e_of_p_tabular(double p, LALSimNeutronStarEOSPiece * eos)
 {
     double log_p;
     double log_e;
@@ -150,7 +150,7 @@ static double eos_e_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
     return exp(log_e);
 }
 
-static double eos_e_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
+static double eos_piece_e_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos)
 {
     double log_h;
     double log_e;
@@ -173,7 +173,7 @@ static double eos_e_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
     return exp(log_e);
 }
 
-static double eos_p_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
+static double eos_piece_p_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos)
 {
     double log_h;
     double log_p;
@@ -196,7 +196,7 @@ static double eos_p_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
     return exp(log_p);
 }
 
-static double eos_rho_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
+static double eos_piece_rho_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos)
 {
     double log_h;
     double log_rho;
@@ -219,7 +219,7 @@ static double eos_rho_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
     return exp(log_rho);
 }
 
-static double eos_h_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
+static double eos_piece_h_of_p_tabular(double p, LALSimNeutronStarEOSPiece * eos)
 {
     double log_p;
     double log_h;
@@ -242,7 +242,7 @@ static double eos_h_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
     return exp(log_h);
 }
 
-static double eos_dedp_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
+static double eos_piece_dedp_of_p_tabular(double p, LALSimNeutronStarEOSPiece * eos)
 {
     double log_p;
     double log_e;
@@ -266,14 +266,14 @@ static double eos_dedp_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
     return d_log_e_d_log_p * exp(log_e - log_p);
 }
 
-static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
+static double eos_piece_v_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos)
 {
     double p, dedp, log_cs2, log_h;
     double tol = 1e-12;
     if (eos->data.tabular->ncol == 2)
     {
-        p = eos_p_of_h_tabular(h, eos);
-        dedp = eos_dedp_of_p_tabular(p, eos);
+        p = eos_piece_p_of_h_tabular(h, eos);
+        dedp = eos_piece_dedp_of_p_tabular(p, eos);
         return pow(dedp, -0.5);
     }
     log_h = log(h);
@@ -291,7 +291,7 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
     return pow(exp(log_cs2), 0.5);
 }
 
-//static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS *eos)
+//static double eos_piece_v_of_h_tabular(double h, LALSimNeutronStarEOSPiece *eos)
 //{
 //      double dpdh, dedh;
 //    printf("hi4\n");
@@ -337,7 +337,7 @@ static void eos_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
     return;
 }
 
-static void eos_free_tabular(LALSimNeutronStarEOS * eos)
+static void eos_free_tabular(LALSimNeutronStarEOSPiece * eos)
 {
     if (eos) {
         eos_free_tabular_data(eos->data.tabular);
@@ -356,8 +356,8 @@ static void eos_free_tabular(LALSimNeutronStarEOS * eos)
 
 /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
  * If the EOS is always causal, return some large value hmax instead. */
-static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
-    LALSimNeutronStarEOS * eos)
+static double eos_piece_min_acausal_pseudo_enthalpy_tabular(double hmax,
+    LALSimNeutronStarEOSPiece * eos)
 {
     size_t i;
     double h_im1, h_i;
@@ -366,10 +366,10 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
     double hMinAcausal = hmax;  /* default large number for EOS that is always causal */
 
     h_im1 = exp(eos->data.tabular->log_hdat[0]);
-    v_im1 = eos_v_of_h_tabular(h_im1, eos);
+    v_im1 = eos_piece_v_of_h_tabular(h_im1, eos);
     for (i = 1; i < eos->data.tabular->ndat; i++) {
         h_i = exp(eos->data.tabular->log_hdat[i]);
-        v_i = eos_v_of_h_tabular(h_i, eos);
+        v_i = eos_piece_v_of_h_tabular(h_i, eos);
         if (v_i > 1.0) {
             /* solve vsound(h) = 1 */
             m = (v_i - v_im1) / (h_i - h_im1);
@@ -379,200 +379,13 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
         h_im1 = h_i;
         v_im1 = v_i;
     }
-//    printf("hMinAcausal = %e, v = %e\n", hMinAcausal, eos_v_of_h_tabular(hMinAcausal, eos));
+//    printf("hMinAcausal = %e, v = %e\n", hMinAcausal, eos_piece_v_of_h_tabular(hMinAcausal, eos));
 
     /* Value of h where EOS first becomes acausal.
      * Or, if EOS is always causal, hmax */
     return hMinAcausal;
 }
 
-static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
-   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
-{
-    LALSimNeutronStarEOS *eos;
-    LALSimNeutronStarEOSDataTabular *data;
-    size_t i;
-
-    eos = LALCalloc(1, sizeof(*eos));
-    data = LALCalloc(1, sizeof(*data));
-
-    eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_TABULAR;
-    eos->data.tabular = data;
-
-    /* setup function pointers */
-    eos->free = eos_free_tabular;
-    eos->e_of_p = eos_e_of_p_tabular;
-    eos->h_of_p = eos_h_of_p_tabular;
-    eos->e_of_h = eos_e_of_h_tabular;
-    eos->p_of_h = eos_p_of_h_tabular;
-    eos->rho_of_h = eos_rho_of_h_tabular;
-    eos->p_of_e = eos_p_of_e_tabular;
-    eos->p_of_rho = eos_p_of_rho_tabular;
-    eos->dedp_of_p = eos_dedp_of_p_tabular;
-    eos->v_of_h = eos_v_of_h_tabular;
-
-    data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
-
-    if(ncol == 2) {
-        /* allocate memory for eos data; ignore first points if 0 */
-        while (*pdat == 0.0 || *edat == 0.0) {
-            ++pdat;
-            ++edat;
-            --ndat;
-        }
-
-        data->ncol = ncol;
-        data->ndat = ndat;
-        data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
-        data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
-        data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
-
-        /* take log of eos data */
-        for (i = 0; i < ndat; ++i) {
-            data->log_pdat[i] = log(pdat[i]);
-            data->log_edat[i] = log(edat[i]);
-        }
-        /* compute pseudo-enthalpy h from dhdp */
-        /* Integrate in log space:
-        dhdp = 1 / [e(p) + p]
-        h(p) = h(p0) + \int_p0^p dhdp dp
-        h(p) = h(p0) + \int_ln(p0)^ln(p) exp[ln(p) + ln(dhdp)] dln(p)
-        First point is
-        h(p0) = p0 / [e(p0) + p0]
-        */
-        double *integrand;
-        integrand = LALMalloc(ndat * sizeof(*integrand));
-        for (i = 0; i < ndat; ++i)
-            integrand[i] = exp(data->log_pdat[i] + log(1.0 / (edat[i] + pdat[i])));
-
-        gsl_interp_accel * dhdp_of_p_acc_temp = gsl_interp_accel_alloc();
-        gsl_interp * dhdp_of_p_interp_temp = gsl_interp_alloc(gsl_interp_linear, ndat);
-        gsl_interp_init(dhdp_of_p_interp_temp, data->log_pdat, integrand, ndat);
-
-        data->log_hdat[0] = log(pdat[0] / (edat[0] + pdat[0]));
-        for (i = 1; i < ndat; ++i)
-            data->log_hdat[i] = log(exp(data->log_hdat[0]) + gsl_interp_eval_integ(dhdp_of_p_interp_temp, data->log_pdat, integrand, data->log_pdat[0], data->log_pdat[i], dhdp_of_p_acc_temp));
-
-        gsl_interp_free(dhdp_of_p_interp_temp);
-        gsl_interp_accel_free(dhdp_of_p_acc_temp);
-        LALFree(integrand);
-    }
-    else if (ncol > 2) {
-        /* allocate memory for eos data; ignore first points if 0 */
-        while (*pdat == 0.0 || *edat == 0.0 || *hdat == 0.0) {
-            ++pdat;
-            ++edat;
-            ++hdat;
-            --ndat;
-        }
-
-        data->ndat = ndat;
-        data->ncol = ncol - 1;
-        data->nbdat = XLALMalloc(ndat * sizeof(*data->nbdat));
-        data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
-        data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
-        data->mubdat = XLALMalloc(ndat * sizeof(*data->mubdat));
-        data->muedat = XLALMalloc(ndat * sizeof(*data->muedat));
-        data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
-        data->yedat = XLALMalloc(ndat * sizeof(*data->yedat));
-        data->log_cs2dat = XLALMalloc(ndat * sizeof(*data->log_cs2dat));
-
-        /* take log of eos data */
-        for (i = 0; i < ndat; ++i) {
-            data->nbdat[i] = nbdat[i];
-            data->log_pdat[i] = log(pdat[i]);
-            data->log_edat[i] = log(edat[i]);
-            data->mubdat[i] = mubdat[i];
-            data->muedat[i] = muedat[i];
-            data->log_hdat[i] = log(hdat[i]);
-            data->yedat[i] = yedat[i];
-            data->log_cs2dat[i] = log(cs2dat[i]);
-        }
-
-        /* these can be set up only using the new eos tables; so they are set up here */
-        data->log_cs2_of_log_h_acc = gsl_interp_accel_alloc();
-        data->log_cs2_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-        gsl_interp_init(data->log_cs2_of_log_h_interp, data->log_hdat, data->log_cs2dat, ndat);
-    }
-
-    // Find rho from e, p, and h: rho = (e+p)/exp(h),
-    // definition of the enthalpy for a cold perfect fluid + first law of thermodynamics,
-    // See Shapiro & Teukolsky book (chapter 2), or Eqs(7-9) in Haensel & Potekhin 2004.
-    for (i = 0; i < ndat; i++)
-        data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
-
-    eos->pmax = exp(data->log_pdat[ndat - 1]);
-    eos->hmax = exp(data->log_hdat[ndat - 1]);
-    eos->hmin = exp(data->log_hdat[0]);
-
-    /* setup interpolation tables */
-
-    data->log_e_of_log_p_acc = gsl_interp_accel_alloc();
-    data->log_h_of_log_p_acc = gsl_interp_accel_alloc();
-    data->log_e_of_log_h_acc = gsl_interp_accel_alloc();
-    data->log_p_of_log_h_acc = gsl_interp_accel_alloc();
-    data->log_rho_of_log_h_acc = gsl_interp_accel_alloc();
-    data->log_p_of_log_e_acc = gsl_interp_accel_alloc();
-    data->log_p_of_log_rho_acc = gsl_interp_accel_alloc();
-
-    data->log_e_of_log_p_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-    data->log_h_of_log_p_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-    data->log_e_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-    data->log_p_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-    data->log_rho_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-    data->log_p_of_log_e_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-    data->log_p_of_log_rho_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-
-    gsl_interp_init(data->log_e_of_log_p_interp, data->log_pdat, data->log_edat, ndat);
-    gsl_interp_init(data->log_h_of_log_p_interp, data->log_pdat, data->log_hdat, ndat);
-    gsl_interp_init(data->log_e_of_log_h_interp, data->log_hdat, data->log_edat, ndat);
-    gsl_interp_init(data->log_p_of_log_h_interp, data->log_hdat, data->log_pdat, ndat);
-    gsl_interp_init(data->log_rho_of_log_h_interp, data->log_hdat, data->log_rhodat, ndat);
-    gsl_interp_init(data->log_p_of_log_e_interp, data->log_edat, data->log_pdat, ndat);
-    gsl_interp_init(data->log_p_of_log_rho_interp, data->log_rhodat, data->log_pdat, ndat);
-
-    eos->hMinAcausal =
-        eos_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
-
-//    printf("%e\n", XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(eos->pmax, eos));
-//
-//    printf("datatype = %d\n", eos->datatype);
-//    printf("pmax = %e\n", eos->pmax);
-//    printf("hmax = %e\n", eos->hmax);
-//    printf("hMinAcausal = %e\n", eos->hMinAcausal);
-
-    return eos;
-}
-
-
-/* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
- * If the EOS is always causal, return some large value hmax instead. */
-static double eosMultiParts_min_acausal_pseudo_enthalpy_tabular(double hmax,
-    LALSimEOSMultiParts * eos)
-{
-    size_t i;
-    double h_im1, h_i;
-    double v_im1, v_i;
-    double m;   /* slope for linear interpolation */
-    double hMinAcausal = hmax;  /* default large number for EOS that is always causal */
-    int number_of_parts = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, number_of_parts-1);
-    h_im1 = exp(eos_piece ->data.tabular->log_hdat[0]);
-    v_im1 = eos_v_of_h_tabular(h_im1, eos_piece);
-    for (i = 1; i < eos_piece ->data.tabular->ndat; i++) {
-        h_i = exp(eos_piece ->data.tabular->log_hdat[i]);
-        v_i = eos_v_of_h_tabular(h_i, eos_piece);
-        if (v_i > 1.0) {
-            /* solve vsound(h) = 1 */
-            m = (v_i - v_im1) / (h_i - h_im1);
-            hMinAcausal = h_im1 + (1.0 - v_im1) / m;
-            break;
-        }
-        h_im1 = h_i;
-        v_im1 = v_i;
-    }
-    return hMinAcausal;
-}
 
 
 /* This function corrects "dirty" phase transitions which are defined
@@ -680,18 +493,175 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat, 
 }
 
 
+static LALSimNeutronStarEOSPiece *eos_piece_alloc_tabular(double *nbdat, double *edat, double *pdat,
+   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
+{
+    LALSimNeutronStarEOSPiece *eos;
+    LALSimNeutronStarEOSDataTabular *data;
+    size_t i;
+
+    eos = LALCalloc(1, sizeof(*eos));
+    data = LALCalloc(1, sizeof(*data));
+
+    eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_TABULAR;
+    eos->data.tabular = data;
+
+    /* setup function pointers */
+    eos->free = eos_free_tabular;
+    eos->e_of_p = eos_piece_e_of_p_tabular;
+    eos->h_of_p = eos_piece_h_of_p_tabular;
+    eos->e_of_h = eos_piece_e_of_h_tabular;
+    eos->p_of_h = eos_piece_p_of_h_tabular;
+    eos->rho_of_h = eos_piece_rho_of_h_tabular;
+    eos->p_of_e = eos_piece_p_of_e_tabular;
+    eos->p_of_rho = eos_piece_p_of_rho_tabular;
+    eos->dedp_of_p = eos_piece_dedp_of_p_tabular;
+    eos->v_of_h = eos_piece_v_of_h_tabular;
+
+    data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
+
+    if(ncol == 2) {
+        /* allocate memory for eos data; ignore first points if 0 */
+        while (*pdat == 0.0 || *edat == 0.0) {
+            ++pdat;
+            ++edat;
+            --ndat;
+        }
+
+        data->ncol = ncol;
+        data->ndat = ndat;
+        data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
+        data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
+        data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
+
+        /* take log of eos data */
+        for (i = 0; i < ndat; ++i) {
+            data->log_pdat[i] = log(pdat[i]);
+            data->log_edat[i] = log(edat[i]);
+        }
+        /* compute pseudo-enthalpy h from dhdp */
+        /* Integrate in log space:
+        dhdp = 1 / [e(p) + p]
+        h(p) = h(p0) + \int_p0^p dhdp dp
+        h(p) = h(p0) + \int_ln(p0)^ln(p) exp[ln(p) + ln(dhdp)] dln(p)
+        First point is
+        h(p0) = p0 / [e(p0) + p0]
+        */
+        double *integrand;
+        integrand = LALMalloc(ndat * sizeof(*integrand));
+        for (i = 0; i < ndat; ++i)
+            integrand[i] = exp(data->log_pdat[i] + log(1.0 / (edat[i] + pdat[i])));
+
+        gsl_interp_accel * dhdp_of_p_acc_temp = gsl_interp_accel_alloc();
+        gsl_interp * dhdp_of_p_interp_temp = gsl_interp_alloc(gsl_interp_linear, ndat);
+        gsl_interp_init(dhdp_of_p_interp_temp, data->log_pdat, integrand, ndat);
+
+        data->log_hdat[0] = log(pdat[0] / (edat[0] + pdat[0]));
+        for (i = 1; i < ndat; ++i)
+            data->log_hdat[i] = log(exp(data->log_hdat[0]) + gsl_interp_eval_integ(dhdp_of_p_interp_temp, data->log_pdat, integrand, data->log_pdat[0], data->log_pdat[i], dhdp_of_p_acc_temp));
+
+        gsl_interp_free(dhdp_of_p_interp_temp);
+        gsl_interp_accel_free(dhdp_of_p_acc_temp);
+        LALFree(integrand);
+    }
+    else if (ncol > 2) {
+        /* allocate memory for eos data; ignore first points if 0 */
+        while (*pdat == 0.0 || *edat == 0.0 || *hdat == 0.0) {
+            ++pdat;
+            ++edat;
+            ++hdat;
+            --ndat;
+        }
+
+        data->ndat = ndat;
+        data->ncol = ncol - 1;
+        data->nbdat = XLALMalloc(ndat * sizeof(*data->nbdat));
+        data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
+        data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
+        data->mubdat = XLALMalloc(ndat * sizeof(*data->mubdat));
+        data->muedat = XLALMalloc(ndat * sizeof(*data->muedat));
+        data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
+        data->yedat = XLALMalloc(ndat * sizeof(*data->yedat));
+        data->log_cs2dat = XLALMalloc(ndat * sizeof(*data->log_cs2dat));
+
+        /* take log of eos data */
+        for (i = 0; i < ndat; ++i) {
+            data->nbdat[i] = nbdat[i];
+            data->log_pdat[i] = log(pdat[i]);
+            data->log_edat[i] = log(edat[i]);
+            data->mubdat[i] = mubdat[i];
+            data->muedat[i] = muedat[i];
+            data->log_hdat[i] = log(hdat[i]);
+            data->yedat[i] = yedat[i];
+            data->log_cs2dat[i] = log(cs2dat[i]);
+        }
+
+        /* these can be set up only using the new eos tables; so they are set up here */
+        data->log_cs2_of_log_h_acc = gsl_interp_accel_alloc();
+        data->log_cs2_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+        gsl_interp_init(data->log_cs2_of_log_h_interp, data->log_hdat, data->log_cs2dat, ndat);
+    }
+
+    // Find rho from e, p, and h: rho = (e+p)/exp(h),
+    // definition of the enthalpy for a cold perfect fluid + first law of thermodynamics,
+    // See Shapiro & Teukolsky book (chapter 2), or Eqs(7-9) in Haensel & Potekhin 2004.
+    for (i = 0; i < ndat; i++)
+        data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
+    eos->pmax = exp(data->log_pdat[ndat - 1]);
+    eos->hmax = exp(data->log_hdat[ndat - 1]);
+    eos->pmin = exp(data->log_pdat[0]);
+    eos->hmin = exp(data->log_hdat[0]);
+
+    /* setup interpolation tables */
+
+    data->log_e_of_log_p_acc = gsl_interp_accel_alloc();
+    data->log_h_of_log_p_acc = gsl_interp_accel_alloc();
+    data->log_e_of_log_h_acc = gsl_interp_accel_alloc();
+    data->log_p_of_log_h_acc = gsl_interp_accel_alloc();
+    data->log_rho_of_log_h_acc = gsl_interp_accel_alloc();
+    data->log_p_of_log_e_acc = gsl_interp_accel_alloc();
+    data->log_p_of_log_rho_acc = gsl_interp_accel_alloc();
+
+    data->log_e_of_log_p_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_h_of_log_p_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_e_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_p_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_rho_of_log_h_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_p_of_log_e_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    data->log_p_of_log_rho_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+
+    gsl_interp_init(data->log_e_of_log_p_interp, data->log_pdat, data->log_edat, ndat);
+    gsl_interp_init(data->log_h_of_log_p_interp, data->log_pdat, data->log_hdat, ndat);
+    gsl_interp_init(data->log_e_of_log_h_interp, data->log_hdat, data->log_edat, ndat);
+    gsl_interp_init(data->log_p_of_log_h_interp, data->log_hdat, data->log_pdat, ndat);
+    gsl_interp_init(data->log_rho_of_log_h_interp, data->log_hdat, data->log_rhodat, ndat);
+    gsl_interp_init(data->log_p_of_log_e_interp, data->log_edat, data->log_pdat, ndat);
+    gsl_interp_init(data->log_p_of_log_rho_interp, data->log_rhodat, data->log_pdat, ndat);
+
+    eos->hMinAcausal =
+        eos_piece_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
+
+//    printf("%e\n", XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(eos->pmax, eos));
+//
+//    printf("datatype = %d\n", eos->datatype);
+//    printf("pmax = %e\n", eos->pmax);
+//    printf("hmax = %e\n", eos->hmax);
+//    printf("hMinAcausal = %e\n", eos->hMinAcausal);
+
+    return eos;
+}
 
 /*
- * This function creates a LALSimNeutronStarEOS pointer from a piece of
+ * This function creates a LALSimNeutronStarEOSPiece pointer from a piece of
  * tabulated equation of state tabulated data, given minimum and maximum
  * indices for the tables.
  */
-static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *edat, double *pdat,
+static LALSimNeutronStarEOSPiece * eos_piece_alloc_tabular_index( double *nbdat, double *edat, double *pdat,
                                                 double *mubdat, double *muedat, double *hdat,
                                                 double *yedat, double *cs2dat,
                                                 size_t begin_index, size_t end_index){
 
-    LALSimNeutronStarEOS * eos;
+    LALSimNeutronStarEOSPiece * eos;
 
     double *nbdat_cut, *edat_cut, *pdat_cut, *mubdat_cut, *muedat_cut, *hdat_cut, *yedat_cut, *cs2dat_cut;
     size_t ndat;
@@ -734,7 +704,7 @@ static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *ed
         }
     }
 
-    eos =     eos_alloc_tabular(nbdat_cut, edat_cut, pdat_cut, mubdat_cut, muedat_cut, hdat_cut, yedat_cut, cs2dat_cut, ndat, ncol);
+    eos =     eos_piece_alloc_tabular(nbdat_cut, edat_cut, pdat_cut, mubdat_cut, muedat_cut, hdat_cut, yedat_cut, cs2dat_cut, ndat, ncol);
 
     LALFree(nbdat_cut);
     LALFree(edat_cut);
@@ -750,9 +720,9 @@ static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *ed
 
 /** @endcond */
 
-/**
+/*
  * @brief Reads a data file containing tabulated neutron star
- * equation of state data to create the LALSimNeutronStarEOS
+ * equation of state data to create the LALSimNeutronStarEOSPiece
  * equation of state structure.
  * @details Read a data file specified by a path fname that contains either
  * i) 2 whitespace separated columns of equation of state data ("old" LAL EoS format)
@@ -768,97 +738,97 @@ static LALSimNeutronStarEOS * eos_piece_alloc_tabular( double *nbdat, double *ed
  * otherwise, search for the file in paths given in the environment variable
  * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
  * @param[in] fname The path of the file to open.
- * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOS).
+ * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOSPiece).
  */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
-    LALSimNeutronStarEOS *eos;
-    double *f_dat;
-    size_t ncol;
-    size_t ndat;
-    LALFILE *fp;
+// LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSFromFile(const char *fname){
+//     LALSimNeutronStarEOSPiece *eos;
+//     double *f_dat;
+//     size_t ncol;
+//     size_t ndat;
+//     LALFILE *fp;
+//
+//     double *nbdat;
+//     double *edat;
+//     double *pdat;
+//     double *mubdat;
+//     double *muedat;
+//     double *hdat;
+//     double *yedat;
+//     double *cs2dat;
+//
+//     fp = XLALSimReadDataFileOpen(fname);
+//     if (!fp)
+//         XLAL_ERROR_NULL(XLAL_EFUNC);
+//
+//     ndat = XLALSimReadDataFileNCol(&f_dat, &ncol, fp);
+//     XLALFileClose(fp);
+//
+//     if (ndat == (size_t) (-1)) {
+//         XLALFree(f_dat);
+//         XLAL_ERROR_NULL(XLAL_EFUNC);
+//     }
+//
+//     nbdat = LALMalloc(ndat * sizeof(*nbdat));
+//     edat = LALMalloc(ndat * sizeof(*edat));
+//     pdat = LALMalloc(ndat * sizeof(*pdat));
+//     mubdat = LALMalloc(ndat * sizeof(*mubdat));
+//     muedat = LALMalloc(ndat * sizeof(*muedat));
+//     hdat = LALMalloc(ndat * sizeof(*hdat));
+//     yedat = LALMalloc(ndat * sizeof(*yedat));
+//     cs2dat = LALMalloc(ndat * sizeof(*cs2dat));
+//
+//     if (ncol > 2)
+//     {
+//         for (size_t i = 0 ; i < ndat ; i++) {
+//             nbdat[i] = f_dat[i * ncol + 1];
+//             edat[i] = f_dat[i * ncol + 2] * 1e3 * LAL_G_C2_SI; /* transform from CGS to SI and then to Geometrized units */
+//             pdat[i] = f_dat[i * ncol + 3] * 1e-1 * LAL_G_C4_SI; /* transform from CGS to SI and then to Geometrized units */
+//             mubdat[i] = f_dat[i * ncol + 4];
+//             muedat[i] = f_dat[i * ncol + 5];
+//             hdat[i] = f_dat[i * ncol + 6];
+//             yedat[i] = f_dat[i * ncol + 7];
+//             cs2dat[i] = f_dat[i * ncol + 8];
+//         }
+//     }
+//     else if (ncol == 2)
+//     {
+//         for (size_t i = 0 ; i < ndat ; i++) {
+//             pdat[i] = f_dat[i * ncol];
+//             edat[i] = f_dat[i * ncol + 1];
+//         }
+//
+//         LALFree(nbdat);  nbdat  = NULL;
+//         LALFree(mubdat); mubdat = NULL;
+//         LALFree(muedat); muedat = NULL;
+//         LALFree(hdat);   hdat   = NULL;
+//         LALFree(yedat);  yedat  = NULL;
+//         LALFree(cs2dat); cs2dat = NULL;
+//     }
+//     else if (ncol < 2)
+//     {
+//         fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
+//         XLAL_ERROR_NULL(XLAL_EDOM);
+//     }
+//
+//     eos = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
+//
+//     XLALFree(f_dat);
+//     LALFree(nbdat);
+//     LALFree(edat);
+//     LALFree(pdat);
+//     LALFree(mubdat);
+//     LALFree(muedat);
+//     LALFree(hdat);
+//     LALFree(yedat);
+//     LALFree(cs2dat);
+//
+//     snprintf(eos->name, sizeof(eos->name), "%s", fname);
+//     return eos;
+// }
 
-    double *nbdat;
-    double *edat;
-    double *pdat;
-    double *mubdat;
-    double *muedat;
-    double *hdat;
-    double *yedat;
-    double *cs2dat;
-
-    fp = XLALSimReadDataFileOpen(fname);
-    if (!fp)
-        XLAL_ERROR_NULL(XLAL_EFUNC);
-
-    ndat = XLALSimReadDataFileNCol(&f_dat, &ncol, fp);
-    XLALFileClose(fp);
-
-    if (ndat == (size_t) (-1)) {
-        XLALFree(f_dat);
-        XLAL_ERROR_NULL(XLAL_EFUNC);
-    }
-
-    nbdat = LALMalloc(ndat * sizeof(*nbdat));
-    edat = LALMalloc(ndat * sizeof(*edat));
-    pdat = LALMalloc(ndat * sizeof(*pdat));
-    mubdat = LALMalloc(ndat * sizeof(*mubdat));
-    muedat = LALMalloc(ndat * sizeof(*muedat));
-    hdat = LALMalloc(ndat * sizeof(*hdat));
-    yedat = LALMalloc(ndat * sizeof(*yedat));
-    cs2dat = LALMalloc(ndat * sizeof(*cs2dat));
-
-    if (ncol > 2)
-    {
-        for (size_t i = 0 ; i < ndat ; i++) {
-            nbdat[i] = f_dat[i * ncol + 1];
-            edat[i] = f_dat[i * ncol + 2] * 1e3 * LAL_G_C2_SI; /* transform from CGS to SI and then to Geometrized units */
-            pdat[i] = f_dat[i * ncol + 3] * 1e-1 * LAL_G_C4_SI; /* transform from CGS to SI and then to Geometrized units */
-            mubdat[i] = f_dat[i * ncol + 4];
-            muedat[i] = f_dat[i * ncol + 5];
-            hdat[i] = f_dat[i * ncol + 6];
-            yedat[i] = f_dat[i * ncol + 7];
-            cs2dat[i] = f_dat[i * ncol + 8];
-        }
-    }
-    else if (ncol == 2)
-    {
-        for (size_t i = 0 ; i < ndat ; i++) {
-            pdat[i] = f_dat[i * ncol];
-            edat[i] = f_dat[i * ncol + 1];
-        }
-
-        LALFree(nbdat);  nbdat  = NULL;
-        LALFree(mubdat); mubdat = NULL;
-        LALFree(muedat); muedat = NULL;
-        LALFree(hdat);   hdat   = NULL;
-        LALFree(yedat);  yedat  = NULL;
-        LALFree(cs2dat); cs2dat = NULL;
-    }
-    else if (ncol < 2)
-    {
-        fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
-        XLAL_ERROR_NULL(XLAL_EDOM);
-    }
-
-    eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
-
-    XLALFree(f_dat);
-    LALFree(nbdat);
-    LALFree(edat);
-    LALFree(pdat);
-    LALFree(mubdat);
-    LALFree(muedat);
-    LALFree(hdat);
-    LALFree(yedat);
-    LALFree(cs2dat);
-
-    snprintf(eos->name, sizeof(eos->name), "%s", fname);
-    return eos;
-}
-
-/**
+/*
  * @brief Reads 9 arrays of neutron star equation of state data
- * to create the LALSimNeutronStarEOS equation of state structure.
+ * to create the LALSimNeutronStarEOSPiece equation of state structure.
  * @details The arrays read contain each ndat lines of equation of state
  * data. Although the 9 arrays correspond to the physical quantities provided
  * in the "new" LAL format equation of state files, the units are not the same.
@@ -895,19 +865,19 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname){
  * @param cs2dat Array for the sound speed squared normalized
  * to the speed of light (dimensionless).
  * @param ndat Size of the arrays for equation of state quantities.
- * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOS).
+ * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOSPiece).
  */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
-   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat)
-{
-    LALSimNeutronStarEOS *eos;
-    int ncol = 9;
-    if (hdat == NULL) ncol = 2;
-    eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
-    return eos;
-}
+// LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
+//    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat)
+// {
+//     LALSimNeutronStarEOSPiece *eos;
+//     int ncol = 9;
+//     if (hdat == NULL) ncol = 2;
+//     eos = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
+//     return eos;
+// }
 
-/**
+/*
  * @brief Creates a tabulated neutron star equation of state from
  * energy density and pressure arrays.
  * @details This is a convenience wrapper around XLALSimNeutronStarEOSFromTabData
@@ -915,7 +885,28 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *ed
  *
  * @param energy_density Array for the energy density (in m^-2).
  * @param pressure Array for the pressure (in m^-2).
- * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOS).
+ * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOSPiece).
+ */
+// LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSFromArrays(
+//     const REAL8Vector *energy_density, const REAL8Vector *pressure)
+// {
+//     XLAL_CHECK_NULL(energy_density && pressure, XLAL_EFAULT);
+//     XLAL_CHECK_NULL(energy_density->length == pressure->length, XLAL_ESIZE,
+//         "energy_density and pressure must have the same length");
+//     return XLALSimNeutronStarEOSFromTabData(
+//         NULL, energy_density->data, pressure->data,
+//         NULL, NULL, NULL, NULL, NULL, pressure->length);
+// }
+
+/**
+ * @brief Creates a phase-transition-aware tabulated neutron star equation of
+ * state from energy density and pressure arrays.
+ * @details This is a convenience wrapper around
+ * XLALSimNeutronStarEOSFromTabDataPhaseTransition that accepts REAL8Vector
+ * inputs, making it usable from Python via SWIG.
+ * @param energy_density Array for the energy density (in m^-2).
+ * @param pressure Array for the pressure (in m^-2).
+ * @return A pointer to LALSimNeutronStarEOS equation of state structure.
  */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
     const REAL8Vector *energy_density, const REAL8Vector *pressure)
@@ -928,34 +919,10 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
         NULL, NULL, NULL, NULL, NULL, pressure->length);
 }
 
-/**
- * @brief Creates a phase-transition-aware tabulated neutron star equation of
- * state from energy density and pressure arrays.
- * @details This is a convenience wrapper around
- * XLALSimNeutronStarEOSFromTabDataPhaseTransition that accepts REAL8Vector
- * inputs, making it usable from Python via SWIG. Use this instead of
- * XLALSimNeutronStarEOSFromArrays when the EOS contains a first-order phase
- * transition (i.e., pressure is not strictly increasing).
- *
- * @param energy_density Array for the energy density (in m^-2).
- * @param pressure Array for the pressure (in m^-2).
- * @return A pointer to LALSimEOSMultiParts equation of state structure.
- */
-LALSimEOSMultiParts *XLALSimNeutronStarEOSFromArraysPhaseTransition(
-    const REAL8Vector *energy_density, const REAL8Vector *pressure)
-{
-    XLAL_CHECK_NULL(energy_density && pressure, XLAL_EFAULT);
-    XLAL_CHECK_NULL(energy_density->length == pressure->length, XLAL_ESIZE,
-        "energy_density and pressure must have the same length");
-    return XLALSimNeutronStarEOSFromTabDataPhaseTransition(
-        NULL, energy_density->data, pressure->data,
-        NULL, NULL, NULL, NULL, NULL, pressure->length);
-}
-
 
 /**
  * @brief Reads a data file containing tabulated equation of state data
- * to create the LALSimEOSMultiParts equation of state structure that can handle
+ * to create the LALSimNeutronStarEOS equation of state structure that can handle
  * equations of state with phase transitions.
  * @details Read a data file specified by a path fname that contains either
  * i) 2 whitespace separated columns of equation of state data ("old" LAL EoS format)
@@ -971,11 +938,11 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromArraysPhaseTransition(
  * otherwise, search for the file in paths given in the environment variable
  * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
  *
- * This function builds the LALSimEOSMultiParts structure from equation of state
+ * This function builds the LALSimNeutronStarEOS structure from equation of state
  * data that can include a first order phase transition. The equation of state data
  * is tested for phase transitions which are numerically defined by a pressure
  * plateau or near like plateau associated to a jump in energy density.
- * If N phase transitions are found, LALSimEOSMultiParts contains N+1 LALSimNeutronStarEOS
+ * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 LALSimNeutronStarEOSPiece
  * equation of state pieces.
  *
  * We define a "dirty" phase transition by an intended first order phase
@@ -1000,16 +967,16 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromArraysPhaseTransition(
  * advised to provide equations of state containing phase transition in the
  * "new" LAL format.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the LALSimNeutronStarEOS structure and the corresponding
+ * corrected, use the LALSimNeutronStarEOSPiece structure and the corresponding
  * XLALSimNeutronStarEOSFromFile; note that it cannot be used in the
  * solver for neutron star's astrophysical parameters that accounts for the
  * necessary phase transition corrections.
  * @param[in] fname The path of the file to open.
- * @return A pointer to neutron star equation of state structure LALSimEOSMultiParts.
+ * @return A pointer to neutron star equation of state structure LALSimNeutronStarEOS.
  */
-LALSimEOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fname) {
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) {
 
-    LALSimEOSMultiParts *eos;
+    LALSimNeutronStarEOS *eos;
 
     double *f_dat;
     size_t ncol;
@@ -1080,7 +1047,7 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fn
         XLAL_ERROR_NULL(XLAL_EDOM);
     }
 
-    eos = XLALSimNeutronStarEOSFromTabDataPhaseTransition(nbdat, edat, pdat, mubdat, muedat, hdat,
+    eos = XLALSimNeutronStarEOSFromTabData(nbdat, edat, pdat, mubdat, muedat, hdat,
                                                                     yedat, cs2dat, ndat);
     XLALFree(f_dat);
     LALFree(nbdat);
@@ -1098,7 +1065,7 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fn
 
 /**
  * @brief Reads 9 arrays of neutron star equation of state data to create
- * the LALSimEOSMultiParts equation of state structure that can handle
+ * the LALSimNeutronStarEOS equation of state structure that can handle
  * equations of state with phase transitions.
  * @details The arrays read contain each ndat lines of equation of state
  * data. Although the 9 arrays correspond to the physical quantities provided
@@ -1127,11 +1094,11 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fn
  * the speed of sound in LALSimulation will result in errors. This is similar to
  * providing an equation of state in the "new" LAL file format, although units are different.
  *
- * This function builds the LALSimEOSMultiParts structure from equation of state
+ * This function builds the LALSimNeutronStarEOS structure from equation of state
  * data that can include a first order phase transition. The equation of state data
  * is tested for phase transitions which are numerically defined by a pressure
  * plateau or near like plateau associated to a jump in energy density.
- * If N phase transitions are found, LALSimEOSMultiParts contains N+1 LALSimNeutronStarEOS
+ * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 LALSimNeutronStarEOSPiece
  * equation of state pieces.
  *
  * We define a "dirty" phase transition by an intended first order phase
@@ -1155,7 +1122,7 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fn
  * have been modified to obtain a clean phase transition: this implies that
  * P(pt,+) and eps(pt,+) are not thermodynamically coherent together.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the LALSimNeutronStarEOS structure and the corresponding
+ * corrected, use the LALSimNeutronStarEOSPiece structure and the corresponding
  * XLALSimNeutronStarEOSFromTabData function; note that it cannot be used in the
  * solver for neutron star's astrophysical parameters that accounts for the
  * necessary phase transition corrections.
@@ -1171,9 +1138,9 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromFilePhaseTransition(const char *fn
  * to the speed of light (dimensionless).
  * @param ndat Size of the arrays for equation of state quantities.
  * @param dirty Integer to test for dirty phase transitions (1) or clean ones only (0).
- * @return A pointer to neutron star equation of state structure LALSimEOSMultiParts.
+ * @return A pointer to neutron star equation of state structure LALSimNeutronStarEOS.
  */
-LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyPT(double *nbdat, double *edat, double *pdat,
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabDataChoiceDirtyPT(double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat, int dirty)
 {
@@ -1183,7 +1150,7 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyP
         XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
-    LALSimEOSMultiParts *eos = NULL;
+    LALSimNeutronStarEOS *eos = NULL;
     int *indices_phase_transition = NULL;
 
     eos = LALCalloc(1, sizeof(*eos));
@@ -1195,11 +1162,9 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyP
     int number_pt = indices_phase_transition[0] ;
     int number_eos = number_pt + 1 ;
 
-    eos->number_of_parts = number_eos;
-    eos->pmin = pdat[0];
-    eos->pmax = pdat[ndat - 1];
+    eos->number_of_pieces = number_eos;
     /* Allocate each piece of the equation of state separated by a phase transition */
-    eos->eos_piece = XLALCalloc(number_eos, sizeof(LALSimNeutronStarEOS *));
+    eos->eos_piece = XLALCalloc(number_eos, sizeof(LALSimNeutronStarEOSPiece *));
     if (!eos->eos_piece) goto cleanup;
 
 
@@ -1237,7 +1202,7 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyP
             eos->eos_piece[i]->free(eos->eos_piece[i]);
             eos->eos_piece[i] = NULL;
         }
-        eos->eos_piece[i] = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
+        eos->eos_piece[i] = eos_piece_alloc_tabular_index(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, bottom_index, upper_index);
         if (!eos->eos_piece[i]) goto cleanup;
         size_t next_index = indices_phase_transition[i + 1];
 
@@ -1309,7 +1274,7 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyP
                 eos->eos_piece[i]->free(eos->eos_piece[i]);
                 eos->eos_piece[i] = NULL;
             }
-            eos->eos_piece[i] = eos_piece_alloc_tabular(
+            eos->eos_piece[i] = eos_piece_alloc_tabular_index(
                 nbdat, edat, pdat,
                 mubdat, muedat, hdat,
                 yedat, cs2dat,
@@ -1345,10 +1310,6 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyP
         XLALFree(pdat_recal);
     }
 
-    eos->hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos->eos_piece[0]);
-    eos->hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos->eos_piece[eos->number_of_parts-1]);
-    eos->hMinAcausal = eosMultiParts_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
-
     char name[LALNameLength] = "unknown_eos_name";
     snprintf(eos->name, sizeof(eos->name), "%s", name);
     XLALFree(indices_phase_transition);
@@ -1358,7 +1319,7 @@ cleanup:
 
     if (eos) {
         if (eos->eos_piece) {
-            for (int i = 0; i < eos->number_of_parts; i++) {
+            for (int i = 0; i < eos->number_of_pieces; i++) {
                 if (eos->eos_piece[i]) {
 
                     // CRITICAL: use proper destructor
@@ -1377,6 +1338,8 @@ cleanup:
         LALFree(eos);
     }
 
+    //TODO can we not call the destroy here ?
+
     if (indices_phase_transition)
         XLALFree(indices_phase_transition);
 
@@ -1390,7 +1353,7 @@ cleanup:
 
 /**
  * @brief Reads 9 arrays of neutron star equation of state data to create
- * the LALSimEOSMultiParts equation of state structure that can handle
+ * the LALSimNeutronStarEOS equation of state structure that can handle
  * equations of state with phase transitions (including "dirty" ones).
  * @details The arrays read contain each ndat lines of equation of state
  * data. Although the 9 arrays correspond to the physical quantities provided
@@ -1419,11 +1382,11 @@ cleanup:
  * the speed of sound in LALSimulation will result in errors. This is similar to
  * providing an equation of state in the "new" LAL file format, although units are different.
  *
- * This function builds the LALSimEOSMultiParts structure from equation of state
+ * This function builds the LALSimNeutronStarEOS structure from equation of state
  * data that can include a first order phase transition. The equation of state data
  * is tested for phase transitions which are numerically defined by a pressure
  * plateau or near like plateau associated to a jump in energy density.
- * If N phase transitions are found, LALSimEOSMultiParts contains N+1 LALSimNeutronStarEOS
+ * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 LALSimNeutronStarEOSPiece
  * equation of state pieces.
  *
  * We define a "dirty" phase transition by an intended first order phase
@@ -1446,7 +1409,7 @@ cleanup:
  * have been modified to obtain a clean phase transition: this implies that
  * P(pt,+) and eps(pt,+) are not thermodynamically coherent together.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the LALSimNeutronStarEOS structure and the corresponding
+ * corrected, use the LALSimNeutronStarEOSPiece structure and the corresponding
  * XLALSimNeutronStarEOSFromTabData function; note that it cannot be used in the
  * solver for neutron star's astrophysical parameters that accounts for the
  * necessary phase transition corrections.
@@ -1461,19 +1424,19 @@ cleanup:
  * @param cs2dat Array for the sound speed squared normalized
  * to the speed of light (dimensionless).
  * @param ndat Size of the arrays for equation of state quantities.
- * @return A pointer to neutron star equation of state structure LALSimEOSMultiParts.
+ * @return A pointer to neutron star equation of state structure LALSimNeutronStarEOS.
  */
-LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nbdat, double *edat, double *pdat,
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData( double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat)
 {
 
-   return XLALSimNeutronStarEOSFromTabDataPhaseTransitionChoiceDirtyPT(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 1);
+   return XLALSimNeutronStarEOSFromTabDataChoiceDirtyPT(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 1);
 }
 
 
 
-/**
+/*
  * @brief Creates an equation of state structure from tabulated equation
  * of state data of a known name. The name of the tabulated equation of state
  * must belong to the sample of equations of state from the old frame work or
@@ -1556,34 +1519,34 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSFromTabDataPhaseTransition( double *nb
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.
  */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
-{
-    static const char fname_base[] = "LALSimNeutronStarEOS_";
-    static const char fname_extn[] = ".dat";
-
-    size_t n = XLAL_NUM_ELEM(lalSimNeutronStarEOSNames);
-    size_t i;
-    char fname[FILENAME_MAX];
-
-    for (i = 0; i < n ; ++i)
-        if (XLALStringCaseCompare(name, lalSimNeutronStarEOSNames[i]) == 0) {
-            LALSimNeutronStarEOS *eos;
-            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, lalSimNeutronStarEOSNames[i],
-                fname_extn);
-            eos = XLALSimNeutronStarEOSFromFile(fname);
-            if (!eos)
-                XLAL_ERROR_NULL(XLAL_EFUNC);
-            snprintf(eos->name, sizeof(eos->name), "%s", lalSimNeutronStarEOSNames[i]);
-            return eos;
-        }
-
-    XLAL_PRINT_ERROR("Unrecognized EOS name %s...", name);
-    XLALPrintError("\tRecognised EOS names are: %s", lalSimNeutronStarEOSNames[0]);
-    for (i = 1; i < n ; ++i)
-        XLALPrintError(", %s", lalSimNeutronStarEOSNames[i]);
-    XLALPrintError("\n");
-    XLAL_ERROR_NULL(XLAL_ENAME);
-}
+// LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSByName(const char *name)
+// {
+//     static const char fname_base[] = "LALSimNeutronStarEOS_";
+//     static const char fname_extn[] = ".dat";
+//
+//     size_t n = XLAL_NUM_ELEM(lalSimNeutronStarEOSNames);
+//     size_t i;
+//     char fname[FILENAME_MAX];
+//
+//     for (i = 0; i < n ; ++i)
+//         if (XLALStringCaseCompare(name, lalSimNeutronStarEOSNames[i]) == 0) {
+//             LALSimNeutronStarEOSPiece *eos;
+//             snprintf(fname, sizeof(fname), "%s%s%s", fname_base, lalSimNeutronStarEOSNames[i],
+//                 fname_extn);
+//             eos = XLALSimNeutronStarEOSFromFile(fname);
+//             if (!eos)
+//                 XLAL_ERROR_NULL(XLAL_EFUNC);
+//             snprintf(eos->name, sizeof(eos->name), "%s", lalSimNeutronStarEOSNames[i]);
+//             return eos;
+//         }
+//
+//     XLAL_PRINT_ERROR("Unrecognized EOS name %s...", name);
+//     XLALPrintError("\tRecognised EOS names are: %s", lalSimNeutronStarEOSNames[0]);
+//     for (i = 1; i < n ; ++i)
+//         XLALPrintError(", %s", lalSimNeutronStarEOSNames[i]);
+//     XLALPrintError("\n");
+//     XLAL_ERROR_NULL(XLAL_ENAME);
+// }
 
 
 /**
@@ -1626,7 +1589,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.
  */
-LALSimEOSMultiParts *XLALSimNeutronStarEOSMultiPartsByName(const char *name)
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
 {
     static const char fname_base[] = "LALSimNeutronStarEOS_";
     static const char fname_extn[] = ".dat";
@@ -1637,10 +1600,10 @@ LALSimEOSMultiParts *XLALSimNeutronStarEOSMultiPartsByName(const char *name)
 
     for (i = 0; i < n ; ++i)
         if (XLALStringCaseCompare(name, lalSimNeutronStarEOSNames[i]) == 0) {
-            LALSimEOSMultiParts *eos;
+            LALSimNeutronStarEOS *eos;
             snprintf(fname, sizeof(fname), "%s%s%s", fname_base, lalSimNeutronStarEOSNames[i],
                 fname_extn);
-            eos = XLALSimNeutronStarEOSFromFilePhaseTransition(fname);
+            eos = XLALSimNeutronStarEOSFromFile(fname);
             if (!eos)
                 XLAL_ERROR_NULL(XLAL_EFUNC);
             snprintf(eos->name, sizeof(eos->name), "%s", lalSimNeutronStarEOSNames[i]);
