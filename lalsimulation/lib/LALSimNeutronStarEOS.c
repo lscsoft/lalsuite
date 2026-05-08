@@ -878,7 +878,7 @@ double XLALSimNeutronStarEOSMinEnergyDensity(LALSimNeutronStarEOS * eos)
 double XLALSimNeutronStarEOSMaxEnergyDensityGeometrized(LALSimNeutronStarEOS * eos)
 {
     int max_id_piece = XLALSimNeutronStarEOSNumberPieces(eos) - 1 ;
-    return XLALSimNeutronStarEOSMinEnergyDensityGeometrizedPerPiece(eos, max_id_piece);
+    return XLALSimNeutronStarEOSMaxEnergyDensityGeometrizedPerPiece(eos, max_id_piece);
 }
 
 /**
