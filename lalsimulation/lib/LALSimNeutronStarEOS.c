@@ -60,48 +60,53 @@ typedef union tagLALSimNeutronStarEOSData {
 
 
 /* Contents of the equation of state structure. */
-struct tagLALSimNeutronStarEOS {
+struct tagLALSimNeutronStarEOSPiece {
     char name[LALNameLength];
+    double pmin;
     double pmax;
     double hmax;
     double hmin;
     double hMinAcausal; /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1) */
-    double (*e_of_p) (double p, LALSimNeutronStarEOS * myself);
-    double (*h_of_p) (double p, LALSimNeutronStarEOS * myself);
-    double (*p_of_h) (double h, LALSimNeutronStarEOS * myself);
-    double (*e_of_h) (double h, LALSimNeutronStarEOS * myself);
-    double (*rho_of_h) (double h, LALSimNeutronStarEOS * myself);
-    double (*p_of_e) (double e, LALSimNeutronStarEOS * myself);
-    double (*p_of_rho) (double rho, LALSimNeutronStarEOS * myself);
-    double (*dedp_of_p) (double p, LALSimNeutronStarEOS * myself);
-    double (*v_of_h) (double h, LALSimNeutronStarEOS * myself);
-    void (*free) (LALSimNeutronStarEOS * myself);
+    double (*e_of_p) (double p, LALSimNeutronStarEOSPiece * myself);
+    double (*h_of_p) (double p, LALSimNeutronStarEOSPiece * myself);
+    double (*p_of_h) (double h, LALSimNeutronStarEOSPiece * myself);
+    double (*e_of_h) (double h, LALSimNeutronStarEOSPiece * myself);
+    double (*rho_of_h) (double h, LALSimNeutronStarEOSPiece * myself);
+    double (*p_of_e) (double e, LALSimNeutronStarEOSPiece * myself);
+    double (*p_of_rho) (double rho, LALSimNeutronStarEOSPiece * myself);
+    double (*dedp_of_p) (double p, LALSimNeutronStarEOSPiece * myself);
+    double (*v_of_h) (double h, LALSimNeutronStarEOSPiece * myself);
+    void (*free) (LALSimNeutronStarEOSPiece * myself);
     int datatype;
     LALSimNeutronStarEOSData data;
 };
 
-struct tagLALSimEOSMultiParts{
+struct tagLALSimNeutronStarEOS{
   char name[LALNameLength];
-  int number_of_parts;
-  double pmax;
-  double pmin;
-  double hmax;
-  double hmin;
-  double hMinAcausal;
-  LALSimNeutronStarEOS ** eos_piece;
-  void (*free) (LALSimEOSMultiParts * myself);
+  int number_of_pieces;
+//   double pmax;
+//   double pmin;
+//   double hmax;
+//   double hmin; // TODO put those only on the piece ??
+//   double hMinAcausal;
+  LALSimNeutronStarEOSPiece ** eos_piece;
+  void (*free) (LALSimNeutronStarEOS * myself);
 };
 
 
 /* This function finds the id number of the piece EoS containing
- * the pressure value p, in a LALSimEOSMultiParts structure.
+ * the pressure value p, in a LALSimNeutronStarEOS structure.
  */
-static int find_eos_piece_pressure(double p, LALSimEOSMultiParts *eos)
+static int find_eos_piece_pressure(double p, LALSimNeutronStarEOS *eos)
 {
-    int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    for (int j = 0 ; j < number_pieces; j++){
-        double pmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, j);
-        double pmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(eos, j);
+    if (p < XLALSimNeutronStarEOSMinPressureGeometrized(eos) ||
+        p > XLALSimNeutronStarEOSMaxPressureGeometrized(eos)) {
+            XLALPrintError("Pressure outside the interpolation range of EoS.\n");
+        }
+        return XLAL_FAILURE;
+    for (int j = 0 ; j < XLALSimNeutronStarEOSNumberPieces(eos); j++){
+        double pmin = XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, j);
+        double pmax = XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, j);
         if (p >= pmin && p <= pmax) return j;
     }
     XLALPrintError("Pressure not found in EoS piece.\n");
@@ -110,14 +115,18 @@ static int find_eos_piece_pressure(double p, LALSimEOSMultiParts *eos)
 
 
 /* This function finds the id number of the piece EoS containing
- * the pseudo-enthalpy value h, in a LALSimEOSMultiParts structure.
+ * the pseudo-enthalpy value h, in a LALSimNeutronStarEOS structure.
  */
-static int find_eos_piece_enthalpy(double h, LALSimEOSMultiParts *eos)
+static int find_eos_piece_enthalpy(double h, LALSimNeutronStarEOS *eos)
 {
-    int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    for (int j = 0 ; j < number_pieces; j++){
-        double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, j);
-        double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, j);
+    if (h < XLALSimNeutronStarEOSMinPseudoEnthalpy(eos) ||
+        h > XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos)) {
+            XLALPrintError("Pseudo-enthalpy outside the interpolation range of EoS.\n");
+        }
+        return XLAL_FAILURE;
+    for (int j = 0 ; j < XLALSimNeutronStarEOSNumberPieces(eos); j++){
+        double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, j);
+        double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, j);
         if (h >= hmin && h <= hmax) return j;
     }
     XLALPrintError("Enthalpy not found in EoS piece.\n");
@@ -126,16 +135,20 @@ static int find_eos_piece_enthalpy(double h, LALSimEOSMultiParts *eos)
 
 
 /* This function finds the id number of the piece EoS containing
- * the rest-mass density value rho, in a LALSimEOSMultiParts structure.
+ * the rest-mass density value rho, in a LALSimNeutronStarEOS structure.
  */
-static int find_eos_piece_rest_mass_density(double rho, LALSimEOSMultiParts *eos)
+static int find_eos_piece_rest_mass_density(double rho, LALSimNeutronStarEOS *eos)
 {
-    int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    for (int j = 0 ; j < number_pieces; j++){
-        double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, j);
-        double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, j);
-        double rhomin = XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeometrized(hmin, eos, j);
-        double rhomax = XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeometrized(hmax, eos, j);
+    if (rho < XLALSimNeutronStarEOSMinRestMassDensityGeometrized(eos) ||
+        rho < XLALSimNeutronStarEOSMaxRestMassDensityGeometrized(eos)) {
+            XLALPrintError("Rest-mass density outside the interpolation range of EoS.\n");
+        }
+        return XLAL_FAILURE;
+    for (int j = 0 ; j < XLALSimNeutronStarEOSNumberPieces(eos); j++){
+        double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, j);
+        double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, j);
+        double rhomin = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrizedPerPiece(hmin, eos, j);
+        double rhomax = XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrizedPerPiece(hmax, eos, j);
         if (rho >= rhomin && rho <= rhomax) return j;
     }
     XLALPrintError("Rest mass density not found in EoS piece.\n");
@@ -143,16 +156,20 @@ static int find_eos_piece_rest_mass_density(double rho, LALSimEOSMultiParts *eos
 }
 
 /* This function finds the id number of the piece EoS containing
- * the energy density value e, in a LALSimEOSMultiParts structure.
+ * the energy density value e, in a LALSimNeutronStarEOS structure.
  */
-static int find_eos_piece_energy_density(double e, LALSimEOSMultiParts *eos)
+static int find_eos_piece_energy_density(double e, LALSimNeutronStarEOS *eos)
 {
-    int number_pieces = XLALSimNeutronStarEOSMultiPartsNumber(eos);
-    for (int j = 0 ; j < number_pieces; j++){
-        double hmin =  XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, j);
-        double hmax =  XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(eos, j);
-        double emin = XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometrized(hmin, eos, j);
-        double emax = XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometrized(hmax, eos, j);
+    if (e < XLALSimNeutronStarEOSMinEnergyDensityGeometrized(eos) ||
+        e < XLALSimNeutronStarEOSMinEnergyDensityGeometrized(eos)) {
+            XLALPrintError("Energy density outside the interpolation range of EoS.\n");
+        }
+        return XLAL_FAILURE;
+    for (int j = 0 ; j < XLALSimNeutronStarEOSNumberPieces(eos); j++){
+        double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, j);
+        double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, j);
+        double emin = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrizedPerPiece(hmin, eos, j);
+        double emax = XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrizedPerPiece(hmax, eos, j);
         if (e >= emin && e <= emax) return j;
     }
     XLALPrintError("Energy density not found in EoS piece.\n");
@@ -204,10 +221,10 @@ const char * const lalSimNeutronStarEOSNames[111] = {
  */
 
 /**
- * @brief Frees the memory associated with a pointer to an EOS structure.
- * @param eos Pointer to the EOS structure to be freed.
+ * @brief Frees the memory associated with a pointer to an LALSimNeutronStarEOSPiece structure.
+ * @param eos Pointer to the EOS piece structure to be freed.
  */
-void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
+void XLALDestroySimNeutronStarEOSPiece(LALSimNeutronStarEOSPiece * eos)
 {
     if (eos)
         eos->free(eos);
@@ -216,14 +233,14 @@ void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
 
 
 /**
- * @brief Frees the memory associated with a pointer to an LALSimEOSMultiParts structure.
- * @param eos Pointer to the LALSimEOSMultiParts structure to be freed.
+ * @brief Frees the memory associated with a pointer to an LALSimNeutronStarEOS structure.
+ * @param eos Pointer to the EOS structure to be freed.
  */
-void XLALDestroySimNeutronStarEOSMultiParts(LALSimEOSMultiParts * eos)
+void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
 {
     if(eos){
         if (eos->eos_piece) {
-            for (int i = 0; i < eos->number_of_parts; i++)
+            for (int i = 0; i < eos->number_of_pieces; i++)
                 if (eos->eos_piece[i]) eos->eos_piece[i]->free(eos->eos_piece[i]);
             LALFree(eos->eos_piece);
         }
@@ -253,12 +270,184 @@ void XLALDestroySimNeutronStarEOSMultiParts(LALSimEOSMultiParts * eos)
  * @{
  */
 
+/* FUNCTIONS FOR KEY EOS-PIECE VALUES */
+
+/**
+ * @brief The name of the Equation Of State (EOS).
+ * @param[in] eos Pointer to the LALSimNeutronStarEOSPiece structure.
+ * @return Pointer to a string containing the name of the EOS.
+ * @warning The pointer returned might be shallow and might be left
+ * dangling if the @a eos structure is freed.
+ */
+char *XLALSimNeutronStarEOSPieceName(LALSimNeutronStarEOSPiece * eos)
+{
+    return XLALStringDuplicate(eos->name);
+}
+
+
+/**
+ * @brief Returns the minimum pressure of the Equation Of State (EOS) piece in geometrized units m^-2.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The minimum pressure of the EOS piece in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSPieceMinPressureGeometrized(LALSimNeutronStarEOSPiece * eos)
+{
+    return eos->pmin;
+}
+
+/**
+ * @brief Returns the minimum pressure of the Equation Of State (EOS) piece in Pa.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The minimum pressure of the EOS piece in Pa.
+ */
+double XLALSimNeutronStarEOSPieceMinPressure(LALSimNeutronStarEOSPiece * eos)
+{
+    return XLALSimNeutronStarEOSPieceMinPressureGeometrized(eos)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the maximum pressure of the Equation Of State (EOS) piece in geometrized units m^-2.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The maximum pressure of the EOS piece in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSPieceMaxPressureGeometrized(LALSimNeutronStarEOSPiece *
+    eos)
+{
+    return eos->pmax;
+}
+
+// /* DEPRECATED: old misspelling of XLALSimNeutronStarEOSPieceMaxPressureGeometrized */
+// double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOSPiece * eos)
+// {
+//     XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSPieceMaxPressureGeometrized");
+//     return XLALSimNeutronStarEOSPieceMaxPressureGeometrized(eos);
+// }
+
+
+/**
+ * @brief Returns the maximum pressure of the Equation Of State (EOS) piece in Pa.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The maximum pressure of the EOS piece in Pa.
+ */
+double XLALSimNeutronStarEOSPieceMaxPressure(LALSimNeutronStarEOSPiece * eos)
+{
+    return XLALSimNeutronStarEOSPieceMaxPressureGeometrized(eos)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the minimum pseudo-enthalpy of the Equation Of State (EOS) piece (dimensionless).
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The minimum pseudo-enthalpy of the EOS piece (dimensionless).
+ */
+double XLALSimNeutronStarEOSPieceMinPseudoEnthalpy(LALSimNeutronStarEOSPiece *
+    eos)
+{
+    return eos->hmin;
+}
+
+/**
+ * @brief Returns the minimum pseudo-enthalpy at which Equation Of State (EOS) piece becomes acausal
+ * (speed of sound > speed of light) (dimensionless).
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The minimum pseudo-enthalpy at which EOS piece becomes acausal
+ * (speed of sound > speed of light) (dimensionless).
+ */
+double XLALSimNeutronStarEOSPieceMinAcausalPseudoEnthalpy(LALSimNeutronStarEOSPiece *
+    eos)
+{
+    return eos->hMinAcausal;
+}
+
+/**
+ * @brief Returns the maximum pseudo-enthalpy of the Equation Of State (EOS) piece (dimensionless).
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The maximum pseudo-enthalpy of the EOS piece (dimensionless).
+ */
+double XLALSimNeutronStarEOSPieceMaxPseudoEnthalpy(LALSimNeutronStarEOSPiece * eos)
+{
+    return eos->hmax;
+}
+
+/**
+ * @brief Returns the minimum energy density of the Equation Of State (EOS)
+ * piece in geometrized units m^-2.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The minimum energy density of the EOS piece in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSPieceMinEnergyDensityGeometrized(LALSimNeutronStarEOSPiece *
+    eos)
+{
+    return eos->e_of_p(XLALSimNeutronStarEOSPieceMinPressureGeometrized(eos), eos);
+}
+
+/**
+ * @brief Returns the minimum energy density of the Equation Of State (EOS)
+ * piece in J/m^3.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The minimum energy density of the EOS piece in J/m^3.
+ */
+double XLALSimNeutronStarEOSPieceMinEnergyDensity(LALSimNeutronStarEOSPiece *
+    eos)
+{
+    return XLALSimNeutronStarEOSPieceMinEnergyDensityGeometrized(eos)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the maximum energy density of the Equation Of State (EOS)
+ * piece in geometrized units m^-2.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The maximum energy density of the EOS piece in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSPieceMaxEnergyDensityGeometrized(LALSimNeutronStarEOSPiece *
+    eos)
+{
+    return eos->e_of_p(XLALSimNeutronStarEOSPieceMaxPressureGeometrized(eos), eos);
+}
+
+/**
+ * @brief Returns the maximum energy density of the Equation Of State (EOS)
+ * piece in J/m^3.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The maximum energy density of the EOS piece in J/m^3.
+ */
+double XLALSimNeutronStarEOSPieceMaxEnergyDensity(LALSimNeutronStarEOSPiece *
+    eos)
+{
+    return XLALSimNeutronStarEOSPieceMaxEnergyDensityGeometrized(eos)/LAL_G_C4_SI;
+}
+
+/**
+ * @brief Returns the minimum rest-mass density of the Equation Of State (EOS)
+ * piece in geometrized units m^-2.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The minimum rest-mass density of the EOS piece in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSPieceMinRestMassDensityGeometrized(LALSimNeutronStarEOSPiece *
+    eos)
+{
+    return eos->rho_of_h(XLALSimNeutronStarEOSPieceMinPseudoEnthalpy(eos), eos);
+}
+
+/**
+ * @brief Returns the maximum rest-mass density of the Equation Of State (EOS)
+ * piece in geometrized units m^-2.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The maximum rest-mass density of the EOS piece in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSPieceMaxRestMassDensityGeometrized(LALSimNeutronStarEOSPiece * eos)
+{
+    return eos->rho_of_h(XLALSimNeutronStarEOSPieceMaxPseudoEnthalpy(eos), eos);
+}
+
 /* FUNCTIONS FOR KEY EOS VALUES */
 
 /**
- * @brief The name of the equation of state.
- * @param[in] eos Pointer to the EOS structure.
- * @return Pointer to a string containing the name of the equation of state.
+ * @brief The name of the Equation Of State (EOS).
+ * @param[in] eos Pointer to the LALSimNeutronStarEOS structure.
+ * @return Pointer to a string containing the name of the EOS.
  * @warning The pointer returned might be shallow and might be left
  * dangling if the @a eos structure is freed.
  */
@@ -268,35 +457,322 @@ char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos)
 }
 
 /**
- * @brief Returns the maximum pressure of the EOS in geometrized units m^-2.
+ * @brief Returns the number of pieces in the Equation Of State (EOS)
+ * divided by phase transitions in the LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns N+1.
  * @param eos Pointer to the EOS structure.
- * @return The maximum pressure of the EOS in geometrized units m^-2.
+ * @return The number of pieces in the EOS structure.
  */
-double XLALSimNeutronStarEOSMaxPressureGeometrized(LALSimNeutronStarEOS *
-    eos)
+int XLALSimNeutronStarEOSNumberPieces(LALSimNeutronStarEOS * eos)
 {
-    return eos->pmax;
-}
-
-/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSMaxPressureGeometrized */
-double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS * eos)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSMaxPressureGeometrized");
-    return XLALSimNeutronStarEOSMaxPressureGeometrized(eos);
+    return eos->number_of_pieces;
 }
 
 /**
- * @brief Returns the minimum pressure of the EOS in geometrized units m^-2.
+ * @brief Returns the ith Equation Of State (EOS) piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function returns a LALSimNeutronStarEOSPiece
+ * structure for the equation of piece with ID number piece_id.
  * @param eos Pointer to the EOS structure.
- * @return The minimum pressure of the EOS in geometrized units m^-2.
+ * @param piece_id ID number for the EOS piece.
+ * @return Pointer of type LALSimNeutronStarEOSPiece, for the ith
+ * piece of the LALSimNeutronStarEOS structure.
+ */
+LALSimNeutronStarEOSPiece * XLALSimNeutronStarEOSSelectPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id < 0 || piece_id >= eos->number_of_pieces) {
+        XLAL_ERROR_NULL(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    }
+    return eos->eos_piece[piece_id];
+}
+
+/**
+ * @brief Returns the minimum pressure of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure in geometrized units m^-2.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the minimum pressure (geometrized units)
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The minimum pressure of the EOS piece in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    }
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceMinPressureGeometrized(eos_piece);
+}
+
+/**
+ * @brief Returns the minimum pressure of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure in Pa.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the minimum pressure (Pa)
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The minimum pressure of the EOS piece in Pa.
+ */
+double XLALSimNeutronStarEOSMinPressurePerPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    return XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, piece_id)/LAL_G_C4_SI;
+}
+
+/**
+ * @brief Returns the maximum pressure of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure in geometrized units m^-2.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the maximum pressure (geometrized units)
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The maximum pressure of the EOS piece in geometrized units m^-2.
+ */
+double XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    }
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceMaxPressureGeometrized(eos_piece);
+}
+
+
+/**
+ * @brief Returns the maximum pressure of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure in Pa.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the maximum pressure (Pa)
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The maximum pressure of the EOS piece in Pa.
+ */
+double XLALSimNeutronStarEOSMaxPressurePerPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    return XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, piece_id)/LAL_G_C4_SI;
+}
+
+
+
+/**
+ * @brief Returns the minimum pseudo-enthalpy (dimensionless) of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the minimum pseudo-enthalpy
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The minimum pseudo-enthalpy of the EOS piece (dimensionless).
+ */
+double XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(LALSimNeutronStarEOS * eos, int piece_id){
+    if (piece_id >= eos->number_of_pieces || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    }
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceMinPseudoEnthalpy(eos_piece);
+}
+
+/**
+ * @brief Returns the minimum acausal pseudo-enthalpy (dimensionless) of the ith Equation Of State (EOS)
+ * piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the minimum acausal pseudo-enthalpy
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The minimum acausal pseudo-enthalpy of the EOS piece (dimensionless).
+ */
+double XLALSimNeutronStarEOSMinAcausalPseudoEnthalpyPerPiece(LALSimNeutronStarEOS * eos, int piece_id){
+    if (piece_id >= eos->number_of_pieces || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    }
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceMinAcausalPseudoEnthalpy(eos_piece);
+}
+
+/**
+ * @brief Returns the maximum pseudo-enthalpy (dimensionless) of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the maximum pseudo-enthalpy
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The maximum pseudo-enthalpy of the EOS piece (dimensionless).
+ */
+double XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(LALSimNeutronStarEOS * eos, int piece_id){
+    if (piece_id >= eos->number_of_pieces || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    }
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceMaxPseudoEnthalpy(eos_piece);
+}
+
+
+/**
+ * @brief Returns the minimum energy density of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure in geometrized units (m^-2).
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the minimum energy density (m^-2)
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The minimum energy density of the EOS piece in geometrized units (m^-2).
+ */
+double XLALSimNeutronStarEOSMinEnergyDensityGeometrizedPerPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    }
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceMinEnergyDensityGeometrized(eos_piece);
+}
+
+/**
+ * @brief Returns the minimum energy density of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure in J/m^3.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the minimum energy density (J/m^3)
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The minimum energy density of the EOS piece in J/m^3.
+ */
+double XLALSimNeutronStarEOSMinEnergyDensityPerPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    return XLALSimNeutronStarEOSMinEnergyDensityGeometrizedPerPiece(eos, piece_id)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the maximum energy density of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure in geometrized units (m^-2).
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the maximum energy density (m^-2)
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The maximum energy density of the EOS piece in geometrized units (m^-2).
+ */
+double XLALSimNeutronStarEOSMaxEnergyDensityGeometrizedPerPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    }
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceMaxEnergyDensityGeometrized(eos_piece);
+}
+
+/**
+ * @brief Returns the maximum energy density of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure in J/m^3.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the maximum energy density J/m^3
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The maximum energy density of the EOS piece in J/m^3.
+ */
+double XLALSimNeutronStarEOSMaxEnergyDensityPerPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    return XLALSimNeutronStarEOSMaxEnergyDensityGeometrizedPerPiece(eos, piece_id)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the minimum rest-mass density of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure in geometrized units.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the minimum rest-mass density
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The minimum rest-mass density of the EOS piece in geometrized units.
+ */
+double XLALSimNeutronStarEOSMinRestMassDensityGeometrizedPerPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    }
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceMinRestMassDensityGeometrized(eos_piece);
+}
+
+/**
+ * @brief Returns the maximum rest-mass density of the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure in geometrized units.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the maximum rest-mass density
+ * for the EOS piece number piece_id.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The maximum rest-mass density of the EOS piece in geometrized units.
+ */
+double XLALSimNeutronStarEOSMaxRestMassDensityGeometrizedPerPiece(LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0) {
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    }
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceMaxRestMassDensityGeometrized(eos_piece);
+}
+
+
+
+/**
+ * @brief Returns the minimum pressure of the Equation Of State (EOS) in geometrized units (m^-2).
+ * @param eos Pointer to the EOS structure.
+ * @return The minimum pressure of the EOS in geometrized units (m^-2).
  */
 double XLALSimNeutronStarEOSMinPressureGeometrized(LALSimNeutronStarEOS * eos)
 {
-    return eos->p_of_h(XLALSimNeutronStarEOSMinPseudoEnthalpy(eos), eos);
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, 0);
+    return XLALSimNeutronStarEOSPieceMinPressureGeometrized(eos_piece);
 }
 
 /**
- * @brief Returns the maximum pressure of the EOS in Pa.
+ * @brief Returns the minimum pressure of the Equation Of State (EOS) in Pa.
+ * @param eos Pointer to the EOS structure.
+ * @return The minimum pressure of the EOS in Pa.
+ */
+double XLALSimNeutronStarEOSMinPressure(LALSimNeutronStarEOS * eos)
+{
+    return XLALSimNeutronStarEOSMinPressureGeometrized(eos)/LAL_G_C4_SI;
+}
+
+/**
+ * @brief Returns the maximum pressure of the Equation Of State (EOS) in geometrized units (m^-2).
+ * @param eos Pointer to the EOS structure.
+ * @return The maximum pressure of the EOS in geometrized units (m^-2).
+ */
+double XLALSimNeutronStarEOSMaxPressureGeometrized(LALSimNeutronStarEOS * eos)
+{
+    int number_of_pieces = XLALSimNeutronStarEOSNumberPieces(eos);
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, number_of_pieces-1);
+    return XLALSimNeutronStarEOSPieceMaxPressureGeometrized(eos_piece);
+}
+
+/**
+ * @brief Returns the maximum pressure of the Equation Of State (EOS) in Pa.
  * @param eos Pointer to the EOS structure.
  * @return The maximum pressure of the EOS in Pa.
  */
@@ -307,973 +783,179 @@ double XLALSimNeutronStarEOSMaxPressure(LALSimNeutronStarEOS * eos)
 
 
 /**
- * @brief Returns the minimum pressure of the EOS in Pa.
+ * @brief Returns the minimum pseudo-enthalpy of the Equation Of State (EOS) (dimensionless).
  * @param eos Pointer to the EOS structure.
- * @return The minimum pressure of the EOS in Pa.
+ * @return The minimum pseudo-enthalpy of the EOS (dimensionless).
  */
-double XLALSimNeutronStarEOSMinPressure(LALSimNeutronStarEOS * eos)
+double XLALSimNeutronStarEOSMinPseudoEnthalpy(LALSimNeutronStarEOS * eos)
 {
-    return XLALSimNeutronStarEOSMinPressureGeometrized(eos)/LAL_G_C4_SI;
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, 0);
+    return XLALSimNeutronStarEOSPieceMinPseudoEnthalpy(eos_piece);
+}
+
+
+
+/* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
+ * If the EOS is always causal, return some large value hmax instead. */
+static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
+    LALSimNeutronStarEOS * eos)
+{
+    size_t i;
+    double h_im1, h_i;
+    double v_im1, v_i;
+    double m;   /* slope for linear interpolation */
+    double hMinAcausal = hmax;  /* default large number for EOS that is always causal */
+    int number_of_pieces = XLALSimNeutronStarEOSNumberPieces(eos);
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, number_of_pieces-1);
+    h_im1 = exp(eos_piece ->data.tabular->log_hdat[0]);
+    v_im1 = eos_piece_v_of_h_tabular(h_im1, eos_piece);
+    for (i = 1; i < eos_piece ->data.tabular->ndat; i++) {
+        h_i = exp(eos_piece ->data.tabular->log_hdat[i]);
+        v_i = eos_piece_v_of_h_tabular(h_i, eos_piece);
+        if (v_i > 1.0) {
+            /* solve vsound(h) = 1 */
+            m = (v_i - v_im1) / (h_i - h_im1);
+            hMinAcausal = h_im1 + (1.0 - v_im1) / m;
+            break;
+        }
+        h_im1 = h_i;
+        v_im1 = v_i;
+    }
+    return hMinAcausal;
 }
 
 /**
- * @brief Returns the maximum pseudo-enthalpy of the EOS (dimensionless).
+ * @brief Returns the minimum pseudo-enthalpy at which Equation Of State (EOS) becomes acausal
+ * (speed of sound > speed of light) (dimensionless).
+ * @param eos Pointer to the EOS structure.
+ * @return The minimum pseudo-enthalpy at which EOS becomes acausal
+ * (speed of sound > speed of light) (dimensionless).
+ */
+double XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(LALSimNeutronStarEOS * eos)
+{
+    double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos);
+    return eos_min_acausal_pseudo_enthalpy_tabular(hmax, eos); // TODO can somebody check that this is ok ??
+}
+
+/**
+ * @brief Returns the maximum pseudo-enthalpy of the Equation Of State (EOS) (dimensionless).
  * @param eos Pointer to the EOS structure.
  * @return The maximum pseudo-enthalpy of the EOS (dimensionless).
  */
 double XLALSimNeutronStarEOSMaxPseudoEnthalpy(LALSimNeutronStarEOS * eos)
 {
-    return eos->hmax;
+    int number_of_pieces = XLALSimNeutronStarEOSNumberPieces(eos);
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, number_of_pieces-1);
+    return XLALSimNeutronStarEOSPieceMaxPseudoEnthalpy(eos_piece);
 }
 
+
 /**
- * @brief Returns the minimum pseudo-enthalpy at which EOS becomes acausal
- * (speed of sound > speed of light) (dimensionless).
+ * @brief Returns the minimum energy density of the Equation Of State (EOS) in geometrized units (m^-2).
  * @param eos Pointer to the EOS structure.
- * @return The minimum pseudo-enthalpy at which EOS becomes acausal
- * (speed of sound > speed of light).
+ * @return The minimum energy density of the EOS in geometrized units (m^-2).
  */
-double XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(LALSimNeutronStarEOS *
-    eos)
+double XLALSimNeutronStarEOSMinEnergyDensityGeometrized(LALSimNeutronStarEOS * eos)
 {
-    return eos->hMinAcausal;
+    return XLALSimNeutronStarEOSMinEnergyDensityGeometrizedPerPiece(eos, 0);
 }
 
 /**
- * @brief Returns the minimum pseudo-enthalpy of the EOS.
+ * @brief Returns the minimum energy density of the Equation Of State (EOS) in J m^-3.
  * @param eos Pointer to the EOS structure.
- * @return The minimum pseudo-enthalpy of the EOS.
+ * @return The minimum energy density of the EOS in J m^-3.
  */
-double XLALSimNeutronStarEOSMinPseudoEnthalpy(LALSimNeutronStarEOS *
-    eos)
+double XLALSimNeutronStarEOSMinEnergyDensity(LALSimNeutronStarEOS * eos)
 {
-    return eos->hmin;
+    return XLALSimNeutronStarEOSMinEnergyDensityGeometrized(eos)/LAL_G_C4_SI;
 }
 
-
 /**
- * @brief Returns the maximum energy density of the EOS in geometrized units m^-2.
+ * @brief Returns the maximum energy density of the Equation Of State (EOS) in geometrized units (m^-2).
  * @param eos Pointer to the EOS structure.
- * @return The maximum energy density of the EOS in geometrized units m^-2.
+ * @return The maximum energy density of the EOS in geometrized units (m^-2).
  */
-double XLALSimNeutronStarEOSMaxEnergyDensityGeometrized(LALSimNeutronStarEOS *
-    eos)
+double XLALSimNeutronStarEOSMaxEnergyDensityGeometrized(LALSimNeutronStarEOS * eos)
 {
-    return eos->e_of_p(XLALSimNeutronStarEOSMaxPressureGeometrized(eos), eos);
+    int max_id_piece = XLALSimNeutronStarEOSNumberPieces(eos) - 1 ;
+    return XLALSimNeutronStarEOSMinEnergyDensityGeometrizedPerPiece(eos, max_id_piece);
 }
 
-
 /**
- * @brief Returns the minimum energy density of the EOS in geometrized units m^-2.
+ * @brief Returns the maximum energy density of the Equation Of State (EOS) in J m^-3.
  * @param eos Pointer to the EOS structure.
- * @return The minimum energy density of the EOS in geometrized units m^-2.
+ * @return The maximum energy density of the EOS in J m^-3.
  */
-double XLALSimNeutronStarEOSMinEnergyDensityGeometrized(LALSimNeutronStarEOS *
-    eos)
+double XLALSimNeutronStarEOSMaxEnergyDensity(LALSimNeutronStarEOS * eos)
 {
-    return eos->e_of_p(XLALSimNeutronStarEOSMinPressureGeometrized(eos), eos);
+    return XLALSimNeutronStarEOSMaxEnergyDensityGeometrized(eos)/LAL_G_C4_SI;
 }
 
 /**
- * @brief Returns the maximum rest-mass density of the EOS in geometrized units m^-2.
+ * @brief Returns the minimum rest-mass of the Equation Of State (EOS) in geometrized units m^-2.
  * @param eos Pointer to the EOS structure.
- * @return The maximum rest-mass density of the EOS in geometrized units m^-2.
+ * @return The minimum rest-mass of the EOS in geometrized units m^-2.
  */
-double XLALSimNeutronStarEOSMaxRestMassDensityGeometrized(LALSimNeutronStarEOS *
-    eos)
+double XLALSimNeutronStarEOSMinRestMassDensityGeometrized(LALSimNeutronStarEOS * eos)
 {
-    return eos->rho_of_h(XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos), eos);
+    return XLALSimNeutronStarEOSMinRestMassDensityGeometrizedPerPiece(eos, 0);
 }
 
 
 /**
- * @brief Returns the minimum rest-mass density of the EOS in geometrized units m^-2.
- * @param eos Pointer to the EOS structure.
- * @return The minimum rest-mass density of the EOS in geometrized units m^-2.
- */
-double XLALSimNeutronStarEOSMinRestMassDensityGeometrized(LALSimNeutronStarEOS *
-    eos)
-{
-    return eos->rho_of_h(XLALSimNeutronStarEOSMinPseudoEnthalpy(eos), eos);
-}
-
-/**
- * @brief The name of the equation of state.
- * @param[in] eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return Pointer to a string containing the name of the equation of state.
- * @warning The pointer returned might be shallow and might be left
- * dangling if the @a eos structure is freed.
- */
-char *XLALSimNeutronStarEOSMultiPartsName(LALSimEOSMultiParts * eos)
-{
-    return XLALStringDuplicate(eos->name);
-}
-
-/**
- * @brief Returns the number of pieces in the equation of state
- * divided by phase transitions in the LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns N+1.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The number of pieces in the LALSimEOSMultiParts structure.
- */
-int XLALSimNeutronStarEOSMultiPartsNumber(LALSimEOSMultiParts * eos)
-{
-    return eos->number_of_parts;
-}
-
-/**
- * @brief Returns the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function returns a LALSimNeutronStarEOS
- * structure for the equation of piece with ID number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id ID number for the equation of state piece.
- * @return Pointer of type LALSimNeutronStarEOS, for the ith
- * piece of the LALSimEOSMultiParts structure.
- */
-LALSimNeutronStarEOS * XLALSimNeutronStarEOSPart(LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id < 0 || piece_id >= eos->number_of_parts) {
-        XLAL_ERROR_NULL(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    return eos->eos_piece[piece_id];
-}
-
-
-/**
- * @brief Returns the maximum pressure of the equation of state in geometrized units m^-2.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The maximum pressure of the equation of state in geometrized units m^-2.
- */
-double XLALSimNeutronStarEOSMultiPartsMaxPressureGeometrized(LALSimEOSMultiParts * eos)
-{
-    return eos->pmax;
-}
-
-/**
- * @brief Returns the minimum pressure of the equation of state in geometrized units m^-2.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The minimum pressure of the equation of state in geometrized units m^-2.
- */
-double XLALSimNeutronStarEOSMultiPartsMinPressureGeometrized(LALSimEOSMultiParts * eos)
-{
-    return eos->pmin;
-}
-
-/**
- * @brief Returns the maximum pressure of the equation of state in Pa.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The maximum pressure of the equation of state in Pa.
- */
-double XLALSimNeutronStarEOSMultiPartsMaxPressure(LALSimEOSMultiParts * eos)
-{
-    return XLALSimNeutronStarEOSMultiPartsMaxPressureGeometrized(eos)/LAL_G_C4_SI;
-}
-
-/**
- * @brief Returns the minimum pressure of the equation of state in Pa.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The minimum pressure of the equation of state in Pa.
- */
-double XLALSimNeutronStarEOSMultiPartsMinPressure(LALSimEOSMultiParts * eos)
-{
-    return XLALSimNeutronStarEOSMultiPartsMinPressureGeometrized(eos)/LAL_G_C4_SI;
-}
-
-/**
- * @brief Returns the minimum pseudo-enthalpy of the equation of state.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The minimum pseudo-enthalpy of the equation of state.
- */
-double XLALSimNeutronStarEOSMultiPartsMinPseudoEnthalpy(LALSimEOSMultiParts * eos)
-{
-    return eos->hmin;
-}
-
-/**
- * @brief Returns the maximum pseudo-enthalpy of the equation of state (dimensionless).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The maximum pseudo-enthalpy of the equation of state (dimensionless).
- */
-double XLALSimNeutronStarEOSMultiPartsMaxPseudoEnthalpy(LALSimEOSMultiParts * eos)
-{
-    return eos->hmax;
-}
-
-/**
- * @brief Returns the minimum pseudo-enthalpy at which equation of state becomes acausal
- * (speed of sound > speed of light) (dimensionless).
- * @param eos Pointer to the equation of state structure.
- * @return The minimum pseudo-enthalpy at which equation of state becomes acausal
- * (speed of sound > speed of light).
- */
-double XLALSimNeutronStarEOSMultiPartsMinAcausalPseudoEnthalpy(LALSimEOSMultiParts * eos)
-{
-    return eos->hMinAcausal;
-}
-
-/**
- * @brief Returns the maximum energy density of the equation of state in geometrized units m^-2.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The maximum energy density of the equation of state in geometrized units m^-2.
- */
-double XLALSimNeutronStarEOSMultiPartsMaxEnergyDensityGeometrized(LALSimEOSMultiParts * eos)
-{
-    int max_id_piece = XLALSimNeutronStarEOSMultiPartsNumber(eos) - 1 ;
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, max_id_piece);
-    double pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos_piece);
-    return eos_piece->e_of_p(pmax, eos_piece);
-}
-
-/**
- * @brief Returns the minimum energy density of the equation of state in geometrized units m^-2.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The minimum energy density of the equation of state in geometrized units m^-2.
- */
-double XLALSimNeutronStarEOSMultiPartsMinEnergyDensityGeometrized(LALSimEOSMultiParts * eos)
-{
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, 0);
-    double pmin =XLALSimNeutronStarEOSMinPressureGeometrized(eos_piece);
-    return eos_piece->e_of_p(pmin, eos_piece);
-}
-
-/**
- * @brief Returns the maximum rest-mass density of the equation of state in geometrized units m^-2.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The maximum rest-mass of the equation of state in geometrized units m^-2.
- */
-double XLALSimNeutronStarEOSMultiPartsMaxRestMassDensityGeometrized(LALSimEOSMultiParts * eos)
-{
-    int max_id_piece = XLALSimNeutronStarEOSMultiPartsNumber(eos) - 1 ;
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, max_id_piece);
-    double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos_piece);
-    return eos_piece->rho_of_h(hmax, eos_piece);
-}
-
-/**
- * @brief Returns the minimum rest-mass of the equation of state in geometrized units m^-2.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The minimum rest-mass of the equation of state in geometrized units m^-2.
- */
-double XLALSimNeutronStarEOSMultiPartsMinRestMassDensityGeometrized(LALSimEOSMultiParts * eos)
-{
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, 0);
-    double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_piece);
-    return eos_piece->rho_of_h(hmin, eos_piece);
-}
-
-
-/**
- * @brief Returns the maximum pressure of the ith equation of state piece
- * of LALSimEOSMultiParts structure in geometrized units m^-2.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the maximum pressure (geometrized units)
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The maximum pressure of the equation of state piece
+ * @brief Returns the maximum rest-mass density of the Equation Of State (EOS)
  * in geometrized units m^-2.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMaxPressureGeometrized(LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMaxPressureGeometrized(eos_piece);
-}
-
-/**
- * @brief Returns the minimum pressure of the ith equation of state piece
- * of LALSimEOSMultiParts structure in geometrized units m^-2.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the minimum pressure (geometrized units)
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The minimum pressure of the equation of state piece
- * in geometrized units m^-2.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    double hmin = XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id);
-    return XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpyGeometrized(hmin, eos, piece_id);
-}
-
-/**
- * @brief Returns the maximum pressure of the ith equation of sstate piece
- * of LALSimEOSMultiParts structure in Pa.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the maximum pressure (Pa)
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The maximum pressure of the equation of state piece in Pa.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMaxPressure(LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    double pmax;
-    pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos_piece);
-    pmax /= LAL_G_C4_SI;
-    return pmax;
-}
-
-/**
- * @brief Returns the minimum pressure of the ith equation of state piece
- * of LALSimEOSMultiParts structure in Pa.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the minimum pressure (Pa)
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The minimum pressure of the equation of state piece in Pa.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMinPressure(LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    double hmin = XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id);
-    double pmin;
-    pmin = XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpyGeometrized(hmin, eos, piece_id);
-    pmin /= LAL_G_C4_SI;
-    return pmin;
-}
-
-/**
- * @brief Returns the minimum pseudo-enthalpy of the ith equation of state piece
- * of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the minimum pseudo-enthalpy
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The minimum pseudo-enthalpy of the equation of state piece.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(LALSimEOSMultiParts * eos, int piece_id){
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMinPseudoEnthalpy(eos_piece);
-}
-
-/**
- * @brief Returns the maximum pseudo-enthalpy of the ith equation of state piece
- * of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the maximum pseudo-enthalpy
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The maximum pseudo-enthalpy of the equation of state piece.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMaxPseudoEnthalpy(LALSimEOSMultiParts * eos, int piece_id){
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos_piece);
-}
-
-/**
- * @brief Returns the minimum acausal pseudo-enthalpy of the ith equation
- * of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the minimum acausal pseudo-enthalpy
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The minimum acausal pseudo-enthalpy of the equation of state piece.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMinAcausalPseudoEnthalpy(LALSimEOSMultiParts * eos, int piece_id){
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(eos_piece);
-}
-
-/**
- * @brief Returns the maximum energy density of the ith equation of sstate piece
- * of LALSimEOSMultiParts structure in geometrized units.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the maximum pressure (Pa)
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The maximum energy density of the equation of state piece in geometrized units.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMaxEnergyDensityGeometrized(LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMaxEnergyDensityGeometrized(eos_piece);
-}
-
-/**
- * @brief Returns the minimum energy density of the ith equation of sstate piece
- * of LALSimEOSMultiParts structure in geometrized units.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the maximum pressure (Pa)
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The minimum energy density of the equation of state piece in geometrized units.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMinEnergyDensityGeometrized(LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMinEnergyDensityGeometrized(eos_piece);
-}
-
-/**
- * @brief Returns the maximum rest-mass density of the ith equation of sstate piece
- * of LALSimEOSMultiParts structure in geometrized units.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the maximum pressure (Pa)
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The maximum rest-mass density of the equation of state piece in geometrized units.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMaxRestMassDensityGeometrized(LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMaxRestMassDensityGeometrized(eos_piece);
-}
-
-/**
- * @brief Returns the minimum rest-mass density of the ith equation of sstate piece
- * of LALSimEOSMultiParts structure in geometrized units.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the maximum pressure (Pa)
- * for the equation of state piece number piece_id.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The minimum rest-mass density of the equation of state piece in geometrized units.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceMinRestMassDensityGeometrized(LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSMinRestMassDensityGeometrized(eos_piece);
-}
-/* FUNCTIONS FOR INTERPOLATED EOS VALUES WITH GEOMETRIZED UNITS */
-
-/**
- * @brief Returns the energy density in geometrized units (m^-2) at a given
- * pressure in geometrized units (m^-2).
- * @param p Pressure in geometrized units (m^-2)
  * @param eos Pointer to the EOS structure.
- * @return The energy density in geometrized units (m^-2).
+ * @return The maximum rest-mass of the EOS in geometrized units m^-2.
  */
-double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(double p,
-    LALSimNeutronStarEOS * eos)
+double XLALSimNeutronStarEOSMaxRestMassDensityGeometrized(LALSimNeutronStarEOS * eos)
 {
-    return eos->e_of_p(p, eos);
+    int max_id_piece = XLALSimNeutronStarEOSNumberPieces(eos) - 1 ;
+    return XLALSimNeutronStarEOSMinRestMassDensityGeometrizedPerPiece(eos, max_id_piece);
 }
 
-/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized */
-double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(double p, LALSimNeutronStarEOS * eos)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized");
-    return XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos);
-}
 
+/* FUNCTIONS FOR INTERPOLATED EOS-PIECE VALUES */
 
 /**
  * @brief Returns the dimensionless pseudo-enthalpy at a given pressure in
- * geometrized units (m^-2).
+ * geometrized units (m^-2) for an Equation Of State (EOS) piece.
  * @param p Pressure in geometrized units (m^-2)
- * @param eos Pointer to the EOS structure.
+ * @param eos Pointer to the EOS-piece structure.
  * @return The pseudo-enthalpy (dimensionless).
  */
-double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(double p,
-    LALSimNeutronStarEOS * eos)
+double XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressureGeometrized(double p,
+    LALSimNeutronStarEOSPiece * eos)
 {
     return eos->h_of_p(p, eos);
 }
 
-/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized */
-double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(double p, LALSimNeutronStarEOS * eos)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized");
-    return XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(p, eos);
-}
-
-
 /**
- * @brief Returns the pressure in geometrized units (m^-2) at a given value of
- * the dimensionless pseudo-enthalpy.
- * @param h The value of the dimensionless pseudo-enthalpy.
+ * @brief Returns the dimensionless pseudo-enthalpy at a given pressure (Pa).
+ * @param p Pressure (Pa).
  * @param eos Pointer to the EOS structure.
- * @return The pressure in geometrized units (m^-2).
- */
-double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(double h,
-    LALSimNeutronStarEOS * eos)
-{
-    return eos->p_of_h(h, eos);
-}
-
-/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized */
-double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(double h, LALSimNeutronStarEOS * eos)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized");
-    return XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos);
-}
-
-
-/**
- * @brief Returns the energy density in geometrized units (m^-2) at a given
- * value of the dimensionless pseudo-enthalpy.
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the EOS structure.
- * @return The energy density in geometrized units (m^-2).
- */
-double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(double
-    h, LALSimNeutronStarEOS * eos)
-{
-    return eos->e_of_h(h, eos);
-}
-
-/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized */
-double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(double h, LALSimNeutronStarEOS * eos)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized");
-    return XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h, eos);
-}
-
-
-/**
- * @brief Returns the rest mass density in geometrized units (m^-2) at a given
- * value of the dimensionless pseudo-enthalpy.
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the EOS structure.
- * @return The rest mass density in geometrized units (m^-2).
- */
-double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(double
-    h, LALSimNeutronStarEOS * eos)
-{
-    return eos->rho_of_h(h, eos);
-}
-
-/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized */
-double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(double h, LALSimNeutronStarEOS * eos)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized");
-    return XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(h, eos);
-}
-
-/**
- * @brief Returns the gradient of the energy density with respect to the
- * pressure (dimensionless) at a given value of the pressure in geometrized
- * units (m^-2).
- * @param p Pressure in geometrized units (m^-2).
- * @param eos Pointer to the EOS structure.
- * @return The gradient of the energy density with respect to the pressure
- * (dimensionless).
- */
-double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(double p,
-    LALSimNeutronStarEOS * eos)
-{
-    return eos->dedp_of_p(p, eos);
-}
-
-/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized */
-double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(double p, LALSimNeutronStarEOS * eos)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized");
-    return XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos);
-}
-
-
-/**
- * @brief Returns the speed of sound in geometrized units (dimensionless)
- * at a given value of the pseudo-enthalpy (dimensionless).
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the EOS structure.
- * @return The speed of sound in geometrized units (dimensionless).
- */
-double XLALSimNeutronStarEOSSpeedOfSoundGeometrized(double h,
-    LALSimNeutronStarEOS * eos)
-{
-    return eos->v_of_h(h, eos);
-}
-
-/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSSpeedOfSoundGeometrized */
-double XLALSimNeutronStarEOSSpeedOfSoundGeometerized(double h, LALSimNeutronStarEOS * eos)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSSpeedOfSoundGeometrized");
-    return XLALSimNeutronStarEOSSpeedOfSoundGeometrized(h, eos);
-}
-
-
-/**
- * @brief Returns the energy density in geometrized units (m^-2) at a given
- * pressure in geometrized units (m^-2), in the ith equation of state piece
- * of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the energy density interpolated at
- * a given pressure p, for the equation of state piece number piece_id.
- * @param p Pressure in geometrized units (m^-2)
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The energy density in geometrized units (m^-2).
-*/
-double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPressureGeometrized(double p,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pressure is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return eos_piece->e_of_p(p, eos_piece);
-}
-
-/**
- * @brief Returns the pseudo-enthalpy at a given pressure in geometrized units (m^-2),
- * in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the pseudo-enthalpy interpolated at
- * a given pressure p, for the equation of state piece number piece_id.
- * @param p Pressure in geometrized units (m^-2)
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
  * @return The pseudo-enthalpy (dimensionless).
-*/
-double XLALSimNeutronStarEOSMultiPartsPiecePseudoEnthalpyOfPressureGeometrized(double p,
-    LALSimEOSMultiParts * eos, int piece_id)
+ */
+double XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressure(double p,
+    LALSimNeutronStarEOSPiece * eos)
 {
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pressure is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return eos_piece->h_of_p(p, eos_piece);
+    p *= LAL_G_C4_SI;
+    return XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressureGeometrized(p, eos);
 }
-
-
-/**
- * @brief Returns the pressure in geometrized units (m^-2) at a
- * given pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the geometrized pressure
- * interpolated at a given pseudo-enthalpy h, for the equation of state piece number piece_id.
- * @param h Pseudo-enthalpy (dimensionless)
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The pressure in geometrized units (m^-2).
-*/
-double XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpyGeometrized(double h,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return eos_piece->p_of_h(h, eos_piece);
-}
-
-/**
- * @brief Returns the energy density in geometrized units (m^-2) at a
- * given pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the geometrized energy density
- * interpolated at a given pseudo-enthalpy h, for the equation of state piece number piece_id.
- * @param h Pseudo-enthalpy (dimensionless)
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The energy density in geometrized units (m^-2).
-*/
-double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpyGeometrized(double
-    h, LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return eos_piece->e_of_h(h, eos_piece);
-}
-
-
-/**
- * @brief Returns the rest-mass density in geometrized units (m^-2) at a
- * given pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the geometrized rest-mass density
- * interpolated at a given pseudo-enthalpy h, for the equation of state piece number piece_id.
- * @param h Pseudo-enthalpy (dimensionless).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The rest mass density in geometrized units (m^-2).
-*/
-double XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpyGeometrized(double
-    h, LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return eos_piece->rho_of_h(h, eos_piece);
-}
-
-
-/**
- * @brief Returns the gradient of the energy density with respect to the
- * pressure (dimensionless) at a given value of the pressure in geometrized
- * units (m^-2), in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the gradient of the energy density
- * interpolated at a given pressure, for the equation of state piece number piece_id.
- * @param p Pressure in geometrized units (m^-2).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The gradient of the energy density with respect to the pressure
- * (dimensionless).
-*/
-double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityDerivOfPressureGeometrized(double p,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pressure is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return eos_piece->dedp_of_p(p, eos_piece);
-}
-
-
-/**
- * @brief Returns the speed of sound in geometrized units (dimensionless)
- * at a given value of the pressure in geometrized units (m^-2),
- * in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the gradient of the energy density
- * interpolated at a given pseudo-enthalpy h, for the equation of state piece number piece_id.
- * @param h Pseudo-enthalpy (dimensionless).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The speed of sound in geometrized units (dimensionless).
-*/
-double XLALSimNeutronStarEOSMultiPartsPieceSpeedOfSoundGeometrized(double h,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return eos_piece->v_of_h(h, eos_piece);
-}
-
 
 /**
  * @brief Returns the energy density in geometrized units (m^-2) at a given
- * pressure in geometrized units (m^-2).
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pressure value belongs to, then it interpolates the energy density
- * at the pressure value p, for the correct equation of state piece.
+ * pressure in geometrized units (m^-2) for an Equation Of State (EOS) piece.
  * @param p Pressure in geometrized units (m^-2)
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
+ * @param eos Pointer to the EOS-piece structure.
  * @return The energy density in geometrized units (m^-2).
-*/
-double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPressureGeometrized(double p,
-    LALSimEOSMultiParts * eos)
+ */
+double XLALSimNeutronStarEOSPieceEnergyDensityOfPressureGeometrized(double p,
+    LALSimNeutronStarEOSPiece * eos)
 {
-    int item_piece = find_eos_piece_pressure(p, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return eos_piece->e_of_p(p, eos_piece);
+    return eos->e_of_p(p, eos);
 }
 
-/**
- * @brief Returns the pseudo-enthalpy at a given pressure in geometrized units (m^-2).
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pressure value belongs to, then it interpolates the pseudo-enthalpy
- * at the pressure value p, for the correct equation of state piece.
- * @param p Pressure in geometrized units (m^-2)
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The pseudo-enthalpy (dimensionless).
-*/
-double XLALSimNeutronStarEOSMultiPartsPseudoEnthalpyOfPressureGeometrized(double p,
-    LALSimEOSMultiParts * eos)
-{
-    int item_piece = find_eos_piece_pressure(p, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return eos_piece->h_of_p(p, eos_piece);
-}
-
-
-/**
- * @brief Returns the pressure in geometrized units (m^-2) at a
- * given pseudo-enthalpy.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pseudo-enthalpy value belongs to, then it interpolates the pressure
- * at the pseudo-enthalpy value h, for the correct equation of state piece.
- * @param h Pseudo-enthalpy (dimensionless)
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The pressure in geometrized units (m^-2).
-*/
-double XLALSimNeutronStarEOSMultiPartsPressureOfPseudoEnthalpyGeometrized(double h,
-    LALSimEOSMultiParts * eos)
-{
-    int item_piece = find_eos_piece_enthalpy(h, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return eos_piece->p_of_h(h, eos_piece);
-}
-
-/**
- * @brief Returns the energy density in geometrized units (m^-2) at a
- * given pseudo-enthalpy.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pseudo-enthalpy value belongs to, then it interpolates the energy density
- * at the pseudo-enthalpy value h, for the correct equation of state piece.
- * @param h Pseudo-enthalpy (dimensionless)
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The energy density in geometrized units (m^-2).
-*/
-double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPseudoEnthalpyGeometrized(double
-    h, LALSimEOSMultiParts * eos)
-{
-    int item_piece = find_eos_piece_enthalpy(h, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return eos_piece->e_of_h(h, eos_piece);
-}
-
-
-/**
- * @brief Returns the rest-mass density in geometrized units (m^-2) at a
- * given pseudo-enthalpy.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pseudo-enthalpy value belongs to, then it interpolates the
- * rest-mass density at the pseudo-enthalpy value h, for the correct
- * equation of state piece.
- * @param h Pseudo-enthalpy (dimensionless).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The rest mass density in geometrized units (m^-2).
-*/
-double XLALSimNeutronStarEOSMultiPartsRestMassDensityOfPseudoEnthalpyGeometrized(double
-    h, LALSimEOSMultiParts * eos)
-{
-    int item_piece = find_eos_piece_enthalpy(h, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return eos_piece->rho_of_h(h, eos_piece);
-}
-
-
-/**
- * @brief Returns the gradient of the energy density with respect to the
- * pressure (dimensionless) at a given value of the pressure in geometrized
- * units (m^-2).
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pressure value belongs to, then it interpolates the
- * energy density at the pressure value p, for the correct
- * equation of state piece.
- * @param p Pressure in geometrized units (m^-2).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The gradient of the energy density with respect to the pressure
- * (dimensionless).
-*/
-double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressureGeometrized(double p,
-    LALSimEOSMultiParts * eos)
-{
-    int item_piece = find_eos_piece_pressure(p, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return eos_piece->dedp_of_p(p, eos_piece);
-}
-
-
-/**
- * @brief Returns the speed of sound in geometrized units (dimensionless)
- * at a given value of the pseudo-enthalpy.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pseudo-enthalpy value belongs to, then it interpolates the
- * speed of sound at the pseudo-enthalpy value h, for the correct
- * equation of state piece.
- * @param h Pseudo-enthalpy (dimensionless).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The speed of sound in geometrized units (dimensionless).
-*/
-double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundGeometrizedOfPseudoEnthalpy(double h,
-    LALSimEOSMultiParts * eos)
-{
-    int item_piece = find_eos_piece_enthalpy(h, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return eos_piece->v_of_h(h, eos_piece);
-}
-
-
-/* FUNCTIONS FOR INTERPOLATED EOS VALUES WITH SI UNITS */
 
 /**
  * @brief Returns the energy density (J m^-3) at a given pressure (Pa).
@@ -1281,16 +963,331 @@ double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundGeometrizedOfPseudoEnthalpy(do
  * @param eos Pointer to the EOS structure.
  * @return The energy density (J m^3).
  */
-double XLALSimNeutronStarEOSEnergyDensityOfPressure(double p,
-    LALSimNeutronStarEOS * eos)
+double XLALSimNeutronStarEOSPieceEnergyDensityOfPressure(double p,
+    LALSimNeutronStarEOSPiece * eos)
 {
     p *= LAL_G_C4_SI;
-    return XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos)/LAL_G_C4_SI;
+    return XLALSimNeutronStarEOSPieceEnergyDensityOfPressureGeometrized(p, eos)/LAL_G_C4_SI;
+}
+/*
+DEPRECATED: old misspelling of XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized */
+// double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(double p, LALSimNeutronStarEOSPiece * eos)
+// {
+//     XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized");
+//     return XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos);
+// }*/
+
+/**
+ * @brief Returns the gradient of the energy density with respect to the
+ * pressure (dimensionless) at a given value of the pressure in geometrized
+ * units (m^-2) for an Equation Of State (EOS) piece.
+ * @param p Pressure in geometrized units (m^-2).
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The gradient of the energy density with respect to the pressure
+ * (dimensionless).
+ */
+double XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(double p,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    return eos->dedp_of_p(p, eos);
+}
+
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized */
+// double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized(double p, LALSimNeutronStarEOSPiece * eos)
+// {
+//     XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized");
+//     return XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos);
+// }
+
+
+/**
+ * @brief Returns the gradient of the energy density with respect to the
+ * pressure (dimensionless) at a given value of the pressure (Pa).
+ * @param p Pressure (Pa).
+ * @param eos Pointer to the EOS structure.
+ * @return The gradient of the energy density with respect to the pressure
+ * (dimensionless).
+ */
+double XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressure(double p,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    p *= LAL_G_C4_SI; // TODO is this right ??????? No need for this right ?????
+    return XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(p, eos);
+}
+
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized */
+// double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(double p, LALSimNeutronStarEOSPiece * eos)
+// {
+//     XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized");
+//     return XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(p, eos);
+// }
+
+
+/**
+ * @brief Returns the pressure in geometrized units (m^-2) at a given value of
+ * the dimensionless pseudo-enthalpy for an Equation Of State (EOS) piece.
+ * @param h The value of the pseudo-enthalpy (dimensionless).
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The pressure in geometrized units (m^-2).
+ */
+double XLALSimNeutronStarEOSPiecePressureOfPseudoEnthalpyGeometrized(double h,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    return eos->p_of_h(h, eos);
+}
+
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized */
+// double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(double h, LALSimNeutronStarEOSPiece * eos)
+// {
+//     XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized");
+//     return XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos);
+// }
+
+/**
+ * @brief Returns the pressure (Pa) at a given value of the dimensionless
+ * pseudo-enthalpy.
+ * @param h The value of the pseudo-enthalpy (dimensionless).
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure (Pa).
+ */
+double XLALSimNeutronStarEOSPiecePressureOfPseudoEnthalpy(double h,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    return XLALSimNeutronStarEOSPiecePressureOfPseudoEnthalpyGeometrized(h, eos)/LAL_G_C4_SI;
 }
 
 
 /**
- * @brief Returns the dimensionless pseudo-enthalpy at a given pressure (Pa).
+ * @brief Returns the energy density in geometrized units (m^-2) at a given
+ * value of the dimensionless pseudo-enthalpy for an Equation Of State (EOS) piece.
+ * @param h The value of the pseudo-enthalpy (dimensionless).
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The energy density in geometrized units (m^-2).
+ */
+double XLALSimNeutronStarEOSPieceEnergyDensityOfPseudoEnthalpyGeometrized(double
+    h, LALSimNeutronStarEOSPiece * eos)
+{
+    return eos->e_of_h(h, eos);
+}
+
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized */
+// double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized(double h, LALSimNeutronStarEOSPiece * eos)
+// {
+//     XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized");
+//     return XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h, eos);
+// }
+
+/**
+ * @brief Returns the energy density (J m^-3) at a given value of the
+ * dimensionless pseudo-enthalpy.
+ * @param h The value of the pseudo-enthalpy (dimensionless).
+ * @param eos Pointer to the EOS structure.
+ * @return The energy density (J m^-3).
+ */
+double XLALSimNeutronStarEOSPieceEnergyDensityOfPseudoEnthalpy(double h,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    return XLALSimNeutronStarEOSPieceEnergyDensityOfPseudoEnthalpyGeometrized(h,eos)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the rest mass density in geometrized units (m^-2) at a given
+ * value of the dimensionless pseudo-enthalpy for an Equation Of State (EOS) piece.
+ * @param h The value of the dimensionless pseudo-enthalpy.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The rest mass density in geometrized units (m^-2).
+ */
+double XLALSimNeutronStarEOSPieceRestMassDensityOfPseudoEnthalpyGeometrized(double
+    h, LALSimNeutronStarEOSPiece * eos)
+{
+    return eos->rho_of_h(h, eos);
+}
+
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized */
+// double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized(double h, LALSimNeutronStarEOSPiece * eos)
+// {
+//     XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized");
+//     return XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(h, eos);
+// }
+
+
+
+/**
+ * @brief Returns the rest mass density (kg m^-3) at a given value of the
+ * dimensionless pseudo-enthalpy.
+ * @param h The value of the dimensionless pseudo-enthalpy.
+ * @param eos Pointer to the EOS structure.
+ * @return The rest mass density (kg m^-3), which is the number density of
+ * baryons times the baryon rest mass.
+ */
+double XLALSimNeutronStarEOSPieceRestMassDensityOfPseudoEnthalpy(double h,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    return XLALSimNeutronStarEOSPieceRestMassDensityOfPseudoEnthalpyGeometrized(h,eos)/LAL_G_C2_SI;
+}
+
+
+/**
+ * @brief Returns the speed of sound in geometrized units (dimensionless) // TODO WTH ??? dimensionless that's it. Call it normalized sound speed
+ * at a given value of the pseudo-enthalpy (dimensionless) for an Equation Of State (EOS) piece.
+ * @param h The value of the dimensionless pseudo-enthalpy.
+ * @param eos Pointer to the EOS-piece structure.
+ * @return The speed of sound in geometrized units (dimensionless).
+ */
+double XLALSimNeutronStarEOSPieceSpeedOfSoundOfPseudoEnthalpyGeometrized(double h,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    return eos->v_of_h(h, eos);
+}
+
+/* DEPRECATED: old misspelling of XLALSimNeutronStarEOSSpeedOfSoundGeometrized */
+// double XLALSimNeutronStarEOSSpeedOfSoundGeometerized(double h, LALSimNeutronStarEOSPiece * eos)
+// {
+//     XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSSpeedOfSoundGeometrized");
+//     return XLALSimNeutronStarEOSSpeedOfSoundGeometrized(h, eos);
+// }
+
+
+/**
+ * @brief Returns the speed of sound (m s^-1) at a given value of the
+ * pseudo-enthalpy (dimensionless).
+ * @param h The value of the dimensionless pseudo-enthalpy.
+ * @param eos Pointer to the EOS structure.
+ * @return The speed of sound (m s^-1).
+ */
+double XLALSimNeutronStarEOSPieceSpeedOfSoundOfPseudoEnthalpy(double h, LALSimNeutronStarEOSPiece * eos)
+{
+    return XLALSimNeutronStarEOSPieceSpeedOfSoundOfPseudoEnthalpyGeometrized(h, eos)*LAL_C_SI;
+}
+
+/**
+ * @brief Returns the pressure in geometrized units (m^-2) at a given
+ * energy density in geometrized units (m^-2).
+ * @param e energy density in geometrized units (m^-2)
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure in geometrized units (m^-2).
+ */
+double XLALSimNeutronStarEOSPiecePressureOfEnergyDensityGeometrized(double e,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    return eos->p_of_e(e,eos);
+}
+
+
+/**
+ * @brief Returns the pressure in Pa at a given
+ * energy density in J/m^3.
+ * @param e energy density in J/m^3
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure in Pa.
+ */
+double XLALSimNeutronStarEOSPiecePressureOfEnergyDensity(double e,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    e *= LAL_G_C4_SI;
+    return XLALSimNeutronStarEOSPiecePressureOfEnergyDensityGeometrized(e, eos)/LAL_G_C4_SI;
+}
+
+/**
+ * @brief Returns the pressure in Pa at a given
+ * rest-mass density in kg/m^3.
+ * @param rho rest-mass density in kg/m^3
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure in Pa.
+ */
+double XLALSimNeutronStarEOSPiecePressureOfRestMassDensityGeometrized(double rho,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    return eos->p_of_rho(rho, eos);
+}
+/**
+ * @brief Returns the pressure in Pa at a given
+ * rest-mass density in kg/m^3.
+ * @param rho rest-mass density in kg/m^3
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure in Pa.
+ */
+double XLALSimNeutronStarEOSPiecePressureOfRestMassDensity(double rho,
+    LALSimNeutronStarEOSPiece * eos)
+{
+    rho *= LAL_G_C2_SI;
+    return XLALSimNeutronStarEOSPiecePressureOfRestMassDensityGeometrized(rho, eos)/LAL_G_C4_SI;
+}
+
+
+/* FUNCTIONS FOR INTERPOLATED EOS VALUES */
+
+/**
+ * @brief Returns the pseudo-enthalpy at a given pressure in geometrized units (m^-2),
+ * in the ith Equation Of State (EOS) piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the pseudo-enthalpy interpolated at
+ * a given pressure p, for the EOS piece number piece_id.
+ * @param p Pressure in geometrized units (m^-2)
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The pseudo-enthalpy (dimensionless).
+*/
+double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrizedPerPiece(double p,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{// TODO is it ok to have the error pop up only at the per piece level, the user will flaggerbasted...
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    if (p < XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, piece_id) || p > XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, piece_id))
+        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pressure is beyond the EOS piece interpolation range.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressureGeometrized(p, eos_piece);
+}
+
+
+/**
+ * @brief Returns the pseudo-enthalpy (dimensionless) at a given pressure in Pa,
+ * in the ith Equation Of State (EOS) piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the pseudo-enthalpy
+ * interpolated at a given pressure p, for the EOS
+ * piece number piece_id.
+ * @param p Pressure (Pa).
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The pseudo-enthalpy (dimensionless).
+ */
+double XLALSimNeutronStarEOSPseudoEnthalpyOfPressurePerPiece(double p,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    p *= LAL_G_C4_SI;
+    return XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrizedPerPiece(p, eos, piece_id);
+}
+
+/**
+ * @brief Returns the pseudo-enthalpy (dimensionless) at a given pressure in geometrized units (m^-2).
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pressure value belongs to, then it interpolates the pseudo-enthalpy
+ * at the pressure value p, for the correct EOS piece.
+ * @param p Pressure in geometrized units (m^-2)
+ * @param eos Pointer to the EOS structure.
+ * @return The pseudo-enthalpy (dimensionless).
+*/
+double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(double p,
+    LALSimNeutronStarEOS * eos)
+{
+    int item_piece = find_eos_piece_pressure(p, eos);
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, item_piece);
+    return XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressureGeometrized(p, eos_piece);
+}
+
+/**
+ * @brief Returns the pseudo-enthalpy (dimensionless) at a given pressure (Pa).
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pressure value belongs to, then it interpolates the pseudo-enthalpy
+ * at the pressure value p, for the correct EOS piece.
  * @param p Pressure (Pa).
  * @param eos Pointer to the EOS structure.
  * @return The pseudo-enthalpy (dimensionless).
@@ -1304,48 +1301,168 @@ double XLALSimNeutronStarEOSPseudoEnthalpyOfPressure(double p,
 
 
 /**
- * @brief Returns the pressure (Pa) at a given value of the dimensionless
- * pseudo-enthalpy.
- * @param h The value of the dimensionless pseudo-enthalpy.
+ * @brief Returns the energy density in geometrized units (m^-2) at a given
+ * pressure in geometrized units (m^-2), in the ith Equation Of State (EOS) piece
+ * of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the energy density interpolated at
+ * a given pressure p, for the EOS piece number piece_id.
+ * @param p Pressure in geometrized units (m^-2)
  * @param eos Pointer to the EOS structure.
- * @return The pressure (Pa).
- */
-double XLALSimNeutronStarEOSPressureOfPseudoEnthalpy(double h,
-    LALSimNeutronStarEOS * eos)
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The energy density in geometrized units (m^-2).
+*/
+double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrizedPerPiece(double p,
+    LALSimNeutronStarEOS * eos, int piece_id)
 {
-    return XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos)/LAL_G_C4_SI;
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    if (p < XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, piece_id) || p > XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, piece_id))
+        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pressure is beyond the EOS piece interpolation range.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceEnergyDensityOfPressureGeometrized(p, eos_piece);
 }
 
 /**
- * @brief Returns the energy density (J m^-3) at a given value of the
- * dimensionless pseudo-enthalpy.
- * @param h The value of the dimensionless pseudo-enthalpy.
+ * @brief Returns the energy density (J m^-3) at a given pressure (Pa),
+ * in the ith Equation Of State (EOS) piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the energy density
+ * interpolated at a given pressure p, for the EOS
+ * piece number piece_id.
+ * @param p Pressure (Pa).
  * @param eos Pointer to the EOS structure.
- * @return The energy density (J m^-3).
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The energy density (J m^3).
  */
-double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpy(double h,
-    LALSimNeutronStarEOS * eos)
+double XLALSimNeutronStarEOSEnergyDensityOfPressurePerPiece(double p,
+    LALSimNeutronStarEOS * eos, int piece_id)
 {
-    return XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h,eos)/LAL_G_C4_SI;
+    p *= LAL_G_C4_SI;
+    return XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrizedPerPiece(p, eos, piece_id)/LAL_G_C4_SI;
 }
 
 /**
- * @brief Returns the rest mass density (kg m^-3) at a given value of the
- * dimensionless pseudo-enthalpy.
- * @param h The value of the dimensionless pseudo-enthalpy.
+ * @brief Returns the energy density in geometrized units (m^-2) at a given
+ * pressure in geometrized units (m^-2).
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pressure value belongs to, then it interpolates the energy density
+ * at the pressure value p, for the correct EOS piece.
+ * @param p Pressure in geometrized units (m^-2)
  * @param eos Pointer to the EOS structure.
- * @return The rest mass density (kg m^-3), which is the number density of
- * baryons times the baryon rest mass.
- */
-double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpy(double h,
+ * @return The energy density in geometrized units (m^-2).
+*/
+double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(double p,
     LALSimNeutronStarEOS * eos)
 {
-    return XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(h,eos)/LAL_G_C2_SI;
+    int item_piece = find_eos_piece_pressure(p, eos);
+    return XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrizedPerPiece(p, eos, item_piece);
+}
+
+
+/**
+ * @brief Returns the energy density (J m^-3) at a given pressure (Pa).
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pressure value belongs to, then it interpolates the energy density
+ * at the pressure value p, for the correct EOS piece.
+ * @param p Pressure (Pa).
+ * @param eos Pointer to the EOS structure.
+ * @return The energy density (J m^3).
+ */
+double XLALSimNeutronStarEOSEnergyDensityOfPressure(double p,
+    LALSimNeutronStarEOS * eos)
+{
+    p *= LAL_G_C4_SI;
+    return XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the gradient of the energy density with respect to the
+ * pressure (dimensionless) at a given value of the pressure in geometrized
+ * units (m^-2), in the ith Equation Of State (EOS) piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the gradient of the energy density
+ * interpolated at a given pressure, for the EOS piece number piece_id.
+ * @param p Pressure in geometrized units (m^-2).
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The gradient of the energy density with respect to the pressure
+ * (dimensionless).
+*/
+double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrizedPerPiece(double p,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    if (p < XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, piece_id) || p > XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, piece_id))
+        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pressure is beyond the EOS piece interpolation range.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(p, eos_piece);
+}
+
+
+/**
+ * @brief Returns the gradient of the energy density with respect to the
+ * pressure (dimensionless) at a given value of the pressure in Pa,
+ * in the ith EOS piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the gradient of the energy density
+ * interpolated at a given pressure p, for the EOS
+ * piece number piece_id.
+ * @param p Pressure (Pa).
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The gradient of the energy density with respect to the pressure
+ * (dimensionless).
+ */
+double XLALSimNeutronStarEOSEnergyDensityDerivOfPressurePerPiece(double p,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    p *= LAL_G_C4_SI;
+    return XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrizedPerPiece(p,eos, piece_id);
 }
 
 /**
  * @brief Returns the gradient of the energy density with respect to the
- * pressure (dimensionless) at a given value of the pressure (Pa).
+ * pressure (dimensionless) at a given value of the pressure in geometrized
+ * units (m^-2).
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pressure value belongs to, then it interpolates the
+ * gradient of the energy density at the pressure value p, for the correct
+ * EOS piece.
+ * @param p Pressure in geometrized units (m^-2).
+ * @param eos Pointer to the EOS structure.
+ * @return The gradient of the energy density with respect to the pressure
+ * (dimensionless).
+*/
+double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(double p,
+    LALSimNeutronStarEOS * eos)
+{
+    int item_piece = find_eos_piece_pressure(p, eos);
+    return XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrizedPerPiece(p, eos, item_piece);
+}
+
+
+/**
+ * @brief Returns the gradient of the energy density with respect to the
+ * pressure (dimensionless) at a given value of the pressure in Pa.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pressure value belongs to, then it interpolates the
+ * gradient of the energy density with respect to the pressure
+ * at the pressure value p, for the correct EOS piece.
  * @param p Pressure (Pa).
  * @param eos Pointer to the EOS structure.
  * @return The gradient of the energy density with respect to the pressure
@@ -1358,21 +1475,443 @@ double XLALSimNeutronStarEOSEnergyDensityDerivOfPressure(double p,
     return XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos);
 }
 
+
+
+
+/**
+ * @brief Returns the pressure in geometrized units (m^-2) at a
+ * given pseudo-enthalpy (dimensionless), in the ith Equation Of State (EOS)
+ * piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the geometrized pressure
+ * interpolated at a given pseudo-enthalpy h, for the EOS piece number piece_id.
+ * @param h Pseudo-enthalpy (dimensionless)
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The pressure in geometrized units (m^-2).
+*/
+double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrizedPerPiece(double h,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    if (h < XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, piece_id) || h > XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id))
+        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is beyond the EOS piece interpolation range.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPiecePressureOfPseudoEnthalpyGeometrized(h, eos_piece);
+}
+
+/**
+ * @brief Returns the pressure in Pa at a given pseudo-enthalpy,
+ * in the ith Equation Of State (EOS) piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the pressure in Pa
+ * interpolated at a given pseudo-enthalpy h, for the EOS piece number piece_id.
+ * @param h Pseudo-enthalpy (dimensionless)
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The pressure in Pa
+*/
+double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyPerPiece(double h,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    return XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrizedPerPiece(h, eos, piece_id)/LAL_G_C4_SI;
+}
+
+/**
+ * @brief Returns the pressure in geometrized units (m^-2) at a
+ * given pseudo-enthalpy.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pseudo-enthalpy value belongs to, then it interpolates the pressure
+ * at the pseudo-enthalpy value h, for the correct EOS piece.
+ * @param h Pseudo-enthalpy (dimensionless)
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure in geometrized units (m^-2).
+*/
+double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(double h,
+    LALSimNeutronStarEOS * eos)
+{
+    int item_piece = find_eos_piece_enthalpy(h, eos);
+    return XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrizedPerPiece(h, eos, item_piece);
+}
+
+/**
+ * @brief Returns the pressure (Pa) at a given value of the dimensionless
+ * pseudo-enthalpy.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pseudo-enthalpy value belongs to, then it interpolates the pressure
+ * at the pseudo-enthalpy value h, for the correct EOS piece.
+ * @param h The value of the dimensionless pseudo-enthalpy.
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure (Pa).
+ */
+double XLALSimNeutronStarEOSPressureOfPseudoEnthalpy(double h,
+    LALSimNeutronStarEOS * eos)
+{
+    return XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the energy density in geometrized units (m^-2) at a given value of the
+ * dimensionless pseudo-enthalpy, in the ith EOS piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the energy density
+ * interpolated at a given pseudo-enthalpy h, for the EOS
+ * piece number piece_id.
+ * @param h The value of the dimensionless pseudo-enthalpy.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The energy density (m^-2).
+ */
+double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrizedPerPiece(double h,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    if (h < XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, piece_id) || h > XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id))
+        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is beyond the EOS piece interpolation range.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceEnergyDensityOfPseudoEnthalpyGeometrized(h, eos_piece);
+}
+
+
+
+/**
+ * @brief Returns the energy density (J m^-3) at a given value of the
+ * pseudo-enthalpy (dimensionless), in the ith Equation Of State (EOS) piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the energy density
+ * interpolated at a given pseudo-enthalpy h, for the EOS
+ * piece number piece_id.
+ * @param h The value of the pseudo-enthalpy (dimensionless).
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The energy density (J m^-3).
+ */
+double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyPerPiece(double h,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    return XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrizedPerPiece(h, eos, piece_id)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the energy density in geometrized units (m^-2) at a
+ * given pseudo-enthalpy.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pseudo-enthalpy value belongs to, then it interpolates the energy density
+ * at the pseudo-enthalpy value h, for the correct EOS piece.
+ * @param h Pseudo-enthalpy (dimensionless)
+ * @param eos Pointer to the EOS structure.
+ * @return The energy density in geometrized units (m^-2).
+*/
+double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(double
+    h, LALSimNeutronStarEOS * eos)
+{
+    int item_piece = find_eos_piece_enthalpy(h, eos);
+    return XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrizedPerPiece(h, eos, item_piece);
+}
+
+
+/**
+ * @brief Returns the energy density (J m^-3) at a given value of the
+ * pseudo-enthalpy (dimensionless).
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pseudo-enthalpy value belongs to, then it interpolates the energy density
+ * at the pseudo-enthalpy value h, for the correct EOS piece.
+ * @param h The value of the pseudo-enthalpy (dimensionless).
+ * @param eos Pointer to the EOS structure.
+ * @return The energy density (J m^-3).
+ */
+double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpy(double h,
+    LALSimNeutronStarEOS * eos)
+{
+    return XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h,eos)/LAL_G_C4_SI;
+}
+
+
+
+/**
+ * @brief Returns the rest-mass density in geometrized units (m^-2) at a
+ * given pseudo-enthalpy, in the ith Equation Of State (EOS) piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the geometrized rest-mass density
+ * interpolated at a given pseudo-enthalpy h, for the EOS piece number piece_id.
+ * @param h Pseudo-enthalpy (dimensionless).
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The rest mass density in geometrized units (m^-2).
+*/
+double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrizedPerPiece(double
+    h, LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    if (h < XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, piece_id) || h > XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id))
+        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is beyond the EOS piece interpolation range.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceRestMassDensityOfPseudoEnthalpyGeometrized(h, eos_piece);
+}
+
+
+/**
+ * @brief Returns the rest mass density (kg m^-3) at a given value of the
+ * dimensionless pseudo-enthalpy, in the ith EOS piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the rest-mass density
+ * interpolated at a given pseudo-enthalpy h, for the EOS
+ * piece number piece_id.
+ * @param h The value of the dimensionless pseudo-enthalpy.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The rest mass density (kg m^-3), which is the number density of
+ * baryons times the baryon rest mass.
+ */
+double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyPerPiece(double h,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    return XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrizedPerPiece(h, eos, piece_id)/LAL_G_C2_SI;
+}
+// TODO why are we converting only this one ???
+
+/**
+ * @brief Returns the rest-mass density in geometrized units (m^-2) at a
+ * given pseudo-enthalpy.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pseudo-enthalpy value belongs to, then it interpolates the
+ * rest-mass density at the pseudo-enthalpy value h, for the correct
+ * EOS piece.
+ * @param h Pseudo-enthalpy (dimensionless).
+ * @param eos Pointer to the EOS structure.
+ * @return The rest mass density in geometrized units (m^-2).
+*/
+double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(double
+    h, LALSimNeutronStarEOS * eos)
+{
+    int item_piece = find_eos_piece_enthalpy(h, eos);
+    return XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrizedPerPiece(h, eos, item_piece);
+}
+
+//TODO again why are we converting only this one ???
+/**
+ * @brief Returns the rest mass density (kg m^-3) at a given value of the
+ * dimensionless pseudo-enthalpy.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pseudo-enthalpy value belongs to, then it interpolates the
+ * rest-mass density at the pseudo-enthalpy value h,
+ * for the correct EOS piece.
+ * @param h The value of the dimensionless pseudo-enthalpy.
+ * @param eos Pointer to the EOS structure.
+ * @return The rest mass density (kg m^-3), which is the number density of
+ * baryons times the baryon rest mass.
+ */
+double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpy(double h,
+    LALSimNeutronStarEOS * eos)
+{
+    return XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(h, eos)/LAL_G_C2_SI;
+}
+
+/**
+ * @brief Returns the speed of sound in geometrized units (dimensionless)
+ * at a given value of the pressure in geometrized units (m^-2),
+ * in the ith Equation Of State (EOS) piece of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the gradient of the energy density
+ * interpolated at a given pseudo-enthalpy h, for the EOS piece number piece_id.
+ * @param h Pseudo-enthalpy (dimensionless).
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The speed of sound in geometrized units (dimensionless).
+*/
+double XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyGeometrizedPerPiece(double h,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    if (h < XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, piece_id) || h > XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id))
+        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is beyond the EOS piece interpolation range.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPieceSpeedOfSoundOfPseudoEnthalpyGeometrized(h, eos_piece);
+}
+
+
+/**
+ * @brief Returns the speed of sound (m s^-1) at a given value of the
+ * pseudo-enthalpy (dimensionless), in the ith EOS piece
+ * of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the speed of sound
+ * interpolated at a given pseudo-enthalpy h, for the EOS
+ * piece number piece_id.
+ * @param h The value of the dimensionless pseudo-enthalpy.
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The speed of sound (m s^-1).
+ */
+double XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyPerPiece(double h,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    return XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyGeometrizedPerPiece(h, eos, piece_id)*LAL_C_SI;
+}
+
+
+/**
+ * @brief Returns the speed of sound in geometrized units (dimensionless)
+ * at a given value of the pseudo-enthalpy (dimensionless).
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pseudo-enthalpy value belongs to, then it interpolates the
+ * speed of sound at the pseudo-enthalpy value h, for the correct
+ * EOS piece.
+ * @param h Pseudo-enthalpy (dimensionless).
+ * @param eos Pointer to the EOS structure.
+ * @return The speed of sound in geometrized units (dimensionless).
+*/
+double XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyGeometrized(double h,
+    LALSimNeutronStarEOS * eos)
+{
+    int item_piece = find_eos_piece_enthalpy(h, eos);
+    return XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyGeometrizedPerPiece(h, eos, item_piece);
+}
+
+
 /**
  * @brief Returns the speed of sound (m s^-1) at a given value of the
  * pseudo-enthalpy (dimensionless).
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the pseudo-enthalpy value belongs to, then it interpolates the
+ * speed of sound at the pseudo-enthalpy value h, for the correct
+ * EOS piece.
  * @param h The value of the dimensionless pseudo-enthalpy.
  * @param eos Pointer to the EOS structure.
  * @return The speed of sound (m s^-1).
  */
-double XLALSimNeutronStarEOSSpeedOfSound(double h, LALSimNeutronStarEOS * eos)
+double XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpy(double h, LALSimNeutronStarEOS * eos)
 {
-    return XLALSimNeutronStarEOSSpeedOfSoundGeometrized(h, eos)*LAL_C_SI;
+    return XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyGeometrized(h, eos)*LAL_C_SI;
 }
+
+
+
+
+/**
+ * @brief Returns the pressure in geometrized units (m^-2) at a given
+ * energy density in geometrized units (m^-2), in the ith EOS piece
+ * of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the pressure
+ * interpolated at a given energy density e, for the EOS
+ * piece number piece_id.
+ * @param e energy density in m^-2
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The pressure in m^-2.
+ */
+double XLALSimNeutronStarEOSPressureOfEnergyDensityGeometrizedPerPiece(double e,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    if (e < XLALSimNeutronStarEOSMinEnergyDensityGeometrizedPerPiece(eos, piece_id) || e > XLALSimNeutronStarEOSMaxEnergyDensityGeometrizedPerPiece(eos, piece_id))
+        XLAL_ERROR_REAL8(XLAL_EDOM, "Input energy density is beyond the EOS piece interpolation range.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPiecePressureOfEnergyDensityGeometrized(e, eos_piece);
+}
+
+
+/**
+ * @brief Returns the pressure in Pa at a given
+ * energy density in J/m^3, in the ith EOS piece
+ * of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the pressure
+ * interpolated at a given energy density e, for the EOS
+ * piece number piece_id.
+ * @param e energy density in J/m^3
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The pressure in Pa.
+ */
+double XLALSimNeutronStarEOSPressureOfEnergyDensityPerPiece(double e,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    e *= LAL_G_C4_SI;
+    return XLALSimNeutronStarEOSPressureOfEnergyDensityGeometrizedPerPiece(e, eos, piece_id)/LAL_G_C4_SI;
+}
+
+/**
+ * @brief Returns the pressure in geometrized units (m^-2) at a given
+ * energy density in J/m^3.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the energy density value belongs to, then it interpolates the
+ * pressure at the energy density value e, for the correct
+ * EOS piece. Note that if the user provides an energy density value that
+ * falls within the phase transition jump, the value of the energu density is
+ * automatically set to the maximum value of the EOS piece preceeding the phase
+ * transition.
+ * @param e energy density in J/m^3
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure in Pa.
+ */
+double XLALSimNeutronStarEOSPressureOfEnergyDensityGeometrized(double e,
+    LALSimNeutronStarEOS * eos)
+{
+    int number_of_pieces = XLALSimNeutronStarEOSNumberPieces(eos);
+    if (number_of_pieces > 1){
+        for (int i = 0; i < number_of_pieces-1; i++){
+            LALSimNeutronStarEOSPiece * eos_low = XLALSimNeutronStarEOSSelectPiece(eos, i);
+            LALSimNeutronStarEOSPiece * eos_high = XLALSimNeutronStarEOSSelectPiece(eos, i+1);
+            if (e > XLALSimNeutronStarEOSPieceMaxEnergyDensityGeometrized(eos_low)
+                && e < XLALSimNeutronStarEOSPieceMinEnergyDensityGeometrized(eos_high)){
+                    e = XLALSimNeutronStarEOSPieceMaxEnergyDensityGeometrized(eos_low);
+                }
+        }
+    }
+    int item_piece = find_eos_piece_energy_density(e, eos);
+    return XLALSimNeutronStarEOSPressureOfEnergyDensityGeometrizedPerPiece(e, eos, item_piece);
+}
+
 
 /**
  * @brief Returns the pressure in Pa at a given
  * energy density in J/m^3.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the energy density value belongs to, then it interpolates the
+ * pressure at the energy density value e, for the correct
+ * EOS piece. Note that if the user provides an energy density value that
+ * falls within the phase transition jump, the value of the energu density is
+ * automatically set to the maximum value of the EOS piece preceeding the phase
+ * transition.
  * @param e energy density in J/m^3
  * @param eos Pointer to the EOS structure.
  * @return The pressure in Pa.
@@ -1381,12 +1920,99 @@ double XLALSimNeutronStarEOSPressureOfEnergyDensity(double e,
     LALSimNeutronStarEOS * eos)
 {
     e *= LAL_G_C4_SI;
-    return eos->p_of_e(e, eos)/LAL_G_C4_SI;
+    return XLALSimNeutronStarEOSPressureOfEnergyDensityGeometrized(e, eos)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the pressure in Pa at a given
+ * rest-mass density in kg/m^3, in the ith EOS piece
+ * of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the pressure
+ * interpolated at a given rest-mass density rho, for the EOS
+ * piece number piece_id.
+ * @param rho rest-mass density in kg/m^3
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The pressure in Pa.
+ */
+double XLALSimNeutronStarEOSPressureOfRestMassDensityGeometrizedPerPiece(double rho,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
+    if (rho < XLALSimNeutronStarEOSMinRestMassDensityGeometrizedPerPiece(eos, piece_id) || rho > XLALSimNeutronStarEOSMaxRestMassDensityGeometrizedPerPiece(eos, piece_id))
+        XLAL_ERROR_REAL8(XLAL_EDOM, "Input rest-mass density is beyond the EOS piece interpolation range.");
+    LALSimNeutronStarEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
+    return XLALSimNeutronStarEOSPiecePressureOfRestMassDensityGeometrized(rho, eos_piece);
 }
 
 /**
  * @brief Returns the pressure in Pa at a given
+ * rest-mass density in kg/m^3, in the ith EOS piece
+ * of LALSimNeutronStarEOS structure.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N, and the function returns the pressure
+ * interpolated at a given rest-mass density rho, for the EOS
+ * piece number piece_id.
+ * @param rho rest-mass density in kg/m^3
+ * @param eos Pointer to the EOS structure.
+ * @param piece_id Integer to the EOS piece ID number.
+ * @return The pressure in Pa.
+ */
+double XLALSimNeutronStarEOSPressureOfRestMassDensityPerPiece(double rho,
+    LALSimNeutronStarEOS * eos, int piece_id)
+{
+    rho *= LAL_G_C2_SI;
+    return XLALSimNeutronStarEOSPressureOfRestMassDensityGeometrizedPerPiece(rho, eos, piece_id)/LAL_G_C4_SI;
+}
+
+
+/**
+ * @brief Returns the pressure in geometrized units (m^-2) at a given
+ * rest-mass density in geometrized units.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the rest-mass density value belongs to, then it interpolates the
+ * pressure at the rest-mass density value rho, for the correct
+ * EOS piece.
+ * @param rho rest-mass density in geometrized units
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure in geometrized units (m^-2).
+ */
+double XLALSimNeutronStarEOSPressureOfRestMassDensityGeometrized(double rho,
+    LALSimNeutronStarEOS * eos)
+{
+    int number_of_pieces = XLALSimNeutronStarEOSNumberPieces(eos);
+    if (number_of_pieces > 1){
+        for (int i = 0; i < number_of_pieces-1; i++){
+            LALSimNeutronStarEOSPiece * eos_low = XLALSimNeutronStarEOSSelectPiece(eos, i);
+            LALSimNeutronStarEOSPiece * eos_high = XLALSimNeutronStarEOSSelectPiece(eos, i+1);
+            if (rho > XLALSimNeutronStarEOSPieceMaxRestMassDensityGeometrized(eos_low)
+                && rho < XLALSimNeutronStarEOSPieceMinRestMassDensityGeometrized(eos_high)){
+                    rho = XLALSimNeutronStarEOSPieceMaxRestMassDensityGeometrized(eos_low);
+                }
+        }
+    }
+    int item_piece = find_eos_piece_rest_mass_density(rho, eos);
+    return XLALSimNeutronStarEOSPressureOfRestMassDensityGeometrizedPerPiece(rho, eos, item_piece);
+}
+
+
+
+/**
+ * @brief Returns the pressure in Pa at a given
  * rest-mass density in kg/m^3.
+ * @details If the EOS contains N phase transitions,
+ * the LALSimNeutronStarEOS structure contains N+1 pieces with ID number
+ * from 0 to N. This function finds automatically which EOS
+ * piece the rest-mass density value belongs to, then it interpolates the
+ * pressure at the rest-mass density value rho, for the correct
+ * EOS piece.
  * @param rho rest-mass density in kg/m^3
  * @param eos Pointer to the EOS structure.
  * @return The pressure in Pa.
@@ -1395,450 +2021,9 @@ double XLALSimNeutronStarEOSPressureOfRestMassDensity(double rho,
     LALSimNeutronStarEOS * eos)
 {
     rho *= LAL_G_C2_SI;
-    return eos->p_of_rho(rho, eos)/LAL_G_C4_SI;
+    return XLALSimNeutronStarEOSPressureOfRestMassDensityGeometrized(rho, eos)/LAL_G_C4_SI;
 }
 
-
-/**
- * @brief Returns the energy density (J m^-3) at a given pressure (Pa), in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the energy density
- * interpolated at a given pressure p, for the equation of state
- * piece number piece_id.
- * @param p Pressure (Pa).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The energy density (J m^3).
- */
-double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPressure(double p,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    p *= LAL_G_C4_SI;
-    if (piece_id >= eos->number_of_parts || piece_id < 0){
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pressure is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos_piece)/LAL_G_C4_SI;
-}
-
-
-/**
- * @brief Returns the dimensionless pseudo-enthalpy at a given pressure (Pa), in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the pseudo-enthalpy
- * interpolated at a given pressure p, for the equation of state
- * piece number piece_id.
- * @param p Pressure (Pa).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The pseudo-enthalpy (dimensionless).
- */
-double XLALSimNeutronStarEOSMultiPartsPiecePseudoEnthalpyOfPressure(double p,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    p *= LAL_G_C4_SI;
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pressure is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(p, eos_piece);
-}
-
-/**
- * @brief Returns the pressure (Pa) at a given value of the dimensionless
- * pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the pressure
- * interpolated at a given pseudo-enthalpy h, for the equation of state
- * piece number piece_id.
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The pressure (Pa).
- */
-double XLALSimNeutronStarEOSMultiPartsPiecePressureOfPseudoEnthalpy(double h,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos_piece)/LAL_G_C4_SI;
-}
-
-/**
- * @brief Returns the energy density (J m^-3) at a given value of the
- * dimensionless pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the energy density
- * interpolated at a given pseudo-enthalpy h, for the equation of state
- * piece number piece_id.
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The energy density (J m^-3).
- */
-double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityOfPseudoEnthalpy(double h,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h, eos_piece)/LAL_G_C4_SI;
-}
-
-/**
- * @brief Returns the rest mass density (kg m^-3) at a given value of the
- * dimensionless pseudo-enthalpy, in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the rest-mass density
- * interpolated at a given pseudo-enthalpy h, for the equation of state
- * piece number piece_id.
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The rest mass density (kg m^-3), which is the number density of
- * baryons times the baryon rest mass.
- */
-double XLALSimNeutronStarEOSMultiPartsPieceRestMassDensityOfPseudoEnthalpy(double h,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0){
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(h, eos_piece)/LAL_G_C2_SI;
-}
-
-/**
- * @brief Returns the gradient of the energy density with respect to the
- * pressure (dimensionless) at a given value of the pressure (Pa),
- * in the ith equation of state piece of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the gradient of the energy density
- * interpolated at a given pressure p, for the equation of state
- * piece number piece_id.
- * @param p Pressure (Pa).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The gradient of the energy density with respect to the pressure
- * (dimensionless).
- */
-double XLALSimNeutronStarEOSMultiPartsPieceEnergyDensityDerivOfPressure(double p,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    p *= LAL_G_C4_SI;
-    if (piece_id >= eos->number_of_parts || piece_id < 0){
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && p < XLALSimNeutronStarEOSMultiPartsPieceMinPressureGeometrized(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pressure is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos_piece);
-}
-
-/**
- * @brief Returns the speed of sound (m s^-1) at a given value of the
- * pseudo-enthalpy (dimensionless), in the ith equation of state piece
- * of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the speed of sound
- * interpolated at a given pseudo-enthalpy h, for the equation of state
- * piece number piece_id.
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The speed of sound (m s^-1).
- */
-double XLALSimNeutronStarEOSMultiPartsPieceSpeedOfSound(double h,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    if (piece_id >= eos->number_of_parts || piece_id < 0){
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && h < XLALSimNeutronStarEOSMultiPartsPieceMinPseudoEnthalpy(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input pseudo-enthalpy is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return XLALSimNeutronStarEOSSpeedOfSoundGeometrized(h, eos_piece)*LAL_C_SI;
-}
-
-
-/**
- * @brief Returns the pressure in Pa at a given
- * energy density in J/m^3, in the ith equation of state piece
- * of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the pressure
- * interpolated at a given energy density e, for the equation of state
- * piece number piece_id.
- * @param e energy density in J/m^3
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The pressure in Pa.
- */
-double XLALSimNeutronStarEOSMultiPartsPiecePressureOfEnergyDensity(double e,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    e *= LAL_G_C4_SI;
-    if (piece_id >= eos->number_of_parts || piece_id < 0){
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && e < XLALSimNeutronStarEOSMultiPartsPieceMinEnergyDensityGeometrized(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input energy density is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return eos_piece->p_of_e(e, eos_piece)/LAL_G_C4_SI;
-}
-
-/**
- * @brief Returns the pressure in Pa at a given
- * rest-mass density in kg/m^3, in the ith equation of state piece
- * of LALSimEOSMultiParts structure.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N, and the function returns the pressure
- * interpolated at a given rest-mass density rho, for the equation of state
- * piece number piece_id.
- * @param rho rest-mass density in kg/m^3
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @param piece_id Integer to the equation of state piece ID number.
- * @return The pressure in Pa.
- */
-double XLALSimNeutronStarEOSMultiPartsPiecePressureOfRestMassDensity(double rho,
-    LALSimEOSMultiParts * eos, int piece_id)
-{
-    rho *= LAL_G_C2_SI;
-    if (piece_id >= eos->number_of_parts || piece_id < 0){
-        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimEOSMultiParts structure is incorrect.");
-    }
-    if (piece_id > 0 && rho < XLALSimNeutronStarEOSMultiPartsPieceMinRestMassDensityGeometrized(eos, piece_id)) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "Input rest-mass density is below the EOS piece interpolation range.");
-    }
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, piece_id);
-    return eos_piece->p_of_rho(rho, eos_piece)/LAL_G_C4_SI;
-}
-
-
-/**
- * @brief Returns the energy density (J m^-3) at a given pressure (Pa).
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pressure value belongs to, then it interpolates the energy density
- * at the pressure value p, for the correct equation of state piece.
- * @param p Pressure (Pa).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The energy density (J m^3).
- */
-double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPressure(double p,
-    LALSimEOSMultiParts * eos)
-{
-    p *= LAL_G_C4_SI;
-    int item_piece = find_eos_piece_pressure(p, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(p, eos_piece)/LAL_G_C4_SI;
-}
-
-/**
- * @brief Returns the dimensionless pseudo-enthalpy at a given pressure (Pa).
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pressure value belongs to, then it interpolates the pseudo-enthalpy
- * at the pressure value p, for the correct equation of state piece.
- * @param p Pressure (Pa).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The pseudo-enthalpy (dimensionless).
- */
-double XLALSimNeutronStarEOSMultiPartsPseudoEnthalpyOfPressure(double p,
-    LALSimEOSMultiParts * eos)
-{
-    p *= LAL_G_C4_SI;
-    int item_piece = find_eos_piece_pressure(p, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(p, eos_piece);
-}
-
-
-/**
- * @brief Returns the pressure (Pa) at a given value of the dimensionless
- * pseudo-enthalpy.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pseudo-enthalpy value belongs to, then it interpolates the pressure
- * at the pseudo-enthalpy value h, for the correct equation of state piece.
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The pressure (Pa).
- */
-double XLALSimNeutronStarEOSMultiPartsPressureOfPseudoEnthalpy(double h,
-    LALSimEOSMultiParts * eos)
-{
-    int item_piece = find_eos_piece_enthalpy(h, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h, eos_piece)/LAL_G_C4_SI;
-}
-
-/**
- * @brief Returns the energy density (J m^-3) at a given value of the
- * dimensionless pseudo-enthalpy.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pseudo-enthalpy value belongs to, then it interpolates the energy density
- * at the pseudo-enthalpy value h, for the correct equation of state piece.
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The energy density (J m^-3).
- */
-double XLALSimNeutronStarEOSMultiPartsEnergyDensityOfPseudoEnthalpy(double h,
-    LALSimEOSMultiParts * eos)
-{
-    int item_piece = find_eos_piece_enthalpy(h, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(h,eos_piece)/LAL_G_C4_SI;
-}
-
-
-/**
- * @brief Returns the rest mass density (kg m^-3) at a given value of the
- * dimensionless pseudo-enthalpy.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pseudo-enthalpy value belongs to, then it interpolates the
- * rest-mass density at the pseudo-enthalpy value h,
- * for the correct equation of state piece.
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The rest mass density (kg m^-3), which is the number density of
- * baryons times the baryon rest mass.
- */
-double XLALSimNeutronStarEOSMultiPartsRestMassDensityOfPseudoEnthalpy(double h,
-    LALSimEOSMultiParts * eos)
-{
-    int item_piece = find_eos_piece_enthalpy(h, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(h, eos_piece)/LAL_G_C2_SI;
-}
-
-
-/**
- * @brief Returns the gradient of the energy density with respect to the
- * pressure (dimensionless) at a given value of the pressure (Pa).
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pressure value belongs to, then it interpolates the
- * gradient of the energy density with respect to the pressure
- * at the pressure value p, for the correct equation of state piece.
- * @param p Pressure (Pa).
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The gradient of the energy density with respect to the pressure
- * (dimensionless).
- */
-double XLALSimNeutronStarEOSMultiPartsEnergyDensityDerivOfPressure(double p,
-    LALSimEOSMultiParts * eos)
-{
-    p *= LAL_G_C4_SI;
-    int item_piece = find_eos_piece_pressure(p, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(p, eos_piece);
-}
-
-
-/**
- * @brief Returns the speed of sound (m s^-1) at a given value of the
- * pseudo-enthalpy (dimensionless).
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the pseudo-enthalpy value belongs to, then it interpolates the
- * speed of sound at the pseudo-enthalpy value h, for the correct
- * equation of state piece.
- * @param h The value of the dimensionless pseudo-enthalpy.
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The speed of sound (m s^-1).
- */
-double XLALSimNeutronStarEOSMultiPartsSpeedOfSoundOfPseudoEnthalpy(double h, LALSimEOSMultiParts * eos)
-{
-    int item_piece = find_eos_piece_enthalpy(h, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return XLALSimNeutronStarEOSSpeedOfSoundGeometrized(h, eos_piece)*LAL_C_SI;
-}
-
-
-/**
- * @brief Returns the pressure in Pa at a given
- * energy density in J/m^3.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the energy density value belongs to, then it interpolates the
- * pressure at the energy density value e, for the correct
- * equation of state piece.
- * @param e energy density in J/m^3
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The pressure in Pa.
- */
-double XLALSimNeutronStarEOSMultiPartsPressureOfEnergyDensity(double e,
-    LALSimEOSMultiParts * eos)
-{
-    e *= LAL_G_C4_SI;
-    int item_piece = find_eos_piece_energy_density(e, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return eos_piece->p_of_e(e, eos_piece)/LAL_G_C4_SI;
-}
-
-
-/**
- * @brief Returns the pressure in Pa at a given
- * rest-mass density in kg/m^3.
- * @details If the equation of state contains N phase transitions,
- * the LALSimEOSMultiParts structure contains N+1 pieces with ID number
- * from 0 to N. This function finds automatically which equation of state
- * piece the rest-mass density value belongs to, then it interpolates the
- * pressure at the rest-mass density value rho, for the correct
- * equation of state piece.
- * @param rho rest-mass density in kg/m^3
- * @param eos Pointer to the equation of state LALSimEOSMultiParts structure.
- * @return The pressure in Pa.
- */
-double XLALSimNeutronStarEOSMultiPartsPressureOfRestMassDensity(double rho,
-    LALSimEOSMultiParts * eos)
-{
-    rho *= LAL_G_C2_SI;
-    int item_piece = find_eos_piece_rest_mass_density(rho, eos);
-    LALSimNeutronStarEOS * eos_piece = XLALSimNeutronStarEOSPart(eos, item_piece);
-    return eos_piece->p_of_rho(rho, eos_piece)/LAL_G_C4_SI;
-}
 
 
 /** @} */
