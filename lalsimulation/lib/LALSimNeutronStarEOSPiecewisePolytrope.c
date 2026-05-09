@@ -47,7 +47,7 @@ struct tagLALSimNeutronStarEOSDataPiecewisePolytrope {
 
 /* Determine which polytrope piece you are in. */
 /* hTab[i] is starting pseudo-enthalpy of polytropic piece i */
-static int polytrope_index_of_h(double h, LALSimNeutronStarEOSPiece * eos)
+static int polytrope_index_of_h(double h, struct tagEOSPiece * eos)
 {
     int i = eos->data.piecewisePolytrope->nPoly - 1;
 
@@ -59,7 +59,7 @@ static int polytrope_index_of_h(double h, LALSimNeutronStarEOSPiece * eos)
 
 /* Rest-mass density as a function of pseudo-enthalpy h */
 static double eos_rho_of_h_piecewise_polytrope(double h,
-    LALSimNeutronStarEOSPiece * eos)
+    struct tagEOSPiece * eos)
 {
     int i = polytrope_index_of_h(h, eos);       /* index for polytrope piece */
     double enthalpy = exp(h);   /* the real enthalpy */
@@ -76,7 +76,7 @@ static double eos_rho_of_h_piecewise_polytrope(double h,
 
 /* Pressure as a function of pseudo-enthalpy h */
 static double eos_p_of_h_piecewise_polytrope(double h,
-    LALSimNeutronStarEOSPiece * eos)
+    struct tagEOSPiece * eos)
 {
     int i = polytrope_index_of_h(h, eos);       /* index for polytrope piece */
     double enthalpy = exp(h);   /* the real enthalpy */
@@ -93,7 +93,7 @@ static double eos_p_of_h_piecewise_polytrope(double h,
 
 /* Energy density as a function of pseudo-enthalpy h */
 static double eos_e_of_h_piecewise_polytrope(double h,
-    LALSimNeutronStarEOSPiece * eos)
+    struct tagEOSPiece * eos)
 {
     int i = polytrope_index_of_h(h, eos);       /* index for polytrope piece */
     double n_i = eos->data.piecewisePolytrope->nTab[i];
@@ -108,7 +108,7 @@ static double eos_e_of_h_piecewise_polytrope(double h,
 }
 
 ///* depsilon/dp blows up as h->0 and enthalpy->1 */
-//static double eos_dedp_of_h_piecewise_polytrope(double h, LALSimNeutronStarEOSPiece *eos)
+//static double eos_dedp_of_h_piecewise_polytrope(double h, struct tagEOSPiece *eos)
 //{
 //    int i = polytrope_index_of_h(h, eos);  /* index for polytrope piece */
 //    double enthalpy = exp(h); /* specific enthalpy */
@@ -120,7 +120,7 @@ static double eos_e_of_h_piecewise_polytrope(double h,
 
 /* v=sqrt(dp/depsilon)->0 as h->0 and enthalpy->1 */
 static double eos_v_of_h_piecewise_polytrope(double h,
-    LALSimNeutronStarEOSPiece * eos)
+    struct tagEOSPiece * eos)
 {
     int i = polytrope_index_of_h(h, eos);       /* index for polytrope piece */
     double enthalpy = exp(h);   /* specific enthalpy */
@@ -134,7 +134,7 @@ static double eos_v_of_h_piecewise_polytrope(double h,
 
 /* Determine which polytrope piece you are in. */
 /* pTab[i] is starting pressure of polytropic piece i */
-static int polytrope_index_of_p(double p, LALSimNeutronStarEOSPiece * eos)
+static int polytrope_index_of_p(double p, struct tagEOSPiece * eos)
 {
     int i = eos->data.piecewisePolytrope->nPoly - 1;
 
@@ -145,7 +145,7 @@ static int polytrope_index_of_p(double p, LALSimNeutronStarEOSPiece * eos)
 }
 
 static double eos_h_of_p_piecewise_polytrope(double p,
-    LALSimNeutronStarEOSPiece * eos)
+    struct tagEOSPiece * eos)
 {
     int i = polytrope_index_of_p(p, eos);       /* index for polytrope piece */
     double k_i = eos->data.piecewisePolytrope->kTab[i];
@@ -160,7 +160,7 @@ static double eos_h_of_p_piecewise_polytrope(double p,
     return log(enthalpy);       /* convert from real enthalpy to pseudo-enthalpy h */
 }
 
-//static double eos_rho_of_p_piecewise_polytrope(double p, LALSimNeutronStarEOSPiece *eos)
+//static double eos_rho_of_p_piecewise_polytrope(double p, struct tagEOSPiece *eos)
 //{
 //    int i = polytrope_index_of_p(p, eos);  /* index for polytrope piece */
 //    double k_i = eos->data.piecewisePolytrope->kTab[i];
@@ -170,7 +170,7 @@ static double eos_h_of_p_piecewise_polytrope(double p,
 //}
 
 static double eos_e_of_p_piecewise_polytrope(double p,
-    LALSimNeutronStarEOSPiece * eos)
+    struct tagEOSPiece * eos)
 {
     double rho;
     int i = polytrope_index_of_p(p, eos);       /* index for polytrope piece */
@@ -185,7 +185,7 @@ static double eos_e_of_p_piecewise_polytrope(double p,
 
 /* depsilon/dp blows up as p->0 */
 static double eos_dedp_of_p_piecewise_polytrope(double p,
-    LALSimNeutronStarEOSPiece * eos)
+    struct tagEOSPiece * eos)
 {
     double epsilon;
     int i = polytrope_index_of_p(p, eos);       /* index for polytrope piece */
@@ -197,7 +197,7 @@ static double eos_dedp_of_p_piecewise_polytrope(double p,
 }
 
 ///* v=sqrt(dp/depsilon)->0 as p->0 */
-//static double eos_v_of_p_piecewise_polytrope(double p, LALSimNeutronStarEOSPiece *eos)
+//static double eos_v_of_p_piecewise_polytrope(double p, struct tagEOSPiece *eos)
 //{
 //    double epsilon;
 //    int i = polytrope_index_of_p(p, eos);  /* index for polytrope piece */
@@ -209,7 +209,7 @@ static double eos_dedp_of_p_piecewise_polytrope(double p,
 //}
 
 
-static void eos_free_piecewise_polytrope(LALSimNeutronStarEOSPiece * eos)
+static void eos_free_piecewise_polytrope(struct tagEOSPiece * eos)
 {
     if (eos) {
         LALFree(eos->data.piecewisePolytrope);
@@ -221,7 +221,7 @@ static void eos_free_piecewise_polytrope(LALSimNeutronStarEOSPiece * eos)
 /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
  * If the EOS is always causal, return some large value hmax instead. */
 static double eos_min_acausal_pseudo_enthalpy_piecewise_polytrope(double hmax,
-    LALSimNeutronStarEOSPiece * eos)
+    struct tagEOSPiece * eos)
 {
     int i;
     int nPoly = eos->data.piecewisePolytrope->nPoly;
@@ -336,10 +336,10 @@ print_piecewise_polytrope_data(LALSimNeutronStarEOSDataPiecewisePolytrope *
  * @param reference_density_si Density at the reference pressure in kg/m^3.
  * @return A pointer to a newly created EOS-piece structure.
  */
-static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPiecePolytrope(double Gamma,
+static struct tagEOSPiece *XLALSimNeutronStarEOSPiecePolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si)
 {
-    LALSimNeutronStarEOSPiece *eos;
+    struct tagEOSPiece *eos;
     LALSimNeutronStarEOSDataPiecewisePolytrope *data;
 
     /* reference pressure, density in geometric units of m^-2 */
@@ -406,13 +406,9 @@ static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPiecePolytrope(double Gam
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si)
 {
-    LALSimNeutronStarEOS *eos = NULL;
-    eos = LALCalloc(1, sizeof(*eos));
-    if (!eos) return NULL;
-
-    eos->number_of_pieces = 1;
-    eos->eos_piece = XLALCalloc(eos->number_of_pieces, sizeof(LALSimNeutronStarEOSPiece *));
-    eos->eos_piece[0] = XLALSimNeutronStarEOSPiecePolytrope(Gamma,reference_pressure_si, reference_density_si);    //TODO add a message to show this is only valid for 1 piece EOS ?
+    //TODO add a message to show this is only valid for 1 piece EOS ?
+    LALSimNeutronStarEOS * eos = XLALCreateSimNeutronStarEOS(1);
+    eos->eos_piece[0] = XLALSimNeutronStarEOSPiecePolytrope(Gamma,reference_pressure_si, reference_density_si);
     return eos;
 }
 
@@ -435,10 +431,10 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
  * @param gamma3 Adiabatic index for densities above 10^18 kg/m^3.
  * @return A pointer to a newly created EOS structure.
  */
-static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPiece4ParameterPiecewisePolytrope(double
+static struct tagEOSPiece *XLALSimNeutronStarEOSPiece4ParameterPiecewisePolytrope(double
     logp1_si, double gamma1, double gamma2, double gamma3)
 {
-    LALSimNeutronStarEOSPiece *eos;
+    struct tagEOSPiece *eos;
     LALSimNeutronStarEOSDataPiecewisePolytrope *data;
 
     /* Data for the 4-piece piecewise polytrope fit to the low-density part of
@@ -676,14 +672,9 @@ static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPiece4ParameterPiecewiseP
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
     logp1_si, double gamma1, double gamma2, double gamma3)
 {
-    LALSimNeutronStarEOS *eos = NULL;
-    eos = LALCalloc(1, sizeof(*eos));
-    if (!eos) return NULL;
-
-    eos->number_of_pieces = 1;
-    eos->eos_piece = XLALCalloc(eos->number_of_pieces, sizeof(LALSimNeutronStarEOSPiece *));
-    eos->eos_piece[0] = XLALSimNeutronStarEOSPiece4ParameterPiecewisePolytrope(logp1_si, gamma1, gamma2, gamma3);
     //TODO add a message to show this is only valid for 1 piece EOS ?
+    LALSimNeutronStarEOS * eos = XLALCreateSimNeutronStarEOS(1);
+    eos->eos_piece[0] = XLALSimNeutronStarEOSPiece4ParameterPiecewisePolytrope(logp1_si, gamma1, gamma2, gamma3);
     return eos;
 }
 

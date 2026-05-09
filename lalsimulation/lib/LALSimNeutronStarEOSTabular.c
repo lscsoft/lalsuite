@@ -81,7 +81,7 @@ static inline double clamp_to_range_tol(double x, double xmin, double xmax, doub
         return x;
 }
 
-static double eos_piece_p_of_e_tabular(double e, LALSimNeutronStarEOSPiece * eos)
+static double eos_piece_p_of_e_tabular(double e, struct tagEOSPiece * eos)
 {
     double log_e;
     double log_p;
@@ -104,7 +104,7 @@ static double eos_piece_p_of_e_tabular(double e, LALSimNeutronStarEOSPiece * eos
     return exp(log_p);
 }
 
-static double eos_piece_p_of_rho_tabular(double rho, LALSimNeutronStarEOSPiece * eos)
+static double eos_piece_p_of_rho_tabular(double rho, struct tagEOSPiece * eos)
 {
     double log_rho;
     double log_p;
@@ -127,7 +127,7 @@ static double eos_piece_p_of_rho_tabular(double rho, LALSimNeutronStarEOSPiece *
     return exp(log_p);
 }
 
-static double eos_piece_e_of_p_tabular(double p, LALSimNeutronStarEOSPiece * eos)
+static double eos_piece_e_of_p_tabular(double p, struct tagEOSPiece * eos)
 {
     double log_p;
     double log_e;
@@ -150,7 +150,7 @@ static double eos_piece_e_of_p_tabular(double p, LALSimNeutronStarEOSPiece * eos
     return exp(log_e);
 }
 
-static double eos_piece_e_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos)
+static double eos_piece_e_of_h_tabular(double h, struct tagEOSPiece * eos)
 {
     double log_h;
     double log_e;
@@ -173,7 +173,7 @@ static double eos_piece_e_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos
     return exp(log_e);
 }
 
-static double eos_piece_p_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos)
+static double eos_piece_p_of_h_tabular(double h, struct tagEOSPiece * eos)
 {
     double log_h;
     double log_p;
@@ -196,7 +196,7 @@ static double eos_piece_p_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos
     return exp(log_p);
 }
 
-static double eos_piece_rho_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos)
+static double eos_piece_rho_of_h_tabular(double h, struct tagEOSPiece * eos)
 {
     double log_h;
     double log_rho;
@@ -219,7 +219,7 @@ static double eos_piece_rho_of_h_tabular(double h, LALSimNeutronStarEOSPiece * e
     return exp(log_rho);
 }
 
-static double eos_piece_h_of_p_tabular(double p, LALSimNeutronStarEOSPiece * eos)
+static double eos_piece_h_of_p_tabular(double p, struct tagEOSPiece * eos)
 {
     double log_p;
     double log_h;
@@ -242,7 +242,7 @@ static double eos_piece_h_of_p_tabular(double p, LALSimNeutronStarEOSPiece * eos
     return exp(log_h);
 }
 
-static double eos_piece_dedp_of_p_tabular(double p, LALSimNeutronStarEOSPiece * eos)
+static double eos_piece_dedp_of_p_tabular(double p, struct tagEOSPiece * eos)
 {
     double log_p;
     double log_e;
@@ -266,7 +266,7 @@ static double eos_piece_dedp_of_p_tabular(double p, LALSimNeutronStarEOSPiece * 
     return d_log_e_d_log_p * exp(log_e - log_p);
 }
 
-static double eos_piece_v_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos)
+static double eos_piece_v_of_h_tabular(double h, struct tagEOSPiece * eos)
 {
     double p, dedp, log_cs2, log_h;
     double tol = 1e-12;
@@ -291,7 +291,7 @@ static double eos_piece_v_of_h_tabular(double h, LALSimNeutronStarEOSPiece * eos
     return pow(exp(log_cs2), 0.5);
 }
 
-//static double eos_piece_v_of_h_tabular(double h, LALSimNeutronStarEOSPiece *eos)
+//static double eos_piece_v_of_h_tabular(double h, struct tagEOSPiece *eos)
 //{
 //      double dpdh, dedh;
 //    printf("hi4\n");
@@ -337,7 +337,7 @@ static void eos_piece_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
     return;
 }
 
-static void eos_piece_free_tabular(LALSimNeutronStarEOSPiece * eos)
+static void eos_piece_free_tabular(struct tagEOSPiece * eos)
 {
     if (eos) {
         eos_piece_free_tabular_data(eos->data.tabular);
@@ -345,8 +345,6 @@ static void eos_piece_free_tabular(LALSimNeutronStarEOSPiece * eos)
     }
     return;
 }
-
-/* Finding density where EOS becomes acausal */
 
 /* Evaluate vSound at each tabulated point until vSound>1 or you get to last
  * point.  If vSound>1 interpolate between that point and previous point to
@@ -357,7 +355,7 @@ static void eos_piece_free_tabular(LALSimNeutronStarEOSPiece * eos)
 /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
  * If the EOS is always causal, return some large value hmax instead. */
 static double eos_piece_min_acausal_pseudo_enthalpy_tabular(double hmax,
-    LALSimNeutronStarEOSPiece * eos)
+    struct tagEOSPiece * eos)
 {
     size_t i;
     double h_im1, h_i;
@@ -493,10 +491,10 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat, 
 }
 
 
-static LALSimNeutronStarEOSPiece *eos_piece_alloc_tabular(double *nbdat, double *edat, double *pdat,
+static struct tagEOSPiece * eos_piece_alloc_tabular(double *nbdat, double *edat, double *pdat,
    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
 {
-    LALSimNeutronStarEOSPiece *eos;
+    struct tagEOSPiece *eos;
     LALSimNeutronStarEOSDataTabular *data;
     size_t i;
 
@@ -652,16 +650,16 @@ static LALSimNeutronStarEOSPiece *eos_piece_alloc_tabular(double *nbdat, double 
 }
 
 /*
- * This function creates a LALSimNeutronStarEOSPiece pointer from a piece of
+ * This function creates a struct tagEOSPiece pointer from a piece of
  * tabulated equation of state tabulated data, given minimum and maximum
  * indices for the tables.
  */
-static LALSimNeutronStarEOSPiece * eos_piece_alloc_tabular_index( double *nbdat, double *edat, double *pdat,
+static struct tagEOSPiece * eos_piece_alloc_tabular_index( double *nbdat, double *edat, double *pdat,
                                                 double *mubdat, double *muedat, double *hdat,
                                                 double *yedat, double *cs2dat,
                                                 size_t begin_index, size_t end_index){
 
-    LALSimNeutronStarEOSPiece * eos;
+    struct tagEOSPiece * eos;
 
     double *nbdat_cut, *edat_cut, *pdat_cut, *mubdat_cut, *muedat_cut, *hdat_cut, *yedat_cut, *cs2dat_cut;
     size_t ndat;
@@ -720,206 +718,6 @@ static LALSimNeutronStarEOSPiece * eos_piece_alloc_tabular_index( double *nbdat,
 
 /** @endcond */
 
-/*
- * @brief Reads a data file containing tabulated neutron star
- * equation of state data to create the LALSimNeutronStarEOSPiece
- * equation of state structure.
- * @details Read a data file specified by a path fname that contains either
- * i) 2 whitespace separated columns of equation of state data ("old" LAL EoS format)
- * with the pressure in /m^2 (first column) and the energy density in /m^2 (second column).
- * ii) 9 whitespace separated columns of equation of state data ("new" LAL EoS format)
- * with the table index, the baryon density in /fm^3, the energy density in g/cm^3,
- * the pressure in dyn/cm^2, the baryon chemical potential in MeV, the electron
- * chemical potential in MeV, the pseudo-enthalpy, the lepton fraction and the
- * square of the speed of sound normalized to light velocity.
- *
- * Every line beginning with the character '#' is ignored.
- * If the path is an absolute path then this specific file is opened;
- * otherwise, search for the file in paths given in the environment variable
- * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
- * @param[in] fname The path of the file to open.
- * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOSPiece).
- */
-// LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSFromFile(const char *fname){
-//     LALSimNeutronStarEOSPiece *eos;
-//     double *f_dat;
-//     size_t ncol;
-//     size_t ndat;
-//     LALFILE *fp;
-//
-//     double *nbdat;
-//     double *edat;
-//     double *pdat;
-//     double *mubdat;
-//     double *muedat;
-//     double *hdat;
-//     double *yedat;
-//     double *cs2dat;
-//
-//     fp = XLALSimReadDataFileOpen(fname);
-//     if (!fp)
-//         XLAL_ERROR_NULL(XLAL_EFUNC);
-//
-//     ndat = XLALSimReadDataFileNCol(&f_dat, &ncol, fp);
-//     XLALFileClose(fp);
-//
-//     if (ndat == (size_t) (-1)) {
-//         XLALFree(f_dat);
-//         XLAL_ERROR_NULL(XLAL_EFUNC);
-//     }
-//
-//     nbdat = LALMalloc(ndat * sizeof(*nbdat));
-//     edat = LALMalloc(ndat * sizeof(*edat));
-//     pdat = LALMalloc(ndat * sizeof(*pdat));
-//     mubdat = LALMalloc(ndat * sizeof(*mubdat));
-//     muedat = LALMalloc(ndat * sizeof(*muedat));
-//     hdat = LALMalloc(ndat * sizeof(*hdat));
-//     yedat = LALMalloc(ndat * sizeof(*yedat));
-//     cs2dat = LALMalloc(ndat * sizeof(*cs2dat));
-//
-//     if (ncol > 2)
-//     {
-//         for (size_t i = 0 ; i < ndat ; i++) {
-//             nbdat[i] = f_dat[i * ncol + 1];
-//             edat[i] = f_dat[i * ncol + 2] * 1e3 * LAL_G_C2_SI; /* transform from CGS to SI and then to Geometrized units */
-//             pdat[i] = f_dat[i * ncol + 3] * 1e-1 * LAL_G_C4_SI; /* transform from CGS to SI and then to Geometrized units */
-//             mubdat[i] = f_dat[i * ncol + 4];
-//             muedat[i] = f_dat[i * ncol + 5];
-//             hdat[i] = f_dat[i * ncol + 6];
-//             yedat[i] = f_dat[i * ncol + 7];
-//             cs2dat[i] = f_dat[i * ncol + 8];
-//         }
-//     }
-//     else if (ncol == 2)
-//     {
-//         for (size_t i = 0 ; i < ndat ; i++) {
-//             pdat[i] = f_dat[i * ncol];
-//             edat[i] = f_dat[i * ncol + 1];
-//         }
-//
-//         LALFree(nbdat);  nbdat  = NULL;
-//         LALFree(mubdat); mubdat = NULL;
-//         LALFree(muedat); muedat = NULL;
-//         LALFree(hdat);   hdat   = NULL;
-//         LALFree(yedat);  yedat  = NULL;
-//         LALFree(cs2dat); cs2dat = NULL;
-//     }
-//     else if (ncol < 2)
-//     {
-//         fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
-//         XLAL_ERROR_NULL(XLAL_EDOM);
-//     }
-//
-//     eos = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
-//
-//     XLALFree(f_dat);
-//     LALFree(nbdat);
-//     LALFree(edat);
-//     LALFree(pdat);
-//     LALFree(mubdat);
-//     LALFree(muedat);
-//     LALFree(hdat);
-//     LALFree(yedat);
-//     LALFree(cs2dat);
-//
-//     snprintf(eos->name, sizeof(eos->name), "%s", fname);
-//     return eos;
-// }
-
-/*
- * @brief Reads 9 arrays of neutron star equation of state data
- * to create the LALSimNeutronStarEOSPiece equation of state structure.
- * @details The arrays read contain each ndat lines of equation of state
- * data. Although the 9 arrays correspond to the physical quantities provided
- * in the "new" LAL format equation of state files, the units are not the same.
- *
- * The energy density (edat) and the pressure (edat) cannot be NULL or zero-filled arrays.
- * It is highly recommanded that the user provides the pseudo-enthalpy as input,
- * particularly if the equation of state data contains phase transitions.
- *
- * If the pseudo-enthalpy (hdat):
- * - is NULL, it will be calculated within the function from the pressure and energy
- * density; in this case, the baryonic density (nbdat), the baryonic and electronic
- * chemical potentials (mubdat and muedat), the lepton fraction (yedat) and sound
- * speed squared (cs2dat) can also be NULL as they are calculated within the function
- * from the pressure and energy density. This is similar to providing an equation of
- * state in the "old" LAL file format.
- * - is not NULL, it is necessary to provide non-NULL arrays of the baryonic density
- * (nbdat), the baryonic and electronic chemical potentials (mubdat and muedat), the
- * lepton fraction (yedat) and sound speed squared (cs2dat). Note that mubdat, muedat,
- * yedat can be zero-filled array without consequence, as those quantities are not
- * used in LALSimulation as of now; this is the same for nbdat, as the rest-mass
- * density is recalculated from hdat, pdat and edat and used in the related
- * LALSimulation functions. A zero-filled array for cs2dat will not lead to an error
- * when constructing the EOS structure and the input of this quantity is not necessary
- * to solve neutron star's astrophysical parameters; however, any function related to
- * the speed of sound in LALSimulation will result in errors. This is similar to
- * providing an equation of state in the "new" LAL file format, although units are different.
- * @param nbdat Array for the baryon density (in /fm^3).
- * @param edat Array for the energy density (in m^-2).
- * @param pdat Array for the pressure in (in m^-2).
- * @param mubdat Array for the baryon chemical potential (in MeV).
- * @param muedat Array for the electron chemical potential (in MeV).
- * @param hdat Array for the pseudo enthalpy (dimensionless).
- * @param yedat Array for the lepton fration (dimensionless).
- * @param cs2dat Array for the sound speed squared normalized
- * to the speed of light (dimensionless).
- * @param ndat Size of the arrays for equation of state quantities.
- * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOSPiece).
- */
-// LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
-//    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat)
-// {
-//     LALSimNeutronStarEOSPiece *eos;
-//     int ncol = 9;
-//     if (hdat == NULL) ncol = 2;
-//     eos = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
-//     return eos;
-// }
-
-/*
- * @brief Creates a tabulated neutron star equation of state from
- * energy density and pressure arrays.
- * @details This is a convenience wrapper around XLALSimNeutronStarEOSFromTabData
- * that accepts REAL8Vector inputs, making it usable from Python via SWIG.
- *
- * @param energy_density Array for the energy density (in m^-2).
- * @param pressure Array for the pressure (in m^-2).
- * @return A pointer to neutron star equation of state structure (LALSimNeutronStarEOSPiece).
- */
-// LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSFromArrays(
-//     const REAL8Vector *energy_density, const REAL8Vector *pressure)
-// {
-//     XLAL_CHECK_NULL(energy_density && pressure, XLAL_EFAULT);
-//     XLAL_CHECK_NULL(energy_density->length == pressure->length, XLAL_ESIZE,
-//         "energy_density and pressure must have the same length");
-//     return XLALSimNeutronStarEOSFromTabData(
-//         NULL, energy_density->data, pressure->data,
-//         NULL, NULL, NULL, NULL, NULL, pressure->length);
-// }
-
-/**
- * @brief Creates a phase-transition-aware tabulated neutron star equation of
- * state from energy density and pressure arrays.
- * @details This is a convenience wrapper around
- * XLALSimNeutronStarEOSFromTabDataPhaseTransition that accepts REAL8Vector
- * inputs, making it usable from Python via SWIG.
- * @param energy_density Array for the energy density (in m^-2).
- * @param pressure Array for the pressure (in m^-2).
- * @return A pointer to LALSimNeutronStarEOS equation of state structure.
- */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
-    const REAL8Vector *energy_density, const REAL8Vector *pressure)
-{
-    XLAL_CHECK_NULL(energy_density && pressure, XLAL_EFAULT);
-    XLAL_CHECK_NULL(energy_density->length == pressure->length, XLAL_ESIZE,
-        "energy_density and pressure must have the same length");
-    return XLALSimNeutronStarEOSFromTabData(
-        NULL, energy_density->data, pressure->data,
-        NULL, NULL, NULL, NULL, NULL, pressure->length);
-}
-
-
 /**
  * @brief Reads a data file containing tabulated equation of state data
  * to create the LALSimNeutronStarEOS equation of state structure that can handle
@@ -967,7 +765,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
  * advised to provide equations of state containing phase transition in the
  * "new" LAL format.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the LALSimNeutronStarEOSPiece structure and the corresponding
+ * corrected, use the struct tagEOSPiece structure and the corresponding
  * XLALSimNeutronStarEOSFromFile; note that it cannot be used in the
  * solver for neutron star's astrophysical parameters that accounts for the
  * necessary phase transition corrections.
@@ -1047,7 +845,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) {
         XLAL_ERROR_NULL(XLAL_EDOM);
     }
 
-    eos = XLALSimNeutronStarEOSFromTabData(nbdat, edat, pdat, mubdat, muedat, hdat,
+    eos = XLALSimNeutronStarEOSFromTabulatedData(nbdat, edat, pdat, mubdat, muedat, hdat,
                                                                     yedat, cs2dat, ndat);
     XLALFree(f_dat);
     LALFree(nbdat);
@@ -1122,8 +920,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) {
  * have been modified to obtain a clean phase transition: this implies that
  * P(pt,+) and eps(pt,+) are not thermodynamically coherent together.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the LALSimNeutronStarEOSPiece structure and the corresponding
- * XLALSimNeutronStarEOSFromTabData function; note that it cannot be used in the
+ * corrected, use the struct tagEOSPiece structure and the corresponding
+ * XLALSimNeutronStarEOSFromTabulatedData function; note that it cannot be used in the
  * solver for neutron star's astrophysical parameters that accounts for the
  * necessary phase transition corrections.
  *
@@ -1140,7 +938,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) {
  * @param dirty Integer to test for dirty phase transitions (1) or clean ones only (0).
  * @return A pointer to neutron star equation of state structure LALSimNeutronStarEOS.
  */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabDataChoiceDirtyPT(double *nbdat, double *edat, double *pdat,
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat, int dirty)
 {
@@ -1150,21 +948,21 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabDataChoiceDirtyPT(double *nbda
         XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
-    LALSimNeutronStarEOS *eos = NULL;
-    int *indices_phase_transition = NULL;
-
-    eos = LALCalloc(1, sizeof(*eos));
-    if (!eos) return NULL;
-
     /* Inquire about phase transitions in the equation of state */
+    int *indices_phase_transition = NULL;
     indices_phase_transition = eos_find_phase_transition(ndat, edat, pdat, dirty);
     if (!indices_phase_transition) goto cleanup;
     int number_pt = indices_phase_transition[0] ;
     int number_eos = number_pt + 1 ;
 
-    eos->number_of_pieces = number_eos;
-    /* Allocate each piece of the equation of state separated by a phase transition */
-    eos->eos_piece = XLALCalloc(number_eos, sizeof(LALSimNeutronStarEOSPiece *));
+//     LALSimNeutronStarEOS *eos = NULL;
+//
+//     eos = LALCalloc(1, sizeof(*eos));
+//     if (!eos) return NULL;
+//     eos->number_of_pieces = number_eos;
+//     /* Allocate each piece of the equation of state separated by a phase transition */
+//     eos->eos_piece = XLALCalloc(number_eos, sizeof(struct tagEOSPiece *));
+    LALSimNeutronStarEOS * eos = XLALCreateSimNeutronStarEOS(number_eos);
     if (!eos->eos_piece) goto cleanup;
 
 
@@ -1316,39 +1114,12 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabDataChoiceDirtyPT(double *nbda
     return eos;
 
 cleanup:
-
-    if (eos) {
-        if (eos->eos_piece) {
-            for (int i = 0; i < eos->number_of_pieces; i++) {
-                if (eos->eos_piece[i]) {
-
-                    // CRITICAL: use proper destructor
-                    if (eos->eos_piece[i]->free) {
-                        eos->eos_piece[i]->free(eos->eos_piece[i]);
-                    } else {
-                        LALFree(eos->eos_piece[i]);
-                    }
-
-                    eos->eos_piece[i] = NULL;
-                }
-            }
-            LALFree(eos->eos_piece);
-        }
-
-        LALFree(eos);
-    }
-
-    //TODO can we not call the destroy here ?
-
+    XLALDestroySimNeutronStarEOS(eos);
     if (indices_phase_transition)
         XLALFree(indices_phase_transition);
 
     return NULL;
 }
-
-
-
-
 
 
 /**
@@ -1409,8 +1180,8 @@ cleanup:
  * have been modified to obtain a clean phase transition: this implies that
  * P(pt,+) and eps(pt,+) are not thermodynamically coherent together.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the LALSimNeutronStarEOSPiece structure and the corresponding
- * XLALSimNeutronStarEOSFromTabData function; note that it cannot be used in the
+ * corrected, use the struct tagEOSPiece structure and the corresponding
+ * XLALSimNeutronStarEOSFromTabulatedData function; note that it cannot be used in the
  * solver for neutron star's astrophysical parameters that accounts for the
  * necessary phase transition corrections.
  *
@@ -1426,128 +1197,34 @@ cleanup:
  * @param ndat Size of the arrays for equation of state quantities.
  * @return A pointer to neutron star equation of state structure LALSimNeutronStarEOS.
  */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData( double *nbdat, double *edat, double *pdat,
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedData( double *nbdat, double *edat, double *pdat,
                                                                     double *mubdat, double *muedat, double *hdat,
                                                                     double *yedat, double *cs2dat, size_t ndat)
 {
 
-   return XLALSimNeutronStarEOSFromTabDataChoiceDirtyPT(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 1);
+   return XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 1);
 }
 
-
-
-/*
- * @brief Creates an equation of state structure from tabulated equation
- * of state data of a known name. The name of the tabulated equation of state
- * must belong to the sample of equations of state from the old frame work or
- *  added for the new framework.
- * @details A known, installed, named tabulated equation of state data file, whose name
- * is included in the old EOS framework names or the new ones, is read and then used to
- * create the equation of state structure.
- * The equations of state for the OLD framework available are the representative sample drawn from
- * http://xtreme.as.arizona.edu/NeutronStars/ they are:
- * - ALF1
- * - ALF2
- * - ALF3
- * - ALF4
- * - AP1
- * - AP2
- * - AP3
- * - AP4
- * - APR4_EPP
- * - BBB2
- * - BGN1H1
- * - BPAL12
- * - BSK19
- * - BSK20
- * - BSK21
- * - ENG
- * - FPS
- * - GNH3
- * - GS1
- * - GS2
- * - H1
- * - H2
- * - H3
- * - H4
- * - H5
- * - H6
- * - H7
- * - MPA1
- * - MS1B
- * - MS1B_PP
- * - MS1_PP
- * - MS1
- * - MS2
- * - PAL6
- * - PCL2
- * - PS
- * - QMC700
- * - SLY4
- * - SLY
- * - SQM1
- * - SQM2
- * - SQM3
- * - WFF1
- * - WFF2
- * - WFF3
- * We also include more modern equations from the CompOSE website
- * https://compose.obspm.fr/ downloaded on 18 June 2018. These EOSs are:
- * - APR
- * - BHF_BBB2
- * - KDE0V
- * - KDE0V1
- * - RS
- * - SK255
- * - SK272
- * - SKA
- * - SKB
- * - SKI2
- * - SKI3
- * - SKI4
- * - SKI5
- * - SKI6
- * - SKMP
- * - SKOP
- * - SLY2
- * - SLY230A
- * - SLY9
- * And we include HQC18 from http://user.numazu-ct.ac.jp/~sumi/eos/HQC18_submit
- * - HQC18
- *
- *
- * @param[in] name The name of the equation of state.
- * @return A pointer to neutron star equation of state structure.
+/**
+ * @brief Creates a phase-transition-aware tabulated neutron star equation of
+ * state from energy density and pressure arrays.
+ * @details This is a convenience wrapper around
+ * XLALSimNeutronStarEOSFromTabulatedDataPhaseTransition that accepts REAL8Vector
+ * inputs, making it usable from Python via SWIG.
+ * @param energy_density Array for the energy density (in m^-2).
+ * @param pressure Array for the pressure (in m^-2).
+ * @return A pointer to LALSimNeutronStarEOS equation of state structure.
  */
-// LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSByName(const char *name)
-// {
-//     static const char fname_base[] = "LALSimNeutronStarEOS_";
-//     static const char fname_extn[] = ".dat";
-//
-//     size_t n = XLAL_NUM_ELEM(lalSimNeutronStarEOSNames);
-//     size_t i;
-//     char fname[FILENAME_MAX];
-//
-//     for (i = 0; i < n ; ++i)
-//         if (XLALStringCaseCompare(name, lalSimNeutronStarEOSNames[i]) == 0) {
-//             LALSimNeutronStarEOSPiece *eos;
-//             snprintf(fname, sizeof(fname), "%s%s%s", fname_base, lalSimNeutronStarEOSNames[i],
-//                 fname_extn);
-//             eos = XLALSimNeutronStarEOSFromFile(fname);
-//             if (!eos)
-//                 XLAL_ERROR_NULL(XLAL_EFUNC);
-//             snprintf(eos->name, sizeof(eos->name), "%s", lalSimNeutronStarEOSNames[i]);
-//             return eos;
-//         }
-//
-//     XLAL_PRINT_ERROR("Unrecognized EOS name %s...", name);
-//     XLALPrintError("\tRecognised EOS names are: %s", lalSimNeutronStarEOSNames[0]);
-//     for (i = 1; i < n ; ++i)
-//         XLALPrintError(", %s", lalSimNeutronStarEOSNames[i]);
-//     XLALPrintError("\n");
-//     XLAL_ERROR_NULL(XLAL_ENAME);
-// }
-
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
+    const REAL8Vector *energy_density, const REAL8Vector *pressure)
+{
+    XLAL_CHECK_NULL(energy_density && pressure, XLAL_EFAULT);
+    XLAL_CHECK_NULL(energy_density->length == pressure->length, XLAL_ESIZE,
+        "energy_density and pressure must have the same length");
+    return XLALSimNeutronStarEOSFromTabulatedData(
+        NULL, energy_density->data, pressure->data,
+        NULL, NULL, NULL, NULL, NULL, pressure->length);
+}
 
 /**
  * @brief Creates an equation of state structure from tabulated equation

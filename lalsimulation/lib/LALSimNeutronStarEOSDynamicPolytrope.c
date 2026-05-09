@@ -60,12 +60,12 @@ static double causal_Nparams(double p, double esec[], double psec[], double usec
 /** @endcond */
 
 /**
- * @brief Reads dynamic analytic eos parameters to make an eos piece.
+ * @brief Reads dynamic analytic Equation Of State (EOS) parameters to make an EOS.
  * @details Reads an array of eos parameters to construct either the causal
- * analytic eos or non-causal analytic polytrope generically outlined in PRD 97,
+ * analytic EOS or non-causal analytic polytrope generically outlined in PRD 97,
  * 123019 (2018). The models are dynamic because the stitching pressures are
  * also parameter choices.
- * @param[in] parameters[] Array of dynamic analytic eos parameters.
+ * @param[in] parameters[] Array of dynamic analytic EOS parameters.
  * [param0, log10(p1), param1, log10(p2), ... , log10(pN), paramN], where
  * pressure is in SI units, and the params are either gammas (adiabatic
  * indexes) for the non-causal polytrope model or the vs (speed function
@@ -73,9 +73,11 @@ static double causal_Nparams(double p, double esec[], double psec[], double usec
  * @param[in] nsec The number of sections (pressure sub-domains) to stitch to
  * crust eos.
  * @param[in] causal Option to use causal version (0=non-causal, 1=causal).
- * @return A pointer to neutron star equation of state piece structure.
+ * @return A pointer to neutron star EOS structure.
  */
-static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPieceDynamicAnalytic(double parameters[], size_t nsec, int causal){
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSDynamicAnalytic(double parameters[], size_t nsec, int causal){
+
+    //TODO put a message
     // Check that causal flag appropriately assigned
     if (causal!=0 && causal!=1)
 	XLAL_ERROR_NULL(XLAL_EINVAL,"Did not specify which approach to take, Causal or Non-Causal");
@@ -263,17 +265,15 @@ static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPieceDynamicAnalytic(doub
     }
 
     // Updating eos structure
-    LALSimNeutronStarEOSPiece * eos;
+    LALSimNeutronStarEOS * eos;
     double *nbdat = NULL;
     double *mubdat = NULL;
     double *muedat = NULL;
     double *yedat = NULL;
     double *cs2dat = NULL;
     double *hdat = NULL;
-    size_t ncol = 2;
     /* Updating eos structure */
-    eos = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
-
+    eos = XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 0);
 
     XLALFree(edat);
     XLALFree(pdat);
@@ -283,123 +283,50 @@ static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPieceDynamicAnalytic(doub
 
 
 /**
- * @brief Reads dynamic analytic eos parameters to make an eos.
- * @details Reads an array of eos parameters to construct either the causal
- * analytic eos or non-causal analytic polytrope generically outlined in PRD 97,
- * 123019 (2018). The models are dynamic because the stitching pressures are
- * also parameter choices.
- * @param[in] parameters[] Array of dynamic analytic eos parameters.
- * [param0, log10(p1), param1, log10(p2), ... , log10(pN), paramN], where
- * pressure is in SI units, and the params are either gammas (adiabatic
- * indexes) for the non-causal polytrope model or the vs (speed function
- * exponents) for the causal analytic model.
- * @param[in] nsec The number of sections (pressure sub-domains) to stitch to
- * crust eos.
- * @param[in] causal Option to use causal version (0=non-causal, 1=causal).
- * @return A pointer to neutron star equation of state structure.
- */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSDynamicAnalytic(double parameters[], size_t nsec, int causal){
-    LALSimNeutronStarEOS *eos = NULL;
-    eos = LALCalloc(1, sizeof(*eos));
-    if (!eos) return NULL;
-
-    eos->number_of_pieces = 1;
-    eos->eos_piece = XLALCalloc(eos->number_of_pieces, sizeof(LALSimNeutronStarEOSPiece *));
-    eos->eos_piece[0] = XLALSimNeutronStarEOSPieceDynamicAnalytic(parameters, nsec, causal);
-
-    //TODO put a message
-    return eos;
-}
-
-/**
- * @brief Reads 5 dynamic polytrope eos parameters to make an eos piece.
- * @details Reads 5 dynamic polytrope eos parameters to construct a 3-piece
- * dynamic polytrope eos, generically outlined in PRD 97, 123019 (2018), and
+ * @brief Reads 5 dynamic polytrope Equation Of State (EOS) parameters to make an EOS.
+ * @details Reads 5 dynamic polytropeEOS parameters to construct a 3-piece
+ * dynamic polytrope EOS, generically outlined in PRD 97, 123019 (2018), and
  * stitched to a low-density SLy eos crust.
  * @param[in] g0 The adiabatic index of the first polytrope.
  * @param[in] log10p1_si The log10 of the first dividing pressure in SI units.
  * @param[in] g1 The adiabatic index of the second polytrope.
  * @param[in] log10p2_si The log10 of the second dividing pressure in SI units.
  * @param[in] g2 The adiabatic index of the third polytrope.
- * @return A pointer to neutron star equation of state structure piece.
- */
-static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPiece3PieceDynamicPolytrope(double g0, double log10p1_si, double g1, double log10p2_si, double g2){
-    double params[]={g0,log10p1_si,g1,log10p2_si,g2};
-    LALSimNeutronStarEOSPiece * eos;
-    // 3-piece (non-causal) dynamic polytrope
-    eos = XLALSimNeutronStarEOSPieceDynamicAnalytic(params, 3, 0);
-    return eos;
-}
-
-
-/**
- * @brief Reads 5 dynamic polytrope eos parameters to make an eos.
- * @details Reads 5 dynamic polytrope eos parameters to construct a 3-piece
- * dynamic polytrope eos, generically outlined in PRD 97, 123019 (2018), and
- * stitched to a low-density SLy eos crust.
- * @param[in] g0 The adiabatic index of the first polytrope.
- * @param[in] log10p1_si The log10 of the first dividing pressure in SI units.
- * @param[in] g1 The adiabatic index of the second polytrope.
- * @param[in] log10p2_si The log10 of the second dividing pressure in SI units.
- * @param[in] g2 The adiabatic index of the third polytrope.
- * @return A pointer to neutron star equation of state structure.
+ * @return A pointer to neutron star EOS structure.
  */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS3PieceDynamicPolytrope(double g0, double log10p1_si, double g1, double log10p2_si, double g2){
-    LALSimNeutronStarEOS *eos = NULL;
-    eos = LALCalloc(1, sizeof(*eos));
-    if (!eos) return NULL;
-
-    eos->number_of_pieces = 1;
-    eos->eos_piece = XLALCalloc(eos->number_of_pieces, sizeof(LALSimNeutronStarEOSPiece *));
-    eos->eos_piece[0] = XLALSimNeutronStarEOSPiece3PieceDynamicPolytrope(g0, log10p1_si, g1, log10p2_si, g2);
     //TODO add a message
+    double params[]={g0,log10p1_si,g1,log10p2_si,g2};
+    LALSimNeutronStarEOS * eos;
+    // 3-piece (non-causal) dynamic polytrope
+    eos = XLALSimNeutronStarEOSDynamicAnalytic(params, 3, 0);
     return eos;
 }
 
+
 /**
- * @brief Reads 5 causal analytic eos parameters to make an eos piece.
- * @details Reads 5 causal analytic eos parameters to construct a 3-piece
+ * @brief Reads 5 causal analytic Equation Of State (EOS) parameters to make an EOS piece.
+ * @details Reads 5 causal analytic EOS parameters to construct a 3-piece
  * causal eos, generically outlined in PRD 97, 123019 (2018), and stitched to
- * a low-density SLy eos crust.
+ * a low-density SLy EOS crust.
  * @param[in] v1 The first sound function exponent.
  * @param[in] log10p1_si The log10 of the first dividing pressure in SI units.
  * @param[in] v2 The second sound function exponent.
  * @param[in] log10p2_si The log10 of the second dividing pressure in SI units.
  * @param[in] v3 The third sound function exponent.
- * @return A pointer to neutron star equation of state piece structure.
- */
-static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPiece3PieceCausalAnalytic(double v1, double log10p1_si, double v2, double log10p2_si, double v3){
-    double params[]={v1,log10p1_si,v2,log10p2_si,v3};
-    LALSimNeutronStarEOSPiece * eos;
-    // 3-piece causal analytic eos
-    eos = XLALSimNeutronStarEOSPieceDynamicAnalytic(params, 3, 1);
-    return eos;
-}
-
-/**
- * @brief Reads 5 causal analytic eos parameters to make an eos.
- * @details Reads 5 causal analytic eos parameters to construct a 3-piece
- * causal eos, generically outlined in PRD 97, 123019 (2018), and stitched to
- * a low-density SLy eos crust.
- * @param[in] v1 The first sound function exponent.
- * @param[in] log10p1_si The log10 of the first dividing pressure in SI units.
- * @param[in] v2 The second sound function exponent.
- * @param[in] log10p2_si The log10 of the second dividing pressure in SI units.
- * @param[in] v3 The third sound function exponent.
- * @return A pointer to neutron star equation of state structure.
+ * @return A pointer to neutron star EOS structure.
  */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS3PieceCausalAnalytic(double v1, double log10p1_si, double v2, double log10p2_si, double v3){
-    LALSimNeutronStarEOS *eos = NULL;
-    eos = LALCalloc(1, sizeof(*eos));
-    if (!eos) return NULL;
-
-    eos->number_of_pieces = 1;
-    eos->eos_piece = XLALCalloc(eos->number_of_pieces, sizeof(LALSimNeutronStarEOSPiece *));
-    eos->eos_piece[0] = XLALSimNeutronStarEOSPiece3PieceCausalAnalytic(v1, log10p1_si, v2, log10p2_si, v3);
-
     //TODO add a message
+    double params[]={v1,log10p1_si,v2,log10p2_si,v3};
+    LALSimNeutronStarEOS * eos;
+    // 3-piece causal analytic eos
+    eos = XLALSimNeutronStarEOSDynamicAnalytic(params, 3, 1);
     return eos;
 }
+
+
+
 /**
  * @brief Check that EOS has enough points (>4) in M-R space to interpolate.
  * As the TOV equations are integrated from pmin to pmax, masses are
@@ -428,34 +355,35 @@ int XLALSimNeutronStarEOS3PDViableFamilyCheck(double p0, double log10p1_si, doub
     double rdat;
     double kdat;
 
-    LALSimNeutronStarEOSPiece *eos=NULL;
+    LALSimNeutronStarEOS *eos = NULL;
+
     if (causal == 1)
-        eos = XLALSimNeutronStarEOSPiece3PieceCausalAnalytic(p0, log10p1_si, p1, log10p2_si, p2);
+        eos = XLALSimNeutronStarEOS3PieceCausalAnalytic(p0, log10p1_si, p1, log10p2_si, p2);
     else
-        eos = XLALSimNeutronStarEOSPiece3PieceDynamicPolytrope(p0, log10p1_si, p1, log10p2_si, p2);
+        eos = XLALSimNeutronStarEOS3PieceDynamicPolytrope(p0, log10p1_si, p1, log10p2_si, p2);
 
     // Initialize previous value for mdat comparison
     mdat_prev = 0.0;
 
     // Ensure mass turnover does not happen too soon
     const double logpmin = 75.5;
-    double logpmax = log(XLALSimNeutronStarEOSPieceMaxPressure(eos));
+    double logpmax = log(XLALSimNeutronStarEOSMaxPressure(eos));
     double dlogp = (logpmax - logpmin) / 100.;
     // Need at least four points
     for (int i = 0; i < 4; ++i) {
         pdat = exp(logpmin + i * dlogp);
-        XLALSimNeutronStarTOVODEIntegrateWithToleranceEOSPiece(&rdat, &mdat, &kdat, pdat, eos, 1e-6);
+        XLALSimNeutronStarTOVODEIntegrate(&rdat, &mdat, &kdat, pdat, eos);
         // Determine if maximum mass has been found
         if (mdat <= mdat_prev){
             // EOS has too few points to create family
             // Clean up
-            XLALDestroySimNeutronStarEOSPiece(eos);
+            XLALDestroySimNeutronStarEOS(eos);
             return XLAL_FAILURE;
         }
         mdat_prev = mdat;
     }
 
-    XLALDestroySimNeutronStarEOSPiece(eos);
+    XLALDestroySimNeutronStarEOS(eos);
 
     return XLAL_SUCCESS;
 }

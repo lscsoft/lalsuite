@@ -170,18 +170,19 @@ static double eos_e_of_p_spectral_decomposition(double x, double gamma[], int si
 
 /**
  * @brief Reads spectral decomposition Equation Of State (EOS) parameters
- * to make an EOS piece.
- * @details Reads an array of spectral decomposition eos parameters and the
- * array length to construct an eos using a spectral decomposition of the
+ * to make an EOS.
+ * @details Reads an array of spectral decomposition EOS parameters and the
+ * array length to construct an EOS using a spectral decomposition of the
  * adiabatic index. The specifics of this implementation are outlined  in
  * PRD 98 063004 (2018). Generic model presented in PRD 82 103011 (2010).
- * @param[in] gamma[] Array of spectral decomposition eos parameters.
+ * @param[in] gamma[] Array of spectral decomposition EOS parameters.
  * @param[in] size The length of the gamma array.
- * @return A pointer to neutron star equation of state piece structure.
+ * @return A pointer to neutron star EOS structure.
  */
-static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPieceSpectralDecomposition(double gamma[], int size)
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double gamma[], int size)
 {
-    LALSimNeutronStarEOSPiece * eos;
+
+    //TODO add a message to show this is only valid for 1 piece EOS ?
     size_t ndat_low = 69;
     size_t ndat = ndat_low + 500;
     size_t i;
@@ -290,16 +291,15 @@ static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPieceSpectralDecompositio
     }
 
     /* Updating eos structure */
+    LALSimNeutronStarEOS *eos;
     double *nbdat = NULL;
     double *mubdat = NULL;
     double *muedat = NULL;
     double *yedat = NULL;
     double *cs2dat = NULL;
     double *hdat = NULL;
-    size_t ncol = 2;
     /* Updating eos structure */
-    eos = eos_piece_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
-
+    eos = XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 0);
 
     if(snprintf(eos->name, sizeof(eos->name), "4-Param Spec Decomp (g0=%.4g, g1=%.4g, g2=%.4g, g3=%.4g)",
     gamma[0], gamma[1], gamma[2], gamma[3]) >= (int) sizeof(eos->name))
@@ -312,55 +312,13 @@ static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPieceSpectralDecompositio
 
 
 /**
- * @brief Reads spectral decomposition Equation Of State (EOS) parameters
- * to make an EOS.
- * @details Reads an array of spectral decomposition eos parameters and the
- * array length to construct an eos using a spectral decomposition of the
- * adiabatic index. The specifics of this implementation are outlined  in
- * PRD 98 063004 (2018). Generic model presented in PRD 82 103011 (2010).
- * @param[in] gamma[] Array of spectral decomposition eos parameters.
- * @param[in] size The length of the gamma array.
- * @return A pointer to neutron star equation of state structure.
- */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double gamma[], int size)
-{
-  LALSimNeutronStarEOS *eos;
-  eos = LALCalloc(1, sizeof(*eos));
-  if (!eos) return NULL;
-
-  eos->number_of_pieces = 1;
-  eos->eos_piece = XLALCalloc(eos->number_of_pieces, sizeof(LALSimNeutronStarEOSPiece *));
-  eos->eos_piece[0] = XLALSimNeutronStarEOSPieceSpectralDecomposition(gamma,size);    //TODO add a message to show this is only valid for 1 piece EOS ?
-  return eos;
-}
-
-
-
-/**
- * @brief Reads 4 spectral decomposition eos parameters to make an eos piece.
- * @details Reads 4 spectral decomposition eos parameters to construct an eos
+ * @brief Reads 4 spectral decomposition Equation Of State (EOS) parameters to make an eos.
+ * @details Reads 4 spectral decomposition EOS parameters to construct an EOS
  * using a spectral decomposition of the adiabatic index, outlined in
  * PRD 82 103011 (2010).
  * @param[in] SDgamma0,SDgamma1,SDgamma2,SDgamma3 The spectral decomposition
- * eos parameters.
- * @return A pointer to neutron star equation of state piece structure.
- */
-static LALSimNeutronStarEOSPiece *XLALSimNeutronStarEOSPiece4ParameterSpectralDecomposition(double SDgamma0, double SDgamma1, double SDgamma2, double SDgamma3){
-    double gamma[] = {SDgamma0, SDgamma1, SDgamma2, SDgamma3};
-    LALSimNeutronStarEOSPiece *eos;
-    eos = XLALSimNeutronStarEOSPieceSpectralDecomposition(gamma, 4);
-    return eos;
-}
-
-
-/**
- * @brief Reads 4 spectral decomposition eos parameters to make an eos.
- * @details Reads 4 spectral decomposition eos parameters to construct an eos
- * using a spectral decomposition of the adiabatic index, outlined in
- * PRD 82 103011 (2010).
- * @param[in] SDgamma0,SDgamma1,SDgamma2,SDgamma3 The spectral decomposition
- * eos parameters.
- * @return A pointer to neutron star equation of state structure.
+ * EOS parameters.
+ * @return A pointer to neutron star EOS structure.
  */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterSpectralDecomposition(double SDgamma0, double SDgamma1, double SDgamma2, double SDgamma3){
     double gamma[] = {SDgamma0, SDgamma1, SDgamma2, SDgamma3};
@@ -371,11 +329,11 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterSpectralDecomposition(doubl
 }
 
 /**
- * @brief Check that EOS has adiabatic index in range (0.6,4.5)
- * @details Reads 4 spectral decomposition eos parameters and checks that the
- * adiabatic index of the eos is within a range (0.6,4.5), since the TOV solver
+ * @brief Check that the Equation Of State (EOS) has adiabatic index in range (0.6,4.5)
+ * @details Reads 4 spectral decomposition EOS parameters and checks that the
+ * adiabatic index of the EOS is within a range (0.6,4.5), since the TOV solver
  * fails for values outside that range.
- * @param[in] g0,g1,g2,g3 The spectral decomposition eos parameters.
+ * @param[in] g0,g1,g2,g3 The spectral decomposition EOS parameters.
  * @return XLAL_SUCCESS or XLAL_FAILURE.
  */
 int XLALSimNeutronStarEOS4ParamSDGammaCheck(double g0, double g1, double g2, double g3){
@@ -431,16 +389,16 @@ int XLALSimNeutronStarEOS4ParamSDGammaCheck(double g0, double g1, double g2, dou
 }
 
 /**
- * @brief Check that EOS has enough points (>4) in M-R space to interpolate.
+ * @brief Check that Equation Of State (EOS) has enough points (>4) in M-R space to interpolate.
  * As the TOV equations are integrated from pmin to pmax, masses are
  * calculated. Once the mass turns over (i.e. m(p_i) > m(p_{i+1})), the
  * integration is terminated. It is possible therefore to have less than 4
  * points in M-R space. We demand, then, that in the interval [pmin,pmax],
  * m(pmin) = m(p_0) < m(p_1) < m(p_2) < m(p_3).
- * @details Reads 4 spectral decomposition eos parameters and checks that the
+ * @details Reads 4 spectral decomposition EOS parameters and checks that the
  * eos has at least 4 data points before turning over in M-R space, which
- * abruptly terminates the eos.
- * @param[in] g0,g1,g2,g3 The spectral decomposition eos parameters.
+ * abruptly terminates the EOS.
+ * @param[in] g0,g1,g2,g3 The spectral decomposition EOS parameters.
  * @return XLAL_SUCCESS or XLAL_FAILURE.
  */
 int XLALSimNeutronStarEOS4ParamSDViableFamilyCheck(double g0, double g1, double g2, double g3){
@@ -450,31 +408,31 @@ int XLALSimNeutronStarEOS4ParamSDViableFamilyCheck(double g0, double g1, double 
     double rdat;
     double kdat;
 
-    LALSimNeutronStarEOSPiece *eos=NULL;
-    eos = XLALSimNeutronStarEOSPiece4ParameterSpectralDecomposition(g0,g1,g2,g3);
+    LALSimNeutronStarEOS *eos = NULL;
+    eos = XLALSimNeutronStarEOS4ParameterSpectralDecomposition(g0,g1,g2,g3);
+    //TODO add a message that state that this is only valid for one EOS piece
 
     // Initialize previous value for mdat comparison
     mdat_prev = 0.0;
     // Ensure mass turnover does not happen too soon
     const double logpmin = 75.5;
-    double logpmax = log(XLALSimNeutronStarEOSPieceMaxPressure(eos));
+    double logpmax = log(XLALSimNeutronStarEOSMaxPressure(eos));
     double dlogp = (logpmax - logpmin) / 100.;
     // Need at least four points
     for (int i = 0; i < 4; ++i) {
        pdat = exp(logpmin + i * dlogp);
-       XLALSimNeutronStarTOVODEIntegrateWithToleranceEOSPiece(&rdat, &mdat, &kdat, pdat, eos, 1e-6);
+       XLALSimNeutronStarTOVODEIntegrate(&rdat, &mdat, &kdat, pdat, eos);
        // Determine if maximum mass has been found
        if (mdat <= mdat_prev){
           // EOS has too few points to create family
           // Clean up
-          XLALDestroySimNeutronStarEOSPiece(eos);
+          XLALDestroySimNeutronStarEOS(eos);
           return XLAL_FAILURE;
         }
         mdat_prev = mdat;
     }
 
-    XLALDestroySimNeutronStarEOSPiece(eos);
-    //TODO add a message that state that this is only valid for EOS piece
+    XLALDestroySimNeutronStarEOS(eos);
 
     return XLAL_SUCCESS;
 }
