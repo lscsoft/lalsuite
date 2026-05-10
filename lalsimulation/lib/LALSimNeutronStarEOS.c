@@ -97,7 +97,7 @@ static int find_eos_piece_pressure(double p, LALSimNeutronStarEOS *eos)
     double pmin_eos = XLALSimNeutronStarEOSMinPressureGeometrized(eos);
     double pmax_eos = XLALSimNeutronStarEOSMaxPressureGeometrized(eos);
     if (p < pmin_eos || p > pmax_eos) {
-        XLALPrintError("Pressure p = %g outside the interpolation range of EoS [%g:%g].\n", p, pmin_eos, pmax_eos);
+        XLALPrintError("Pressure p = %.16e outside the interpolation range of EoS [%.16e:%.16e].\n", p, pmin_eos, pmax_eos);
         return XLAL_FAILURE;
     }
     for (int j = 0 ; j < XLALSimNeutronStarEOSNumberPieces(eos); j++){
@@ -118,10 +118,9 @@ static int find_eos_piece_enthalpy(double h, LALSimNeutronStarEOS *eos)
     double hmin_eos = XLALSimNeutronStarEOSMinPseudoEnthalpy(eos);
     double hmax_eos = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos);
     if (h < hmin_eos || h > hmax_eos) {
-        XLALPrintError("Pseudo-enthalpy h = %g outside the interpolation range of EoS [%g:%g].\n", h, hmin_eos, hmax_eos);
+        XLALPrintError("Pseudo-enthalpy h = %.16e outside the interpolation range of EoS [%.16e:%.16e].\n", h, hmin_eos, hmax_eos);
         return XLAL_FAILURE;
     }
-
     for (int j = 0 ; j < XLALSimNeutronStarEOSNumberPieces(eos); j++){
         double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, j);
         double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, j);
@@ -140,7 +139,7 @@ static int find_eos_piece_rest_mass_density(double rho, LALSimNeutronStarEOS *eo
     double rhomin_eos = XLALSimNeutronStarEOSMinRestMassDensityGeometrized(eos);
     double rhomax_eos = XLALSimNeutronStarEOSMaxRestMassDensityGeometrized(eos);
     if (rho < rhomin_eos || rho < rhomax_eos) {
-        XLALPrintError("Rest-mass density rho = %g outside the interpolation range of EoS [%g:%g].\n", rho, rhomin_eos, rhomax_eos);
+        XLALPrintError("Rest-mass density rho = %.16e outside the interpolation range of EoS [%.16e:%.16e].\n", rho, rhomin_eos, rhomax_eos);
         return XLAL_FAILURE;
     }
     for (int j = 0 ; j < XLALSimNeutronStarEOSNumberPieces(eos); j++){
@@ -162,7 +161,7 @@ static int find_eos_piece_energy_density(double e, LALSimNeutronStarEOS *eos)
     double emin_eos = XLALSimNeutronStarEOSMinEnergyDensityGeometrized(eos);
     double emax_eos = XLALSimNeutronStarEOSMaxEnergyDensityGeometrized(eos);
     if (e < emin_eos || e < emax_eos) {
-        XLALPrintError("Energy density e = %g outside the interpolation range of EoS [%g:%g].\n", e, emin_eos, emax_eos);
+        XLALPrintError("Energy density e = %.16e outside the interpolation range of EoS [%.16e:%.16e].\n", e, emin_eos, emax_eos);
         return XLAL_FAILURE;
     }
     for (int j = 0 ; j < XLALSimNeutronStarEOSNumberPieces(eos); j++){
@@ -923,7 +922,7 @@ double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrizedPerPiece(double p
     double pmax = XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, piece_id);
     if (p < pmin || p > pmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pressure p = %g is beyond the EOS piece interpolation range [%g:%g].", p, pmin, pmax);
+                         "Input pressure p = %.16e is beyond the EOS piece interpolation range [%.16e:%.16e].", p, pmin, pmax);
     struct tagEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
     return XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressureGeometrized(p, eos_piece);
 }
@@ -963,7 +962,7 @@ double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrized(double p,
     double pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos);
     if (p < pmin || p > pmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pressure p = %g is beyond the EOS interpolation range [%g:%g].", p, pmin, pmax);
+                         "Input pressure p = %.16e is beyond the EOS interpolation range [%.16e:%.16e].", p, pmin, pmax);
     int item_piece = find_eos_piece_pressure(p, eos);
     return XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrizedPerPiece(p, eos, item_piece);
 }
@@ -1019,12 +1018,11 @@ static double XLALSimNeutronStarEOSPieceEnergyDensityOfPressureGeometrized(doubl
 double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrizedPerPiece(double p,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
-
     double pmin = XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, piece_id);
     double pmax = XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, piece_id);
     if (p < pmin || p > pmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pressure p = %g is beyond the EOS piece interpolation range [%g:%g].", p, pmin, pmax);
+                         "Input pressure p = %.16e is beyond the EOS piece interpolation range [%.16e:%.16e].", p, pmin, pmax);
     struct tagEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
     return XLALSimNeutronStarEOSPieceEnergyDensityOfPressureGeometrized(p, eos_piece);
 }
@@ -1066,7 +1064,7 @@ double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrized(double p,
     double pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos);
     if (p < pmin || p > pmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pressure p = %g is beyond the EOS interpolation range [%g:%g].", p, pmin, pmax);
+                         "Input pressure p = %.16e is beyond the EOS interpolation range [%.16e:%.16e].", p, pmin, pmax);
     int item_piece = find_eos_piece_pressure(p, eos);
     return XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrizedPerPiece(p, eos, item_piece);
 }
@@ -1128,12 +1126,11 @@ static double XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(
 double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrizedPerPiece(double p,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
-
     double pmin = XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, piece_id);
     double pmax = XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, piece_id);
     if (p < pmin || p > pmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pressure p = %g is beyond the EOS piece interpolation range [%g:%g].", p, pmin, pmax);
+                         "Input pressure p = %.16e is beyond the EOS piece interpolation range [%.16e:%.16e].", p, pmin, pmax);
     struct tagEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
     return XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(p, eos_piece);
 }
@@ -1176,12 +1173,11 @@ double XLALSimNeutronStarEOSEnergyDensityDerivOfPressurePerPiece(double p,
 double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized(double p,
     LALSimNeutronStarEOS * eos)
 {
-
     double pmin = XLALSimNeutronStarEOSMinPressureGeometrized(eos);
     double pmax = XLALSimNeutronStarEOSMaxPressureGeometrized(eos);
     if (p < pmin || p > pmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pressure p = %g is beyond the EOS interpolation range [%g:%g].", p, pmin, pmax);
+                         "Input pressure p = %.16e is beyond the EOS interpolation range [%.16e:%.16e].", p, pmin, pmax);
     int item_piece = find_eos_piece_pressure(p, eos);
     return XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrizedPerPiece(p, eos, item_piece);
 }
@@ -1241,12 +1237,11 @@ static double XLALSimNeutronStarEOSPiecePressureOfPseudoEnthalpyGeometrized(doub
 double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrizedPerPiece(double h,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
-
     double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, piece_id);
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id);
     if (h < hmin || h > hmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pseudo-enthalpy h = %g is beyond the EOS piece interpolation range [%g:%g].", h, hmin, hmax);
+                         "Input pseudo-enthalpy h = %.16e is beyond the EOS piece interpolation range [%.16e:%.16e].", h, hmin, hmax);
     struct tagEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
     return XLALSimNeutronStarEOSPiecePressureOfPseudoEnthalpyGeometrized(h, eos_piece);
 }
@@ -1286,7 +1281,7 @@ double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(double h,
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos);
     if (h < hmin || h > hmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pseudo-enthalpy h = %g is beyond the EOS interpolation range [%g:%g].", h, hmin, hmax);
+                         "Input pseudo-enthalpy h = %.16e is beyond the EOS interpolation range [%.16e:%.16e].", h, hmin, hmax);
     int item_piece = find_eos_piece_enthalpy(h, eos);
     return XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrizedPerPiece(h, eos, item_piece);
 }
@@ -1347,7 +1342,7 @@ double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrizedPerPiece(dou
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id);
     if (h < hmin || h > hmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pseudo-enthalpy h = %g is beyond the EOS piece interpolation range [%g:%g].", h, hmin, hmax);
+                         "Input pseudo-enthalpy h = %.16e is beyond the EOS piece interpolation range [%.16e:%.16e].", h, hmin, hmax);
     struct tagEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
     return XLALSimNeutronStarEOSPieceEnergyDensityOfPseudoEnthalpyGeometrized(h, eos_piece);
 }
@@ -1388,7 +1383,7 @@ double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized(double
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos);
     if (h < hmin || h > hmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pseudo-enthalpy h = %g is beyond the EOS interpolation range [%g:%g].", h, hmin, hmax);
+                         "Input pseudo-enthalpy h = %.16e is beyond the EOS interpolation range [%.16e:%.16e].", h, hmin, hmax);
     int item_piece = find_eos_piece_enthalpy(h, eos);
     return XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrizedPerPiece(h, eos, item_piece);
 }
@@ -1448,7 +1443,7 @@ double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrizedPerPiece(d
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id);
     if (h < hmin || h > hmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pseudo-enthalpy h = %g is beyond the EOS piece interpolation range [%g:%g].", h, hmin, hmax);
+                         "Input pseudo-enthalpy h = %.16e is beyond the EOS piece interpolation range [%.16e:%.16e].", h, hmin, hmax);
     struct tagEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
     return XLALSimNeutronStarEOSPieceRestMassDensityOfPseudoEnthalpyGeometrized(h, eos_piece);
 }
@@ -1491,7 +1486,7 @@ double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized(double
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos);
     if (h < hmin || h > hmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pseudo-enthalpy h = %g is beyond the EOS interpolation range [%g:%g].", h, hmin, hmax);
+                         "Input pseudo-enthalpy h = %.16e is beyond the EOS interpolation range [%.16e:%.16e].", h, hmin, hmax);
     int item_piece = find_eos_piece_enthalpy(h, eos);
     return XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrizedPerPiece(h, eos, item_piece);
 }
@@ -1554,7 +1549,7 @@ double XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyGeometrizedPerPiece(doub
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id);
     if (h < hmin || h > hmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pseudo-enthalpy h = %g is beyond the EOS piece interpolation range [%g:%g].", h, hmin, hmax);
+                         "Input pseudo-enthalpy h = %.16e is beyond the EOS piece interpolation range [%.16e:%.16e].", h, hmin, hmax);
     struct tagEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
     return XLALSimNeutronStarEOSPieceSpeedOfSoundOfPseudoEnthalpyGeometrized(h, eos_piece);
 }
@@ -1597,7 +1592,7 @@ double XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyGeometrized(double h,
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpy(eos);
     if (h < hmin || h > hmax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input pseudo-enthalpy h = %g is beyond the EOS interpolation range [%g:%g].", h, hmin, hmax);
+                         "Input pseudo-enthalpy h = %.16e is beyond the EOS interpolation range [%.16e:%.16e].", h, hmin, hmax);
     int item_piece = find_eos_piece_enthalpy(h, eos);
     return XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyGeometrizedPerPiece(h, eos, item_piece);
 }
@@ -1665,7 +1660,7 @@ double XLALSimNeutronStarEOSPressureOfEnergyDensityGeometrizedPerPiece(double e,
     double emax = XLALSimNeutronStarEOSMaxEnergyDensityGeometrizedPerPiece(eos, piece_id);
     if (e < emin || e > emax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input energy density e = %g is beyond the EOS piece interpolation range [%g:%g].", e, emin, emax);
+                         "Input energy density e = %.16e is beyond the EOS piece interpolation range [%.16e:%.16e].", e, emin, emax);
     struct tagEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
     return XLALSimNeutronStarEOSPiecePressureOfEnergyDensityGeometrized(e, eos_piece);
 }
@@ -1712,7 +1707,7 @@ double XLALSimNeutronStarEOSPressureOfEnergyDensityGeometrized(double e,
     double emax = XLALSimNeutronStarEOSMaxEnergyDensityGeometrized(eos);
     if (e < emin || e > emax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input energy density e = %g is beyond the EOS interpolation range [%g:%g].", e, emin, emax);
+                         "Input energy density e = %.16e is beyond the EOS interpolation range [%.16e:%.16e].", e, emin, emax);
     int number_of_pieces = XLALSimNeutronStarEOSNumberPieces(eos);
     if (number_of_pieces > 1){
         for (int i = 0; i < number_of_pieces-1; i++){
@@ -1783,7 +1778,7 @@ double XLALSimNeutronStarEOSPressureOfRestMassDensityGeometrizedPerPiece(double 
     double rhomax = XLALSimNeutronStarEOSMaxRestMassDensityGeometrizedPerPiece(eos, piece_id);
     if (rho < rhomin || rho > rhomax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input rest-mass density e = %g is beyond the EOS piece interpolation range [%g:%g].", rho, rhomin, rhomax);
+                         "Input rest-mass density e = %.16e is beyond the EOS piece interpolation range [%.16e:%.16e].", rho, rhomin, rhomax);
     struct tagEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
     return XLALSimNeutronStarEOSPiecePressureOfRestMassDensityGeometrized(rho, eos_piece);
 }
@@ -1827,7 +1822,7 @@ double XLALSimNeutronStarEOSPressureOfRestMassDensityGeometrized(double rho,
     double rhomax = XLALSimNeutronStarEOSMaxRestMassDensityGeometrized(eos);
     if (rho < rhomin || rho > rhomax)
         XLAL_ERROR_REAL8(XLAL_EDOM,
-                         "Input rest-mass density e = %g is beyond the EOS interpolation range [%g:%g].", rho, rhomin, rhomax);
+                         "Input rest-mass density e = %.16e is beyond the EOS interpolation range [%.16e:%.16e].", rho, rhomin, rhomax);
     int number_of_pieces = XLALSimNeutronStarEOSNumberPieces(eos);
     if (number_of_pieces > 1){
         for (int i = 0; i < number_of_pieces-1; i++){
