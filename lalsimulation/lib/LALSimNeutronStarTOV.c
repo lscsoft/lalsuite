@@ -251,6 +251,11 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
     LALSimNeutronStarEOS *eos = par->eos;
     int j = par->piece_id;
 
+    double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, j);
+    /* Protects against GSL internal stage values slightly below boundary */
+    if (h < hmin)
+        h = hmin;
+
     double r = vars->r;
     double m = vars->m;
     double H = vars->H;
@@ -365,7 +370,6 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     double dedh_c = dedp_c / dhdp_c;
     double dh = -1e-12 * hc;
     double h0 = hc + dh;
-    double h1 = 0.0 - dh;
     double r0 = sqrt(-3.0 * dh / (2.0 * LAL_PI * (ec + 3.0 * pc)));
     double m0 = 4.0 * LAL_PI * r0 * r0 * r0 * ec / 3.0;
     double H0 = r0 * r0;
@@ -402,8 +406,9 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     vars->J2 = J2_0;
 
     h = h0;
-    while (h > h1) {
-        int s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, h1, &dh, y);
+    double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, 0);
+    while (h > hmin) {
+        int s = gsl_odeiv_evolve_apply(evolv, ctrl, step, &sys, &h, hmin, &dh, y);
         if (s != GSL_SUCCESS) {
             gsl_odeiv_evolve_free(evolv);
             gsl_odeiv_control_free(ctrl);
@@ -417,14 +422,12 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     for (int w = 0 ; w < 1 ; ++w){
         tov_virial_ode(h, y, dy, params);
         for (i = 0; i < TOV_ODE_VARS_DIM; ++i)
-            y[i] += dy[i] * (0.0 - h1);
+            y[i] += dy[i] * (0.0 - hmin);
     }
-
 
     /* compute tidal Love number k2 */
     c = vars->m / vars->r;      /* compactness */
     yy = vars->r * vars->b / vars->H;
-
     *int3 = (1.0 - vars->m / vars->r) * pow((1.0 - 2.0 * vars->m / vars->r), (-0.5)) - 1.0;
     *int6 = vars->r * (*int3);
 
@@ -542,6 +545,11 @@ static int tov_ext_ode(double h, const double *y, double *dy, void *params)
     LALSimNeutronStarEOS *eos = par->eos;
     int j = par->piece_id;
 
+    double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, j);
+    /* Protects against GSL internal stage values slightly below boundary */
+    if (h < hmin)
+        h = hmin;
+
     double r = vars->r;
     double m = vars->m;
     double H_k2 = vars->H_k2;
@@ -657,8 +665,6 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     gsl_odeiv_control *ctrl = gsl_odeiv_control_y_new(epsabs, epsrel);
     /* Set up evolution function to solve ODE with the dimension of the ODE set */
     gsl_odeiv_evolve *evolv = gsl_odeiv_evolve_alloc(TOV_EXT_ODE_VARS_DIM);
-
-    printf("\nBeginning of TOV, after setting up system. Pc = %g\n", central_pressure_si);
 
     /* Equations of state quantities at the center of the star */
     double pc = central_pressure_si * LAL_G_C4_SI; // convert the pressure from Pascal to geometrized units [/m^2]
@@ -817,6 +823,11 @@ static int tov_ode(double h, const double *y, double *dy, void *params)
     struct params_for_ode * par = (struct params_for_ode *) params;
     LALSimNeutronStarEOS *eos = par->eos;
     int j = par->piece_id;
+
+    double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, j);
+    /* Protects against GSL internal stage values slightly below boundary */
+    if (h < hmin)
+        h = hmin;
 
     double r = vars->r;
     double m = vars->m;
