@@ -488,7 +488,6 @@ static double XLALSimNeutronStarEOSPieceMinPseudoEnthalpy(struct tagEOSPiece * e
  * @return The minimum pseudo-enthalpy of the EOS piece (dimensionless).
  */
 double XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(LALSimNeutronStarEOS * eos, int piece_id){
-//     printf("lllllllllllll %d\n", piece_id);
     if (piece_id >= eos->number_of_pieces || piece_id < 0)
         XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
     struct tagEOSPiece * eos_piece = XLALSimNeutronStarEOSSelectPiece(eos, piece_id);
@@ -918,6 +917,8 @@ static double XLALSimNeutronStarEOSPiecePseudoEnthalpyOfPressureGeometrized(doub
 double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometrizedPerPiece(double p,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
     double pmin = XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, piece_id);
     double pmax = XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, piece_id);
     if (p < pmin || p > pmax)
@@ -1018,6 +1019,8 @@ static double XLALSimNeutronStarEOSPieceEnergyDensityOfPressureGeometrized(doubl
 double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometrizedPerPiece(double p,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
     double pmin = XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, piece_id);
     double pmax = XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, piece_id);
     if (p < pmin || p > pmax)
@@ -1126,6 +1129,8 @@ static double XLALSimNeutronStarEOSPieceEnergyDensityDerivOfPressureGeometrized(
 double XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrizedPerPiece(double p,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
     double pmin = XLALSimNeutronStarEOSMinPressureGeometrizedPerPiece(eos, piece_id);
     double pmax = XLALSimNeutronStarEOSMaxPressureGeometrizedPerPiece(eos, piece_id);
     if (p < pmin || p > pmax)
@@ -1237,6 +1242,8 @@ static double XLALSimNeutronStarEOSPiecePressureOfPseudoEnthalpyGeometrized(doub
 double XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrizedPerPiece(double h,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
     double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, piece_id);
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id);
     if (h < hmin || h > hmax)
@@ -1338,6 +1345,8 @@ static double XLALSimNeutronStarEOSPieceEnergyDensityOfPseudoEnthalpyGeometrized
 double XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrizedPerPiece(double h,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
     double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, piece_id);
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id);
     if (h < hmin || h > hmax)
@@ -1439,6 +1448,8 @@ static double XLALSimNeutronStarEOSPieceRestMassDensityOfPseudoEnthalpyGeometriz
 double XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrizedPerPiece(double
     h, LALSimNeutronStarEOS * eos, int piece_id)
 {
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
     double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, piece_id);
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id);
     if (h < hmin || h > hmax)
@@ -1545,6 +1556,8 @@ static double XLALSimNeutronStarEOSPieceSpeedOfSoundOfPseudoEnthalpyGeometrized(
 double XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyGeometrizedPerPiece(double h,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
     double hmin = XLALSimNeutronStarEOSMinPseudoEnthalpyPerPiece(eos, piece_id);
     double hmax = XLALSimNeutronStarEOSMaxPseudoEnthalpyPerPiece(eos, piece_id);
     if (h < hmin || h > hmax)
@@ -1656,6 +1669,8 @@ static double XLALSimNeutronStarEOSPiecePressureOfEnergyDensityGeometrized(doubl
 double XLALSimNeutronStarEOSPressureOfEnergyDensityGeometrizedPerPiece(double e,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
     double emin = XLALSimNeutronStarEOSMinEnergyDensityGeometrizedPerPiece(eos, piece_id);
     double emax = XLALSimNeutronStarEOSMaxEnergyDensityGeometrizedPerPiece(eos, piece_id);
     if (e < emin || e > emax)
@@ -1774,6 +1789,8 @@ static double XLALSimNeutronStarEOSPiecePressureOfRestMassDensityGeometrized(dou
 double XLALSimNeutronStarEOSPressureOfRestMassDensityGeometrizedPerPiece(double rho,
     LALSimNeutronStarEOS * eos, int piece_id)
 {
+    if (piece_id >= eos->number_of_pieces || piece_id < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID piece number of LALSimNeutronStarEOS structure is incorrect.");
     double rhomin = XLALSimNeutronStarEOSMinRestMassDensityGeometrizedPerPiece(eos, piece_id);
     double rhomax = XLALSimNeutronStarEOSMaxRestMassDensityGeometrizedPerPiece(eos, piece_id);
     if (rho < rhomin || rho > rhomax)

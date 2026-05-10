@@ -61,7 +61,6 @@ typedef struct tagLALSimNeutronStarEOS LALSimNeutronStarEOS;
 extern const char * const lalSimNeutronStarEOSNames[111];
 
 /** Incomplete type for a neutron star family having a particular EOS. */
-typedef struct tagLALSimNeutronStarBranch LALSimNeutronStarBranch;
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
 
@@ -247,55 +246,37 @@ void XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass
 
 /* NEUTRON STAR ASTROPHYSICAL PARAMETER'S RELATED ROUTINES */
 
-void XLALDestroySimNeutronStarBranch(LALSimNeutronStarBranch * branch);
+// void XLALDestroySimNeutronStarBranch(LALSimNeutronStarBranch * branch);
 void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam);
 
 LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamilyWithPcmin(LALSimNeutronStarEOS * eos, int min_fam, double logPcmin);
 LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(LALSimNeutronStarEOS * eos, int min_fam);
 int XLALSimNeutronStarFamNumberOfBranches(LALSimNeutronStarFamily *fam);
-LALSimNeutronStarBranch * XLALSimNeutronStarFamSelectBranch(LALSimNeutronStarFamily * fam, int branch_id);
 double XLALSimNeutronStarFamMassTOVLimit(LALSimNeutronStarFamily *fam);
 
-
-double XLALSimNeutronStarBranchMinMass(LALSimNeutronStarBranch * branch);
 double XLALSimNeutronStarFamMinMassPerBranch(LALSimNeutronStarFamily *fam, int branch_id);
 double XLALSimNeutronStarFamMinMass(LALSimNeutronStarFamily *fam);
-
-
-double XLALSimNeutronStarBranchMaxMass(LALSimNeutronStarBranch * branch);
 double XLALSimNeutronStarFamMaxMassPerBranch(LALSimNeutronStarFamily *fam, int branch_id);
 double XLALSimNeutronStarFamMaxMass(LALSimNeutronStarFamily *fam);
-
-double XLALSimNeutronStarBranchMinCentralPressure(LALSimNeutronStarBranch * branch);
 double XLALSimNeutronStarFamMinCentralPressurePerBranch(LALSimNeutronStarFamily *fam, int branch_id);
 double XLALSimNeutronStarFamMinCentralPressure(LALSimNeutronStarFamily *fam);
-
-double XLALSimNeutronStarBranchMaxCentralPressure(LALSimNeutronStarBranch * branch);
 double XLALSimNeutronStarFamMaxCentralPressurePerBranch(LALSimNeutronStarFamily *fam, int branch_id);
 double XLALSimNeutronStarFamMaxCentralPressure(LALSimNeutronStarFamily *fam);
 
-
-double XLALSimNeutronStarBranchRadiusOfMass(double m, LALSimNeutronStarBranch * branch);
 double XLALSimNeutronStarFamRadiusOfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-
-double XLALSimNeutronStarBranchCentralPressureOfMass(double m, LALSimNeutronStarBranch * branch);
+double * XLALSimNeutronStarFamRadiusOfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamCentralPressureOfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-
-double XLALSimNeutronStarBranchMassOfCentralPressure(double p, LALSimNeutronStarBranch * branch);
+double * XLALSimNeutronStarFamCentralPressureOfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamMassOfCentralPressurePerBranch(double p, LALSimNeutronStarFamily * fam, int branch_id);
-
-double XLALSimNeutronStarBranchBaryonicMassOfMass(double m, LALSimNeutronStarBranch * branch);
+double XLALSimNeutronStarFamMassOfCentralPressure(double p, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamBaryonicMassOfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-
-double XLALSimNeutronStarBranchLoveNumberK2OfMass(double m, LALSimNeutronStarBranch * branch);
+double * XLALSimNeutronStarFamBaryonicMassOfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-
-double XLALSimNeutronStarBranchLoveNumberK3OfMass(double m, LALSimNeutronStarBranch * branch);
+double * XLALSimNeutronStarFamLoveNumberK2OfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamLoveNumberK3OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-
-double XLALSimNeutronStarBranchLoveNumberK4OfMass(double m, LALSimNeutronStarBranch * branch);
+double * XLALSimNeutronStarFamLoveNumberK3OfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamLoveNumberK4OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-
+double * XLALSimNeutronStarFamLoveNumberK4OfMass(double m, LALSimNeutronStarFamily * fam);
 //TODO finish this
 // double XLALSimNeutronStarFamMinimumMass(LALSimNeutronStarFamily * fam);
 // double XLALSimNeutronStarMaximumMass(LALSimNeutronStarFamily * fam);

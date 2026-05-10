@@ -37,7 +37,7 @@ GSL_VAR const gsl_interp_type * lal_gsl_interp_steffen;
 /** @cond */
 
 /* Contents of the neutron star family structure. */
-struct tagLALSimNeutronStarBranch {
+struct tagFamBranch  {
     double *pdat;
     double *mdat;
     double *mbdat;
@@ -67,18 +67,8 @@ struct tagLALSimNeutronStarFamily{
   int mtov;
   double pcmin;
   double pcmax;
-  LALSimNeutronStarBranch ** fam_branch;
+  struct tagFamBranch  ** fam_branch;
 };
-
-// /* gsl function for use in finding the maximum neutron star mass */
-// static double fminimizer_gslfunction(double x, void * params);
-// static double fminimizer_gslfunction(double x, void * params)
-// {
-//     struct tagEOSPiece * eos = params;
-//     double r, m, k;
-//     XLALSimNeutronStarTOVODEIntegrateWithToleranceEOSPiece(&r, &m, &k, x, eos, 1e-6);
-//     return -m; /* maximum mass is minimum negative mass */
-// }
 
 /* Function used by GSLminimizer to find the central pressure for the
  * exact maximum or minimum neutron star mass from LALSimNeutronStarEOS structure.
@@ -126,7 +116,7 @@ static double get_central_pressure_mext(LALSimNeutronStarEOS *eos, int index, do
  * @brief Frees the memory associated with a pointer to a neutron star branch.
  * @param branch Pointer to the neutron star branch structure to be freed.
  */
-void XLALDestroySimNeutronStarBranch(LALSimNeutronStarBranch * branch)
+static void XLALDestroySimNeutronStarBranch(struct tagFamBranch  * branch)
 {
     if (branch) {
         gsl_interp_accel_free(branch->k2_of_m_acc);
@@ -175,111 +165,6 @@ void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam)
     return;
 
 }
-
-/*
- * @brief Creates a neutron star branch structure for a given equation of state piece.
- * @details
- * A neutron star branch is a structure that contains the stable hydrostatic
- * configurations of a neutron star sequence for a fixed equation of state.
- * @param eos Pointer to the Equation of State piece structure.
- * @return A pointer to the neutron star branch structure.
- */
-// LALSimNeutronStarBranch * XLALCreateSimNeutronStarBranch(
-//     struct tagEOSPiece * eos)
-// {
-//     LALSimNeutronStarBranch * fam;
-//     const size_t ndatmax = 100;
-//     const double logpcmin = 75.5;
-//     double logpcmax;
-//     double dlogp;
-//     size_t ndat = ndatmax;
-//     size_t i;
-//
-//     /* allocate memory (calloc zeroes all fields so unused pointers are NULL) */
-//     fam = LALCalloc(1, sizeof(*fam));
-//     if (!fam)
-//         XLAL_ERROR_NULL(XLAL_ENOMEM);
-//     fam->pdat = LALMalloc(ndat * sizeof(*fam->pdat));
-//     fam->mdat = LALMalloc(ndat * sizeof(*fam->mdat));
-//     fam->rdat = LALMalloc(ndat * sizeof(*fam->rdat));
-//     fam->k2dat = LALMalloc(ndat * sizeof(*fam->k2dat));
-//     if (!fam->mdat || !fam->rdat || !fam->k2dat)
-//         XLAL_ERROR_NULL(XLAL_ENOMEM);
-//
-//     /* compute data tables */
-//     logpcmax = log(XLALSimNeutronStarEOSPieceMaxPressure(eos));
-//     dlogp = (logpcmax - logpcmin) / (ndat-1);
-//     for (i = 0; i < ndat; ++i) {
-//         fam->pdat[i] = exp(logpcmin + i * dlogp);
-//         XLALSimNeutronStarTOVODEIntegrateWithToleranceEOSPiece(&fam->rdat[i], &fam->mdat[i],
-//             &fam->k2dat[i], fam->pdat[i], eos, 1e-6);
-//         /* determine if maximum mass has been found */
-//         if (i > 0 && fam->mdat[i] <= fam->mdat[i-1])
-//             break;
-//     }
-//
-//     if (i < ndat) {
-//         /* replace the ith point with the maximum mass */
-//         const double epsabs = 0.0, epsrel = 1e-6;
-//         double a = fam->pdat[i - 2];
-//         double x = fam->pdat[i - 1];
-//         double b = fam->pdat[i];
-//         double fa = -fam->mdat[i - 2];
-//         double fx = -fam->mdat[i - 1];
-//         double fb = -fam->mdat[i];
-//         int status;
-//         gsl_function F;
-//         gsl_min_fminimizer * s;
-//         F.function = &fminimizer_gslfunction;
-//         F.params = eos;
-//         s = gsl_min_fminimizer_alloc(gsl_min_fminimizer_brent);
-//         gsl_min_fminimizer_set_with_values(s, &F, x, fx, a, fa, b, fb);
-//         do {
-//             status = gsl_min_fminimizer_iterate(s);
-//             x = gsl_min_fminimizer_x_minimum(s);
-//             a = gsl_min_fminimizer_x_lower(s);
-//             b = gsl_min_fminimizer_x_upper(s);
-//             status = gsl_min_test_interval(a, b, epsabs, epsrel);
-//         } while (status == GSL_CONTINUE);
-//         gsl_min_fminimizer_free(s);
-//         fam->pdat[i] = x;
-//         XLALSimNeutronStarTOVODEIntegrateWithToleranceEOSPiece(&fam->rdat[i], &fam->mdat[i],
-//             &fam->k2dat[i], fam->pdat[i], eos, 1e-6);
-//
-//         /* resize arrays */
-//         if(fam->pdat[i] <= fam->pdat[i-1]){
-//             fam->pdat[i-1] = fam->pdat[i];
-//             ndat = i;
-//         }
-//         else{
-//             ndat = i + 1;
-//         }
-//
-//         fam->pdat = LALRealloc(fam->pdat, ndat * sizeof(*fam->pdat));
-//         fam->mdat = LALRealloc(fam->mdat, ndat * sizeof(*fam->mdat));
-//         fam->rdat = LALRealloc(fam->rdat, ndat * sizeof(*fam->rdat));
-//         fam->k2dat = LALRealloc(fam->k2dat, ndat * sizeof(*fam->k2dat));
-//     }
-//     fam->ndat = ndat;
-//
-//     /* setup interpolators */
-//
-//     fam->p_of_m_acc = gsl_interp_accel_alloc();
-//     fam->r_of_m_acc = gsl_interp_accel_alloc();
-//     fam->k2_of_m_acc = gsl_interp_accel_alloc();
-//
-//     fam->p_of_m_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-//     fam->r_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-//     fam->k2_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
-//
-//     gsl_interp_init(fam->p_of_m_interp, fam->mdat, fam->pdat, ndat);
-//     gsl_interp_init(fam->r_of_m_interp, fam->mdat, fam->rdat, ndat);
-//     gsl_interp_init(fam->k2_of_m_interp, fam->mdat, fam->k2dat, ndat);
-//
-//     return fam;
-// }
-// // TODO remove the one before here ?
-
 
 
 /**
@@ -376,12 +261,12 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamilyWithPcmin(LALSimNeutronS
     if (nb_stable_branches != 0) {
   	// if the last branch is stable, append the index for the end of the stable branch as the last index of TOV data
         if (flag_stable == 1) index_end_stable_branch[nb_stable_branches-1] = ndat-1;
-        fam->fam_branch = (LALSimNeutronStarBranch **) LALMalloc(sizeof(LALSimNeutronStarBranch *) * nb_stable_branches);
+        fam->fam_branch = (struct tagFamBranch  **) LALMalloc(sizeof(struct tagFamBranch  *) * nb_stable_branches);
         int *ndat_branch;
         ndat_branch = LALMalloc(nb_stable_branches * sizeof(*ndat_branch));
         for (int b = 0; b < nb_stable_branches; b++){
             ndat_branch[b] = index_end_stable_branch[b] - index_begin_stable_branch[b] + 1;
-            LALSimNeutronStarBranch * fam_branch_i = LALCalloc(1, sizeof(LALSimNeutronStarBranch));
+            struct tagFamBranch  * fam_branch_i = LALCalloc(1, sizeof(struct tagFamBranch));
             if(min_fam==1){
                 fam_branch_i->mbdat = NULL;
                 fam_branch_i->k3dat = NULL;
@@ -576,15 +461,14 @@ int XLALSimNeutronStarFamNumberOfBranches(LALSimNeutronStarFamily *fam)
  * @param branch_id Integer for the branch number.
  * @return The number of branches (stable hydrostatic configurations) for a given neutron star family.
  */
-LALSimNeutronStarBranch * XLALSimNeutronStarFamSelectBranch(LALSimNeutronStarFamily * fam, int branch_id)
+static struct tagFamBranch  * XLALSimNeutronStarFamSelectBranch(LALSimNeutronStarFamily * fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_NULL(XLAL_EDOM);
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_NULL(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
     return fam->fam_branch[branch_id];
 }
 
 
-
-// TODO can somebody check that this is ok ???
 static double find_max_mass_for_multiple_branches(LALSimNeutronStarFamily *fam){
     double mmax_branch = 0.;
     double mmax_branch_temp = 0.;
@@ -628,7 +512,7 @@ double XLALSimNeutronStarFamMassTOVLimit(LALSimNeutronStarFamily *fam)
  * @param branch Pointer to the neutron star branch structure.
  * @return The minimum mass of the branch in kg.
  */
-double XLALSimNeutronStarBranchMinMass(LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchMinMass(struct tagFamBranch  * branch)
 {
     return branch->mdat[0];
 }
@@ -641,8 +525,9 @@ double XLALSimNeutronStarBranchMinMass(LALSimNeutronStarBranch * branch)
  */
 double XLALSimNeutronStarFamMinMassPerBranch(LALSimNeutronStarFamily *fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchMinMass(b);
 }
 
@@ -654,7 +539,7 @@ double XLALSimNeutronStarFamMinMassPerBranch(LALSimNeutronStarFamily *fam, int b
  */
 double XLALSimNeutronStarFamMinMass(LALSimNeutronStarFamily *fam)
 {
-    return find_min_mass_for_multiple_branches(fam); //TODO ??? check this
+    return find_min_mass_for_multiple_branches(fam);
 }
 
 
@@ -663,7 +548,7 @@ double XLALSimNeutronStarFamMinMass(LALSimNeutronStarFamily *fam)
  * @param branch Pointer to the neutron star branch structure.
  * @return The maximum mass of the branch in kg.
  */
-double XLALSimNeutronStarBranchMaxMass(LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchMaxMass(struct tagFamBranch  * branch)
 {
     return branch->mdat[branch->ndat - 1];
 }
@@ -676,8 +561,9 @@ double XLALSimNeutronStarBranchMaxMass(LALSimNeutronStarBranch * branch)
  */
 double XLALSimNeutronStarFamMaxMassPerBranch(LALSimNeutronStarFamily *fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchMaxMass(b);
 }
 
@@ -689,7 +575,7 @@ double XLALSimNeutronStarFamMaxMassPerBranch(LALSimNeutronStarFamily *fam, int b
  */
 double XLALSimNeutronStarFamMaxMass(LALSimNeutronStarFamily *fam)
 {
-    return find_max_mass_for_multiple_branches(fam); //TODO is this right ???
+    return find_max_mass_for_multiple_branches(fam);
 }
 
 /**
@@ -697,7 +583,7 @@ double XLALSimNeutronStarFamMaxMass(LALSimNeutronStarFamily *fam)
  * @param branch Pointer to the neutron star branch structure.
  * @return The minimum central pressure in Pa of a neutron star branch.
  */
-double XLALSimNeutronStarBranchMinCentralPressure(LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchMinCentralPressure(struct tagFamBranch  * branch)
 {
     return branch->pdat[0];
 }
@@ -711,8 +597,9 @@ double XLALSimNeutronStarBranchMinCentralPressure(LALSimNeutronStarBranch * bran
  */
 double XLALSimNeutronStarFamMinCentralPressurePerBranch(LALSimNeutronStarFamily *fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchMinCentralPressure(b);
 }
 
@@ -723,9 +610,8 @@ double XLALSimNeutronStarFamMinCentralPressurePerBranch(LALSimNeutronStarFamily 
  */
 double XLALSimNeutronStarFamMinCentralPressure(LALSimNeutronStarFamily *fam)
 {
-    return XLALSimNeutronStarFamMinCentralPressurePerBranch(fam, 0); //TODO ??? check this
+    return XLALSimNeutronStarFamMinCentralPressurePerBranch(fam, 0);
 }
-
 
 
 /**
@@ -733,7 +619,7 @@ double XLALSimNeutronStarFamMinCentralPressure(LALSimNeutronStarFamily *fam)
  * @param branch Pointer to the neutron star branch structure.
  * @return The maximum central pressure in Pa of a neutron star branch.
  */
-double XLALSimNeutronStarBranchMaxCentralPressure(LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchMaxCentralPressure(struct tagFamBranch  * branch)
 {
     return branch->pdat[branch->ndat - 1];
 }
@@ -746,8 +632,9 @@ double XLALSimNeutronStarBranchMaxCentralPressure(LALSimNeutronStarBranch * bran
  */
 double XLALSimNeutronStarFamMaxCentralPressurePerBranch(LALSimNeutronStarFamily *fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchMaxCentralPressure(b);
 }
 
@@ -758,8 +645,12 @@ double XLALSimNeutronStarFamMaxCentralPressurePerBranch(LALSimNeutronStarFamily 
  */
 double XLALSimNeutronStarFamMaxCentralPressure(LALSimNeutronStarFamily *fam)
 {
-    return XLALSimNeutronStarFamMaxCentralPressurePerBranch(fam, fam->number_of_branches-1); //TODO ??? check this
+    int branch_number = XLALSimNeutronStarFamNumberOfBranches(fam) - 1;
+    return XLALSimNeutronStarFamMaxCentralPressurePerBranch(fam, branch_number);
 }
+
+
+/* FUNCTIONS RELATED TO INTERPOLATION IN NS FAMILY */
 
 /**
  * @brief Returns the radius in m corresponding to a given mass in kg in the neutron star branch.
@@ -767,7 +658,7 @@ double XLALSimNeutronStarFamMaxCentralPressure(LALSimNeutronStarFamily *fam)
  * @param branch Pointer to the neutron star branch structure.
  * @return The radius in m interpolated at mass m in kg for the neutron star branch.
  */
-double XLALSimNeutronStarBranchRadiusOfMass(double m, LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchRadiusOfMass(double m, struct tagFamBranch  * branch)
 {
     if (!branch || !branch->r_of_m_interp || !branch->r_of_m_acc || !branch->mdat || !branch->rdat)
         XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
@@ -776,7 +667,6 @@ double XLALSimNeutronStarBranchRadiusOfMass(double m, LALSimNeutronStarBranch * 
         branch->r_of_m_acc);
     return r;
 }
-
 
 /**
  * @brief Returns the radius in m corresponding to a given mass in kg for the ith branch of the neutron star family.
@@ -787,13 +677,54 @@ double XLALSimNeutronStarBranchRadiusOfMass(double m, LALSimNeutronStarBranch * 
  */
 double XLALSimNeutronStarFamRadiusOfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    // TODO should we put interpolating limits ?? or at other leverl ?
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    double mmin = XLALSimNeutronStarFamMinMassPerBranch(fam, branch_id);
+    double mmax = XLALSimNeutronStarFamMaxMassPerBranch(fam, branch_id);
+    if (m < mmin || m > mmax)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+                         "Input mass m = %.16e is beyond the Family branch interpolation range [%.16e:%.16e].", m, mmin, mmax);
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchRadiusOfMass(m, b);
 }
 
+/* Function to find the number of twins given a mass value */
+static int find_number_of_twins_at_mass(double m, LALSimNeutronStarFamily * fam){
+    int twins = 0;
+    for (int i = 0; i < XLALSimNeutronStarFamNumberOfBranches(fam); i++){
+        if (m >= XLALSimNeutronStarFamMinMassPerBranch(fam, i) && m <= XLALSimNeutronStarFamMinMassPerBranch(fam, i))
+            twins +=1;
+    }
+    return twins;
+}
 
+static int * find_branch_twins_at_mass(double m, LALSimNeutronStarFamily * fam, int twins){
+    int * branch_indices = XLALCalloc(twins, sizeof(*branch_indices));
+    for (int i = 0; i < XLALSimNeutronStarFamNumberOfBranches(fam); i++)
+        if (m >= XLALSimNeutronStarFamMinMassPerBranch(fam, i) && m <= XLALSimNeutronStarFamMinMassPerBranch(fam, i)){
+            branch_indices[i] = i;
+    }
+    return branch_indices;
+}
+
+/**
+ * @brief Returns the radius in m corresponding to a given mass in kg.
+ * @details This function can accomodate twins stars, it returns an array
+ * which size corresponds to the number of twins in the sequence. Requires
+ * deallocation of memory with LALFree.
+ * @param m Mass in kg at which the radius is interpolated.
+ * @param fam Pointer to the neutron star family structure.
+ * @return The radius in m interpolated at mass m in kg.
+ */
+double * XLALSimNeutronStarFamRadiusOfMass(double m, LALSimNeutronStarFamily * fam){
+    int twins = find_number_of_twins_at_mass(m, fam);
+    double * r = XLALCalloc(twins, sizeof(*r));
+    int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
+    for (int i = 0; i < twins; i++)
+        r[i] = XLALSimNeutronStarFamRadiusOfMassPerBranch(m, fam, twin_indices[i]);
+    LALFree(twin_indices);
+    return r;
+}
 
 /**
  * @brief Returns the central pressure in Pa corresponding to a given mass in kg in the neutron star branch.
@@ -801,11 +732,10 @@ double XLALSimNeutronStarFamRadiusOfMassPerBranch(double m, LALSimNeutronStarFam
  * @param branch Pointer to the neutron star branch structure.
  * @return The central pressure in Pa interpolated at mass m in kg for the neutron star branch.
  */
-double XLALSimNeutronStarBranchCentralPressureOfMass(double m, LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchCentralPressureOfMass(double m, struct tagFamBranch  * branch)
 {
     if (!branch || !branch->p_of_m_interp || !branch->p_of_m_acc || !branch->mdat || !branch->pdat)
         XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
-    //TODO add interpolation limits ??
     double p;
     p = gsl_interp_eval(branch->p_of_m_interp, branch->mdat, branch->pdat, m,
         branch->p_of_m_acc);
@@ -823,13 +753,35 @@ double XLALSimNeutronStarBranchCentralPressureOfMass(double m, LALSimNeutronStar
  */
 double XLALSimNeutronStarFamCentralPressureOfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    double mmin = XLALSimNeutronStarFamMinMassPerBranch(fam, branch_id);
+    double mmax = XLALSimNeutronStarFamMaxMassPerBranch(fam, branch_id);
+    if (m < mmin || m > mmax)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+                         "Input mass m = %.16e is beyond the Family branch interpolation range [%.16e:%.16e].", m, mmin, mmax);
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchCentralPressureOfMass(m, b);
 }
 
-
-// TODO add here ???
+/**
+ * @brief Returns the central pressure in Pa corresponding to a given mass in kg.
+ * @details This function can accomodate twins stars, it returns an array
+ * which size corresponds to the number of twins in the sequence. Requires deallocation
+ * of memory with LALFree.
+ * @param m Mass in kg at which the radius is interpolated.
+ * @param fam Pointer to the neutron star family structure.
+ * @return The central pressure in Pa interpolated at mass m in kg.
+ */
+double * XLALSimNeutronStarFamCentralPressureOfMass(double m, LALSimNeutronStarFamily * fam){
+    int twins = find_number_of_twins_at_mass(m, fam);
+    double * pc = XLALCalloc(twins, sizeof(*pc));
+    int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
+    for (int i = 0; i < twins; i++)
+        pc[i] = XLALSimNeutronStarFamRadiusOfMassPerBranch(m, fam, twin_indices[i]);
+    LALFree(twin_indices);
+    return pc;
+}
 
 /**
  * @brief Returns the mass in kg corresponding to a given central pressure in Pa in the neutron star branch.
@@ -837,11 +789,10 @@ double XLALSimNeutronStarFamCentralPressureOfMassPerBranch(double m, LALSimNeutr
  * @param branch Pointer to the neutron star branch structure.
  * @return The mass interpolated at central pressure p for the neutron star branch.
  */
-double XLALSimNeutronStarBranchMassOfCentralPressure(double p, LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchMassOfCentralPressure(double p, struct tagFamBranch  * branch)
 {
     if (!branch || !branch->m_of_p_interp || !branch->m_of_p_acc || !branch->mdat || !branch->pdat)
         XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
-    //TODO add interpolation limits ??
     double m;
     m = gsl_interp_eval(branch->m_of_p_interp, branch->pdat, branch->mdat, p,
         branch->m_of_p_acc);
@@ -858,12 +809,39 @@ double XLALSimNeutronStarBranchMassOfCentralPressure(double p, LALSimNeutronStar
  */
 double XLALSimNeutronStarFamMassOfCentralPressurePerBranch(double p, LALSimNeutronStarFamily * fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    double pcmin = XLALSimNeutronStarFamMinCentralPressurePerBranch(fam, branch_id);
+    double pcmax = XLALSimNeutronStarFamMaxCentralPressurePerBranch(fam, branch_id);
+    if (p < pcmin || p > pcmax)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+                         "Input central pressure pc = %.16e is beyond the Family branch interpolation range [%.16e:%.16e].", p, pcmin, pcmax);
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchMassOfCentralPressure(p, b);
 }
-//TODO add here
 
+/* This function looks for the branch index where a central pressure p exists */
+static int find_branch_of_pressure(double p, LALSimNeutronStarFamily * fam){
+    int branch_index = 0;
+    for (int i = 0; i < XLALSimNeutronStarFamNumberOfBranches(fam); i++){
+        if (p >= XLALSimNeutronStarFamMinCentralPressurePerBranch(fam, i) &&
+            p <= XLALSimNeutronStarFamMaxCentralPressurePerBranch(fam, i)){
+                branch_index = i;
+                break;
+            }
+    }
+    return branch_index;
+}
+/**
+ * @brief Returns the mass in kg corresponding to a given central pressure in Pa.
+ * @param p Central pressure in Pa at which the mass is interpolated.
+ * @param fam Pointer to the neutron star family structure.
+ * @return The mass in kg interpolated at central pressure in Pa.
+ */
+double XLALSimNeutronStarFamMassOfCentralPressure(double p, LALSimNeutronStarFamily * fam){
+    int index_branch = find_branch_of_pressure(p, fam);
+    return XLALSimNeutronStarFamMassOfCentralPressurePerBranch(p, fam, index_branch);
+}
 
 /**
  * @brief Returns the baryonic mass in kg corresponding to a given
@@ -872,7 +850,7 @@ double XLALSimNeutronStarFamMassOfCentralPressurePerBranch(double p, LALSimNeutr
  * @param branch Pointer to the neutron star branch structure.
  * @return The baryonic mass in kg interpolated at mass m for the neutron star branch.
  */
-double XLALSimNeutronStarBranchBaryonicMassOfMass(double m, LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchBaryonicMassOfMass(double m, struct tagFamBranch  * branch)
 {
     /* In case user used mini solver */
     if (!branch || !branch->mb_of_m_interp || !branch->mb_of_m_acc || !branch->mdat || !branch->mbdat)
@@ -882,7 +860,6 @@ double XLALSimNeutronStarBranchBaryonicMassOfMass(double m, LALSimNeutronStarBra
         branch->mb_of_m_acc);
     return mb;
 }
-
 
 /**
  * @brief Returns the baryonic mass in kg corresponding to a given
@@ -894,12 +871,36 @@ double XLALSimNeutronStarBranchBaryonicMassOfMass(double m, LALSimNeutronStarBra
  */
 double XLALSimNeutronStarFamBaryonicMassOfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    double mmin = XLALSimNeutronStarFamMinMassPerBranch(fam, branch_id);
+    double mmax = XLALSimNeutronStarFamMaxMassPerBranch(fam, branch_id);
+    if (m < mmin || m > mmax)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+                         "Input mass m = %.16e is beyond the Family branch interpolation range [%.16e:%.16e].", m, mmin, mmax);
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchBaryonicMassOfMass(m, b);
 }
 
-// TODO add here
+/**
+ * @brief Returns the baryonic mass in kg corresponding to a given
+ * (gravitationnal) mass in kg.
+ * @details This function can accomodate twins stars, it returns an array
+ * which size corresponds to the number of twins in the sequence. Requires deallocation
+ * of memory with LALFree.
+ * @param m Mass in kg at which the baryonic mass is interpolated.
+ * @param fam Pointer to the neutron star family structure.
+ * @return The central pressure in Pa interpolated at mass m in kg.
+ */
+double * XLALSimNeutronStarFamBaryonicMassOfMass(double m, LALSimNeutronStarFamily * fam){
+    int twins = find_number_of_twins_at_mass(m, fam);
+    double * mb = XLALCalloc(twins, sizeof(*mb));
+    int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
+    for (int i = 0; i < twins; i++)
+        mb[i] = XLALSimNeutronStarFamBaryonicMassOfMassPerBranch(m, fam, twin_indices[i]);
+    LALFree(twin_indices);
+    return mb;
+}
 
 /**
  * @brief Returns k2 Love number (dimensionless) corresponding to a
@@ -908,7 +909,7 @@ double XLALSimNeutronStarFamBaryonicMassOfMassPerBranch(double m, LALSimNeutronS
  * @param branch Pointer to the neutron star branch structure.
  * @return The k2 Love number (dimensionless) interpolated at mass m for the neutron star branch.
  */
-double XLALSimNeutronStarBranchLoveNumberK2OfMass(double m, LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchLoveNumberK2OfMass(double m, struct tagFamBranch  * branch)
 {
     if (!branch || !branch->k2_of_m_interp || !branch->k2_of_m_acc || !branch->mdat || !branch->k2dat)
         XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid family branch (uninitialized interpolation)");
@@ -917,7 +918,6 @@ double XLALSimNeutronStarBranchLoveNumberK2OfMass(double m, LALSimNeutronStarBra
         branch->k2_of_m_acc);
     return k2;
 }
-
 
 /**
  * @brief Returns k2 Love number (dimensionless) corresponding to a given mass in kg
@@ -929,9 +929,34 @@ double XLALSimNeutronStarBranchLoveNumberK2OfMass(double m, LALSimNeutronStarBra
  */
 double XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    double mmin = XLALSimNeutronStarFamMinMassPerBranch(fam, branch_id);
+    double mmax = XLALSimNeutronStarFamMaxMassPerBranch(fam, branch_id);
+    if (m < mmin || m > mmax)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+                         "Input mass m = %.16e is beyond the Family branch interpolation range [%.16e:%.16e].", m, mmin, mmax);
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchLoveNumberK2OfMass(m, b);
+}
+
+/**
+ * @brief Returns k2 Love number (dimensionless) corresponding to a given mass in kg.
+ * @details This function can accomodate twins stars, it returns an array
+ * which size corresponds to the number of twins in the sequence. Requires deallocation
+ * of memory with LALFree.
+ * @param m Mass in kg at which the k2 Love number is interpolated.
+ * @param fam Pointer to the neutron star family structure.
+ * @return The k2 Love number (dimensionless) interpolated at mass m.
+ */
+double * XLALSimNeutronStarFamLoveNumberK2OfMass(double m, LALSimNeutronStarFamily * fam){
+    int twins = find_number_of_twins_at_mass(m, fam);
+    double * k2 = XLALCalloc(twins, sizeof(*k2));
+    int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
+    for (int i = 0; i < twins; i++)
+        k2[i] = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(m, fam, twin_indices[i]);
+    LALFree(twin_indices);
+    return k2;
 }
 
 /**
@@ -941,7 +966,7 @@ double XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(double m, LALSimNeutronS
  * @param branch Pointer to the neutron star branch structure.
  * @return The k3 Love number (dimensionless) interpolated at mass m for the neutron star branch.
  */
-double XLALSimNeutronStarBranchLoveNumberK3OfMass(double m, LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchLoveNumberK3OfMass(double m, struct tagFamBranch  * branch)
 {
     /* In case user used mini solver */
     if (!branch || !branch->k3_of_m_interp || !branch->k3_of_m_acc || !branch->mdat || !branch->k3dat)
@@ -963,11 +988,35 @@ double XLALSimNeutronStarBranchLoveNumberK3OfMass(double m, LALSimNeutronStarBra
  */
 double XLALSimNeutronStarFamLoveNumberK3OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    double mmin = XLALSimNeutronStarFamMinMassPerBranch(fam, branch_id);
+    double mmax = XLALSimNeutronStarFamMaxMassPerBranch(fam, branch_id);
+    if (m < mmin || m > mmax)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+                         "Input mass m = %.16e is beyond the Family branch interpolation range [%.16e:%.16e].", m, mmin, mmax);
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchLoveNumberK3OfMass(m, b);
 }
 
+/**
+ * @brief Returns k3 Love number (dimensionless) corresponding to a given mass in kg.
+ * @details This function can accomodate twins stars, it returns an array
+ * which size corresponds to the number of twins in the sequence. Requires deallocation
+ * of memory with LALFree.
+ * @param m Mass in kg at which the k3 Love number is interpolated.
+ * @param fam Pointer to the neutron star family structure.
+ * @return The k3 Love number (dimensionless) interpolated at mass m.
+ */
+double * XLALSimNeutronStarFamLoveNumberK3OfMass(double m, LALSimNeutronStarFamily * fam){
+    int twins = find_number_of_twins_at_mass(m, fam);
+    double * k3 = XLALCalloc(twins, sizeof(*k3));
+    int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
+    for (int i = 0; i < twins; i++)
+        k3[i] = XLALSimNeutronStarFamLoveNumberK3OfMassPerBranch(m, fam, twin_indices[i]);
+    LALFree(twin_indices);
+    return k3;
+}
 
 /**
  * @brief Returns k4 Love number (dimensionless) corresponding to a given mass
@@ -976,7 +1025,7 @@ double XLALSimNeutronStarFamLoveNumberK3OfMassPerBranch(double m, LALSimNeutronS
  * @param branch Pointer to the neutron star branch structure.
  * @return The k4 Love number (dimensionless) interpolated at mass m for the neutron star branch.
  */
-double XLALSimNeutronStarBranchLoveNumberK4OfMass(double m, LALSimNeutronStarBranch * branch)
+static double XLALSimNeutronStarBranchLoveNumberK4OfMass(double m, struct tagFamBranch  * branch)
 {
     /* In case user used mini solver */
     if (!branch || !branch->k4_of_m_interp || !branch->k4_of_m_acc || !branch->mdat || !branch->k4dat)
@@ -986,8 +1035,6 @@ double XLALSimNeutronStarBranchLoveNumberK4OfMass(double m, LALSimNeutronStarBra
         branch->k4_of_m_acc);
     return k4;
 }
-
-
 
 /**
  * @brief Returns k4 Love number (dimensionless) corresponding to a given mass
@@ -999,56 +1046,34 @@ double XLALSimNeutronStarBranchLoveNumberK4OfMass(double m, LALSimNeutronStarBra
  */
 double XLALSimNeutronStarFamLoveNumberK4OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id)
 {
-    if (branch_id < 0 || branch_id >= fam->number_of_branches) XLAL_ERROR_REAL8(XLAL_EDOM);
-    LALSimNeutronStarBranch * b = fam->fam_branch[branch_id];
+    if (branch_id < 0 || branch_id >= fam->number_of_branches)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "The ID branch number of LALSimNeutronStarFamily structure is incorrect.");
+    double mmin = XLALSimNeutronStarFamMinMassPerBranch(fam, branch_id);
+    double mmax = XLALSimNeutronStarFamMaxMassPerBranch(fam, branch_id);
+    if (m < mmin || m > mmax)
+        XLAL_ERROR_REAL8(XLAL_EDOM,
+                         "Input mass m = %.16e is beyond the Family branch interpolation range [%.16e:%.16e].", m, mmin, mmax);
+    struct tagFamBranch  * b = XLALSimNeutronStarFamSelectBranch(fam, branch_id);
     return XLALSimNeutronStarBranchLoveNumberK4OfMass(m, b);
 }
 
-//TODO what are those ??
-/*
- * @brief Returns the central pressure of a neutron star of mass @a m.
- * @param m The mass of the neutron star (kg).
+/**
+ * @brief Returns k4 Love number (dimensionless) corresponding to a given mass in kg.
+ * @details This function can accomodate twins stars, it returns an array
+ * which size corresponds to the number of twins in the sequence. Requires deallocation
+ * of memory with LALFree.
+ * @param m Mass in kg at which the k4 Love number is interpolated.
  * @param fam Pointer to the neutron star family structure.
- * @return The central pressure of the neutron star (Pa).
+ * @return The k4 Love number (dimensionless) interpolated at mass m.
  */
-// double XLALSimNeutronStarCentralPressure(double m,
-//     LALSimNeutronStarFamily * fam)
-// {
-//     double p;
-//     p = gsl_interp_eval(fam->p_of_m_interp, fam->mdat, fam->pdat, m,
-//         fam->p_of_m_acc);
-//     return p;
-// }
-
-/*
- * @brief Returns the radius of a neutron star of mass @a m.
- * @param m The mass of the neutron star (kg).
- * @param fam Pointer to the neutron star family structure.
- * @return The radius of the neutron star (m).
- */
-// double XLALSimNeutronStarRadius(double m, LALSimNeutronStarFamily * fam)
-// {
-//     double r;
-//     r = gsl_interp_eval(fam->r_of_m_interp, fam->mdat, fam->rdat, m,
-//         fam->r_of_m_acc);
-//     return r;
-// }
-
-/*
- * @brief Returns the tidal Love number k2 of a neutron star of mass @a m.
- * @param m The mass of the neutron star (kg).
- * @param fam Pointer to the neutron star family structure.
- * @return The dimensionless tidal Love number k2.
- */
-// double XLALSimNeutronStarLoveNumberK2(double m, LALSimNeutronStarFamily * fam)
-// {
-//     double k2;
-//     k2 = gsl_interp_eval(fam->k2_of_m_interp, fam->mdat, fam->k2dat, m,
-//         fam->k2_of_m_acc);
-//     return k2;
-// }
-
-
-// TODO DEPRECATED all of those ???
+double * XLALSimNeutronStarFamLoveNumberK4OfMass(double m, LALSimNeutronStarFamily * fam){
+    int twins = find_number_of_twins_at_mass(m, fam);
+    double * k4 = XLALCalloc(twins, sizeof(*k4));
+    int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
+    for (int i = 0; i < twins; i++)
+        k4[i] = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(m, fam, twin_indices[i]);
+    LALFree(twin_indices);
+    return k4;
+}
 
 /** @} */
