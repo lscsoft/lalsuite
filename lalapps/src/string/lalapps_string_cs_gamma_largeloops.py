@@ -71,7 +71,7 @@ def parse_command_line():
     if missing_options:
         raise ValueError("missing required option(s) %s" % ", ".join("--%s" % option.replace("_", "-") for option in missing_options))
     if options.model not in ("Siemens06", "Blanco-Pillado14", "Ringeval07"):
-    	raise ValueError("--model \"%s\" not recognized" % options.model)
+        raise ValueError("--model \"%s\" not recognized" % options.model)
     assert options.nGmu >= 2
     assert options.np >= 2
 
