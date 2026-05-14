@@ -340,6 +340,12 @@ upgrade:
     - eval export "${LCI_ENV}"
     - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
     - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
+    # check for a LALSuite release to upgrade
+    - |
+      if test -f /no-lalsuite; then
+          cat /no-lalsuite
+          exit 77
+      fi
     # upgrade packages
     - source ${LCI_SCRIPTS}/pkg_upgrade_${LCI_BLD}.sh
     # check that packages have been upgraded
@@ -361,3 +367,7 @@ upgrade:
         $LCI_ENV =~ /LCI_BLD=make/
       when: never
     - !reference [.pkg-level-job, rules]
+  allow_failure:
+    # returned if container does not have a
+    # LALSuite release installed to upgrade
+    exit_codes: 77
