@@ -20,8 +20,5 @@ gpgcheck=0
 EOF
 
 # upgrade all packages
-${LCI_SCRIPTS}/retry dnf -y upgrade \
-    $(printf "lib%s-devel " ${LCI_PKGLIST_X_LALAPPS}) \
-    $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
-    ${LCI_PKGLIST}
+${LCI_SCRIPTS}/retry dnf -y upgrade
 lalapps_version
