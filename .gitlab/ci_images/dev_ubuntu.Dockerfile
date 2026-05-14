@@ -97,11 +97,14 @@ for subdir in ${LCI_PKGLIST_X_LALAPPS} lalapps; do
 done
 
 # install latest LALSuite release, if available
-apt-get -y -q install \
+if ! apt-get -y -q install \
     $(printf "lib%s-dev " ${LCI_PKGLIST_X_LALAPPS}) \
     $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
-    ${LCI_PKGLIST_X_LALAPPS} lalapps \
-    || true
+    ${LCI_PKGLIST_X_LALAPPS} lalapps
+then
+    echo 'WARNING: no LALSuite release available' > /no-lalsuite
+    cat /no-lalsuite
+fi
 
 # print info
 dpkg-query --list

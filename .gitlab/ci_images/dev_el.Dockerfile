@@ -67,11 +67,14 @@ done
 dnf builddep -y -q ${specfiles} || true
 
 # install latest LALSuite release, if available
-dnf -y -q install \
+if ! dnf -y -q install \
     $(printf "lib%s-devel " ${LCI_PKGLIST_X_LALAPPS}) \
     $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
-    ${LCI_PKGLIST_X_LALAPPS} lalapps \
-    || true
+    ${LCI_PKGLIST_X_LALAPPS} lalapps
+then
+    echo 'WARNING: no LALSuite release available' > /no-lalsuite
+    cat /no-lalsuite
+fi
 
 # disable Python from downloading packages on-the-fly
 # - everything should be specified as BuildRequires

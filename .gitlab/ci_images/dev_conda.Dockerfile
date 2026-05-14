@@ -92,7 +92,12 @@ conda env update --quiet --name lalsuite-ci --file ./conda-dev-env.yml
 conda create --quiet --name lalsuite-ci-upgrade
 
 # install latest LALSuite release, if available
-conda install --quiet --name lalsuite-ci-upgrade ${LCI_PKGLIST_X_LALAPPS} lalapps || true
+if ! conda install --quiet --name lalsuite-ci-upgrade \
+    ${LCI_PKGLIST_X_LALAPPS} lalapps
+then
+    echo 'WARNING: no LALSuite release available' > /no-lalsuite
+    cat /no-lalsuite
+fi
 
 # print info
 conda info --all
