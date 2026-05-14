@@ -174,11 +174,11 @@ workflow:
 
     # runs if:
     # - the trigger is a commit push
-    # - the branch is a development image update branch at lscsoft/lalsuite
+    # - the branch is the devimg-update branch at lscsoft/lalsuite
     - if: >-
         $CI_PIPELINE_SOURCE == "push"
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
-        && $CI_COMMIT_REF_NAME =~ /^devimg/
+        && $CI_COMMIT_REF_NAME =~ "devimg-update"
       when: always
       variables:
         LCI_PIPE_NAME: "[update] Build and test Docker development images"
