@@ -192,7 +192,7 @@ XLALVectorMath_S2s_SSEx ( REAL4 *out, const REAL4 *in, const UINT4 len, __m128 (
         }
 
       // deal with the remaining (<=3) terms separately
-      for ( UINT4 i = i4Max, j=0; i < len; i ++, j++ ) {
+      for ( UINT4 i = i4Max; i < len; i ++ ) {
         *out = (*op)( *out, in[i] );
       }
 
@@ -382,7 +382,7 @@ XLALVectorMath_D2d_SSEx ( REAL8 *out, const REAL8 *in, const UINT4 len, __m128d 
         }
 
       // deal with the remaining (<=1) terms separately
-      for ( UINT4 i = i2Max, j=0; i < len; i ++, j++ ) {
+      for ( UINT4 i = i2Max; i < len; i ++ ) {
         *out = (*op)( *out, in[i] );
       }
 
