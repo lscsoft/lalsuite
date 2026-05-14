@@ -95,13 +95,6 @@ for subdir in ${LCI_PKGLIST_X_LALAPPS} lalapps; do
     popd
 done
 
-# install latest LALSuite release, if available
-apt-get -y -q install \
-    $(printf "lib%s-dev " ${LCI_PKGLIST_X_LALAPPS}) \
-    $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
-    ${LCI_PKGLIST_X_LALAPPS} lalapps \
-    || true
-
 # print info
 dpkg-query --list
 python3 -m pip list

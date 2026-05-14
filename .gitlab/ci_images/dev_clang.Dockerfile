@@ -104,13 +104,6 @@ for subdir in ${LCI_PKGLIST_X_LALAPPS} lalapps; do
     popd
 done
 
-# install latest LALSuite release, if available
-apt-get -y -q install \
-    $(printf "lib%s-dev " ${LCI_PKGLIST_X_LALAPPS}) \
-    $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
-    ${LCI_PKGLIST_X_LALAPPS} lalapps \
-    || true
-
 # install Clang
 apt-get -y -q install clang${CLANG_VERSION_SUFFIX}
 
