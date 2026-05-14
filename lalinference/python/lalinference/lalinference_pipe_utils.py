@@ -877,13 +877,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     def write_wrapper_script(self, path):
         script = """#!/usr/bin/env bash
-		    echo "Making placeholder output files"
-		    IFS=','
-		    for f in $@; do
-			touch $f;
-			echo "created $f";
-		    done;
-		"""
+                    echo "Making placeholder output files"
+                    IFS=','
+                    for f in $@; do
+                        touch $f;
+                        echo "created $f";
+                    done;
+                """
         with open(path,'w') as scr:
             scr.write(script)
         import stat
