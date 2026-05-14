@@ -23,10 +23,11 @@ convention detailed in the SFT spec (T040164)."""
 
 
 import argparse
-import sys
 import os
+import sys
 
 from lalpulsar.public_sft_directory import public_sft_directory
+
 from lalpulsar import git_version
 
 __author__ = "Karl Wette <karl.wette@ligo.org>"
