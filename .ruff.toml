@@ -9,6 +9,7 @@ select = [
     "I",
     # pycodestyle errors
     "E9",
+    "E101",
     "E701",
     "E702",
     "E703",
@@ -26,3 +27,8 @@ select = [
     # ruff
     "RUF016",
 ]
+
+[lint.per-file-ignores]
+"lalburst/bin/*" = ["E101"]
+"lalburst/python/*" = ["E101"]
+"lalburst/test/*" = ["E101"]
