@@ -13,8 +13,5 @@ cp -v ${upstream_debs} /srv/local-apt-repository
 ${LCI_SCRIPTS}/retry apt-get -y -q update
 
 # upgrade all packages
-${LCI_SCRIPTS}/retry apt-get -y -q install \
-    $(printf "lib%s-dev " ${LCI_PKGLIST_X_LALAPPS}) \
-    $(printf "python3-%s " ${LCI_PKGLIST_X_LALAPPS}) \
-    ${LCI_PKGLIST}
+${LCI_SCRIPTS}/retry apt-get -y -q dist-upgrade
 lalapps_version
