@@ -156,13 +156,13 @@ if args.bns_injection:
         cpBNS.write(cpfile)
 
     lalinferenceargs = [ 'lalinference_pipe'
-    		     , '-I'
-    		     , args.bns_injection
-    		     , '-r'
-    		     , './run'
-    		     , '-p'
-    		     , './daglog'
-    		     , BNS_ini_file ]
+                     , '-I'
+                     , args.bns_injection
+                     , '-r'
+                     , './run'
+                     , '-p'
+                     , './daglog'
+                     , BNS_ini_file ]
 
     if args.condor_submit:
         lalinferenceargs.append('--condor-submit')
