@@ -67,7 +67,7 @@ outputs:
       commands:
         - test -f ${LALSIMULATION_DATADIR}/LIGO-P1200087-v18-AdV_DESIGN.txt  # [unix]
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
@@ -122,7 +122,7 @@ outputs:
         # check pkg-config
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalsimulation
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -176,7 +176,7 @@ outputs:
         - lalsimulation.tilts_at_infinity
         - lalsimulation.gwsignal
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -230,7 +230,7 @@ outputs:
         - lalsim-unicorn --help
 
 about:
-  home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+  home: https://lscsoft.docs.ligo.org/lalsuite/
   doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later

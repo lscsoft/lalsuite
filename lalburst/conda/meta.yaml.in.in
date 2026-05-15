@@ -79,7 +79,7 @@ outputs:
         # check pkg-config
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalburst
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -159,7 +159,7 @@ outputs:
         - lalburst.snglcoinc
         - lalburst.timeslides
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -210,7 +210,7 @@ outputs:
       imports:
         - lalburst
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -220,7 +220,7 @@ outputs:
         The LSC Algorithm Burst Library for gravitational wave data analysis.
 
 about:
-  home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+  home: https://lscsoft.docs.ligo.org/lalsuite/
   doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later

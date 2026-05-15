@@ -153,7 +153,7 @@ test:
     - lalapps_version
 
 about:
-  home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+  home: https://lscsoft.docs.ligo.org/lalsuite/
   doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later

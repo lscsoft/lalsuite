@@ -86,7 +86,7 @@ outputs:
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lal
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalsupport
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
@@ -156,7 +156,7 @@ outputs:
       commands:
         - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
@@ -217,7 +217,7 @@ outputs:
         - test "$(lal_tconvert 1831518865)" == "Tue Jan 19 03:14:07 UTC 2038"
         - test "$(lal_tconvert 1831518866)" == "Tue Jan 19 03:14:08 UTC 2038"
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -228,7 +228,7 @@ outputs:
         This package contains the runtime tools.
 
 about:
-  home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+  home: https://lscsoft.docs.ligo.org/lalsuite/
   doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later

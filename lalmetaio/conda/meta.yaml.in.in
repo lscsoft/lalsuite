@@ -72,7 +72,7 @@ outputs:
         # check pkg-config
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalmetaio
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -124,7 +124,7 @@ outputs:
       imports:
         - lalmetaio
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -157,7 +157,7 @@ outputs:
       commands:
         - lalmetaio_version --verbose
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -167,7 +167,7 @@ outputs:
         The LSC Algorithm MetaIO Library for gravitational wave data analysis.
 
 about:
-  home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+  home: https://lscsoft.docs.ligo.org/lalsuite/
   doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later

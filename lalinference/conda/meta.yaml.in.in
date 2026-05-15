@@ -75,7 +75,7 @@ outputs:
       commands:
         - test -f ${LALINFERENCE_DATADIR}/fiducialBNS.xml  # [unix]
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalinference/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
@@ -130,7 +130,7 @@ outputs:
         - pkg-config --print-errors --exact-version "{{ version }}" lalinference
         - test -f ${PREFIX}/lib/liblalinference${SHLIB_EXT}  # [not win]
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -212,7 +212,7 @@ outputs:
         - lalinference.tiger.postproc
         - lalinference.wrapper
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -333,7 +333,7 @@ outputs:
       imports:
         - lalinference
     about:
-      home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+      home: https://lscsoft.docs.ligo.org/lalsuite/
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
@@ -343,7 +343,7 @@ outputs:
         The LSC Algorithm Inference Library for gravitational wave data analysis.
 
 about:
-  home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+  home: https://lscsoft.docs.ligo.org/lalsuite/
   doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
