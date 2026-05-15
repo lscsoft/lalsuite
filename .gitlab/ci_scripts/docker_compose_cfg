@@ -12,9 +12,17 @@ import yaml
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("-o", "--output", type=Path, required=True, help="Output file")
 parser.add_argument("--file", type=Path, required=True, help="Docker file")
-parser.add_argument("--build-args", nargs="*", help="Docker build arguments")
-parser.add_argument("--tags", nargs="+", help="Docker tags")
+parser.add_argument(
+    "--build-args",
+    nargs="*",
+    help="Docker build arguments; ignores duplicate arguments",
+)
+parser.add_argument(
+    "--tags", nargs="+", help="Docker tags; ignores duplicate arguments"
+)
 args = parser.parse_args()
+
+# ignore duplicate arguments
 args.build_args = sorted(set(args.build_args))
 args.tags = sorted(set(args.tags))
 
