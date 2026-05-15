@@ -70,6 +70,7 @@ for file, i, N in S.write_frame_files(fs=1, Tframe=1800, comment="simCW"):
 
 ~~~
 """
+
 ## @{
 
 from __future__ import division, print_function
