@@ -81,7 +81,7 @@ static inline double clamp_to_range_tol(double x, double xmin, double xmax, doub
         return x;
 }
 
-static double eos_piece_p_of_e_tabular(double e, struct tagEOSPiece * eos)
+static double eos_piece_p_of_e_tabular(double e, EOSPiece * eos)
 {
     double log_e;
     double log_p;
@@ -104,7 +104,7 @@ static double eos_piece_p_of_e_tabular(double e, struct tagEOSPiece * eos)
     return exp(log_p);
 }
 
-static double eos_piece_p_of_rho_tabular(double rho, struct tagEOSPiece * eos)
+static double eos_piece_p_of_rho_tabular(double rho, EOSPiece * eos)
 {
     double log_rho;
     double log_p;
@@ -127,7 +127,7 @@ static double eos_piece_p_of_rho_tabular(double rho, struct tagEOSPiece * eos)
     return exp(log_p);
 }
 
-static double eos_piece_e_of_p_tabular(double p, struct tagEOSPiece * eos)
+static double eos_piece_e_of_p_tabular(double p, EOSPiece * eos)
 {
     double log_p;
     double log_e;
@@ -150,7 +150,7 @@ static double eos_piece_e_of_p_tabular(double p, struct tagEOSPiece * eos)
     return exp(log_e);
 }
 
-static double eos_piece_e_of_h_tabular(double h, struct tagEOSPiece * eos)
+static double eos_piece_e_of_h_tabular(double h, EOSPiece * eos)
 {
     double log_h;
     double log_e;
@@ -173,7 +173,7 @@ static double eos_piece_e_of_h_tabular(double h, struct tagEOSPiece * eos)
     return exp(log_e);
 }
 
-static double eos_piece_p_of_h_tabular(double h, struct tagEOSPiece * eos)
+static double eos_piece_p_of_h_tabular(double h, EOSPiece * eos)
 {
     double log_h;
     double log_p;
@@ -196,7 +196,7 @@ static double eos_piece_p_of_h_tabular(double h, struct tagEOSPiece * eos)
     return exp(log_p);
 }
 
-static double eos_piece_rho_of_h_tabular(double h, struct tagEOSPiece * eos)
+static double eos_piece_rho_of_h_tabular(double h, EOSPiece * eos)
 {
     double log_h;
     double log_rho;
@@ -219,7 +219,7 @@ static double eos_piece_rho_of_h_tabular(double h, struct tagEOSPiece * eos)
     return exp(log_rho);
 }
 
-static double eos_piece_h_of_p_tabular(double p, struct tagEOSPiece * eos)
+static double eos_piece_h_of_p_tabular(double p, EOSPiece * eos)
 {
     double log_p;
     double log_h;
@@ -242,7 +242,7 @@ static double eos_piece_h_of_p_tabular(double p, struct tagEOSPiece * eos)
     return exp(log_h);
 }
 
-static double eos_piece_dedp_of_p_tabular(double p, struct tagEOSPiece * eos)
+static double eos_piece_dedp_of_p_tabular(double p, EOSPiece * eos)
 {
     double log_p;
     double log_e;
@@ -266,7 +266,7 @@ static double eos_piece_dedp_of_p_tabular(double p, struct tagEOSPiece * eos)
     return d_log_e_d_log_p * exp(log_e - log_p);
 }
 
-static double eos_piece_v_of_h_tabular(double h, struct tagEOSPiece * eos)
+static double eos_piece_v_of_h_tabular(double h, EOSPiece * eos)
 {
     double p, dedp, log_cs2, log_h;
     double tol = 1e-12;
@@ -291,7 +291,7 @@ static double eos_piece_v_of_h_tabular(double h, struct tagEOSPiece * eos)
     return pow(exp(log_cs2), 0.5);
 }
 
-//static double eos_piece_v_of_h_tabular(double h, struct tagEOSPiece *eos)
+//static double eos_piece_v_of_h_tabular(double h, EOSPiece *eos)
 //{
 //      double dpdh, dedh;
 //    printf("hi4\n");
@@ -337,7 +337,7 @@ static void eos_piece_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
     return;
 }
 
-static void eos_piece_free_tabular(struct tagEOSPiece * eos)
+static void eos_piece_free_tabular(EOSPiece * eos)
 {
     if (eos) {
         eos_piece_free_tabular_data(eos->data.tabular);
@@ -355,7 +355,7 @@ static void eos_piece_free_tabular(struct tagEOSPiece * eos)
 /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1).
  * If the EOS is always causal, return some large value hmax instead. */
 static double eos_piece_min_acausal_pseudo_enthalpy_tabular(double hmax,
-    struct tagEOSPiece * eos)
+    EOSPiece * eos)
 {
     size_t i;
     double h_im1, h_i;
@@ -491,10 +491,10 @@ static int * eos_find_phase_transition(size_t ndat, double *edat, double *pdat, 
 }
 
 
-static struct tagEOSPiece * eos_piece_alloc_tabular(double *nbdat, double *edat, double *pdat,
+static EOSPiece * eos_piece_alloc_tabular(double *nbdat, double *edat, double *pdat,
    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
 {
-    struct tagEOSPiece *eos;
+    EOSPiece *eos;
     LALSimNeutronStarEOSDataTabular *data;
     size_t i;
 
@@ -650,16 +650,16 @@ static struct tagEOSPiece * eos_piece_alloc_tabular(double *nbdat, double *edat,
 }
 
 /*
- * This function creates a struct tagEOSPiece pointer from a piece of
+ * This function creates a EOSPiece pointer from a piece of
  * tabulated equation of state tabulated data, given minimum and maximum
  * indices for the tables.
  */
-static struct tagEOSPiece * eos_piece_alloc_tabular_index( double *nbdat, double *edat, double *pdat,
+static EOSPiece * eos_piece_alloc_tabular_index( double *nbdat, double *edat, double *pdat,
                                                 double *mubdat, double *muedat, double *hdat,
                                                 double *yedat, double *cs2dat,
                                                 size_t begin_index, size_t end_index){
 
-    struct tagEOSPiece * eos;
+    EOSPiece * eos;
 
     double *nbdat_cut, *edat_cut, *pdat_cut, *mubdat_cut, *muedat_cut, *hdat_cut, *yedat_cut, *cs2dat_cut;
     size_t ndat;
@@ -740,7 +740,7 @@ static struct tagEOSPiece * eos_piece_alloc_tabular_index( double *nbdat, double
  * data that can include a first order phase transition. The equation of state data
  * is tested for phase transitions which are numerically defined by a pressure
  * plateau or near like plateau associated to a jump in energy density.
- * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 LALSimNeutronStarEOSPiece
+ * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 EOSPiece
  * equation of state pieces.
  *
  * We define a "dirty" phase transition by an intended first order phase
@@ -765,7 +765,7 @@ static struct tagEOSPiece * eos_piece_alloc_tabular_index( double *nbdat, double
  * advised to provide equations of state containing phase transition in the
  * "new" LAL format.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the struct tagEOSPiece structure and the corresponding
+ * corrected, use the EOSPiece structure and the corresponding
  * XLALSimNeutronStarEOSFromFile; note that it cannot be used in the
  * solver for neutron star's astrophysical parameters that accounts for the
  * necessary phase transition corrections.
@@ -896,7 +896,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) {
  * data that can include a first order phase transition. The equation of state data
  * is tested for phase transitions which are numerically defined by a pressure
  * plateau or near like plateau associated to a jump in energy density.
- * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 LALSimNeutronStarEOSPiece
+ * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 EOSPiece
  * equation of state pieces.
  *
  * We define a "dirty" phase transition by an intended first order phase
@@ -920,7 +920,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) {
  * have been modified to obtain a clean phase transition: this implies that
  * P(pt,+) and eps(pt,+) are not thermodynamically coherent together.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the struct tagEOSPiece structure and the corresponding
+ * corrected, use the EOSPiece structure and the corresponding
  * XLALSimNeutronStarEOSFromTabulatedData function; note that it cannot be used in the
  * solver for neutron star's astrophysical parameters that accounts for the
  * necessary phase transition corrections.
@@ -961,7 +961,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(double
 //     if (!eos) return NULL;
 //     eos->number_of_pieces = number_eos;
 //     /* Allocate each piece of the equation of state separated by a phase transition */
-//     eos->eos_piece = XLALCalloc(number_eos, sizeof(struct tagEOSPiece *));
+//     eos->eos_piece = XLALCalloc(number_eos, sizeof(EOSPiece *));
     LALSimNeutronStarEOS * eos = XLALCreateSimNeutronStarEOS(number_eos);
     if (!eos->eos_piece) goto cleanup;
 
@@ -1157,7 +1157,7 @@ cleanup:
  * data that can include a first order phase transition. The equation of state data
  * is tested for phase transitions which are numerically defined by a pressure
  * plateau or near like plateau associated to a jump in energy density.
- * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 LALSimNeutronStarEOSPiece
+ * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 EOSPiece
  * equation of state pieces.
  *
  * We define a "dirty" phase transition by an intended first order phase
@@ -1180,7 +1180,7 @@ cleanup:
  * have been modified to obtain a clean phase transition: this implies that
  * P(pt,+) and eps(pt,+) are not thermodynamically coherent together.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the struct tagEOSPiece structure and the corresponding
+ * corrected, use the EOSPiece structure and the corresponding
  * XLALSimNeutronStarEOSFromTabulatedData function; note that it cannot be used in the
  * solver for neutron star's astrophysical parameters that accounts for the
  * necessary phase transition corrections.

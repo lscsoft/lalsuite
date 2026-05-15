@@ -215,7 +215,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS3PieceCausalAnalytic(double v1,
 /* FUNCTIONS FOR NS ASTROPHYSICAL SOLVER */
 /* TOV and Love Number solver ROUTINES */
 // int XLALSimNeutronStarTOVODEIntegrateWithToleranceEOSPiece(double *radius, double *mass,
-//     double *love_number_k2, double central_pressure_si, struct tagEOSPiece * eos, double epsrel);
+//     double *love_number_k2, double central_pressure_si, EOSPiece * eos, double epsrel);
 // int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
 //     double *love_number_k2, double central_pressure_si,
 //     LALSimNeutronStarEOS * eos, double epsrel);
