@@ -21,14 +21,12 @@
 """Output the public directory for the given SFT name(s), following the
 convention detailed in the SFT spec (T040164)."""
 
-
 import argparse
 import os
 import sys
 
-from lalpulsar.public_sft_directory import public_sft_directory
-
 from lalpulsar import git_version
+from lalpulsar.public_sft_directory import public_sft_directory
 
 __author__ = "Karl Wette <karl.wette@ligo.org>"
 __version__ = git_version.id
