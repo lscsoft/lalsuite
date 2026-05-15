@@ -351,10 +351,6 @@ static struct tagEOSPiece *XLALSimNeutronStarEOSPiecePolytrope(double Gamma,
 
     eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_PIECEWISE_POLYTROPE;
     eos->data.piecewisePolytrope = data;
-    if(snprintf(eos->name, sizeof(eos->name),
-	"Gamma=%g Polytrope (p=%g Pa @ rho=%g kg/m^3)", Gamma,
-	reference_pressure_si, reference_density_si) >= (signed) sizeof(eos->name))
-        XLAL_PRINT_WARNING("EOS name too long");
 
     /* setup function pointers */
     eos->free = eos_free_piecewise_polytrope;
@@ -408,6 +404,10 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
 {
     //TODO add a message to show this is only valid for 1 piece EOS ?
     LALSimNeutronStarEOS * eos = XLALCreateSimNeutronStarEOS(1);
+    if(snprintf(eos->name, sizeof(eos->name),
+        "Gamma=%g Polytrope (p=%g Pa @ rho=%g kg/m^3)", Gamma,
+        reference_pressure_si, reference_density_si) >= (signed) sizeof(eos->name))
+        XLAL_PRINT_WARNING("EOS name too long");
     eos->eos_piece[0] = XLALSimNeutronStarEOSPiecePolytrope(Gamma,reference_pressure_si, reference_density_si);
     return eos;
 }
@@ -496,10 +496,6 @@ static struct tagEOSPiece *XLALSimNeutronStarEOSPiece4ParameterPiecewisePolytrop
 
     eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_PIECEWISE_POLYTROPE;
     eos->data.piecewisePolytrope = data;
-
-    if(snprintf(eos->name, sizeof(eos->name), "4-Piece Poly (p1=10^%.4g Pa,"
-	"G1=%.4g,G2=%.4g,G3=%.4g)", logp1_si, gamma1, gamma2, gamma3) >= (int) sizeof(eos->name))
-        XLAL_PRINT_WARNING("EOS name too long");
 
     /* setup function pointers */
     eos->free = eos_free_piecewise_polytrope;
@@ -674,6 +670,9 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
 {
     //TODO add a message to show this is only valid for 1 piece EOS ?
     LALSimNeutronStarEOS * eos = XLALCreateSimNeutronStarEOS(1);
+    if(snprintf(eos->name, sizeof(eos->name), "4-Piece Poly (p1=10^%.4g Pa,"
+        "G1=%.4g,G2=%.4g,G3=%.4g)", logp1_si, gamma1, gamma2, gamma3) >= (int) sizeof(eos->name))
+        XLAL_PRINT_WARNING("EOS name too long");
     eos->eos_piece[0] = XLALSimNeutronStarEOSPiece4ParameterPiecewisePolytrope(logp1_si, gamma1, gamma2, gamma3);
     return eos;
 }

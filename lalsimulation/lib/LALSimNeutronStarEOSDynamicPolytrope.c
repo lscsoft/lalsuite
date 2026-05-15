@@ -77,7 +77,6 @@ static double causal_Nparams(double p, double esec[], double psec[], double usec
  */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSDynamicAnalytic(double parameters[], size_t nsec, int causal){
 
-    //TODO put a message
     // Check that causal flag appropriately assigned
     if (causal!=0 && causal!=1)
 	XLAL_ERROR_NULL(XLAL_EINVAL,"Did not specify which approach to take, Causal or Non-Causal");
@@ -295,7 +294,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSDynamicAnalytic(double parameters[], 
  * @return A pointer to neutron star EOS structure.
  */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS3PieceDynamicPolytrope(double g0, double log10p1_si, double g1, double log10p2_si, double g2){
-    //TODO add a message
     double params[]={g0,log10p1_si,g1,log10p2_si,g2};
     LALSimNeutronStarEOS * eos;
     // 3-piece (non-causal) dynamic polytrope
@@ -317,7 +315,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS3PieceDynamicPolytrope(double g0, dou
  * @return A pointer to neutron star EOS structure.
  */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS3PieceCausalAnalytic(double v1, double log10p1_si, double v2, double log10p2_si, double v3){
-    //TODO add a message
     double params[]={v1,log10p1_si,v2,log10p2_si,v3};
     LALSimNeutronStarEOS * eos;
     // 3-piece causal analytic eos

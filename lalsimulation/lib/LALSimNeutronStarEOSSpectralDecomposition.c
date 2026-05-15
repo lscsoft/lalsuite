@@ -182,7 +182,6 @@ static double eos_e_of_p_spectral_decomposition(double x, double gamma[], int si
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double gamma[], int size)
 {
 
-    //TODO add a message to show this is only valid for 1 piece EOS ?
     size_t ndat_low = 69;
     size_t ndat = ndat_low + 500;
     size_t i;
@@ -410,7 +409,6 @@ int XLALSimNeutronStarEOS4ParamSDViableFamilyCheck(double g0, double g1, double 
 
     LALSimNeutronStarEOS *eos = NULL;
     eos = XLALSimNeutronStarEOS4ParameterSpectralDecomposition(g0,g1,g2,g3);
-    //TODO add a message that state that this is only valid for one EOS piece
 
     // Initialize previous value for mdat comparison
     mdat_prev = 0.0;
