@@ -80,7 +80,7 @@ outputs:
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalburst
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalframe/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -160,7 +160,7 @@ outputs:
         - lalburst.timeslides
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -211,7 +211,7 @@ outputs:
         - lalburst
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -221,7 +221,7 @@ outputs:
 
 about:
   home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-  doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
   license_file: COPYING

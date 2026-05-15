@@ -176,10 +176,10 @@ these directions.
 [lal-discuss-a]:    https://sympa.ligo.org/wws/info/lal-discuss
 [lal-discuss-s]:    https://grouper.ligo.org/selfmanage/lal-discuss
 [lalspec]:          https://dcc.ligo.org/LIGO-T990030/public
-[lalsuitedocs]:     https://docs.ligo.org/lscsoft/lalsuite
+[lalsuitedocs]:     https://lscsoft.docs.ligo.org/lalsuite
 [lalsuitefaq]:      https://git.ligo.org/lscsoft/lalsuite/-/wikis/FAQ
 [lalsuitesources]:  http://software.ligo.org/lscsoft/source/lalsuite/?C=M;O=D
 [lalsuitewiki]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis
 [previousissues]:   https://git.ligo.org/lscsoft/lalsuite/issues?scope=all&utf8=%E2%9C%93&state=closed
 [projectrepo]:      https://git.ligo.org/lscsoft/lalsuite
-[swiglal]:          https://docs.ligo.org/lscsoft/lalsuite/dev/swiglal_tutorial.html
+[swiglal]:          https://lscsoft.docs.ligo.org/lalsuite/dev/swiglal_tutorial.html

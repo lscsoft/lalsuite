@@ -139,7 +139,7 @@ setup(
     url='https://git.ligo.org/lscsoft/lalsuite',
     project_urls={
         "Bug Tracker": "https://git.ligo.org/lscsoft/lalsuite/-/issues/",
-        "Documentation": "https://docs.ligo.org/lscsoft/lalsuite/",
+        "Documentation": "https://lscsoft.docs.ligo.org/lalsuite/",
         "Source Code": "https://git.ligo.org/lscsoft/lalsuite",
     },
     classifiers=[

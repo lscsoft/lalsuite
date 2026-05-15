@@ -76,7 +76,7 @@ outputs:
         - test -f ${LALINFERENCE_DATADIR}/fiducialBNS.xml  # [unix]
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinference/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalinference/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -131,7 +131,7 @@ outputs:
         - test -f ${PREFIX}/lib/liblalinference${SHLIB_EXT}  # [not win]
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -213,7 +213,7 @@ outputs:
         - lalinference.wrapper
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -334,7 +334,7 @@ outputs:
         - lalinference
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -344,7 +344,7 @@ outputs:
 
 about:
   home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-  doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
   license_file: COPYING

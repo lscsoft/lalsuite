@@ -64,4 +64,4 @@ See the [LALSuite README][readme].
 [helpdesk]:         mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
 [install]:          https://git.ligo.org/lscsoft/lalsuite/-/wikis/INSTALL
 [readme]:           https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-[swiglal]:          https://docs.ligo.org/lscsoft/lalsuite/dev/swiglal_tutorial.html
+[swiglal]:          https://lscsoft.docs.ligo.org/lalsuite/dev/swiglal_tutorial.html

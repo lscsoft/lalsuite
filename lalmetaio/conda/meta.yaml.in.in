@@ -73,7 +73,7 @@ outputs:
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalmetaio
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -125,7 +125,7 @@ outputs:
         - lalmetaio
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -158,7 +158,7 @@ outputs:
         - lalmetaio_version --verbose
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -168,7 +168,7 @@ outputs:
 
 about:
   home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-  doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
   license_file: COPYING

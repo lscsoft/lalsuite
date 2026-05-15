@@ -68,7 +68,7 @@ outputs:
         - test -f ${LALSIMULATION_DATADIR}/LIGO-P1200087-v18-AdV_DESIGN.txt  # [unix]
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalsimulation/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
       dev_url: https://git.ligo.org/lscsoft/lalsuite.git
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -123,7 +123,7 @@ outputs:
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalsimulation
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalsimulation/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -177,7 +177,7 @@ outputs:
         - lalsimulation.gwsignal
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalsimulation/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -231,7 +231,7 @@ outputs:
 
 about:
   home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-  doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
   license_file: COPYING

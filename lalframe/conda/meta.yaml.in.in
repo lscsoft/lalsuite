@@ -76,7 +76,7 @@ outputs:
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalframe
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -134,7 +134,7 @@ outputs:
         - lalframe.frread
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -181,7 +181,7 @@ outputs:
         - lalfr-vis --channel H1:LSC-AS_Q --start-time 600000000 --duration 0.01 --frame-glob test/F-TEST-*.gwf
     about:
       home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/
       dev_url: https://git.ligo.org/lscsoft/lalsuite/
       license: GPL-2.0-or-later
       license_file: COPYING
@@ -192,7 +192,7 @@ outputs:
 
 about:
   home: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
-  doc_url: https://docs.ligo.org/lscsoft/lalsuite/
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/
   dev_url: https://git.ligo.org/lscsoft/lalsuite/
   license: GPL-2.0-or-later
   license_file: COPYING

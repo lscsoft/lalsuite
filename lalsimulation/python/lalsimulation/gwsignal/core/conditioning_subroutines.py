@@ -27,7 +27,7 @@ def high_pass_time_series(time_series, dt, fmin, attenuation, N):
     """
 
     # Following butterworth filters as applied to LAL:
-    # See : https://docs.ligo.org/lscsoft/lalsuite/dev/lal/group___butterworth_time_series__c.html
+    # See : https://lscsoft.docs.ligo.org/lalsuite/dev/lal/group___butterworth_time_series__c.html
 
     # Number of samples
     Ns = len(time_series)

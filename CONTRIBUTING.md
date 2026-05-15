@@ -421,7 +421,7 @@ the [Git LFS][gitlfs] conversion. Please note:
 [gitlfs]:           https://wiki.ligo.org/Computing/GitLFS
 [gitsetup]:         https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
 [helpdesk]:         mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
-[lalsuitedocs]:     https://docs.ligo.org/lscsoft/lalsuite
+[lalsuitedocs]:     https://lscsoft.docs.ligo.org/lalsuite
 [lalsuiteforks]:    https://git.ligo.org/lscsoft/lalsuite/-/forks/new
 [lalsuiterepo]:     https://git.ligo.org/lscsoft/lalsuite
 [lalsuitewiki]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis/home

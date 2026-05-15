@@ -493,7 +493,7 @@ int XLALSimInspiralGenerateTDWaveform(
 
 /**
  * Compute time-domain modes for a specific approximant.
- * Equivalent to XLALSimInspiralChooseTDModes(). The only difference is that the SphHarmSeries object needs to be passed as an argument to the function. The actual returned value is an integer which indicates success or error in the waveform evaluation (see https://docs.ligo.org/lscsoft/lalsuite/lal/group___x_l_a_l_error__h.html).
+ * Equivalent to XLALSimInspiralChooseTDModes(). The only difference is that the SphHarmSeries object needs to be passed as an argument to the function. The actual returned value is an integer which indicates success or error in the waveform evaluation (see https://lscsoft.docs.ligo.org/lalsuite/lal/group___x_l_a_l_error__h.html).
  * The waveform arguments are inserted into the LALDict. The generator carries the info about the approximant and potentially extra data which could be recycled by the model to speed-up calculation.
  *
  * The parameters in the LALDict must be in SI units.
@@ -537,7 +537,7 @@ int XLALSimInspiralGenerateFDWaveform(
 
 /**
  * Compute frequency-domain modes for a specific approximant.
- * Equivalent to XLALSimInspiralChooseFDModes. The only difference is that the SphHarmSeries object needs to be passed as an argument to the function. The actual returned value is an integer which indicates success or error in the waveform evaluation (see https://docs.ligo.org/lscsoft/lalsuite/dev/lal/group___x_l_a_l_error__h.html).
+ * Equivalent to XLALSimInspiralChooseFDModes. The only difference is that the SphHarmSeries object needs to be passed as an argument to the function. The actual returned value is an integer which indicates success or error in the waveform evaluation (see https://lscsoft.docs.ligo.org/lalsuite/dev/lal/group___x_l_a_l_error__h.html).
  * The waveform arguments are inserted into the LALDict. The generator carries the info about the approximant and potentially extra data which could be recycled by the model to speed-up calculation.
  *
  * The parameters in the LALDict must be in SI units.
