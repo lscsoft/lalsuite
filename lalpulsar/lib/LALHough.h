@@ -146,7 +146,7 @@ extern "C" {
  * derivatives at different time stamps that have to be combined to form a Hough map
  * for a given (null or) residual spin-down parameters
  */
-typedef struct tagUINT8FrequencyIndexVector{
+typedef struct tagUINT8FrequencyIndexVector {
   UINT4      length;  /**< number of elements */
   REAL8      deltaF;  /**< frequency resolution */
   UINT8      *data;   /**< the frequency indexes */
@@ -157,26 +157,26 @@ typedef struct tagUINT8FrequencyIndexVector{
  * corresponds to a different spin-down residual value; there will thus be as many
  * sets as many spin-down residuals one wants to search over with the hough stage.
  */
-typedef struct tagUINT8FrequencyIndexVectorSequence{
+typedef struct tagUINT8FrequencyIndexVectorSequence {
   UINT4                          length;        /**< number of elements */
   UINT4                          vectorLength;  /**< frequency resolution */
   UINT8FrequencyIndexVector      *freqIndV;     /**< the frequency indexes */
 } UINT8FrequencyIndexVectorSequence;
 
 /** This structure contains a vector of peak-grams (for the different time stamps) */
-typedef struct tagHOUGHPeakGramVector{
+typedef struct tagHOUGHPeakGramVector {
   UINT4             length; /**< number of elements */
   HOUGHPeakGram     *pg;    /**< the Peakgrams */
 } HOUGHPeakGramVector;
 
 /** This structure contains a vector of partial look up tables (for the different  time stamps) */
-typedef struct tagHOUGHptfLUTVector{
+typedef struct tagHOUGHptfLUTVector {
   UINT4            length; /**< number of elements */
   HOUGHptfLUT     *lut;    /**< the partial Look Up Tables */
 } HOUGHptfLUTVector;
 
 /** This structure contains a vector of Hough maps */
-typedef struct tagHOUGHMapTotalVector{
+typedef struct tagHOUGHMapTotalVector {
   UINT4            length; /**< number of elements */
   HOUGHMapTotal    *ht;    /**< the Hough maps */
 } HOUGHMapTotalVector;
@@ -186,7 +186,7 @@ typedef struct tagHOUGHMapTotalVector{
  * derivatives (for different time stamps and different frequencies) representing
  * a circular buffer for the frequency indexes
  */
-typedef struct tagPHMDVectorSequence{
+typedef struct tagPHMDVectorSequence {
   UINT4       nfSize;    /**< number of different frequencies */
   UINT4       length;    /**< number of elements for each frequency */
   UINT8       fBinMin;   /**< frequency index of smallest intrinsic frequency in circular buffer */
@@ -196,10 +196,10 @@ typedef struct tagPHMDVectorSequence{
 } PHMDVectorSequence;
 
 /** This structure stores the residual spin-down parameters at a given time */
-typedef struct tagHOUGHResidualSpinPar{
-  REAL8          deltaF;   	/**< Frequency resolution;  df=1/TCOH */
-  REAL8          timeDiff; 	/**< \f$ T_{\hat N}(t)-T_{\hat N}(\hat t_0) \f$ : time difference */
-  REAL8Vector    spinRes; 	/**< length: Maximum order of spdwn parameter *data: pointer to residual Spin parameter set fk */
+typedef struct tagHOUGHResidualSpinPar {
+  REAL8          deltaF;    /**< Frequency resolution;  df=1/TCOH */
+  REAL8          timeDiff;  /**< \f$ T_{\hat N}(t)-T_{\hat N}(\hat t_0) \f$ : time difference */
+  REAL8Vector    spinRes;   /**< length: Maximum order of spdwn parameter *data: pointer to residual Spin parameter set fk */
 } HOUGHResidualSpinPar;
 
 /*
@@ -210,71 +210,71 @@ typedef struct tagHOUGHResidualSpinPar{
 /*
  * 12. Functions Declarations (i.e., prototypes).
  */
-void LALHOUGHConstructSpacePHMD (LALStatus            *status,
-				 PHMDVectorSequence   *phmdVS,
-				 HOUGHPeakGramVector  *pgV,
-				 HOUGHptfLUTVector    *lutV
-				 );
+void LALHOUGHConstructSpacePHMD( LALStatus            *status,
+                                 PHMDVectorSequence   *phmdVS,
+                                 HOUGHPeakGramVector  *pgV,
+                                 HOUGHptfLUTVector    *lutV
+                               );
 
-void LALHOUGHupdateSpacePHMDup (LALStatus            *status,
-				PHMDVectorSequence   *phmdVS,
-				HOUGHPeakGramVector  *pgV,
-				HOUGHptfLUTVector    *lutV
-				);
+void LALHOUGHupdateSpacePHMDup( LALStatus            *status,
+                                PHMDVectorSequence   *phmdVS,
+                                HOUGHPeakGramVector  *pgV,
+                                HOUGHptfLUTVector    *lutV
+                              );
 
-void LALHOUGHupdateSpacePHMDdn (LALStatus            *status,
-				PHMDVectorSequence   *phmdVS,
-				HOUGHPeakGramVector  *pgV,
-				HOUGHptfLUTVector    *lutV
-				);
+void LALHOUGHupdateSpacePHMDdn( LALStatus            *status,
+                                PHMDVectorSequence   *phmdVS,
+                                HOUGHPeakGramVector  *pgV,
+                                HOUGHptfLUTVector    *lutV
+                              );
 
-void LALHOUGHConstructHMT  (LALStatus                  *status,
-			    HOUGHMapTotal              *ht,
-			    UINT8FrequencyIndexVector  *freqInd,
-			    PHMDVectorSequence         *phmdVS
-			    );
+void LALHOUGHConstructHMT( LALStatus                  *status,
+                           HOUGHMapTotal              *ht,
+                           UINT8FrequencyIndexVector  *freqInd,
+                           PHMDVectorSequence         *phmdVS
+                         );
 
-void LALHOUGHComputeFBinMap (LALStatus             *status,
-			     UINT8                 *fBinMap,
-			     UINT8                 *f0Bin,
-			     HOUGHResidualSpinPar  *rs
-			     );
+void LALHOUGHComputeFBinMap( LALStatus             *status,
+                             UINT8                 *fBinMap,
+                             UINT8                 *f0Bin,
+                             HOUGHResidualSpinPar  *rs
+                           );
 
-void LALHOUGHConstructHMT_W  (LALStatus                  *status,
-			      HOUGHMapTotal              *ht,
-			      UINT8FrequencyIndexVector  *freqInd,
-			      PHMDVectorSequence         *phmdVS
-			      );
+void LALHOUGHConstructHMT_W( LALStatus                  *status,
+                             HOUGHMapTotal              *ht,
+                             UINT8FrequencyIndexVector  *freqInd,
+                             PHMDVectorSequence         *phmdVS
+                           );
 
-void LALHOUGHWeighSpacePHMD  (LALStatus            *status,
-			      PHMDVectorSequence   *phmdVS,
-			      REAL8Vector *weightV
-			      );
+void LALHOUGHWeighSpacePHMD( LALStatus            *status,
+                             PHMDVectorSequence   *phmdVS,
+                             REAL8Vector *weightV
+                           );
 
-void LALHOUGHInitializeWeights  (LALStatus            *status,
-				 REAL8Vector *weightV
-				 );
+void LALHOUGHInitializeWeights( LALStatus            *status,
+                                REAL8Vector *weightV
+                              );
 
-void LALHOUGHNormalizeWeights  (LALStatus            *status,
-				REAL8Vector *weightV
-				);
+void LALHOUGHNormalizeWeights( LALStatus            *status,
+                               REAL8Vector *weightV
+                             );
 
-void LALHOUGHComputeAMWeights  (LALStatus         *status,
-				REAL8Vector       *weightV,
-				LIGOTimeGPSVector *timeV,
-				LALDetector       *detector,
-				EphemerisData     *edat,
-				REAL8             alpha,
-				REAL8             delta
-				);
+void LALHOUGHComputeAMWeights( LALStatus         *status,
+                               REAL8Vector       *weightV,
+                               LIGOTimeGPSVector *timeV,
+                               LALDetector       *detector,
+                               EphemerisData     *edat,
+                               REAL8             alpha,
+                               REAL8             delta
+                             );
 
-void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
-					REAL8Vector        *weightV,
-					SFTCatalog         *catalog,
-					EphemerisData      *edat,
-					REAL8              alpha,
-					REAL8              delta
-					);
+void LALHOUGHComputeMultiIFOAMWeights( LALStatus          *status,
+                                       REAL8Vector        *weightV,
+                                       SFTCatalog         *catalog,
+                                       EphemerisData      *edat,
+                                       REAL8              alpha,
+                                       REAL8              delta
+                                     );
 
 
 /** @} */
