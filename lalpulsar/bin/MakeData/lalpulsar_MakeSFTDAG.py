@@ -617,6 +617,7 @@ makesfts_group.add_argument(
     help="do not validate created SFTs",
 )
 
+
 ##### DEPRECATED OPTIONS #####
 class DeprecateAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
