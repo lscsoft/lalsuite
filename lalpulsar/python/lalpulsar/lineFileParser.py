@@ -43,6 +43,7 @@ Intervals are accesible through attributes `LineFileParser.lines_left_side` and
 If several files are read, their resulting intervals are concatenated
 (but not sorted, and duplicate or overlapping entries are kept as they are).
 """
+
 ## @{
 
 import numpy as np
