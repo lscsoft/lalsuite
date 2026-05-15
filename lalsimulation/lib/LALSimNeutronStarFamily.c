@@ -293,7 +293,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamilyWithPcmin(LALSimNeutronS
             }
 
             /* On allocation failure, free everything before returning. */
-            if (!fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat ||
+            if (!fam_branch_i->pdat || !fam_branch_i->mdat || !fam_branch_i->rdat || !fam_branch_i->k2dat ||
                 (min_fam==0 && (!fam_branch_i->mbdat || !fam_branch_i->k3dat || !fam_branch_i->k4dat))) {
                 XLALDestroySimNeutronStarBranch(fam_branch_i);
                 LALFree(ndat_branch);
@@ -324,7 +324,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamilyWithPcmin(LALSimNeutronS
 
             // Recalculate the maximum mass of a branch
             if (index_end_stable_branch[b] < ndat-1) { // if an unstable branch follows the current stable branch
-                double pc_max = get_central_pressure_mext(eos, index_end_stable_branch[b], pdat, mdat, -1.0);
+                double pc_max = get_central_pressure_mext(eos, index_end_stable_branch[b], pdat, mdat, -1);
                 if(min_fam==1) XLALSimNeutronStarTOVODEIntegrateWithTolerance(
                                     &fam_branch_i->rdat[ndat_branch[b]-1],
                                     &fam_branch_i->mdat[ndat_branch[b]-1],
@@ -346,7 +346,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamilyWithPcmin(LALSimNeutronS
 
             // Recalculate the minimum mass of a branch
             if (index_begin_stable_branch[b] != 0) {
-                double pc_min = get_central_pressure_mext(eos, index_begin_stable_branch[b], pdat, mdat, 1.0);
+                double pc_min = get_central_pressure_mext(eos, index_begin_stable_branch[b], pdat, mdat, 1);
                 if(min_fam==1){
                     XLALSimNeutronStarTOVODEIntegrateWithTolerance(
                         &fam_branch_i->rdat[0],
@@ -692,7 +692,7 @@ double XLALSimNeutronStarFamRadiusOfMassPerBranch(double m, LALSimNeutronStarFam
 static int find_number_of_twins_at_mass(double m, LALSimNeutronStarFamily * fam){
     int twins = 0;
     for (int i = 0; i < XLALSimNeutronStarFamNumberOfBranches(fam); i++){
-        if (m >= XLALSimNeutronStarFamMinMassPerBranch(fam, i) && m <= XLALSimNeutronStarFamMinMassPerBranch(fam, i))
+        if (m >= XLALSimNeutronStarFamMinMassPerBranch(fam, i) && m <= XLALSimNeutronStarFamMaxMassPerBranch(fam, i))
             twins +=1;
     }
     return twins;
@@ -700,9 +700,10 @@ static int find_number_of_twins_at_mass(double m, LALSimNeutronStarFamily * fam)
 
 static int * find_branch_twins_at_mass(double m, LALSimNeutronStarFamily * fam, int twins){
     int * branch_indices = XLALCalloc(twins, sizeof(*branch_indices));
+    int k = 0;
     for (int i = 0; i < XLALSimNeutronStarFamNumberOfBranches(fam); i++)
-        if (m >= XLALSimNeutronStarFamMinMassPerBranch(fam, i) && m <= XLALSimNeutronStarFamMinMassPerBranch(fam, i)){
-            branch_indices[i] = i;
+        if (m >= XLALSimNeutronStarFamMinMassPerBranch(fam, i) && m <= XLALSimNeutronStarFamMaxMassPerBranch(fam, i)){
+            branch_indices[k++] = i;
     }
     return branch_indices;
 }
@@ -778,7 +779,7 @@ double * XLALSimNeutronStarFamCentralPressureOfMass(double m, LALSimNeutronStarF
     double * pc = XLALCalloc(twins, sizeof(*pc));
     int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
     for (int i = 0; i < twins; i++)
-        pc[i] = XLALSimNeutronStarFamRadiusOfMassPerBranch(m, fam, twin_indices[i]);
+        pc[i] = XLALSimNeutronStarFamCentralPressureOfMassPerBranch(m, fam, twin_indices[i]);
     LALFree(twin_indices);
     return pc;
 }
@@ -1071,7 +1072,7 @@ double * XLALSimNeutronStarFamLoveNumberK4OfMass(double m, LALSimNeutronStarFami
     double * k4 = XLALCalloc(twins, sizeof(*k4));
     int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
     for (int i = 0; i < twins; i++)
-        k4[i] = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(m, fam, twin_indices[i]);
+        k4[i] = XLALSimNeutronStarFamLoveNumberK4OfMassPerBranch(m, fam, twin_indices[i]);
     LALFree(twin_indices);
     return k4;
 }

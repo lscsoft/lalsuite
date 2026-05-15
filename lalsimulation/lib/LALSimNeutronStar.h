@@ -230,18 +230,18 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos, double epsrel);
 
-void XLALSimNeutronStarTOVODEExtendedIntegrate(double *radius, double *mass, double *baryon_mass,
+int XLALSimNeutronStarTOVODEExtendedIntegrate(double *radius, double *mass, double *baryon_mass,
     double *love_number_k2, double *love_number_k3, double *love_number_k4,
     double central_pressure_si, LALSimNeutronStarEOS *eos);
 
-void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
+int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
     double *love_number_k2, double *love_number_k3, double *love_number_k4,
     double central_pressure_si, LALSimNeutronStarEOS * eos, double epsrel);
 
-void XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass, double *love_number_k2,
+int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass, double *love_number_k2,
     double central_pressure_si, LALSimNeutronStarEOS *eos);
 
-void XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass, double *love_number_k2,
+int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass, double *love_number_k2,
     double central_pressure_si, LALSimNeutronStarEOS * eos, double epsrel);
 
 /* NEUTRON STAR ASTROPHYSICAL PARAMETER'S RELATED ROUTINES */

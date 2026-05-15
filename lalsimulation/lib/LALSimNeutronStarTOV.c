@@ -341,7 +341,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     XLAL_CHECK(XLALSimNeutronStarEOSNumberPieces(eos) == 1,
                XLAL_EFUNC, "The EOS provided contains multiple piece separated by a phase transition. The Virial TOV solver can only handle a single piece EOS. Use XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance instead.");
 
-    struct params_for_ode *params = malloc(sizeof(*params));
+    struct params_for_ode *params = LALMalloc(sizeof(*params));
     params->eos = eos;
     params->piece_id = 0;
 
@@ -413,6 +413,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
             gsl_odeiv_evolve_free(evolv);
             gsl_odeiv_control_free(ctrl);
             gsl_odeiv_step_free(step);
+            LALFree(params);
             XLAL_ERROR(XLAL_EERR,
                 "Error encountered in GSL's ODE integrator\n");
         }
@@ -421,7 +422,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     /*take one final Euler step to get to surface*/
     for (int w = 0 ; w < 1 ; ++w){
         tov_virial_ode(h, y, dy, params);
-        for (i = 0; i < TOV_ODE_VARS_DIM; ++i)
+        for (i = 0; i < TOV_VIRIAL_ODE_VARS_DIM; ++i)
             y[i] += dy[i] * (0.0 - hmin);
     }
 
@@ -445,6 +446,7 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
     gsl_odeiv_evolve_free(evolv);
     gsl_odeiv_control_free(ctrl);
     gsl_odeiv_step_free(step);
+    LALFree(params);
     return 0;
 }
 
@@ -640,7 +642,7 @@ static double correction_phase_transition(double r, double m, double b_kl, doubl
  * @param eos Pointer to the multiple-parts Equation of State structure.
  * @param[in] epsrel The relative error for the numerical solver routine.
  */
-void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
+int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
              LALSimNeutronStarEOS *eos,
@@ -650,7 +652,7 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     const double epsabs = 0.0;
     int s;
 
-    struct params_for_ode *params = malloc(sizeof(*params));
+    struct params_for_ode *params = LALMalloc(sizeof(*params));
     params->eos = eos;
     params->piece_id = XLALSimNeutronStarEOSNumberPieces(eos) - 1;
 
@@ -699,7 +701,8 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
                 gsl_odeiv_evolve_free(evolv);
                 gsl_odeiv_control_free(ctrl);
                 gsl_odeiv_step_free(step);
-                XLAL_ERROR_VOID(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
+                LALFree(params);
+                XLAL_ERROR(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
             }
         }
         // Correction related to the phase transition
@@ -737,8 +740,9 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
     gsl_odeiv_evolve_free(evolv);
     gsl_odeiv_control_free(ctrl);
     gsl_odeiv_step_free(step);
+    LALFree(params);
 
-    return;
+    return 0;
 }
 
 /**
@@ -767,16 +771,15 @@ void XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doub
  * @param[in] central_pressure_si The central pressure of the star in Pa.
  * @param eos Pointer to the multiple-parts Equation of State structure.
  */
-void XLALSimNeutronStarTOVODEExtendedIntegrate(double *radius, double *mass, double *baryon_mass,
+int XLALSimNeutronStarTOVODEExtendedIntegrate(double *radius, double *mass, double *baryon_mass,
              double *love_number_k2, double *love_number_k3, double *love_number_k4,
              double central_pressure_si,
              LALSimNeutronStarEOS *eos)
 {
     const double epsrel = 1e-6;
-    XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(radius, mass, baryon_mass, love_number_k2,
+    return XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(radius, mass, baryon_mass, love_number_k2,
                                                            love_number_k3, love_number_k4, central_pressure_si,
                                                            eos, epsrel);
-    return ;
 }
 
 
@@ -880,7 +883,7 @@ static int tov_ode(double h, const double *y, double *dy, void *params)
  * @param eos Pointer to the multiple-parts Equation of State structure.
  * @param[in] epsrel The relative error for the numerical solver routine.
  */
-void XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
+int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
              double *love_number_k2, double central_pressure_si,
              LALSimNeutronStarEOS *eos,
              double epsrel){
@@ -889,7 +892,7 @@ void XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass
     const double epsabs = 0.0;
     int s;
 
-    struct params_for_ode *params = malloc(sizeof(*params));
+    struct params_for_ode *params = LALMalloc(sizeof(*params));
     params->eos = eos;
     params->piece_id = XLALSimNeutronStarEOSNumberPieces(eos) - 1;
 
@@ -940,7 +943,8 @@ void XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass
                 gsl_odeiv_evolve_free(evolv);
                 gsl_odeiv_control_free(ctrl);
                 gsl_odeiv_step_free(step);
-                XLAL_ERROR_VOID(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
+                LALFree(params);
+                XLAL_ERROR(XLAL_EERR, "Error encountered in GSL's ODE integrator\n");
             }
         }
         // Correction related to the phase transition
@@ -969,8 +973,9 @@ void XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass
     gsl_odeiv_evolve_free(evolv);
     gsl_odeiv_control_free(ctrl);
     gsl_odeiv_step_free(step);
+    LALFree(params);
 
-    return ;
+    return 0;
 }
 
 
@@ -997,12 +1002,11 @@ void XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass
  * @param[in] central_pressure_si The central pressure of the star in Pa.
  * @param eos Pointer to the multiple-parts Equation of State structure.
  */
-void XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass, double *love_number_k2,
+int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass, double *love_number_k2,
                                        double central_pressure_si, LALSimNeutronStarEOS *eos)
 {
     const double epsrel = 1e-6;
-    XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
-    return ;
+    return XLALSimNeutronStarTOVODEIntegrateWithTolerance(radius, mass, love_number_k2, central_pressure_si, eos, epsrel);
 }
 
 
