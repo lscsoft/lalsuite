@@ -110,15 +110,15 @@ extern "C" {
  * Depending of the number of maps to accumulate
  * change both types \c HoughDT and \c HoughTT to \c INT2 or \c UINT2 respectively.
  */
-  typedef REAL8 HoughTT; /* for weighted hough maps only */
-  /* Depending of the number of maps to accumulate, */
-  /* if needed change both types  to INT2 or UINT2  */
+typedef REAL8 HoughTT; /* for weighted hough maps only */
+/* Depending of the number of maps to accumulate, */
+/* if needed change both types  to INT2 or UINT2  */
 /* typedef UCHAR HoughTT; */
 /*typedef UINT2 HoughTT; */
 
 
 /** This structure stores the Hough map derivative */
-typedef struct tagHOUGHMapDeriv{
+typedef struct tagHOUGHMapDeriv {
   UINT2     xSide;  /**< number of physical pixels in the x direction */
   UINT2     ySide;  /**< number of physical pixels in the y direction */
   HoughDT   *map ;  /**< the pixel count derivatives;
@@ -127,7 +127,7 @@ typedef struct tagHOUGHMapDeriv{
 
 
 /**  This structure stores the Hough map */
-typedef struct tagHOUGHMapTotal{
+typedef struct tagHOUGHMapTotal {
   INT8               f0Bin;      /**< frequency bin for which it has been constructed */
   REAL8              deltaF;     /**< frequency resolution */
   UINT4              mObsCoh;    /**< ratio of observation time and coherent timescale */
@@ -151,36 +151,36 @@ typedef struct tagHOUGHMapTotal{
  * 12. Functions Declarations (i.e., prototypes).
  */
 
-void LALHOUGHInitializeHD (LALStatus      *status,
-			  HOUGHMapDeriv   *hd /* the Hough map derivative */
-			  );
+void LALHOUGHInitializeHD( LALStatus      *status,
+                           HOUGHMapDeriv   *hd /* the Hough map derivative */
+                         );
 
-void LALHOUGHAddPHMD2HD (LALStatus      *status,
-			 HOUGHMapDeriv  *hd,  /* the Hough map derivative */
-			 HOUGHphmd      *phmd  /* info from a partial map */
-			 );
+void LALHOUGHAddPHMD2HD( LALStatus      *status,
+                         HOUGHMapDeriv  *hd,  /* the Hough map derivative */
+                         HOUGHphmd      *phmd  /* info from a partial map */
+                       );
 
-void LALHOUGHAddPHMD2HD_W (LALStatus      *status,
-			   HOUGHMapDeriv  *hd,  /* the Hough map derivative */
-			   HOUGHphmd      *phmd  /* info from a partial map */
-			   );
+void LALHOUGHAddPHMD2HD_W( LALStatus      *status,
+                           HOUGHMapDeriv  *hd,  /* the Hough map derivative */
+                           HOUGHphmd      *phmd  /* info from a partial map */
+                         );
 
-void LALHOUGHIntegrHD2HT (LALStatus       *status,
-			  HOUGHMapTotal   *ht,     /* the total Hough map */
-			  HOUGHMapDeriv   *hd /* the Hough map derivative */
-			  );
+void LALHOUGHIntegrHD2HT( LALStatus       *status,
+                          HOUGHMapTotal   *ht,     /* the total Hough map */
+                          HOUGHMapDeriv   *hd /* the Hough map derivative */
+                        );
 
-void LALHOUGHInitializeHT (LALStatus      *status,
-			  HOUGHMapTotal   *ht,     /* the total Hough map */
-			  HOUGHPatchGrid  *patch      /* patch information */
-			  );
+void LALHOUGHInitializeHT( LALStatus      *status,
+                           HOUGHMapTotal   *ht,     /* the total Hough map */
+                           HOUGHPatchGrid  *patch      /* patch information */
+                         );
 
-void LALStereo2SkyLocation (LALStatus  *status,
-			    REAL8UnitPolarCoor *sourceLocation, /* output*/
-			    UINT2              xPos,
-			    UINT2              yPos,
-			    HOUGHPatchGrid    *patch,
-			    HOUGHDemodPar     *parDem);
+void LALStereo2SkyLocation( LALStatus  *status,
+                            REAL8UnitPolarCoor *sourceLocation, /* output*/
+                            UINT2              xPos,
+                            UINT2              yPos,
+                            HOUGHPatchGrid    *patch,
+                            HOUGHDemodPar     *parDem );
 
 /** @} */
 
