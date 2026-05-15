@@ -1,7 +1,7 @@
 """
-  Classes needed for the known pulsar search pipeline.
+Classes needed for the known pulsar search pipeline.
 
-  (C) 2006, 2015 Matthew Pitkin
+(C) 2006, 2015 Matthew Pitkin
 
 """
 
@@ -1716,9 +1716,7 @@ class knopeDAG(pipeline.CondorDAG):
                 if self.error_code != 0:
                     return
 
-                n2pnodes[
-                    pname
-                ] = (
+                n2pnodes[pname] = (
                     []
                 )  # list of nodes for lalinference_nest2pos jobs for a given pulsar
 
@@ -1779,9 +1777,9 @@ class knopeDAG(pipeline.CondorDAG):
                             psr, psrdir, dets, self.freq_factors, ffdir
                         )
                         if pname not in self.pe_prior_files:
-                            self.pe_prior_files[
-                                pname
-                            ] = priorfile  # set prior file (just use first one as they should be the same for each combination of detectors)
+                            self.pe_prior_files[pname] = (
+                                priorfile  # set prior file (just use first one as they should be the same for each combination of detectors)
+                            )
 
                         nruns = self.pe_nruns
                         nlive = self.pe_nlive
