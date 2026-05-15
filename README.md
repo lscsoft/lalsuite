@@ -114,6 +114,12 @@ The latest release is LALSuite 7.26, released 22 May 2025 ([source tarball](http
 Previous releases can be found by visiting the [IGWN analysis software source
 code server][lalsuitesources].
 
+## Docker Images
+
+Docker images of the latest development snapshot, as well as recent releases, of
+LALSuite are available from [DockerHub][dockerhub]. Images of the latest
+development snapshot, and the most recent release, are updated weekly.
+
 ## Sources
 
 The LALSuite sources are located in the [LALSuite Git repository][projectrepo].
@@ -178,6 +184,7 @@ Notes on ancient history may be found [here][history].
 [cmp-discuss-s]:    https://grouper.ligo.org/selfmanage/computing-discuss
 [contributing]:     https://git.ligo.org/lscsoft/lalsuite/-/blob/master/CONTRIBUTING.md
 [currentissues]:    https://git.ligo.org/lscsoft/lalsuite/issues
+[dockerhub]:        https://hub.docker.com/r/igwn/lalsuite
 [doi]:              https://doi.org/10.7935/GT1W-FZ16
 [helpdesk]:         mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
 [history]:          https://git.ligo.org/lscsoft/lalsuite/-/wikis/HISTORY

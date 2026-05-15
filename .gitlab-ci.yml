@@ -136,6 +136,12 @@ variables:
   # use the Docker development image tags that have been tested (no suffix)
   LCI_DEV_TAG_SUFFIX: ""
 
+  # Docker release image
+  LCI_RELEASE_IMG: "kwwette/lalsuite"   ### TOFIX ###
+  LCI_RELEASE_IMG_REGISTRY: "docker.io"
+  LCI_RELEASE_IMG_USERNAME: "${DOCKERHUB_USERNAME}"
+  LCI_RELEASE_IMG_TOKEN: "${DOCKERHUB_TOKEN}"
+
   # pipeline specific ./configure flags
   LCI_CONFIGURE_FLAGS_PIPE: ""
 
@@ -235,6 +241,11 @@ workflow:
         LCI_PIPE_TYPE: sched-snapshot
         # - add shapshot version number based on day
         LCI_CONFIGURE_FLAGS_PIPE: "--with-snapshot-version"
+        # - test Docker release image
+        LCI_RELEASE_IMG: "${CI_REGISTRY_IMAGE}/release"
+        LCI_RELEASE_IMG_REGISTRY: "${CI_REGISTRY}"
+        LCI_RELEASE_IMG_USERNAME: "gitlab-ci-token"
+        LCI_RELEASE_IMG_TOKEN: "${CI_JOB_TOKEN}"
 
     # --- sched-release: Rebuild release Docker images
 
@@ -265,6 +276,11 @@ workflow:
       variables:
         LCI_PIPE_NAME: "[test] Rebuild release Docker images"
         LCI_PIPE_TYPE: sched-release
+        # - test Docker release image
+        LCI_RELEASE_IMG: "${CI_REGISTRY_IMAGE}/release"
+        LCI_RELEASE_IMG_REGISTRY: "${CI_REGISTRY}"
+        LCI_RELEASE_IMG_USERNAME: "gitlab-ci-token"
+        LCI_RELEASE_IMG_TOKEN: "${CI_JOB_TOKEN}"
 
     # --- sched-doc: Build and deploy Doxygen documentation
 
