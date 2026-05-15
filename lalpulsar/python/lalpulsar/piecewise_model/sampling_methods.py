@@ -80,6 +80,7 @@ def pointsrandom(ppint):
 normalpoints = False  # Points chosen to be evenly spaced between knots
 freqpoints = True  # Points chosen in time to correspond with points evenly spaced in frequency by the GTE (runs into problems for long signal durations)
 
+
 # Returns an integer value corresponding to the interval that point lies in
 def thisint(point):
     if point < bf.knotslist[0] or point > bf.knotslist[-1]:
