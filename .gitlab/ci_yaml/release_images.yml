@@ -81,9 +81,6 @@ snapshot-image:deploy:
     IMG_PATHS: >-
       ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:snapshot
       ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:snapshot
-  environment:
-    name: "image/snapshot/${LCI_PLAT_BASE}"
-    url: "${CI_PROJECT_URL}/container_registry"
   rules:
     # only run for building snapshot Docker images
     - if: >-
@@ -150,9 +147,6 @@ release-image:deploy:
       ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:${LALSUITE_TAG_MAJOR_LATEST}
       ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:${LALSUITE_TAG_MAJOR_MINOR}
       ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:${LALSUITE_TAG_MAJOR_MINOR}
-  environment:
-    name: "image/latest/${LCI_PLAT_BASE}"
-    url: "${CI_PROJECT_URL}/container_registry"
   rules:
     # only run for building snapshot Docker images
     - if: >-

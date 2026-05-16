@@ -133,9 +133,6 @@ pages:doc:
     - .pages-job
   needs:
     - doxygen-doc
-  environment:
-    name: "pages/doc/${LCI_DOC_ENV_SUFFIX}"
-    url: "${CI_PAGES_URL}"
   rules:
     - !reference [.deploy-check-execute, rules]
     - if: >-
@@ -151,9 +148,6 @@ pages:index:
     - .pages-job
   needs:
     - doxygen-index
-  environment:
-    name: "pages/index"
-    url: "${CI_PAGES_URL}"
   rules:
     - !reference [.deploy-check-execute, rules]
     - if: >-
