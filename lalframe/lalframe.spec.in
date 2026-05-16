@@ -13,7 +13,7 @@ Version: @BASE_VERSION@
 Release: %{?snapshot:0.%{snapshot}}%{!?snapshot:%{release}}%{?dist}
 License: GPLv2+
 Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?snapshot:.%{snapshot}}.tar.xz
-URL: https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md
+URL: https://lscsoft.docs.ligo.org/lalsuite/
 Packager: Adam Mercer <adam.mercer@ligo.org>
 Prefix: %{_prefix}
 
