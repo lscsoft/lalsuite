@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 import time
+from collections import defaultdict
 from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
@@ -167,23 +168,35 @@ def get_artifacts(server, repo, args):
 def doxygen_index(server, repo, args):
     """Generate a top-level index for Doxygen documentation"""
 
-    # get Doxygen pages from list of GitLab environments
-    environments = repo.environments.list(all=True)
-    path_prefixes = set()
-    for env in environments:
-        if env.state == "available" and env.name.startswith("pages/doc/lalsuite-v"):
-            url = urlparse(env.external_url)
-            path_prefixes.add(Path(url.path).name)
-    path_prefixes = natsorted(path_prefixes)
+    # get Doxygen pages from list of releases
+    releases = repo.releases.list(iterator=True, include_html_description=True)
+    prefix_tags = defaultdict(list)
+    tag_desc = {}
+    for rel in releases:
+        urls = [
+            link["url"]
+            for link in rel.assets["links"]
+            if link["name"].lower() == "documentation"
+        ]
+        if len(urls) != 1:
+            LOGGER.critical("no documentation url for tag %s: got %s", tag, str(urls))
+            sys.exit(1)
+        url = urlparse(urls[0])
+        prefix = Path(url.path).name
+        tag = rel.tag_name
+        desc = rel.description
+        prefix_tags[prefix].append(tag)
+        tag_desc[tag] = desc
 
     # generate index entries
     entry_template = "<li><a href='{}/index.html'>{}</a></li>"
     entries = [entry_template.format("dev", "development version")]
-    if path_prefixes:
-        for p in reversed(natsorted(path_prefixes)):
-            lbl = p + ".*"
-            entries.append(entry_template.format(p, "release version " + lbl))
-            LOGGER.info("found Doxygen documentation for release: %s", lbl)
+    if prefix_tags:
+        for prefix in reversed(natsorted(prefix_tags.keys())):
+            latest_tag = natsorted(prefix_tags[prefix])[-1]
+            desc = tag_desc[latest_tag]
+            entries.append(entry_template.format(prefix, desc))
+            LOGGER.info("found Doxygen documentation for release: %s", desc)
     else:
         LOGGER.warning("no Doxygen documentation for releases found")
 
