@@ -44,10 +44,10 @@ def parse_command_line():
     token_group = parser.add_mutually_exclusive_group()
     token_group.add_argument(
         "-p",
-        "--personal-token-env-var",
+        "--private-token-env-var",
         type=str,
         default=None,
-        help="Authenticate using the GitLab personal access token in this environment variable",
+        help="Authenticate using the GitLab private access token in this environment variable",
     )
     token_group.add_argument(
         "-j",
@@ -216,9 +216,9 @@ def main():
     args = parse_command_line()
 
     # interface to GitLab server
-    if args.personal_token_env_var:
+    if args.private_token_env_var:
         LOGGER.info(
-            f"authenticating to {args.server}/{args.repo} with personal access token in {args.private_token_env_var}"
+            f"authenticating to {args.server}/{args.repo} with private access token in {args.private_token_env_var}"
         )
         server = gitlab.Gitlab(
             args.server, private_token=os.environ[args.private_token_env_var]
