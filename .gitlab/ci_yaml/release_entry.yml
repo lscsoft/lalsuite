@@ -52,16 +52,17 @@ release-entry:info:
         $LCI_PIPE_TYPE == "lalsuite-tag"
 
 release-entry:
-  image: docker:latest
+  image: registry.gitlab.com/gitlab-org/cli:latest
   extends:
     - .deploy-job
   needs:
     # needs release info
     - job: release-entry:info
       artifacts: true
+    # needs documentation path prefix
+    - job: doxygen-doc
+      artifacts: true
     # ensure that all release products are successfully deployed first
-    - job: pages:doc
-      artifacts: false
     - job: wheel:deploy
       artifacts: false
   before_script:
@@ -83,6 +84,10 @@ release-entry:
     tag_name: "${CI_COMMIT_TAG}"
     name: "LALSuite ${VERSION}"
     description: "${DESCRIPTION}"
+    assets:
+      links:
+        - name: "Documentation"
+          url: "${CI_PAGES_URL}/${PATH_PREFIX}"
   rules:
     - !reference [.deploy-check-execute, rules]
     - if: >
