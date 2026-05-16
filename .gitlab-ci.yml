@@ -46,6 +46,7 @@ include:
   - local: .gitlab/ci_yaml/wheel_matrix.yml
   - local: .gitlab/ci_yaml/wheel_build.yml
   - local: .gitlab/ci_yaml/release_images.yml
+  - local: .gitlab/ci_yaml/release_entry.yml
 
 stages:
   - code-quality
