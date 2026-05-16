@@ -81,7 +81,7 @@ wheel:deploy:
         echo "WARNING: simulating execution of deployment actions"
         exit 123
       fi
-      ${LCI_SCRIPTS}/retry python -m twine upload --non-interactive wheelhouse/*
+    - ${LCI_SCRIPTS}/retry python -m twine upload --non-interactive wheelhouse/*
     # done
   environment:
     name: "wheel/${LCI_WHEEL_ENV_SUBDIV}"
