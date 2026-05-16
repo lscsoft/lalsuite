@@ -69,6 +69,12 @@ release-entry:
     - export -p
   script:
     - |
+      cat <<EOF
+      tag_name: ${CI_COMMIT_TAG}
+      name: LALSuite ${VERSION}
+      description: ${DESCRIPTION}
+      EOF
+    - |
       if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
         echo "WARNING: simulating execution of deployment actions"
         exit 123
