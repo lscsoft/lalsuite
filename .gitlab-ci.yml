@@ -124,7 +124,7 @@ variables:
   # --- default pipeline variables -------------------------------------
 
   # CI pipelines defined in `workflow` section must set $LCI_PIPE_NAME
-  LCI_PIPE_NAME: "UNKNOWN PIPELINE"
+  LCI_PIPE_NAME: "WARNING: CI pipeline must set LCI_PIPE_NAME"
 
   # CI/CD inputs *must* be assigned to variables to be used in rules
   LCI_PIPE_TYPE: "$[[ inputs.pipeline ]]"
