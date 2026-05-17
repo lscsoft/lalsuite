@@ -190,7 +190,7 @@ def doxygen_index(server, repo, args):
 
     # generate index entries
     entry_template = "<li><a href='{}/index.html'>{}</a></li>"
-    entries = [entry_template.format("dev", "development version")]
+    entries = [entry_template.format("dev", "latest development version")]
     if prefix_tags:
         for prefix in reversed(natsorted(prefix_tags.keys())):
             latest_tag = natsorted(prefix_tags[prefix])[-1]
