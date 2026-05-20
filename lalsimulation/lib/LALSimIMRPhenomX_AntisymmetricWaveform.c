@@ -417,8 +417,9 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 
       REAL8 Amp0 = pWF->amp0 * pWF->ampNorm;
 
+
       antisymamp->data[idx] = Amp0 * powers_of_Mf.m_seven_sixths * amp_AS;
-      antisymphase->data[idx] = pPrec->zeta_polarization + phi_AS;
+      antisymphase->data[idx] = phi_AS;
     }
 
     /* Clean up memory allocation */
@@ -620,7 +621,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
     phi_MfT  += linb*MfT + lina + phiref22;
 
     *A0 = phi_der_MfT/2 - alpha_der_MfT;
-    *phi_A0 = pPrec-> alpha_offset;
+    *phi_A0 = -pPrec->alpha_offset;
     *phi_B0 = alpha_MfT - phi_MfT/2 + *A0 * MfT + *phi_A0;
 
     LALFree(alphaParams);
