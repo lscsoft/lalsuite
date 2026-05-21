@@ -903,20 +903,20 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   {
       LALSimNeutronStarFamily *eos_fam = model->eos_fam;
       REAL8 r1=0, r2=0, k2_1=0, k2_2=0, lambda1=0, lambda2=0;
-      REAL8 mass_max = XLALSimNeutronStarMaximumMass(eos_fam) / LAL_MSUN_SI;
-      REAL8 mass_min = XLALSimNeutronStarFamMinimumMass(eos_fam) / LAL_MSUN_SI;
+      REAL8 mass_max = XLALSimNeutronStarFamMaxMassPerBranch(eos_fam, 0) / LAL_MSUN_SI;
+      REAL8 mass_min = XLALSimNeutronStarFamMinMassPerBranch(eos_fam, 0) / LAL_MSUN_SI;
 
       if(m1<mass_max && m1>mass_min)
       {
         /* Compute l1, l2 from mass and EOS */
-        r1 = XLALSimNeutronStarRadius(m1*LAL_MSUN_SI, eos_fam);
-        k2_1 = XLALSimNeutronStarLoveNumberK2(m1*LAL_MSUN_SI, eos_fam);
+        r1 = XLALSimNeutronStarFamRadiusOfMassPerBranch(m1*LAL_MSUN_SI, eos_fam, 0);
+        k2_1 = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(m1*LAL_MSUN_SI, eos_fam, 0);
         lambda1 = (2./3.)*k2_1 * pow(r1/(m1*LAL_MRSUN_SI), 5.0);
       }
       if(m2<mass_max && m2>mass_min)
       {
-         r2 = XLALSimNeutronStarRadius(m2*LAL_MSUN_SI, eos_fam);
-         k2_2 = XLALSimNeutronStarLoveNumberK2(m2*LAL_MSUN_SI, eos_fam);
+         r2 = XLALSimNeutronStarFamRadiusOfMassPerBranch(m2*LAL_MSUN_SI, eos_fam, 0);
+         k2_2 = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(m2*LAL_MSUN_SI, eos_fam, 0);
          lambda2 = (2./3.)*k2_2 * pow(r2/(m2*LAL_MRSUN_SI), 5.0);
       }
       /* Set waveform params */

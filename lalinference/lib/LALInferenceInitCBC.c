@@ -1455,7 +1455,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     if(errnum!=XLAL_SUCCESS)
         XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
 
-    XLAL_TRY(model->eos_fam = XLALCreateSimNeutronStarFamily(eos),errnum);
+    XLAL_TRY(model->eos_fam = XLALCreateSimNeutronStarFamily(eos, 1),errnum);
     if(errnum!=XLAL_SUCCESS)
         XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
     if(!model->eos_fam) XLAL_ERROR_NULL(XLAL_EINVAL, "Unable to initialise EOS family");
