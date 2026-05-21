@@ -2347,17 +2347,17 @@ double mass2_kg=mass2*LAL_MSUN_SI;
 LALSimNeutronStarEOS *eos = NULL;
 LALSimNeutronStarFamily *fam = NULL;
 eos = XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(logp1_si, gamma1, gamma2, gamma3);
-fam = XLALCreateSimNeutronStarFamily(eos);
+fam = XLALCreateSimNeutronStarFamily(eos, 1);
 
 // Calculate lambda1(m1|eos)
-double r = XLALSimNeutronStarRadius(mass1_kg, fam);
-double k = XLALSimNeutronStarLoveNumberK2(mass1_kg, fam);
+double r = XLALSimNeutronStarFamRadiusOfMassPerBranch(mass1_kg, fam, 0);
+double k = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(mass1_kg, fam, 0);
 double c = mass1 * LAL_MRSUN_SI / r;
 *lambda1= (2.0/3.0) * k / pow(c , 5.0);
 
 // Calculate lambda2(m2|eos)
-r = XLALSimNeutronStarRadius(mass2_kg, fam);
-k = XLALSimNeutronStarLoveNumberK2(mass2_kg, fam);
+r = XLALSimNeutronStarFamRadiusOfMassPerBranch(mass2_kg, fam, 0);
+k = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(mass2_kg, fam, 0);
 c = mass2 * LAL_MRSUN_SI / r;
 *lambda2= (2.0/3.0) * k / pow(c , 5.0);
 
@@ -2384,17 +2384,17 @@ else{
   LALSimNeutronStarEOS *eos = NULL;
   LALSimNeutronStarFamily *fam = NULL;
   eos = XLALSimNeutronStarEOSSpectralDecomposition(gamma,size);
-  fam = XLALCreateSimNeutronStarFamily(eos);
+  fam = XLALCreateSimNeutronStarFamily(eos, 1);
 
   // Calculate lambda1(m1|eos)
-  double r = XLALSimNeutronStarRadius(mass1_kg, fam);
-  double k = XLALSimNeutronStarLoveNumberK2(mass1_kg, fam);
+  double r = XLALSimNeutronStarFamRadiusOfMassPerBranch(mass1_kg, fam, 0);
+  double k = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(mass1_kg, fam, 0);
   double c = mass1 * LAL_MRSUN_SI / r;
   *lambda1= (2.0/3.0) * k / pow(c , 5.0);
 
   // Calculate lambda2(m1|eos)
-  r = XLALSimNeutronStarRadius(mass2_kg, fam);
-  k = XLALSimNeutronStarLoveNumberK2(mass2_kg, fam);
+  r = XLALSimNeutronStarFamRadiusOfMassPerBranch(mass2_kg, fam, 0);
+  k = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(mass2_kg, fam, 0);
   c = mass2 * LAL_MRSUN_SI / r;
   *lambda2= (2.0/3.0) * k / pow(c , 5.0);
 
@@ -2495,7 +2495,7 @@ for (int i = 0; i < 4; ++i) {
 
 
 // Make family
-fam = XLALCreateSimNeutronStarFamily(eos);
+fam = XLALCreateSimNeutronStarFamily(eos, 1);
 
 // Determine which mass parameterization is used
 double mass1 = 0.;
@@ -2533,11 +2533,11 @@ double mass1_kg= mass1*LAL_MSUN_SI;
 double mass2_kg= mass2*LAL_MSUN_SI;
 
 // Calculate speed of sound and max and min mass allowed by eos
-double min_mass_kg = XLALSimNeutronStarFamMinimumMass(fam);
-double max_mass_kg = XLALSimNeutronStarMaximumMass(fam);
-double pmax = XLALSimNeutronStarCentralPressure(max_mass_kg, fam);
+double min_mass_kg = XLALSimNeutronStarFamMinMassPerBranch(fam, 0);
+double max_mass_kg = XLALSimNeutronStarFamMaxMassPerBranch(fam, 0);
+double pmax = XLALSimNeutronStarFamMaxCentralPressurePerBranch(fam, 0);
 double hmax = XLALSimNeutronStarEOSPseudoEnthalpyOfPressure(pmax, eos);
-double vsmax = XLALSimNeutronStarEOSSpeedOfSoundGeometrized(hmax, eos);
+double vsmax = XLALSimNeutronStarEOSSpeedOfSoundGeometerized(hmax, eos);
 
 // Read in max observed NS mass, which eos must support
 REAL8 ns_max_mass = 0.;
