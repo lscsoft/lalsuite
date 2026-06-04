@@ -127,7 +127,7 @@ install-html-local: html-local
 	for dir in `cd out/ && find . -type d`; do \
 		echo " $(MKDIR_P) '$(DESTDIR)$(doxygendir)/$${dir}'"; \
 		$(MKDIR_P) "$(DESTDIR)$(doxygendir)/$${dir}"; \
-		$(PYTHON) $(abs_srcdir)/install_regex.py "$(doxygen_toplevel_reldir)" "$(DESTDIR)$(doxygendir)/$${dir}" "$(DOXYGEN_INSTALL_DIRMAP)" > $@.regex; \
+		$(PYTHON) $(abs_srcdir)/install_regex.py "$(doxygen_toplevel_reldir)" "$(DESTDIR)$(doxygendir)" "$(DOXYGEN_INSTALL_DIRMAP)" > $@.regex; \
 		for file in `cd out/ && echo $${dir}/*`; do \
 			if test -f "out/$${file}"; then \
 				echo " $(INSTALL_DATA) out/$${file} '$(DESTDIR)$(doxygendir)/$${file}'"; \

@@ -26,7 +26,9 @@ for elem in install_dirmap.split():
         fail("from-directory in install directory map is empty")
     if len(to_dir) == 0:
         fail("to-directory in install directory map is empty")
-    print("s|%s|%s|g" % (from_dir, os.path.relpath(to_dir, install_dir)))
+    regex = "s|{}|{}|g".format(from_dir, os.path.relpath(to_dir, install_dir))
+    regex = regex.replace(".", r"\.")
+    print(regex)
 
 # install regex for top-level navigation tabs
 print(r"s|\.\./\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|../\1/index.html|g")
