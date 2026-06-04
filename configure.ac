@@ -103,7 +103,6 @@ AC_DEFUN([lalsuite_config_subdir],[
       # export precious environment variables
       uppercase[]_LIBS="${lalsuite_abs_top_builddir}/lowercase/lib/lib[]lowercase.la"
       uppercase[]_CFLAGS="-I${lalsuite_abs_top_builddir}/lowercase/include"
-      uppercase[]_HTMLDIR="${htmldir}/../lowercase"
       m4_foreach_w([dep],$2,[
         m4_pushdef([dep_uppercase],m4_translit(dep, [a-z], [A-Z]))
         for flag in ${dep_uppercase[]_CFLAGS}; do
@@ -118,7 +117,7 @@ AC_DEFUN([lalsuite_config_subdir],[
         done
         m4_popdef([dep_uppercase])
       ])
-      export uppercase[]_LIBS uppercase[]_CFLAGS uppercase[]_HTMLDIR
+      export uppercase[]_LIBS uppercase[]_CFLAGS
 
       # export precious environment paths
       uppercase[]_BIN_PATH="${lalsuite_abs_top_builddir}/lowercase/bin"
@@ -158,8 +157,7 @@ LALSUPPORT_BIN_PATH="${LAL_BIN_PATH}"
 LALSUPPORT_DATA_PATH="${LAL_DATA_PATH}"
 LALSUPPORT_OCTAVE_PATH="${LAL_OCTAVE_PATH}"
 LALSUPPORT_PYTHON_PATH="${LAL_PYTHON_PATH}"
-LALSUPPORT_HTMLDIR="${htmldir}/../lal"
-export LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALSUPPORT_HTMLDIR
+export LALSUPPORT_LIBS LALSUPPORT_CFLAGS
 export LALSUPPORT_BIN_PATH LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_PATH LALSUPPORT_PYTHON_PATH
 
 # configure optional packages
