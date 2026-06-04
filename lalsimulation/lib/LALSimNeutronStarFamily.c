@@ -892,7 +892,7 @@ double XLALSimNeutronStarFamBaryonicMassOfMassPerBranch(double m, LALSimNeutronS
  * of memory with LALFree.
  * @param m Mass in kg at which the baryonic mass is interpolated.
  * @param fam Pointer to the neutron star family structure.
- * @return The central pressure in Pa interpolated at mass m in kg.
+ * @return The baryonic mass in kg interpolated at mass m in kg.
  */
 double * XLALSimNeutronStarFamBaryonicMassOfMass(double m, LALSimNeutronStarFamily * fam){
     int twins = find_number_of_twins_at_mass(m, fam);
