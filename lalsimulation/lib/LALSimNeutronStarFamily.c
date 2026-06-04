@@ -121,21 +121,21 @@ static double get_central_pressure_mext(LALSimNeutronStarEOS *eos, int index, do
 static void XLALDestroySimNeutronStarBranch(FamBranch * branch)
 {
     if (branch) {
-        gsl_interp_accel_free(branch->k2_of_m_acc);
-        gsl_interp_accel_free(branch->k3_of_m_acc);
-        gsl_interp_accel_free(branch->k4_of_m_acc);
-        gsl_interp_accel_free(branch->r_of_m_acc);
-        gsl_interp_accel_free(branch->p_of_m_acc);
-        gsl_interp_accel_free(branch->mb_of_m_acc);
-        gsl_interp_accel_free(branch->m_of_p_acc);
+        if (branch->k2_of_m_acc) gsl_interp_accel_free(branch->k2_of_m_acc);
+        if (branch->k3_of_m_acc) gsl_interp_accel_free(branch->k3_of_m_acc);
+        if (branch->k4_of_m_acc) gsl_interp_accel_free(branch->k4_of_m_acc);
+        if (branch->r_of_m_acc) gsl_interp_accel_free(branch->r_of_m_acc);
+        if (branch->p_of_m_acc) gsl_interp_accel_free(branch->p_of_m_acc);
+        if (branch->mb_of_m_acc) gsl_interp_accel_free(branch->mb_of_m_acc);
+        if (branch->m_of_p_acc) gsl_interp_accel_free(branch->m_of_p_acc);
 
-        gsl_interp_free(branch->k2_of_m_interp);
-        gsl_interp_free(branch->k3_of_m_interp);
-        gsl_interp_free(branch->k4_of_m_interp);
-        gsl_interp_free(branch->r_of_m_interp);
-        gsl_interp_free(branch->p_of_m_interp);
-        gsl_interp_free(branch->mb_of_m_interp);
-        gsl_interp_free(branch->m_of_p_interp);
+        if (branch->k2_of_m_interp) gsl_interp_free(branch->k2_of_m_interp);
+        if (branch->k3_of_m_interp) gsl_interp_free(branch->k3_of_m_interp);
+        if (branch->k4_of_m_interp) gsl_interp_free(branch->k4_of_m_interp);
+        if (branch->r_of_m_interp) gsl_interp_free(branch->r_of_m_interp);
+        if (branch->p_of_m_interp) gsl_interp_free(branch->p_of_m_interp);
+        if (branch->mb_of_m_interp) gsl_interp_free(branch->mb_of_m_interp);
+        if (branch->m_of_p_interp) gsl_interp_free(branch->m_of_p_interp);
 
         LALFree(branch->k2dat);
         LALFree(branch->k3dat);
