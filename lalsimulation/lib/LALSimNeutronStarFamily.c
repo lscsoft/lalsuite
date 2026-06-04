@@ -32,6 +32,7 @@
 GSL_VAR const gsl_interp_type * lal_gsl_interp_steffen;
 
 #include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
 #include <lal/LALSimNeutronStar.h>
 
 /** @cond */
