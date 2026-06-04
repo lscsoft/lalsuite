@@ -708,19 +708,19 @@ static int * find_branch_twins_at_mass(double m, LALSimNeutronStarFamily * fam, 
 
 /**
  * @brief Returns the radius in m corresponding to a given mass in kg.
- * @details This function can accomodate twins stars, it returns an array
- * which size corresponds to the number of twins in the sequence. Requires
- * deallocation of memory with LALFree.
+ * @details This function can accomodate twins stars, it returns a REAL8Vector
+ * whose length corresponds to the number of twins in the sequence. Requires
+ * deallocation of memory with XLALDestroyREAL8Vector.
  * @param m Mass in kg at which the radius is interpolated.
  * @param fam Pointer to the neutron star family structure.
  * @return The radius in m interpolated at mass m in kg.
  */
-double * XLALSimNeutronStarFamRadiusOfMass(double m, LALSimNeutronStarFamily * fam){
+REAL8Vector * XLALSimNeutronStarFamRadiusOfMass(double m, LALSimNeutronStarFamily * fam){
     int twins = find_number_of_twins_at_mass(m, fam);
-    double * r = XLALCalloc(twins, sizeof(*r));
+    REAL8Vector * r = XLALCreateREAL8Vector(twins);
     int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
     for (int i = 0; i < twins; i++)
-        r[i] = XLALSimNeutronStarFamRadiusOfMassPerBranch(m, fam, twin_indices[i]);
+        r->data[i] = XLALSimNeutronStarFamRadiusOfMassPerBranch(m, fam, twin_indices[i]);
     LALFree(twin_indices);
     return r;
 }
@@ -765,19 +765,19 @@ double XLALSimNeutronStarFamCentralPressureOfMassPerBranch(double m, LALSimNeutr
 
 /**
  * @brief Returns the central pressure in Pa corresponding to a given mass in kg.
- * @details This function can accomodate twins stars, it returns an array
- * which size corresponds to the number of twins in the sequence. Requires deallocation
- * of memory with LALFree.
- * @param m Mass in kg at which the radius is interpolated.
+ * @details This function can accomodate twins stars, it returns a REAL8Vector
+ * whose length corresponds to the number of twins in the sequence. Requires deallocation
+ * of memory with XLALDestroyREAL8Vector.
+ * @param m Mass in kg at which the central pressure is interpolated.
  * @param fam Pointer to the neutron star family structure.
  * @return The central pressure in Pa interpolated at mass m in kg.
  */
-double * XLALSimNeutronStarFamCentralPressureOfMass(double m, LALSimNeutronStarFamily * fam){
+REAL8Vector * XLALSimNeutronStarFamCentralPressureOfMass(double m, LALSimNeutronStarFamily * fam){
     int twins = find_number_of_twins_at_mass(m, fam);
-    double * pc = XLALCalloc(twins, sizeof(*pc));
+    REAL8Vector * pc = XLALCreateREAL8Vector(twins);
     int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
     for (int i = 0; i < twins; i++)
-        pc[i] = XLALSimNeutronStarFamCentralPressureOfMassPerBranch(m, fam, twin_indices[i]);
+        pc->data[i] = XLALSimNeutronStarFamCentralPressureOfMassPerBranch(m, fam, twin_indices[i]);
     LALFree(twin_indices);
     return pc;
 }
@@ -883,19 +883,19 @@ double XLALSimNeutronStarFamBaryonicMassOfMassPerBranch(double m, LALSimNeutronS
 /**
  * @brief Returns the baryonic mass in kg corresponding to a given
  * (gravitationnal) mass in kg.
- * @details This function can accomodate twins stars, it returns an array
- * which size corresponds to the number of twins in the sequence. Requires deallocation
- * of memory with LALFree.
+ * @details This function can accomodate twins stars, it returns a REAL8Vector
+ * whose length corresponds to the number of twins in the sequence. Requires deallocation
+ * of memory with XLALDestroyREAL8Vector.
  * @param m Mass in kg at which the baryonic mass is interpolated.
  * @param fam Pointer to the neutron star family structure.
  * @return The baryonic mass in kg interpolated at mass m in kg.
  */
-double * XLALSimNeutronStarFamBaryonicMassOfMass(double m, LALSimNeutronStarFamily * fam){
+REAL8Vector * XLALSimNeutronStarFamBaryonicMassOfMass(double m, LALSimNeutronStarFamily * fam){
     int twins = find_number_of_twins_at_mass(m, fam);
-    double * mb = XLALCalloc(twins, sizeof(*mb));
+    REAL8Vector * mb = XLALCreateREAL8Vector(twins);
     int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
     for (int i = 0; i < twins; i++)
-        mb[i] = XLALSimNeutronStarFamBaryonicMassOfMassPerBranch(m, fam, twin_indices[i]);
+        mb->data[i] = XLALSimNeutronStarFamBaryonicMassOfMassPerBranch(m, fam, twin_indices[i]);
     LALFree(twin_indices);
     return mb;
 }
@@ -940,19 +940,19 @@ double XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(double m, LALSimNeutronS
 
 /**
  * @brief Returns k2 Love number (dimensionless) corresponding to a given mass in kg.
- * @details This function can accomodate twins stars, it returns an array
- * which size corresponds to the number of twins in the sequence. Requires deallocation
- * of memory with LALFree.
+ * @details This function can accomodate twins stars, it returns a REAL8Vector
+ * whose length corresponds to the number of twins in the sequence. Requires deallocation
+ * of memory with XLALDestroyREAL8Vector.
  * @param m Mass in kg at which the k2 Love number is interpolated.
  * @param fam Pointer to the neutron star family structure.
  * @return The k2 Love number (dimensionless) interpolated at mass m.
  */
-double * XLALSimNeutronStarFamLoveNumberK2OfMass(double m, LALSimNeutronStarFamily * fam){
+REAL8Vector * XLALSimNeutronStarFamLoveNumberK2OfMass(double m, LALSimNeutronStarFamily * fam){
     int twins = find_number_of_twins_at_mass(m, fam);
-    double * k2 = XLALCalloc(twins, sizeof(*k2));
+    REAL8Vector * k2 = XLALCreateREAL8Vector(twins);
     int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
     for (int i = 0; i < twins; i++)
-        k2[i] = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(m, fam, twin_indices[i]);
+        k2->data[i] = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(m, fam, twin_indices[i]);
     LALFree(twin_indices);
     return k2;
 }
@@ -999,19 +999,19 @@ double XLALSimNeutronStarFamLoveNumberK3OfMassPerBranch(double m, LALSimNeutronS
 
 /**
  * @brief Returns k3 Love number (dimensionless) corresponding to a given mass in kg.
- * @details This function can accomodate twins stars, it returns an array
- * which size corresponds to the number of twins in the sequence. Requires deallocation
- * of memory with LALFree.
+ * @details This function can accomodate twins stars, it returns a REAL8Vector
+ * whose length corresponds to the number of twins in the sequence. Requires deallocation
+ * of memory with XLALDestroyREAL8Vector.
  * @param m Mass in kg at which the k3 Love number is interpolated.
  * @param fam Pointer to the neutron star family structure.
  * @return The k3 Love number (dimensionless) interpolated at mass m.
  */
-double * XLALSimNeutronStarFamLoveNumberK3OfMass(double m, LALSimNeutronStarFamily * fam){
+REAL8Vector * XLALSimNeutronStarFamLoveNumberK3OfMass(double m, LALSimNeutronStarFamily * fam){
     int twins = find_number_of_twins_at_mass(m, fam);
-    double * k3 = XLALCalloc(twins, sizeof(*k3));
+    REAL8Vector * k3 = XLALCreateREAL8Vector(twins);
     int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
     for (int i = 0; i < twins; i++)
-        k3[i] = XLALSimNeutronStarFamLoveNumberK3OfMassPerBranch(m, fam, twin_indices[i]);
+        k3->data[i] = XLALSimNeutronStarFamLoveNumberK3OfMassPerBranch(m, fam, twin_indices[i]);
     LALFree(twin_indices);
     return k3;
 }
@@ -1057,19 +1057,19 @@ double XLALSimNeutronStarFamLoveNumberK4OfMassPerBranch(double m, LALSimNeutronS
 
 /**
  * @brief Returns k4 Love number (dimensionless) corresponding to a given mass in kg.
- * @details This function can accomodate twins stars, it returns an array
- * which size corresponds to the number of twins in the sequence. Requires deallocation
- * of memory with LALFree.
+ * @details This function can accomodate twins stars, it returns a REAL8Vector
+ * whose length corresponds to the number of twins in the sequence. Requires deallocation
+ * of memory with XLALDestroyREAL8Vector.
  * @param m Mass in kg at which the k4 Love number is interpolated.
  * @param fam Pointer to the neutron star family structure.
  * @return The k4 Love number (dimensionless) interpolated at mass m.
  */
-double * XLALSimNeutronStarFamLoveNumberK4OfMass(double m, LALSimNeutronStarFamily * fam){
+REAL8Vector * XLALSimNeutronStarFamLoveNumberK4OfMass(double m, LALSimNeutronStarFamily * fam){
     int twins = find_number_of_twins_at_mass(m, fam);
-    double * k4 = XLALCalloc(twins, sizeof(*k4));
+    REAL8Vector * k4 = XLALCreateREAL8Vector(twins);
     int * twin_indices = find_branch_twins_at_mass(m, fam, twins);
     for (int i = 0; i < twins; i++)
-        k4[i] = XLALSimNeutronStarFamLoveNumberK4OfMassPerBranch(m, fam, twin_indices[i]);
+        k4->data[i] = XLALSimNeutronStarFamLoveNumberK4OfMassPerBranch(m, fam, twin_indices[i]);
     LALFree(twin_indices);
     return k4;
 }

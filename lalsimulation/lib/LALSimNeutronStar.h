@@ -264,19 +264,19 @@ double XLALSimNeutronStarFamMaxCentralPressurePerBranch(LALSimNeutronStarFamily 
 double XLALSimNeutronStarFamMaxCentralPressure(LALSimNeutronStarFamily *fam);
 
 double XLALSimNeutronStarFamRadiusOfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-double * XLALSimNeutronStarFamRadiusOfMass(double m, LALSimNeutronStarFamily * fam);
+REAL8Vector * XLALSimNeutronStarFamRadiusOfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamCentralPressureOfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-double * XLALSimNeutronStarFamCentralPressureOfMass(double m, LALSimNeutronStarFamily * fam);
+REAL8Vector * XLALSimNeutronStarFamCentralPressureOfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamMassOfCentralPressurePerBranch(double p, LALSimNeutronStarFamily * fam, int branch_id);
 double XLALSimNeutronStarFamMassOfCentralPressure(double p, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamBaryonicMassOfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-double * XLALSimNeutronStarFamBaryonicMassOfMass(double m, LALSimNeutronStarFamily * fam);
+REAL8Vector * XLALSimNeutronStarFamBaryonicMassOfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-double * XLALSimNeutronStarFamLoveNumberK2OfMass(double m, LALSimNeutronStarFamily * fam);
+REAL8Vector * XLALSimNeutronStarFamLoveNumberK2OfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamLoveNumberK3OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-double * XLALSimNeutronStarFamLoveNumberK3OfMass(double m, LALSimNeutronStarFamily * fam);
+REAL8Vector * XLALSimNeutronStarFamLoveNumberK3OfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamLoveNumberK4OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
-double * XLALSimNeutronStarFamLoveNumberK4OfMass(double m, LALSimNeutronStarFamily * fam);
+REAL8Vector * XLALSimNeutronStarFamLoveNumberK4OfMass(double m, LALSimNeutronStarFamily * fam);
 //TODO finish this
 // double XLALSimNeutronStarFamMinimumMass(LALSimNeutronStarFamily * fam);
 // double XLALSimNeutronStarMaximumMass(LALSimNeutronStarFamily * fam);
