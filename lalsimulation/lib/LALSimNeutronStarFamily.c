@@ -387,10 +387,6 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamilyWithPcmin(LALSimNeutronS
                 gsl_interp_init(fam_branch_i->k2_of_m_interp, fam_branch_i->mdat, fam_branch_i->k2dat, ndat_branch[b]);
 
                 if(min_fam==0){
-                    fam_branch_i->mbdat = LALRealloc(fam_branch_i->mbdat, ndat_branch[b] * sizeof(*fam_branch_i->mbdat));
-                    fam_branch_i->k3dat = LALRealloc(fam_branch_i->k3dat, ndat_branch[b] * sizeof(*fam_branch_i->k3dat));
-                    fam_branch_i->k4dat = LALRealloc(fam_branch_i->k4dat, ndat_branch[b] * sizeof(*fam_branch_i->k4dat));
-
                     fam_branch_i->mb_of_m_acc = gsl_interp_accel_alloc();
                     fam_branch_i->k3_of_m_acc = gsl_interp_accel_alloc();
                     fam_branch_i->k4_of_m_acc = gsl_interp_accel_alloc();
