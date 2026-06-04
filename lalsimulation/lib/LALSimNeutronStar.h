@@ -180,15 +180,10 @@ double XLALSimNeutronStarEOSSpeedOfSound(double h, LALSimNeutronStarEOS * eos);
 /* FUNCTIONS TO FILL THE EQUATION OF STATE STRUCTURE */
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
-#ifndef SWIG /* exclude from SWIG interface: double* array params are not handled correctly by SWIG */
-/* Python users should use XLALSimNeutronStarEOSFromArrays instead, which takes REAL8Vector inputs */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(double *nbdat, double *edat, double *pdat,
-    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, int dirty);
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedData( double *nbdat, double *edat, double *pdat,
-    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
-#endif /* SWIG */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromArrays(
-    const REAL8Vector *energy_density, const REAL8Vector *pressure);
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedData(
+    const REAL8Vector *nbdat, const REAL8Vector *edat, const REAL8Vector *pdat,
+    const REAL8Vector *mubdat, const REAL8Vector *muedat, const REAL8Vector *hdat,
+    const REAL8Vector *yedat, const REAL8Vector *cs2dat);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 
 
