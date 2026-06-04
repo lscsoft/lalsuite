@@ -825,15 +825,12 @@ double XLALSimNeutronStarFamMassOfCentralPressurePerBranch(double p, LALSimNeutr
 
 /* This function looks for the branch index where a central pressure p exists */
 static int find_branch_of_pressure(double p, LALSimNeutronStarFamily * fam){
-    int branch_index = 0;
     for (int i = 0; i < XLALSimNeutronStarFamNumberOfBranches(fam); i++){
         if (p >= XLALSimNeutronStarFamMinCentralPressurePerBranch(fam, i) &&
-            p <= XLALSimNeutronStarFamMaxCentralPressurePerBranch(fam, i)){
-                branch_index = i;
-                break;
-            }
+            p <= XLALSimNeutronStarFamMaxCentralPressurePerBranch(fam, i))
+            return i;
     }
-    return branch_index;
+    return -1;
 }
 /**
  * @brief Returns the mass in kg corresponding to a given central pressure in Pa.
@@ -843,6 +840,8 @@ static int find_branch_of_pressure(double p, LALSimNeutronStarFamily * fam){
  */
 double XLALSimNeutronStarFamMassOfCentralPressure(double p, LALSimNeutronStarFamily * fam){
     int index_branch = find_branch_of_pressure(p, fam);
+    if (index_branch < 0)
+        XLAL_ERROR_REAL8(XLAL_EDOM, "Central pressure p = %.16e is not in any branch.", p);
     return XLALSimNeutronStarFamMassOfCentralPressurePerBranch(p, fam, index_branch);
 }
 
