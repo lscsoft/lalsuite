@@ -947,7 +947,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(double
         printf("Variable dirty should be either 0 or 1.\n");
         XLAL_ERROR_NULL(XLAL_EINVAL);
     }
-
+    if(hdat == NULL) dirty = 0;
     /* Inquire about phase transitions in the equation of state */
     int *indices_phase_transition = NULL;
     indices_phase_transition = eos_find_phase_transition(ndat, edat, pdat, dirty);
