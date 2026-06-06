@@ -412,23 +412,6 @@ how to trigger then:
 * The main GitLab [documentation][githelp] contains further information
   regarding the usage of GitLab.
 
-## Appendix: Notes on Ancient History
-
-LALSuite was transferred to `git.ligo.org` in December 2017. Older
-history has been imported, though commit hashes were rewritten during
-the [Git LFS][gitlfs] conversion. Please note:
-
-1. The `Original:` commit IDs quoted in each commit message can be used
-   to compare with the [archived reference repo][oldlalsuite], old issue
-   discussions on the [Redmine tracker][oldredmine], review wiki pages
-   etc.
-
-1. Commits before December 2017 may also include references to issues
-   (`#number`). These refer to the corresponding [Redmine
-   issue][oldredmine] (LVC-authorized access only), and any clickable
-   link the internal GitLab web interface produces for those old commits
-   will therefore be spurious.
-
 [buildfromsrc]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis/BUILD
 [compguidegit]:     https://computing.docs.ligo.org/guide/gitlab/
 [doxygen]:          https://doxygen.nl
@@ -442,8 +425,6 @@ the [Git LFS][gitlfs] conversion. Please note:
 [lalsuiterepo]:     https://git.ligo.org/lscsoft/lalsuite
 [lalsuitewiki]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
 [mergerequests]:    https://git.ligo.org/help/user/project/merge_requests/index.html
-[oldlalsuite]:      https://git.ligo.org/lscsoft/lalsuite-archive
-[oldredmine]:       https://bugs.ligo.org/redmine/projects/lalsuite
 [precommit]:        https://pre-commit.com/
 [prettyastyle]:     https://astyle.sourceforge.net/
 [prettyblack]:      https://black.readthedocs.io/en/stable/
