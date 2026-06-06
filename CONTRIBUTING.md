@@ -10,7 +10,7 @@ GitLab][compguidegit] before you start.
 
 Please see [here][buildfromsrc] for instructions on building LALSuite from source.
 
-## Contributing code
+## Contributing Code
 
 All contributions to LALSuite code must be made using the fork and [merge
 request][mergerequests] [workflow][forkworkflow], which must then be reviewed by
@@ -404,13 +404,13 @@ how to trigger then:
     </tbody>
 </table>
 
-## More information
+## More Information
 
-* More information regarding the usage of GitLab can be found in the main GitLab
-  [documentation][githelp].
+* The LALSuite GitLab [wiki][lalsuitewiki] has a list of frequently asked
+  questions.
 
-* See also [the LALSuite GitLab wiki pages][lalsuitewiki] for some additional
-  developer FAQs.
+* The main GitLab [documentation][githelp] contains further information
+  regarding the usage of GitLab.
 
 ## Appendix: Notes on Ancient History
 
