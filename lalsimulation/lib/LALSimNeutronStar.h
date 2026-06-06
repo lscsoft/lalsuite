@@ -180,6 +180,10 @@ double XLALSimNeutronStarEOSSpeedOfSound(double h, LALSimNeutronStarEOS * eos);
 /* FUNCTIONS TO FILL THE EQUATION OF STATE STRUCTURE */
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(
+    const REAL8Vector *nbdat, const REAL8Vector *edat, const REAL8Vector *pdat,
+    const REAL8Vector *mubdat, const REAL8Vector *muedat, const REAL8Vector *hdat,
+    const REAL8Vector *yedat, const REAL8Vector *cs2dat, int dirty);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedData(
     const REAL8Vector *nbdat, const REAL8Vector *edat, const REAL8Vector *pdat,
     const REAL8Vector *mubdat, const REAL8Vector *muedat, const REAL8Vector *hdat,
@@ -209,14 +213,6 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS3PieceCausalAnalytic(double v1,
 
 /* FUNCTIONS FOR NS ASTROPHYSICAL SOLVER */
 /* TOV and Love Number solver ROUTINES */
-// int XLALSimNeutronStarTOVODEIntegrateWithToleranceEOSPiece(double *radius, double *mass,
-//     double *love_number_k2, double central_pressure_si, EOSPiece * eos, double epsrel);
-// int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
-//     double *love_number_k2, double central_pressure_si,
-//     LALSimNeutronStarEOS * eos, double epsrel);
-// int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
-//     double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos);
-
 int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si, LALSimNeutronStarEOS * eos);
@@ -241,7 +237,6 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
 
 /* NEUTRON STAR ASTROPHYSICAL PARAMETER'S RELATED ROUTINES */
 
-// void XLALDestroySimNeutronStarBranch(LALSimNeutronStarBranch * branch);
 void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam);
 
 LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamilyWithPcmin(LALSimNeutronStarEOS * eos, int min_fam, double logPcmin);
@@ -272,12 +267,6 @@ double XLALSimNeutronStarFamLoveNumberK3OfMassPerBranch(double m, LALSimNeutronS
 REAL8Vector * XLALSimNeutronStarFamLoveNumberK3OfMass(double m, LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarFamLoveNumberK4OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
 REAL8Vector * XLALSimNeutronStarFamLoveNumberK4OfMass(double m, LALSimNeutronStarFamily * fam);
-//TODO finish this
-// double XLALSimNeutronStarFamMinimumMass(LALSimNeutronStarFamily * fam);
-// double XLALSimNeutronStarMaximumMass(LALSimNeutronStarFamily * fam);
-// double XLALSimNeutronStarCentralPressure(double m, LALSimNeutronStarFamily * fam);
-// double XLALSimNeutronStarRadius(double m, LALSimNeutronStarFamily * fam);
-// double XLALSimNeutronStarLoveNumberK2(double m, LALSimNeutronStarFamily * fam);
 
 #endif /* _LALSIMNEUTRONSTAR_H */
 
