@@ -1124,7 +1124,6 @@ cleanup:
  * @param yedat Array for the lepton fration (dimensionless).
  * @param cs2dat Array for the sound speed squared normalized
  * to the speed of light (dimensionless).
- * @param ndat Size of the arrays for equation of state quantities.
  * @param dirty Integer to test for dirty phase transitions (1) or clean ones only (0).
  * @return A pointer to neutron star equation of state structure LALSimNeutronStarEOS.
  */
