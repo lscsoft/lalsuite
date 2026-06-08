@@ -419,7 +419,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 
 
       antisymamp->data[idx] = Amp0 * powers_of_Mf.m_seven_sixths * amp_AS;
-      antisymphase->data[idx] = phi_AS;
+      antisymphase->data[idx] = pPrec->phiJ_Sf + phi_AS;
     }
 
     /* Clean up memory allocation */
@@ -571,24 +571,28 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
 
     REAL8 q = pWF->q;
     REAL8 chi = pPrec->chi_singleSpin;
+    REAL8 alpha_ref = 0.0;
 
     /* inside callibration region */
     if ((q <= pPrec->PNR_q_window_lower) && (chi <= pPrec->PNR_chi_window_lower))
     {
       alpha_der_MfT = ( IMRPhenomX_PNR_GeneratePNRAlphaAtMf(Mf_right, alphaParams, pWF, pPrec) - IMRPhenomX_PNR_GeneratePNRAlphaAtMf(Mf_left, alphaParams, pWF, pPrec) )/2/deltaMF;
       alpha_MfT = IMRPhenomX_PNR_GeneratePNRAlphaAtMf(MfT, alphaParams, pWF, pPrec);
+      alpha_ref = IMRPhenomX_PNR_GeneratePNRAlphaAtMf(pWF->MfRef, alphaParams, pWF, pPrec);
     }
     /* inside transition region */
     else if ((q <= pPrec->PNR_q_window_upper) && (chi <= pPrec->PNR_chi_window_upper))
     {
       alpha_der_MfT = ( IMRPhenomX_PNR_GenerateMergedPNRAlphaAtMf(Mf_right, alphaParams, pWF, pPrec) - IMRPhenomX_PNR_GenerateMergedPNRAlphaAtMf(Mf_left, alphaParams, pWF, pPrec) )/2/deltaMF;
       alpha_MfT = IMRPhenomX_PNR_GenerateMergedPNRAlphaAtMf(MfT, alphaParams, pWF, pPrec);
+      alpha_ref = IMRPhenomX_PNR_GenerateMergedPNRAlphaAtMf(pWF->MfRef, alphaParams, pWF, pPrec);
     }
     /* fully in outside calibration region */
     else
     {
       alpha_der_MfT = ( IMRPhenomX_PNR_GetPNAlphaAtFreq(Mf_right, pWF, pPrec) - IMRPhenomX_PNR_GetPNAlphaAtFreq(Mf_left, pWF, pPrec) )/2/deltaMF;
       alpha_MfT = IMRPhenomX_PNR_GetPNAlphaAtFreq(MfT, pWF, pPrec);
+      alpha_ref = IMRPhenomX_PNR_GetPNAlphaAtFreq(pWF->MfRef, pWF, pPrec);
     }
 
     // alpha_der_MfT = ( IMRPhenomX_PNR_GeneratePNRAlphaAtMf(Mf_right, alphaParams, pWF, pPrec) - IMRPhenomX_PNR_GeneratePNRAlphaAtMf(Mf_left, alphaParams, pWF, pPrec) )/2/deltaMF;
@@ -621,7 +625,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
     phi_MfT  += linb*MfT + lina + phiref22;
 
     *A0 = phi_der_MfT/2 - alpha_der_MfT;
-    *phi_A0 = -pPrec->alpha_offset;
+    *phi_A0 = -alpha_ref - LAL_PI/2;
     *phi_B0 = alpha_MfT - phi_MfT/2 + *A0 * MfT + *phi_A0;
 
     LALFree(alphaParams);
