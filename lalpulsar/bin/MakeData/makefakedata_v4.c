@@ -21,18 +21,16 @@
 
 /**
  * \file
- * \ingroup lalpulsar_bin_Tools
+ * \ingroup lalpulsar_bin_HWInject
  * \author R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
+ * \brief Old CW signal injection routine, please use \c lalpular_Makefakedata_v5 .
  */
 
 /*-----------------------------------------------------------------------
  *
- * File Name: makefakedata_v4.c
- *
- * Authors: R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
- *
  * This code is a descendant of an earlier implementation 'makefakedata_v2.[ch]'
- * by Badri Krishnan, Bruce Allen, Maria Alessandra Papa, Reinhard Prix, Xavier Siemens, Yousuke Itoh
+ * by Badri Krishnan, Bruce Allen, Maria Alessandra Papa, Reinhard Prix,
+ *    Xavier Siemens, Yousuke Itoh
  *
  *-----------------------------------------------------------------------
  */
