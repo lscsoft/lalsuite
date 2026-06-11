@@ -29,7 +29,7 @@
 #include "SinCosLUT.i"
 
 ///
-/// \file ComputeFstat_DemodHL_SSE.c
+/// \file
 /// \ingroup ComputeFstat_Demod_c
 /// \brief Akos hotloop precalc SSE code (Dterms=8)
 ///

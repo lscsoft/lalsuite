@@ -21,7 +21,7 @@
 
 
 /**
- * \file StackSlideFstat.h
+ * \file
  * \ingroup lalpulsar_bin_HoughFstat
  * \brief Header file for StackSlideFstat.c
  * \author Gregory Mendell

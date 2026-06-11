@@ -18,7 +18,7 @@
  */
 
 /**
- * \file MultiWeights.c
+ * \file
  * \ingroup lalpulsar_bin_Apps
  * \author Badri Krishnan, Alicia Sintes
  * \brief Utility code for calculating some properties of the noise weights
