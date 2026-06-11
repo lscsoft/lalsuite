@@ -80,8 +80,8 @@ $(pybin_scripts) $(noinst_pybin_scripts): Makefile
 		printf "\nERROR: $(srcdir)/$@.py must not be executable\n\n" >&2; \
 		exit 1; \
 	fi; \
-	if test "x`$(SED) -n -e \"1{\|^##python$$|p;}\" $(srcdir)/$@.py`" = x; then \
-		printf "\nERROR: $(srcdir)/$@.py must start with the line '##python' (which will be replaced with '$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)' upon installation)\n\n" >&2; \
+	if test "x`$(SED) -n -e \"1{\|^#[# ]python$$|p;}\" $(srcdir)/$@.py`" = x; then \
+		printf "\nERROR: $(srcdir)/$@.py must start with the line '##python' or '# python' (which will be replaced with '$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)' upon installation)\n\n" >&2; \
 		exit 1; \
 	fi; \
 	echo "$${shebang}/bin/sh" > .libs/$@.bin; \
