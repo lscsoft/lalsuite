@@ -113,7 +113,7 @@ pybin-install-exec-local:
 		fi; \
 		for file in $(pybin_scripts); do \
 			if test "x$(prefix)" = "x$(LALSUITE_PYTHON_SYS_PREFIX)"; then \
-				$(SED) -e "1{s|^##python$$|$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)|;};s|@LALSUITE_BINDIR@|$(bindir)|g" "$(srcdir)/$${file}.py" > .libs/$${file}.bin || exit 1; \
+				$(SED) -e "1{s|^#[# ]python$$|$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)|;};s|@LALSUITE_BINDIR@|$(bindir)|g" "$(srcdir)/$${file}.py" > .libs/$${file}.bin || exit 1; \
 			else \
 				echo "$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)" > .libs/$${file}.bin; \
 				echo "import os, sys" >> .libs/$${file}.bin; \

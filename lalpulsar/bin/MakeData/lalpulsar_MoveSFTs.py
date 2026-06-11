@@ -1,4 +1,4 @@
-##python
+# python
 # Copyright (C) 2024 Evan Goetz
 #
 # This program is free software; you can redistribute it and/or modify

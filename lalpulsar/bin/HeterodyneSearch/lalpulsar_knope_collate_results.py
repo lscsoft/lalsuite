@@ -1,4 +1,4 @@
-##python
+# python
 # -*- coding: utf-8 -*-
 #
 #       lalpulsar_knope_collate_results.py

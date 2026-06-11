@@ -1,4 +1,4 @@
-##python
+# python
 ## \file
 ## \ingroup lalpulsar_bin_HeterodyneSearch
 """
