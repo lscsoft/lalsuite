@@ -22,22 +22,19 @@
 
 /**
  * \file
- * \ingroup lalpulsar_bin_Tools
+ * \ingroup lalpulsar_bin_MakeData
  * \author R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
+ * \brief Generate simulated CW signals in SFTs or frames.
  */
 
 /*-----------------------------------------------------------------------
  *
- * File Name: makefakedata_v5.c
- *
- * Authors: R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
- *
  * This code is a descendant of an earlier implementation 'makefakedata_v4.c',
  * which itself descended from 'makefakedata_v2.c'
- * by Badri Krishnan, Bruce Allen, Maria Alessandra Papa, Reinhard Prix, Xavier Siemens, Yousuke Itoh
+ * by Badri Krishnan, Bruce Allen, Maria Alessandra Papa, Reinhard Prix,
+ *    Xavier Siemens, Yousuke Itoh
  *
- *-----------------------------------------------------------------------
- */
+ *----------------------------------------------------------------------- */
 
 /* ---------- includes ---------- */
 #include "config.h"

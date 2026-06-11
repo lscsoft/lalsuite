@@ -70,6 +70,7 @@
    @{
       \defgroup lalpulsar_bin_SFTTools		SFT File Operation Tools
       \defgroup lalpulsar_bin_FITSTools		FITS File Operation Tools
+      \defgroup lalpulsar_bin_MakeData          Signal Injection Tools
    @}
    \defgroup lalpulsar_bin_Apps		Search Applications
 @}
