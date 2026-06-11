@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalpulsar_bin_Apps
+ * \ingroup lalpulsar_bin_Hough
  * \author Badri Krishnan and Alicia Sintes
  * \brief  Checking improvements in Hough if amplitude modulation is considered.
  */

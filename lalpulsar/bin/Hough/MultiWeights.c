@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalpulsar_bin_Apps
+ * \ingroup lalpulsar_bin_Hough
  * \author Badri Krishnan, Alicia Sintes
  * \brief Utility code for calculating some properties of the noise weights
  * for the multi-IFO Hough search

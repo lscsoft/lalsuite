@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalpulsar_bin_Apps
+ * \ingroup lalpulsar_bin_Hough
  * \author Sintes, A.M., and Krishnan, B.
  * \brief Header file for  PeakSelect.c
  *
