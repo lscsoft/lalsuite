@@ -1054,7 +1054,7 @@ cleanup:
 /**
  * @brief Reads 9 arrays of neutron star equation of state data to create
  * the LALSimNeutronStarEOS equation of state structure that can handle
- * equations of state with phase transitions.
+ * equations of state with "clean" or "dirty" phase transitions.
  * @details The arrays read contain each ndat lines of equation of state
  * data. Although the 9 arrays correspond to the physical quantities provided
  * in the "new" LAL format equation of state files, the units are not the same.
@@ -1150,7 +1150,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(
 /**
  * @brief Reads 9 arrays of neutron star equation of state data to create
  * the LALSimNeutronStarEOS equation of state structure that can handle
- * equations of state with phase transitions.
+ * equations of state with "clean" phase transitions.
  * @details The arrays contain equation of state data. Although the 9 arrays
  * correspond to the physical quantities provided in the "new" LAL format
  * equation of state files, the units are not the same.
@@ -1180,33 +1180,14 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(
  *
  * This function builds the LALSimNeutronStarEOS structure from equation of state
  * data that can include a first order phase transition. The equation of state data
- * is tested for phase transitions which are numerically defined by a pressure
- * plateau or near like plateau associated to a jump in energy density.
+ * is tested for phase transitions which are defined by a pressure
+ * plateau associated to a jump in energy density.
  * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 EOSPiece
  * equation of state pieces.
  *
- * We define a "dirty" phase transition by an intended first order phase
- * transition that is not numerically so: at the upper (+) and lower (-)
- * boundaries of the phase transition (pt), the user input equation of
- * state data has P(pt,+)- P(pt,-) > 0.
- * If a "dirty" phase transition is detected, it is corrected as follows:
- * - If hdat is provided: a linear extrapolation is used to correct
- * the two points in the equation of state data grid involved with the
- * phase transition and define a clean phase transition. The pseudo-enthalpy
- * and pressure at the boundary of the phase transition are recomputed such
- * that h(pt,-) = h(pt,+) and P(pt,-) = P(pt,+); the corresponding energy density
- * at the upper and lower boundaries of the newly defined clean phase transition
- * are computed also with a linear extrapolation.
- * - If hdat is NULL: as the pseudo-enthalpy is calculated, its value
- * at the boundaries of the phase transition is corrected as h(pt,+) -> h(pt,-).
- * The pressure is also corrected such that P(pt,+) -> P(pt,-) and the energy
- * density points at the boundary of the phase transition are kept intact.
- * The existing points of the equation of state data provided by the user
- * have been modified to obtain a clean phase transition: this implies that
- * P(pt,+) and eps(pt,+) are not thermodynamically coherent together.
- *
  * All array inputs are REAL8Vector, making this function callable from Python via SWIG.
- * The physics described above is implemented in sim_eos_from_tabulated_data_dirty_pt.
+ * The physics described above is implemented in sim_eos_from_tabulated_data_dirty_pt function
+ * located in lalsimulation/lib/LALSimNeutronStarEOSTabular.c.
  *
  * @param nbdat Array for the baryon density (in /fm^3).
  * @param edat Array for the energy density (in m^-2).
@@ -1225,7 +1206,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedData(
     const REAL8Vector *yedat, const REAL8Vector *cs2dat)
 {
     return XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(nbdat, edat, pdat,
-    mubdat, muedat, hdat, yedat, cs2dat, 1);
+    mubdat, muedat, hdat, yedat, cs2dat, 0);
 }
 
 /**
