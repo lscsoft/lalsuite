@@ -10,7 +10,7 @@ GitLab][compguidegit] before you start.
 
 Please see [here][buildfromsrc] for instructions on building LALSuite from source.
 
-## Contributing code
+## Contributing Code
 
 All contributions to LALSuite code must be made using the fork and [merge
 request][mergerequests] [workflow][forkworkflow], which must then be reviewed by
@@ -388,30 +388,13 @@ how to trigger then:
     </tbody>
 </table>
 
-## More information
+## More Information
 
-* More information regarding the usage of GitLab can be found in the main GitLab
-  [documentation][githelp].
+* The LALSuite GitLab [wiki][lalsuitewiki] has a list of frequently asked
+  questions.
 
-* See also [the LALSuite GitLab wiki pages][lalsuitewiki] for some additional
-  developer FAQs.
-
-## Appendix: Notes on Ancient History
-
-LALSuite was transferred to `git.ligo.org` in December 2017. Older
-history has been imported, though commit hashes were rewritten during
-the [Git LFS][gitlfs] conversion. Please note:
-
-1. The `Original:` commit IDs quoted in each commit message can be used
-   to compare with the [archived reference repo][oldlalsuite], old issue
-   discussions on the [Redmine tracker][oldredmine], review wiki pages
-   etc.
-
-1. Commits before December 2017 may also include references to issues
-   (`#number`). These refer to the corresponding [Redmine
-   issue][oldredmine] (LVC-authorized access only), and any clickable
-   link the internal GitLab web interface produces for those old commits
-   will therefore be spurious.
+* The main GitLab [documentation][githelp] contains further information
+  regarding the usage of GitLab.
 
 [buildfromsrc]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis/BUILD
 [compguidegit]:     https://computing.docs.ligo.org/guide/gitlab/
@@ -426,8 +409,6 @@ the [Git LFS][gitlfs] conversion. Please note:
 [lalsuiterepo]:     https://git.ligo.org/lscsoft/lalsuite
 [lalsuitewiki]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
 [mergerequests]:    https://git.ligo.org/help/user/project/merge_requests/index.html
-[oldlalsuite]:      https://git.ligo.org/lscsoft/lalsuite-archive
-[oldredmine]:       https://bugs.ligo.org/redmine/projects/lalsuite
 [precommit]:        https://pre-commit.com/
 [prettyastyle]:     https://astyle.sourceforge.net/
 [prettyblack]:      https://black.readthedocs.io/en/stable/

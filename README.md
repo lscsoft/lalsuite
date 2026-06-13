@@ -1,10 +1,17 @@
 # LVK Algorithm Library Suite - LALSuite
 
-LALSuite is comprised of various gravitational wave data analysis routines
-written in C (following the ISO/IEC 9899:1999 standard, more commonly referred
-to as C99) and Python. Its primary purpose is searching for and characterizing
-astrophysical signals in gravitational-wave time series data, particularly data
-from ground-based detectors such as [LIGO], [Virgo], and [KAGRA].
+LALSuite is a collection of data analysis routines whose primary application is
+to search for and characterize astrophysical signals in gravitational-wave time
+series data, in particular from ground-based detectors such as [LIGO], [Virgo],
+and [KAGRA].
+
+LALSuite is primarily written in C following the ISO/IEC 9899:1999 standard,
+more commonly referred to as C99. It provides libraries written in C99, with
+language bindings available for Python and Octave. It also provides command-line
+applications written in C99 and Python.
+
+LALSuite is licensed under the [GNU General Public License v2.0 or
+later][GPL-2.0-or-later].
 
 * [Project homepage][projectrepo]
 * [Installation instructions][install]
@@ -12,9 +19,6 @@ from ground-based detectors such as [LIGO], [Virgo], and [KAGRA].
 * [Reference documentation][lalsuitedocs]
 * [Building from source][buildfromsrc]
 * [Contributing guide][contributing]
-
-LALSuite is licensed under the [GNU General Public License v2.0 or
-later][GPL-2.0-or-later].
 
 ## Acknowledgment
 
@@ -158,6 +162,10 @@ The [guide to contributing to LALSuite][contributing] explains how to contribute
 fixes or new features using the fork and pull workflow. Please read and follow
 these directions.
 
+## Notes on Ancient History
+
+Notes on ancient history may be found [here][history].
+
 [GPL-2.0-or-later]: https://spdx.org/licenses/GPL-2.0-or-later.html
 [KAGRA]:            https://gwcenter.icrr.u-tokyo.ac.jp/en/
 [LIGO]:             https://www.ligo.org
@@ -170,6 +178,7 @@ these directions.
 [currentissues]:    https://git.ligo.org/lscsoft/lalsuite/issues
 [doi]:              https://doi.org/10.7935/GT1W-FZ16
 [helpdesk]:         mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
+[history]:          https://git.ligo.org/lscsoft/lalsuite/-/wikis/HISTORY
 [install]:          https://git.ligo.org/lscsoft/lalsuite/-/wikis/INSTALL
 [lal-announce-a]:   https://sympa.ligo.org/wws/info/lal-announce
 [lal-announce-s]:   https://grouper.ligo.org/selfmanage/lal-announce

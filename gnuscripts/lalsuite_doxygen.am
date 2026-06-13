@@ -62,14 +62,14 @@ doxygen_header.html: Makefile $(DOXYGEN)
 	rm -f $@.tmp; \
 	$(DOXYGEN) -w html $@.tmp /dev/null /dev/null >/dev/null 2>&1; \
 	if test "x$(DOXYGEN_NAVIGATION_TABS)" != x; then \
-		echo "<div id=\"lalsuite_navigation_tabs\"><ul class=\"sm sm-dox\">" >> $@.tmp; \
-		echo "<li class=\"sm sm-dox\"><a href=\"$(doxygen_lalsuite_reldir)/index.html\"><span>LALSuite</span></a></li>" >> $@.tmp; \
+		echo "<div><ul class=\"sm sm-dox lalsuite-nav-tab-container\">" >> $@.tmp; \
+		echo "<li class=\"sm sm-dox lalsuite-nav-tab\"><a href=\"$(doxygen_lalsuite_reldir)/index.html\"><span>LALSuite</span></a></li>" >> $@.tmp; \
 		for pkg in $(DOXYGEN_NAVIGATION_TABS); do \
 			pkg_lcase=`echo $${pkg} | tr '[A-Z]' '[a-z]'`; \
 			if test "x$${pkg_lcase}" = "x$(PACKAGE_NAME_LCASE)"; then \
-				echo "<li class=\"sm sm-dox\"><a href=\"./index.html\"><span>$${pkg}</span></a></li>" >> $@.tmp; \
+				echo "<li class=\"sm sm-dox lalsuite-nav-tab\"><a href=\"./index.html\"><span>$${pkg}</span></a></li>" >> $@.tmp; \
 			else \
-				echo "<li class=\"sm sm-dox\"><a href=\"$(doxygen_lalpkg_reldir)/$${pkg_lcase}/doxygen/out/index.html\"><span>$${pkg}</span></a></li>" >> $@.tmp; \
+				echo "<li class=\"sm sm-dox lalsuite-nav-tab\"><a href=\"$(doxygen_lalpkg_reldir)/$${pkg_lcase}/doxygen/out/index.html\"><span>$${pkg}</span></a></li>" >> $@.tmp; \
 			fi; \
 		done; \
 		echo "</ul></div>" >> $@.tmp; \
