@@ -23,12 +23,13 @@ import os
 import sys
 from pathlib import Path
 
-import pytest
-
 import igwn_segments as segments
+import pytest
 
 from lal import (
     LIGOTimeGPS,
+)
+from lal import (
     utils as lal_utils,
 )
 

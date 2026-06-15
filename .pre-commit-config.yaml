@@ -1,7 +1,7 @@
 repos:
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         stages: [pre-commit]
@@ -10,15 +10,18 @@ repos:
         stages: [pre-commit]
 
       - id: check-yaml
-        files: ^\.pre-commit-config.yaml$
+        name: check yaml (top-level config files)
+        files: ^\.[^/]+.yaml$
         stages: [pre-commit]
 
       - id: check-yaml
+        name: check yaml (GitLab CI files)
         args: [--unsafe]
         files: ^\.gitlab.*\.yml$
         stages: [pre-commit]
 
       - id: file-contents-sorter
+        name: sort .gitattributes
         args: [--unique]
         files: \.gitattributes$
         stages: [pre-commit]
@@ -26,10 +29,27 @@ repos:
       - id: check-executables-have-shebangs
         stages: [pre-commit]
 
+  - repo: https://github.com/assorted-pre-commit-hooks/one-liners
+    rev: v0.5
+    hooks:
+      - id: regex
+        name: check makefiles use tab indentation
+        args: [--patt, "^ +", --repl, "\t"]
+        files: \.(am|mk)$
+        stages: [pre-commit]
+
+      - id: chmod
+        name: remove executive permissions
+        args: [--ux, --gx, --ox]
+        files: ""
+        exclude: ^.gitlab/ci_scripts/|00boot$|common/|conda/|debian/|gnuscripts/
+        stages: [pre-commit]
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.13
+    rev: v0.15.7
     hooks:
       - id: ruff-check
+        name: check Python code (ruff)
         args: [--exit-non-zero-on-fix, --fix, --show-fixes]
         stages: [pre-commit]
 
@@ -38,21 +58,33 @@ repos:
         args: [--exit-zero, --output-file, code-quality-ruff.json, --output-format, gitlab]
         stages: [manual]
 
-  - repo: https://git.ligo.org/lscsoft/lalsuite-code-quality.git
-    rev: v0.6
+  - repo: https://github.com/assorted-pre-commit-hooks/authors
+    rev: v0.2
     hooks:
-      - id: remove-executable-bits
-        exclude: 00boot$|common/|conda/|debian/|gnuscripts/
+      - id: authors
+        name: check AUTHORS and .mailmap files
+        args: [--prefer, "@ligo[.]org", --avoid, "albert[.]einstein", --author-mail-env, "CI_COMMIT_AUTHOR"]
         stages: [pre-commit]
 
-      - id: fix-makefile-indents
+  - repo: https://github.com/assorted-pre-commit-hooks/gitignore
+    rev: v0.1
+    hooks:
+      - id: gitignore
+        name: check .gitignore files
         stages: [pre-commit]
 
-      - id: fix-gitignore-entries
+  - repo: https://github.com/igrr/astyle_py
+    rev: v1.1.0
+    hooks:
+      - id: astyle_py
+        name: prettify C code (astyle)
+        args: [--astyle-version=3.1, --rules=.astyle.yaml]
         stages: [pre-commit]
 
-      - id: fix-mailmap-authors
-        stages: [pre-commit]
-
-      - id: make-code-pretty
-        stages: [pre-commit]
+  - repo: https://github.com/psf/black
+    rev: 26.3.1
+    hooks:
+      - id: black
+        name: prettify Python code (black)
+        args: [--target-version=py310]
+        files: ^.gitlab/ci_scripts/|^common/   ### |^lalpulsar/ TOFIX

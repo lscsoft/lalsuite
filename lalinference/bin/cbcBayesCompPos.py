@@ -20,27 +20,27 @@
 #       MA 02110-1301, USA.
 
 #standard library imports
+import copy
+import getpass
 import os
 import sys
 from time import strftime
-import copy
-import getpass
+
+import matplotlib as mpl
 
 #related third party imports
 import numpy as np
+import scipy.stats as ss
 from numpy import floor
 
-import scipy.stats as ss
-
-import matplotlib as mpl
 mpl.use("AGG")
-from matplotlib import pyplot as plt
-from matplotlib import colors as mpl_colors
-from matplotlib import cm as mpl_cm
-from matplotlib.ticker import ScalarFormatter
-
 #local application/library specific imports
 import lalinference.bayespputils as bppu
+from matplotlib import cm as mpl_cm
+from matplotlib import colors as mpl_colors
+from matplotlib import pyplot as plt
+from matplotlib.ticker import ScalarFormatter
+
 from lalinference import git_version
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Will M. Farr <will.farr@ligo.org>"
@@ -101,6 +101,7 @@ allowed_params=['mtotal','m1','m2','mchirp','mc','chirpmass','q','asym_massratio
 def open_url(url,username,password):
 
     import urllib
+
     import urllib2
     import urlparse
 
@@ -145,7 +146,8 @@ def open_url(url,username,password):
 def all_pairs(L):
     while L:
         i = L.pop()
-        for j in L: yield i, j
+        for j in L:
+            yield i, j
 
 def open_url_curl(url,args=[]):
     import subprocess
@@ -303,7 +305,8 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
             print('Skipping '+param)
             continue
         locmaxy=max(n)
-        if locmaxy>max_y: max_y=locmaxy
+        if locmaxy>max_y:
+            max_y=locmaxy
 #(n, bins, patches)=plt.hist(posterior[param].samples,bins=bins,facecolor='white',label=name,normed=True,hold=True,color=color_by_name[name])#range=(min_pos,max_pos)
         (n, bins, patches)=plt.hist(posterior[param].samples,bins=bins,histtype='step',label=name,density=True,hold=True,color=color_by_name[name])
         patch_list.append(patches[0])
@@ -492,7 +495,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
 
     if injection_path is not None and os.path.exists(injection_path) and eventnum is not None:
         eventnum=int(eventnum)
-        from igwn_ligolw import ligolw, lsctables, utils
+        from igwn_ligolw import lsctables, utils
         injections = lsctables.SimInspiralTable.get_table(
                 utils.load_filename(injection_path))
         if eventnum is not None:
@@ -526,7 +529,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             pos_folder_parse=urlparse.urlparse(pos_folder)
             pfp_scheme,pfp_netloc,pfp_path,pfp_params,pfp_query,pfp_fragment=pos_folder_parse
             head,tail=os.path.split(pfp_path)
-            if tail is 'posplots.html' or tail:
+            if tail == 'posplots.html' or tail:
                 pos_file_part=head
             else:
                 pos_file_part=pfp_path
@@ -544,7 +547,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
                     os.makedirs(downloads_folder)
                 open_url_curl(pos_file_url,args=["-o","%s"%pos_file])
 
-        elif pfu_scheme is '' or pfu_scheme is 'file':
+        elif pfu_scheme == '' or pfu_scheme == 'file':
             pos_file=os.path.join(pos_folder,'%s.dat'%name)
             # Try looking for posterior_samples.dat if name.dat doesn't exist
             if not os.path.exists(pos_file):
@@ -711,7 +714,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
 
     greedy2savepaths=[]
 
-    if common_params is not [] and common_params is not None: #If there are common parameters....
+    if common_params != [] and common_params is not None: #If there are common parameters....
         colorlst=bppu.__default_color_lst
 
         if len(common_params)>1: #If there is more than one parameter...
@@ -758,7 +761,8 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
                     slinestyles=['solid', 'dashed', 'dashdot', 'dotted']
 
                     fig=bppu.plot_two_param_kde_greedy_levels(pos_list,greedy2Params,TwoDconfidenceLevels,color_by_name,figsize=contour_figsize,dpi=contour_dpi,figposition=contour_figposition,legend=ldg,line_styles=slinestyles,hatches_by_name=hatches_by_name,Npixels=Npixels2D)
-                    if fig is None: continue
+                    if fig is None:
+                            continue
                     #fig=bppu.plot_two_param_greedy_bins_contour(pos_list,greedy2Params,TwoDconfidenceLevels,color_by_name,figsize=contour_figsize,dpi=contour_dpi,figposition=contour_figposition)
                     greedy2savepaths.append('%s-%s.png'%(pplst[0],pplst[1]))
                     fig.savefig(os.path.join(outdir,'%s-%s.png'%(pplst[0],pplst[1])),bbox_inches='tight')

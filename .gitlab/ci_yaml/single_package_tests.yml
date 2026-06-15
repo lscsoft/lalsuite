@@ -1,0 +1,121 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: single-package test jobs
+# ----------------------------------------------------------------------
+
+# lal - build Conda package with MKL
+lal:conda-mkl:
+  variables:
+    LCI_SINGLE_PKG_SELECT: "conda"
+    LCI_SINGLE_PKG_ENV: "LCI_CONDA_PLAT_lal=fft_implmkl"
+  extends:
+    - .single-pkg:lal
+  script:
+    - !reference [.single-pkg-job, script]
+    # run package-level build
+    - source ${LCI_SCRIPTS}/pkg_build_${LCI_BLD}.sh
+  artifacts:
+    expire_in: 18h
+    paths:
+      # log files
+      - "build/${PACKAGE}-*/**/config.log"
+      - "build/${PACKAGE}-*/**/test-suite.log"
+      # generated sources
+      - "build/${PACKAGE}-*/**/swiglal_lal*_octave.cpp"
+      - "build/${PACKAGE}-*/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "build/${PACKAGE}-*/**/Makefile"
+      - "build/${PACKAGE}-*/**/libtool"
+      # package system files
+      - "build/${PACKAGE}-*/${LCI_BLD}-specific/"
+
+# lalinference - run test nested sampling job
+lalinference:test-job:
+  variables:
+    LCI_SINGLE_PKG_SELECT: "rpm"
+  extends:
+    - .single-pkg:lalinference:after
+  script:
+    - !reference [.single-pkg-job, script]
+    # run test job
+    - git -c "lfs.fetchinclude=**/params.dat,*/4s/**" clone "https://${CI_SERVER_FQDN}/lscsoft/ROQ_data"
+    - bash ./test/lalinference_nestedSampling_integration_test.sh
+  artifacts:
+    expire_in: 18h
+    paths:
+      # test configuration
+      - "build/${PACKAGE}-*/example.ini"
+      # test results
+      - "build/${PACKAGE}-*/example/"
+    when: always
+
+# lalpulsar - runs tests using available frame libraries
+lalpulsar:frame-libs:
+  variables:
+    LCI_SINGLE_PKG_SELECT: "rpm|deb"
+  extends:
+    - .single-pkg:lalpulsar:after
+  script:
+    - !reference [.single-pkg-job, script]
+    # setup build environment
+    - source ${LCI_SCRIPTS}/build_env.sh
+    # configure
+    - eval ./configure "${LCI_CONFIGURE_FLAGS}"
+    # build, test, and install package
+    - make -j${CPU_COUNT} all
+    - make -j${CPU_COUNT} install
+    # test finding data files
+    - env LAL_DEBUG_LEVEL=info lalpulsar_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
+    # run tests using available frame libraries
+    - |
+      for frame_library in $(lalframe_libraries_available); do
+          export LAL_FRAME_LIBRARY=${frame_library}
+          echo ">>>>>>> Running tests with LAL_FRAME_LIBRARY=${LAL_FRAME_LIBRARY}"
+          make -j${CPU_COUNT} check -C bin/
+          echo "^^^^^^^ Tests above were run with LAL_FRAME_LIBRARY=${LAL_FRAME_LIBRARY}"
+      done
+  artifacts:
+    expire_in: 18h
+    paths:
+      # log files
+      - "build/${PACKAGE}-*/**/config.log"
+      - "build/${PACKAGE}-*/**/test-suite.log"
+      # generated sources
+      - "build/${PACKAGE}-*/**/swiglal_lal*_octave.cpp"
+      - "build/${PACKAGE}-*/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "build/${PACKAGE}-*/**/Makefile"
+      - "build/${PACKAGE}-*/**/libtool"
+    when: always
+
+# lalpulsar - run long-running tests
+lalpulsar:long-tests:
+  variables:
+    LCI_SINGLE_PKG_SELECT: "rpm"
+  extends:
+    - .single-pkg:lalpulsar:after
+  script:
+    - !reference [.single-pkg-job, script]
+    # setup build environment
+    - source ${LCI_SCRIPTS}/build_env.sh
+    # configure
+    - eval ./configure "${LCI_CONFIGURE_FLAGS}"
+    # build, test, and install package
+    - make -j${CPU_COUNT} all
+    - make -j${CPU_COUNT} install
+    # test finding data files
+    - env LAL_DEBUG_LEVEL=info lalpulsar_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
+    # run long-running tests
+    - make -j${CPU_COUNT} check -C bin/longtests/ LONGTESTS=1
+  artifacts:
+    expire_in: 18h
+    paths:
+      # log files
+      - "build/${PACKAGE}-*/**/config.log"
+      - "build/${PACKAGE}-*/**/test-suite.log"
+      # generated sources
+      - "build/${PACKAGE}-*/**/swiglal_lal*_octave.cpp"
+      - "build/${PACKAGE}-*/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "build/${PACKAGE}-*/**/Makefile"
+      - "build/${PACKAGE}-*/**/libtool"
+    when: always

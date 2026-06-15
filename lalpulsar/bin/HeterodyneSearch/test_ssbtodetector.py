@@ -1,8 +1,7 @@
-import sys
 import subprocess as sp
+import sys
 
 import numpy as np
-
 import pytest
 
 # from LALConstants.h

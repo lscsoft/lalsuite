@@ -6,6 +6,7 @@ __copyright__ = "Copyright (C) 2015 Karl Wette"
 import sys
 from xml.etree.cElementTree import ElementTree
 
+
 # print error message and exit
 def fail(msg):
     sys.stderr.write("%s: %s\n" % (sys.argv[0], msg))

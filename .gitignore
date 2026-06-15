@@ -11,15 +11,14 @@
 .pytest_cache
 .vscode
 /.cache/
-/.condarc
-/.config/
-/.venv/
+/.ci-tmp/
 /AUTHORS
 /Makefile
 /Makefile.in
 /_build/
 /_inst/
-/api-*/
+/api-dump-*/
+/api-report/
 /doxygen/*.log
 /doxygen/Makefile
 /doxygen/Makefile.in
@@ -34,7 +33,6 @@
 /doxygen/make_autogen_dox
 /doxygen/out/
 /doxygen/test_doxygen.*
-/envs/
 /lalsuite-*/
 /lalsuiterc
 /wheel/*.whl

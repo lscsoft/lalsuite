@@ -6,10 +6,12 @@ P. Ajith, Abhirup Ghosh, 2015-09-15
 $Id:$
 """
 
+from functools import partial
+from multiprocessing import Pool
+
 import numpy as np
 import scipy.ndimage.filters as filter
-from multiprocessing import Pool
-from functools import partial
+
 from . import nrutils as nr
 
 """ calculate the mass and spin of the final black hole using an NR-inspired fitting formula """
@@ -133,17 +135,26 @@ def calc_Mfchif_prior_samples(comp_mass_prior_min, comp_mass_prior_max, comp_spi
 def calc_Mfchif_prior(comp_mass_prior_min, comp_mass_prior_max, comp_spin_min, comp_spin_max, Mf_bins, chif_bins, fit_formula, spin_angle_dist, N_sampl, num_threads):
 
   # check inputs
-  if comp_mass_prior_min < 1. or comp_mass_prior_min > 1000.: raise ValueError("comp_mass_prior_min should be in the interval [1, 1000]")
-  if comp_mass_prior_max < 1. or comp_mass_prior_max > 1000.: raise ValueError("comp_mass_prior_max should be in the interval [1, 1000]")
-  if comp_mass_prior_max <= comp_mass_prior_min : raise ValueError("comp_mass_prior_max should be greater than comp_mass_prior_min")
-  if N_sampl < 1: raise ValueError("N_sampl should be greater than 1")
-  if comp_spin_max < comp_spin_min: raise ValueError("comp_spin_max should be greater than comp_spin_min")
+  if comp_mass_prior_min < 1. or comp_mass_prior_min > 1000.:
+    raise ValueError("comp_mass_prior_min should be in the interval [1, 1000]")
+  if comp_mass_prior_max < 1. or comp_mass_prior_max > 1000.:
+    raise ValueError("comp_mass_prior_max should be in the interval [1, 1000]")
+  if comp_mass_prior_max <= comp_mass_prior_min :
+    raise ValueError("comp_mass_prior_max should be greater than comp_mass_prior_min")
+  if N_sampl < 1:
+    raise ValueError("N_sampl should be greater than 1")
+  if comp_spin_max < comp_spin_min:
+    raise ValueError("comp_spin_max should be greater than comp_spin_min")
   if spin_angle_dist == 'aligned':
-    if comp_spin_min < -1. or comp_spin_min > 1.: raise ValueError("comp_spin_min should be in the interval [-1, 1] for the case of aligned spin distributions")
-    if comp_spin_max < -1. or comp_spin_max > 1.: raise ValueError("comp_spin_max should be in the interval [-1, 1] for the case of aligned spin distributions")
+    if comp_spin_min < -1. or comp_spin_min > 1.:
+      raise ValueError("comp_spin_min should be in the interval [-1, 1] for the case of aligned spin distributions")
+    if comp_spin_max < -1. or comp_spin_max > 1.:
+      raise ValueError("comp_spin_max should be in the interval [-1, 1] for the case of aligned spin distributions")
   elif spin_angle_dist == 'isotropic':
-    if comp_spin_min < 0. or comp_spin_min > 1.: raise ValueError("comp_spin_min should be in the interval [0, 1] for the case of isotrpic spin distributions")
-    if comp_spin_max < 0. or comp_spin_max > 1.: raise ValueError("comp_spin_max should be in the interval [0, 1] for the case of isotrpic spin distributions")
+    if comp_spin_min < 0. or comp_spin_min > 1.:
+      raise ValueError("comp_spin_min should be in the interval [0, 1] for the case of isotrpic spin distributions")
+    if comp_spin_max < 0. or comp_spin_max > 1.:
+      raise ValueError("comp_spin_max should be in the interval [0, 1] for the case of isotrpic spin distributions")
   else:
     raise ValueError("spin_angle_dist should be 'aligned' or 'isotropic'")
 

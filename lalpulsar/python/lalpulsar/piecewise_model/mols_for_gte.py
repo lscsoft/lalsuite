@@ -27,8 +27,8 @@ import numpy as np
 from scipy import integrate
 
 from . import basis_functions as bf
-from . import gte_and_other_methods as gom
 from . import errors
+from . import gte_and_other_methods as gom
 from . import sampling_methods as sm
 
 

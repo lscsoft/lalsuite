@@ -23,19 +23,19 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
-from igwn_ligolw import table
-from igwn_ligolw import utils
 import matplotlib
+from igwn_ligolw import ligolw, lsctables, table, utils
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as pp
-import numpy as np
 import optparse
 import os
 import os.path
-import scipy.stats as ss
 import string
+
+import matplotlib.pyplot as pp
+import numpy as np
+import scipy.stats as ss
+
 
 class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
     def __init__(self,document):
@@ -52,8 +52,10 @@ class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
       elif self.intable: # We are in the correct table
         ligolw.LIGOLWContentHandler.startElement(self,name,attrs)
     def endElement(self,name):
-      if self.intable: ligolw.LIGOLWContentHandler.endElement(self,name)
-      if self.intable and name==self.tableElementName: self.intable=False
+      if self.intable:
+          ligolw.LIGOLWContentHandler.endElement(self,name)
+      if self.intable and name==self.tableElementName:
+          self.intable=False
 
 posterior_name_to_sim_burst_extractor = {
     'frequency' : lambda sb: sb.frequency,
@@ -98,8 +100,7 @@ def fractional_rank(x, xs):
 def pp_plot(ps, title=None, outfile=None):
     """Generates a p-p plot for the given ps.
 
-    :param ps: The p-values whose cumulative distribution is to be
-      plotted.
+    :param ps: The p-values whose cumulative distribution is to be plotted.
 
     :param title: An (optional) title for the plot.
 

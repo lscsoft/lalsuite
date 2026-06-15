@@ -1,6 +1,9 @@
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
+# Run tests against each configured frame library
+test_script_compiler = $(top_srcdir)/gnuscripts/lalframe_test_compiler $(FRAME_LIBRARIES_AVAILABLE) --
+
 SUBDIRS = \
 	$(END_OF_LIST)
 

@@ -772,13 +772,13 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
     (--modeList lm,l-m...,lm,l-m)           List of modes to be used by the model. The chosen modes ('lm') should be passed as a ',' seperated list.\n\
     (--phenomXHMMband float)     Threshold parameter for the Multibanding of the non-precessing hlm modes in IMRPhenomXHM and IMRPhenomXPHM. If set to 0 then do not use multibanding.\n\
-                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/dev/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
     (--phenomXPHMMband float)    Threshold parameter for the Multibanding of the Euler angles in IMRPhenomXPHM. If set to 0 then do not use multibanding.\n\
-                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/dev/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
     (--phenomXPFinalSpinMod int) Change version for the final spin model used in IMRPhenomXP/IMRPhenomXPHM.\n\
-                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/dev/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
     (--phenomXPrecVersion int)   Change version of the Euler angles for the twisting-up of IMRPhenomXP/IMRPhenomXPHM.\n\
-                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/dev/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
 \n\
     ----------------------------------------------\n\
     --- Starting Parameters ----------------------\n\

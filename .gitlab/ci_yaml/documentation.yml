@@ -1,0 +1,154 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: build Doxygen documentation
+# ----------------------------------------------------------------------
+
+# -- Doxygen documentation jobs ----------------------------------------
+
+doxygen-doc:
+  stage: code-quality
+  extends:
+    - .generic-job
+    - .linux-job
+  variables:
+    LCI_CONFIGURE_FLAGS_DOC: "--enable-doxygen"
+  script:
+    # install build dependencies
+    - source ${LCI_SCRIPTS}/top_builddep_conda.sh
+    # configure
+    - ./00boot
+    - source ${LCI_SCRIPTS}/build_env.sh
+    - eval ./configure "${LCI_CONFIGURE_FLAGS}"
+    # build and install documentation
+    # - on failure, save outputs from Doxygen documentation filters for debugging
+    - |
+      if make -j${CPU_COUNT} install-html; then
+          mv _inst/share/doc/lalsuite/ html/
+      else
+          for path in $(find -name '*.doxygen_filtered.txt'); do
+              basedir=doxygen_filtered/$(dirname ${path} | sed 's|/doxygen/in/|/|')
+              mkdir -p ${basedir}
+              mv ${path} ${basedir}
+          done
+          exit 1
+      fi
+    # add top-level index, to ease browsing in artifacts
+    - |
+      cat > index.html <<EOF
+      <!DOCTYPE html>
+      <html>
+      <head><meta http-equiv="refresh" content="0; url='html/index.html'"/></head>
+      </html>
+      EOF
+    # export path prefix
+    # - for release tags: <major-version>.<minor-version>
+    - |
+      case ${LCI_DOC_PATH_PREFIX} in
+          lalsuite-v*)
+              version=${LCI_DOC_PATH_PREFIX##lalsuite-v}
+              major=$(echo ${version} | cut -d. -f1)
+              minor=$(echo ${version} | cut -d. -f2)
+              echo "PATH_PREFIX=${major}.${minor}" > path_prefix.env
+              ;;
+          *)
+              echo "PATH_PREFIX=${LCI_DOC_PATH_PREFIX}" > path_prefix.env
+              ;;
+      esac
+    # show exported environment
+    - cat path_prefix.env
+  artifacts:
+    expose_as: html
+    paths:
+      # documentation
+      - html/
+      - index.html
+      # outputs from Doxygen documentation filters for debugging
+      - doxygen_filtered/
+    reports:
+      # path prefix
+      dotenv: path_prefix.env
+    when: always
+  rules:
+    - if: >-
+        $LCI_PIPE_TYPE == "push"
+    - if: >-
+        $LCI_PIPE_TYPE == "merge"
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-devimg"
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-doc"
+    - if: >-
+        $LCI_PIPE_TYPE == "lalsuite-tag"
+
+doxygen-index:
+  stage: code-quality
+  extends:
+    - .generic-job
+    - .linux-job
+  script:
+    - mkdir html
+    - cd html
+    # add top-level index
+    - |
+      ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
+          -j CI_JOB_TOKEN ${CI_SERVER_URL} lscsoft/lalsuite \
+          doxygen-index
+  artifacts:
+    expose_as: html
+    paths:
+      # top-level index
+      - html/
+  rules:
+    # the `gitlab_server_tasks doxygen-index` command can only run on
+    # the main branch at lscsoft/lalsuite due to GitLab API permissions
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-doc"
+        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+
+# -- page deployment jobs ----------------------------------------------
+
+.pages-job:
+  image: docker:latest
+  extends:
+    - .deploy-job
+  before_script:
+    # print environment variables for debugging
+    - export -p
+  script:
+    - mv html/ public/
+    - |
+      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        echo "WARNING: simulating execution of deployment actions"
+        exit 123
+      fi
+  artifacts:
+    paths:
+      - public
+
+pages:doc:
+  pages:
+    path_prefix: "${PATH_PREFIX}"
+    expire_in: never
+  extends:
+    - .pages-job
+  needs:
+    - doxygen-doc
+  rules:
+    - !reference [.deploy-check-execute, rules]
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-doc"
+    - if: >-
+        $LCI_PIPE_TYPE == "lalsuite-tag"
+
+pages:index:
+  pages:
+    path_prefix: ""
+    expire_in: never
+  extends:
+    - .pages-job
+  needs:
+    - doxygen-index
+  rules:
+    - !reference [.deploy-check-execute, rules]
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-doc"

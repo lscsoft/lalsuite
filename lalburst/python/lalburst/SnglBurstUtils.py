@@ -23,9 +23,10 @@
 #
 
 
-import itertools
 import math
+
 import matplotlib
+
 matplotlib.rcParams.update({
 	"font.size": 8.0,
 	"axes.titlesize": 10.0,
@@ -37,22 +38,21 @@ matplotlib.rcParams.update({
 	"savefig.dpi": 600,
 	"text.usetex": True	# render all text with TeX
 })
-from matplotlib import figure
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import re
 import sys
 
-
-from igwn_ligolw import lsctables
-from igwn_ligolw import dbtables
+from igwn_ligolw import dbtables, lsctables
 from igwn_ligolw.utils import search_summary as ligolw_search_summary
 from igwn_ligolw.utils import segments as ligolw_segments
+from matplotlib import figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+
+from . import git_version
 from .offsetvector import offsetvector
 
-
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from .git_version import date as __date__
-from .git_version import version as __version__
+__date__ = git_version.date
+__version__ = git_version.version
 
 
 #

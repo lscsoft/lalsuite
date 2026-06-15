@@ -1,0 +1,155 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: build Docker release images
+# ----------------------------------------------------------------------
+
+# -- release image matrix ----------------------------------------------
+
+.release-image-matrix:
+  parallel:
+    matrix:
+
+      # --- Enterprise Linux -------------------------------------------
+
+      - LCI_PLAT: "el8"
+        LCI_ENV: "LCI_BLD=rpm"
+        LCI_PLAT_BASE: "el"
+        LCI_DOCKER_ARGS: "EL_VERSION=el8"
+        LCI_JOB_TYPE: ["sched-snapshot", "sched-release", "lalsuite-tag"]
+
+      # --- Debian -----------------------------------------------------
+
+      - LCI_PLAT: "bookworm"
+        LCI_ENV: "LCI_BLD=deb"
+        LCI_PLAT_BASE: "debian"
+        LCI_DOCKER_ARGS: "DEB_VERSION=bookworm"
+        LCI_JOB_TYPE: ["sched-snapshot", "sched-release", "lalsuite-tag"]
+
+      # --- CUDA (Ubuntu) ----------------------------------------------
+
+      - LCI_PLAT: "cuda12.8"
+        LCI_ENV: "LCI_BLD=deb LCI_CUDA=yes"
+        LCI_PLAT_BASE: "cuda"
+        LCI_DOCKER_ARGS: "CUDA_VERSION=12.8.1 UBU_VERSION=noble UBU_VERSION_N=24.04"
+        LCI_JOB_TYPE: ["sched-snapshot", "sched-release", "lalsuite-tag"]
+
+# -- release image jobs ------------------------------------------------
+
+.release-image-job:
+  extends:
+    - .linux-job
+    - .release-image-matrix
+    - .deploy-job
+    - .docker-build-job
+  script:
+    # generate configuration file for docker compose
+    - ${LCI_SCRIPTS}/docker_compose_cfg -o compose.yaml
+          --file ".gitlab/ci_images/release_${LCI_PLAT_BASE}.Dockerfile"
+          --build-args ${LCI_DOCKER_ARGS}
+          --tags ${IMG_PATHS}
+    # build image
+    - ${LCI_SCRIPTS}/retry docker compose build
+    # test image
+    - docker run --rm ${IMG_PATHS%% *} lalapps_version
+    # push image to registry
+    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - ${LCI_SCRIPTS}/retry --delay 180 docker compose push -q
+
+snapshot-image:deploy:
+  extends:
+    - .release-image-job
+  needs:
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalpulsar
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalapps
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    # push release snapshot images to the "snapshot" tag
+    IMG_PATHS: >-
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:snapshot
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:snapshot
+  rules:
+    # only run for building snapshot Docker images
+    - if: >-
+        $LCI_PIPE_TYPE != "sched-snapshot"
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+release-image:
+  stage: release-image
+  extends:
+    - .linux-job
+    - .release-image-matrix
+    - .generic-job
+  script:
+    # download packages from latest release tag
+    - |
+      for pkg in ${LCI_PKGLIST}; do
+        ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
+            ${CI_SERVER_URL} lscsoft/lalsuite \
+            get-artifacts --latest-tag lalsuite-v --write-ref-name LALSUITE_TAG "${pkg}: [${LCI_PLAT}, ${LCI_ENV}, lalsuite-tag]"
+      done
+    # parse the LALSuite version number from the latest release tag
+    - version=$(sed 's/^lalsuite-v//' LALSUITE_TAG)
+    - major=$(echo ${version} | cut -d. -f1)
+    - minor=$(echo ${version} | cut -d. -f2)
+    # export the release tag: <major-version>.latest
+    - echo "LALSUITE_TAG_MAJOR_LATEST=${major}.latest" > lalsuite_tag.env
+    # export the release tag: <major-version>.<minor-version>
+    - echo "LALSUITE_TAG_MAJOR_MINOR=${major}.${minor}" >> lalsuite_tag.env
+    # show exported environment
+    - cat lalsuite_tag.env
+  artifacts:
+    paths:
+      # packages
+      - packages/
+    reports:
+      # release_tag
+      dotenv: lalsuite_tag.env
+  rules:
+    # only run for building snapshot Docker images
+    - if: >-
+        $LCI_PIPE_TYPE != "sched-release"
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+release-image:deploy:
+  extends:
+    - .release-image-job
+  needs:
+    - job: release-image
+      parallel:
+        matrix:
+          - LCI_PLAT: '$[[ matrix.LCI_PLAT ]]'
+            LCI_ENV: '$[[ matrix.LCI_ENV ]]'
+            LCI_PLAT_BASE: '$[[ matrix.LCI_PLAT_BASE ]]'
+            LCI_DOCKER_ARGS: '$[[ matrix.LCI_DOCKER_ARGS ]]'
+            LCI_JOB_TYPE: '$[[ matrix.LCI_JOB_TYPE ]]'
+  variables:
+    # push release images to the "latest" tag, and to versioned tags
+    IMG_PATHS: >-
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:latest
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:latest
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:${LALSUITE_TAG_MAJOR_LATEST}
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:${LALSUITE_TAG_MAJOR_LATEST}
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT_BASE}:${LALSUITE_TAG_MAJOR_MINOR}
+      ${CI_REGISTRY_IMAGE}/${LCI_PLAT}:${LALSUITE_TAG_MAJOR_MINOR}
+  rules:
+    # only run for building snapshot Docker images
+    - if: >-
+        $LCI_PIPE_TYPE != "sched-release"
+      when: never
+    - !reference [.default-matrix-rule, rules]

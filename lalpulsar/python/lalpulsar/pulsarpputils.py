@@ -26,22 +26,24 @@
 # Many functions in this a taken from, or derived from equivalents available in
 # the PRESTO pulsar software package http://www.cv.nrao.edu/~sransom/presto/
 
-from __future__ import print_function, division
+from __future__ import division, print_function
 
-import sys
-import math
 import cmath
+import math
 import os
-import numpy as np
-import struct
 import re
+import struct
+import sys
+
 import h5py
+import numpy as np
 
 try:
-    from scipy.integrate import trapezoid, cumulative_trapezoid
+    from scipy.integrate import cumulative_trapezoid, trapezoid
 except ImportError:
     # FIXME: Remove this once we require scipy >=1.6.0.
-    from scipy.integrate import trapz as trapezoid, cumtrapz as cumulative_trapezoid
+    from scipy.integrate import cumtrapz as cumulative_trapezoid
+    from scipy.integrate import trapz as trapezoid
 
 from scipy.interpolate import interp1d
 
@@ -249,7 +251,7 @@ def p_to_f(p, pd, pdd=None):
     """
     f = 1.0 / p
     fd = -pd / (p * p)
-    if pdd == None:
+    if pdd is None:
         return [f, fd]
     else:
         if pdd == 0.0:
@@ -266,7 +268,7 @@ def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
        Calculate the period or frequency errors and
        the pdot or fdot errors from the opposite one.
     """
-    if pdorfd == None:
+    if pdorfd is None:
         return [1.0 / porf, porferr / porf**2.0]
     else:
         forperr = porferr / porf**2.0
@@ -818,8 +820,8 @@ def plot_posterior_hist(
     mplparams=False,
 ):
     import matplotlib
-    from matplotlib import pyplot as plt
     from lalpulsar.pulsarhtmlutils import paramlatexdict
+    from matplotlib import pyplot as plt
 
     # create list of figures
     myfigs = []
@@ -858,7 +860,7 @@ def plot_posterior_hist(
     if parfile:
         parval = parfile[param.upper()]
 
-    if ifos == None:
+    if ifos is None:
         # default to just output colour for H1
         ifos = ["H1"]
 
@@ -983,8 +985,8 @@ def upper_limit_greedy(pos, upperlimit=0.95, nbins=100):
 # of bins
 def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, mplparams=False):
     import matplotlib
-    from matplotlib import pyplot as plt
     from lalpulsar.pulsarhtmlutils import paramlatexdict
+    from matplotlib import pyplot as plt
 
     try:
         from matplotlib import gridspec
@@ -1166,8 +1168,8 @@ def plot_2Dhist_from_file(
     histfile, ndimlabel, mdimlabel, margpars=True, mplparams=False
 ):
     import matplotlib
-    from matplotlib import pyplot as plt
     from lalpulsar.pulsarhtmlutils import paramlatexdict
+    from matplotlib import pyplot as plt
 
     # read in 2D h0 vs cos(iota) binary prior file
     xbins, ybins, histarr = read_hist_from_file(histfile)
@@ -1321,8 +1323,8 @@ def plot_posterior_hist2D(
     mplparams=False,
 ):
     import matplotlib
-    from matplotlib import pyplot as plt
     from lalpulsar.pulsarhtmlutils import paramlatexdict
+    from matplotlib import pyplot as plt
 
     if len(params) != 2:
         print("Require 2 parameters", file=sys.stderr)
@@ -1372,7 +1374,7 @@ def plot_posterior_hist2D(
         parval1 = parfile[params[0].upper()]
         parval2 = parfile[params[1].upper()]
 
-    if ifos == None:
+    if ifos is None:
         ifos = ["H1"]
 
     for idx, ifo in enumerate(ifos):
@@ -1564,9 +1566,9 @@ def plot_Bks_ASDs(
     mplparams=False,
 ):
     import matplotlib
-    from matplotlib.mlab import specgram
     from matplotlib import colors
     from matplotlib import pyplot as plt
+    from matplotlib.mlab import specgram
 
     # create list of figures
     Bkfigs = []
@@ -1784,8 +1786,8 @@ def plot_limits_hist(
     lims, param, ifos, prevlims=None, bins=20, overplot=False, mplparams=False
 ):
     import matplotlib
-    from matplotlib import pyplot as plt
     from lalpulsar.pulsarhtmlutils import paramlatexdict
+    from matplotlib import pyplot as plt
 
     if not mplparams:
         mplparams = {
@@ -1833,7 +1835,7 @@ def plot_limits_hist(
 
             # remove any None's
             for i, val in enumerate(theselims):
-                if val == None:
+                if val is None:
                     del theselims[i]
 
             loglims = np.log10(theselims)
@@ -1855,7 +1857,7 @@ def plot_limits_hist(
 
         # remove any None's
         for i, val in enumerate(theselims):
-            if val == None:
+            if val is None:
                 del theselims[i]
 
         loglims = np.log10(theselims)
@@ -2829,8 +2831,9 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
         e.g. if cosiota and iota exist then iota will be removed.
     """
 
-    from lalinference import bayespputils as bppu
     from lalinference.bayespputils import replace_column
+
+    from lalinference import bayespputils as bppu
 
     fe = os.path.splitext(postfile)[-1].lower()  # file extension
 
@@ -2840,6 +2843,7 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
             # use functions from lalapps_nest2pos to read values from nested sample files i.e. not a posterior file created by lalapps_nest2pos
             try:
                 from lalinference.io import read_samples
+
                 from lalinference import LALInferenceHDF5NestedSamplesDatasetName
 
                 samples = read_samples(
@@ -3299,12 +3303,13 @@ def pulsar_posterior_grid(
     """
 
     # import numpy
-    import numpy as np
     import sys
+
+    import numpy as np
     from scipy.special import gammaln
 
     # set the likelihood to either Student's or Gaussian
-    if sigmas == None:
+    if sigmas is None:
         liketype = "studentst"
     else:
         liketype = "gaussian"
@@ -3342,7 +3347,7 @@ def pulsar_posterior_grid(
             return
 
         # checks on sigmas
-        if sigmas != None:
+        if sigmas is not None:
             if det not in sigmas:
                 print(
                     "No sigma time series given for detector %s" % det, file=sys.stderr
@@ -3357,7 +3362,7 @@ def pulsar_posterior_grid(
                 file=sys.stderr,
             )
 
-        if sigmas != None:
+        if sigmas is not None:
             if len(ts[det]) != len(sigmas[det]):
                 print(
                     "Length of times stamps array and sigma array are inconsistent for %s"

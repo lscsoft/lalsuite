@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+
+"""Write a Docker Compose configuration file."""
+
+import argparse
+import os
+from pathlib import Path
+
+import yaml
+
+# parse command line
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("-o", "--output", type=Path, required=True, help="Output file")
+parser.add_argument("--file", type=Path, required=True, help="Docker file")
+parser.add_argument("--build-args", nargs="*", help="Docker build arguments")
+parser.add_argument("--tags", nargs="+", help="Docker tags")
+args = parser.parse_args()
+args.build_args = sorted(set(args.build_args))
+args.tags = sorted(set(args.tags))
+
+# construct build section
+build = {
+    "context": ".",
+    "dockerfile": str(args.file),
+}
+if len(args.build_args) > 0:
+    build["args"] = {}
+    for build_arg in args.build_args:
+        if "=" in build_arg:
+            k, v = build_arg.split("=", maxsplit=1)
+        else:
+            k = build_arg
+            v = os.environ[k]
+        build["args"][k] = v
+if len(args.tags) > 1:
+    build["tags"] = args.tags[1:]
+
+# construct Compose configuration
+compose = {"services": {"ci_image": {"image": args.tags[0], "build": build}}}
+compose_yml = yaml.safe_dump(compose, default_flow_style=False)
+
+# show Compose configuration file
+header = f"---- {args.output} -----".ljust(80, "-")
+print(header + "\n" + compose_yml + "-" * len(header))
+
+# write Compose configuration file
+with args.output.open("w") as f:
+    print(compose_yml, file=f)

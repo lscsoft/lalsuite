@@ -2,16 +2,18 @@
 # DAG generation code for running LALInference pipeline
 # (C) 2012 John Veitch, Vivien Raymond
 
-from lalinference import lalinference_pipe_utils as pipe_utils
-import numpy as np
 import configparser
-from optparse import OptionParser
-import sys
 import os
+import sys
 import uuid
-from lal import pipeline
+from optparse import OptionParser
+
+import numpy as np
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
+
+from lal import pipeline
+from lalinference import lalinference_pipe_utils as pipe_utils
 
 usage=""" %prog [options] config.ini
 Setup a Condor DAG file to run the LALInference pipeline based on
@@ -54,8 +56,10 @@ def mkdirs(path):
     Helper function. Make the given directory, creating intermediate
     dirs if necessary, and don't complain about it already existing.
     """
-    if os.access(path,os.W_OK) and os.path.isdir(path): return
-    else: os.makedirs(path)
+    if os.access(path,os.W_OK) and os.path.isdir(path):
+        return
+    else:
+        os.makedirs(path)
 
 def add_variations(cp, section, option, values=None, allowed_values=None):
     """

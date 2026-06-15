@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
             "Usage: %s [-h|--help] [-v|--verbose]\n\n"
             "Print version information for @PACKAGE_NAME@ and upstream LALSuite components\n\n"
             "Options:\n"
-            "  --help       display this messgage and exit\n"
+            "  --help       display this message and exit\n"
             "  --verbose    display verbose version information\n",
             argv[0]
       );

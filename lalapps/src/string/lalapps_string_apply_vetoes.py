@@ -28,16 +28,14 @@
 
 from __future__ import print_function
 
-
-from optparse import OptionParser
 import sqlite3
 import sys
-
+from optparse import OptionParser
 
 from igwn_ligolw import dbtables
 from igwn_ligolw.utils import segments as ligolwsegments
-from lalburst import git_version
 
+from lalburst import git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id

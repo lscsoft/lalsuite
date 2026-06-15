@@ -14,11 +14,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import sys
-import pytest
-import lalpulsar
-import numpy as np
 import os
+import sys
+
+import numpy as np
+import pytest
+
+import lalpulsar
 
 try:
     from pathlib import Path

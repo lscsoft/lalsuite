@@ -63,8 +63,9 @@
 
 
 import bisect
+
 try:
-	from fpconst import PosInf, NegInf
+	from fpconst import NegInf, PosInf
 except ImportError:
 	# fpconst is not part of the standard library and might not be
 	# available
@@ -73,22 +74,17 @@ except ImportError:
 import glob
 import heapq
 import math
-from matplotlib import patches
-import numpy
-from scipy import interpolate
-from scipy import optimize
-from optparse import OptionParser
 import sqlite3
 import sys
+from optparse import OptionParser
 
-
+import numpy
 from igwn_ligolw import dbtables
-from lal import iterutils
-from lalburst import rate
-from lalburst import git_version
-from lalburst import SimBurstUtils
-from lalburst import SnglBurstUtils
+from matplotlib import patches
+from scipy import interpolate, optimize
 
+from lal import iterutils
+from lalburst import SimBurstUtils, SnglBurstUtils, git_version, rate
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id

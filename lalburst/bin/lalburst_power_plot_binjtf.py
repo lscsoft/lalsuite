@@ -27,16 +27,14 @@
 
 
 import math
-from matplotlib import cm, colors, collections
-import numpy
-from optparse import OptionParser
 import sqlite3
 import sys
+from optparse import OptionParser
 
+import numpy
+from matplotlib import cm, collections, colors
 
-from lalburst import git_version
-from lalburst import SnglBurstUtils
-
+from lalburst import SnglBurstUtils, git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id

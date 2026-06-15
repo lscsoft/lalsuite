@@ -1,19 +1,19 @@
-%define nightly @NIGHTLY_VERSION@%{nil}
+%define snapshot @SNAPSHOT_VERSION@%{nil}
 %define release 1
 %define configure_opts %{nil}
 
-%if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
-%undefine nightly
+%if "%{?snapshot:%{snapshot}}%{!?snapshot:0}" == "%{nil}"
+%undefine snapshot
 %endif
 
 # -- metadata ---------------
 
 Name: @PACKAGE@
 Version: @BASE_VERSION@
-Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
+Release: %{?snapshot:0.%{snapshot}}%{!?snapshot:%{release}}%{?dist}
 License: GPLv2+
-Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
-URL: https://wiki.ligo.org/Computing/LALSuite
+Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?snapshot:.%{snapshot}}.tar.xz
+URL: https://lscsoft.docs.ligo.org/lalsuite/
 Packager: Adam Mercer <adam.mercer@ligo.org>
 Prefix: %{_prefix}
 
@@ -30,12 +30,13 @@ BuildRequires: help2man >= 1.37
 BuildRequires: less
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
+BuildRequires: zlib-devel
 
 # swig
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python3x
-BuildRequires: python3
+BuildRequires: python3 >= @MIN_PYTHON_VERSION@
 BuildRequires: python3-devel
 BuildRequires: python3dist(freezegun)
 BuildRequires: python3dist(igwn-segments)
@@ -76,6 +77,7 @@ Requires: lib%{name} = %{version}-%{release}
 Requires: fftw-devel
 Requires: gsl-devel
 Requires: hdf5-devel
+Requires: zlib-devel
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 7.1.1-1
 %description -n lib%{name}-devel
@@ -87,7 +89,7 @@ as well as the documentation for the library.
 %package -n python3-%{name}
 Summary: Python %{python3_version} bindings for LAL
 Requires: lib%{name} = %{version}-%{release}
-Requires: python3
+Requires: python3 >= @MIN_PYTHON_VERSION@
 Requires: python3dist(igwn-segments)
 Requires: python3dist(numpy) >= @MIN_NUMPY_VERSION@
 Requires: python3dist(python-dateutil)
@@ -108,7 +110,7 @@ This package provides the Octave bindings.
 # -- build stages -----------
 
 %prep
-%setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
+%setup -q -n %{name}-%{version}%{?snapshot:.%{snapshot}}
 
 %build
 %configure %{configure_opts} --sysconfdir=%{_sysconfdir} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
@@ -128,7 +130,7 @@ find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
-rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
+rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?snapshot:.%{snapshot}}
 
 # -- files ------------------
 

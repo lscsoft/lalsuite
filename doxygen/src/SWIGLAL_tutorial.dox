@@ -5,14 +5,9 @@
 
 # Installing the interface
 
--# Install the relevant packages, e.g.:
-   - Conda: `conda install python-lal`
-   - Pip: `pip install lalsuite`
-   - Debian: `apt install python3-lal`
-   - Red Hat, CentOS, etc.: `yum install python3-lal`
+-# Install the relevant packages, see [here](https://git.ligo.org/lscsoft/lalsuite/-/wikis/INSTALL) for instructions.
 
-   If you instead wish to build LALSuite from source, see the \ref index "LALSuite README"
-   for instructions.
+   If you instead wish to build LALSuite from source, see [here](https://git.ligo.org/lscsoft/lalsuite/-/wikis/BUILD) for instructions.
 
 -# You should then be able to successfully run
    \code{.py}

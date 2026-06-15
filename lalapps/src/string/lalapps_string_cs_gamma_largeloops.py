@@ -34,13 +34,13 @@
 from __future__ import print_function
 
 import math
-import numpy
-from optparse import OptionParser
-import scipy.integrate
 import sys
+from optparse import OptionParser
 
-from lalburst import cs_gamma
-from lalburst import git_version
+import numpy
+import scipy.integrate
+
+from lalburst import cs_gamma, git_version
 
 #Constants from cs_lambda_cosmo.h
 LAMBDA_Z_EQ = 5440.0
@@ -71,7 +71,7 @@ def parse_command_line():
     if missing_options:
         raise ValueError("missing required option(s) %s" % ", ".join("--%s" % option.replace("_", "-") for option in missing_options))
     if options.model not in ("Siemens06", "Blanco-Pillado14", "Ringeval07"):
-    	raise ValueError("--model \"%s\" not recognized" % options.model)
+        raise ValueError("--model \"%s\" not recognized" % options.model)
     assert options.nGmu >= 2
     assert options.np >= 2
 

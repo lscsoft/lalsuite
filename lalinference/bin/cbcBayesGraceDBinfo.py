@@ -27,8 +27,10 @@
 
 #standard library imports
 import sys
-import numpy as np
+
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg")
 
 from lalinference import bayespputils as bppu
@@ -51,8 +53,9 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
     print("Must provide both a graceDB id and a posterior samples file or skymap file\n")
     sys.exit(1)
 
-  import ligo.gracedb.rest
   import os
+
+  import ligo.gracedb.rest
   if server is not None:
     g=ligo.gracedb.rest.GraceDb(server)
   else:
@@ -87,7 +90,8 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
           outstr+='<td align=left>%.3f &plusmn; %.3f</td></tr>'%(pos[i].samples[which][0],pos[i].stdev)
     if bcifile is not None and os.path.isfile(bcifile):
       bci=np.loadtxt(bcifile)
-    else: bci=None
+    else:
+      bci=None
     if bci is not None:
       outstr+='<tr><td align=left>logBCI</td>'
       outstr+='<td align=center>%.2f</td></tr>'%(bci)
@@ -145,10 +149,12 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
   elif skymap is not None:
     if bcifile is not None and os.path.isfile(bcifile):
       bci=np.loadtxt(bcifile)
-    else: bci=None
+    else:
+      bci=None
     if bsnfile is not None and os.path.isfile(bsnfile):
       bsn=np.loadtxt(bsnfile)
-    else: bsn=None
+    else:
+      bsn=None
     tag=['sky_loc']
     """
     if bci is not None and bsn is not None:

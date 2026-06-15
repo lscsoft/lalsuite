@@ -10,7 +10,7 @@ Welcome to GWSignal documentation!
 GWSignal
 ----------------
 :code:`GWSignal` is a Python library that provides a interface between python waveforms and `LALSuite <https://lscsoft.docs.ligo.org/lalsuite/>`_ and vice-versa. This software is packaged with
-`LALSimulation <https://lscsoft.docs.ligo.org/lalsuite/>`_ in `LALSuite <https://lscsoft.docs.ligo.org/lalsuite/>`_ releases. Check out the :doc:`installation` section for further information, including how to
+`LALSimulation <https://lscsoft.docs.ligo.org/lalsuite/dev/lalsimulation/>`_ in `LALSuite <https://lscsoft.docs.ligo.org/lalsuite/>`_ releases. Check out the :doc:`installation` section for further information, including how to
 :ref:`install <install>` the project.
 
 

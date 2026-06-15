@@ -6,28 +6,30 @@
 """
 
 # make print statements python 3-proof
-from __future__ import print_function, division
+from __future__ import division, print_function
 
 __author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
 __date__ = "$Date$"
 __version__ = "$Revision$"
 
-import os
-import re
-from lal import pipeline
-import sys
 import ast
 import json
-import subprocess as sp
-import shutil
-import uuid
-from configparser import RawConfigParser
-import urllib.parse as urlparse
-from copy import deepcopy
-import numpy as np
+import os
 import pickle
-from scipy import optimize
+import re
+import shutil
+import subprocess as sp
+import sys
+import urllib.parse as urlparse
+import uuid
 from collections import OrderedDict
+from configparser import RawConfigParser
+from copy import deepcopy
+
+import numpy as np
+from scipy import optimize
+
+from lal import pipeline
 from lalpulsar import pulsarpputils as pppu
 
 # set some specific error codes and messages
@@ -84,7 +86,7 @@ class knopeDAG(pipeline.CondorDAG):
                 "analysis", "preprocessed_pickle_object"
             )
 
-            if preprocessed_pickle == None:
+            if preprocessed_pickle is None:
                 print(
                     "Error... trying post-processing only, but no previous pickle file is given",
                     file=sys.stderr,
@@ -544,7 +546,7 @@ class knopeDAG(pipeline.CondorDAG):
                         continue
 
                 # check that .par file contains ephemeris information and units (if not present defaults will be used - see get_ephemeris)
-                if psr["EPHEM"] != None:
+                if psr["EPHEM"] is not None:
                     if psr["EPHEM"] not in [
                         "DE200",
                         "DE405",
@@ -563,7 +565,7 @@ class knopeDAG(pipeline.CondorDAG):
                         )
                         continue
 
-                if psr["UNITS"] != None:
+                if psr["UNITS"] is not None:
                     if psr["UNITS"] not in ["TCB", "TDB"]:
                         print(
                             "Unregconised time units '%s' in '%s'. Skipping this source"
@@ -719,7 +721,7 @@ class knopeDAG(pipeline.CondorDAG):
 
         # email notification that the analysis has finished if required
         email = self.get_config_option("analysis", "email", allownone=True)
-        if email != None:
+        if email is not None:
             if "@" not in email:
                 print(
                     "Warning... email address '%s' is invalid. No notification will be sent."
@@ -793,7 +795,7 @@ class knopeDAG(pipeline.CondorDAG):
             )
             resultexec = self.find_exec_file("lalpulsar_knope_result_page")
 
-            if resultexec == None:
+            if resultexec is None:
                 print(
                     "Error... could not find 'lalpulsar_knope_result_page' in 'PATH'",
                     file=sys.stderr,
@@ -818,7 +820,7 @@ class knopeDAG(pipeline.CondorDAG):
             )
             collateexec = self.find_exec_file("lalpulsar_knope_collate_results")
 
-            if collateexec == None:
+            if collateexec is None:
                 print(
                     "Error... could not find 'lalpulsar_knope_collate_results' in 'PATH'",
                     file=sys.stderr,
@@ -1312,7 +1314,7 @@ class knopeDAG(pipeline.CondorDAG):
             )
             peexec = self.find_exec_file("lalpulsar_parameter_estimation_nested")
 
-            if peexec == None:
+            if peexec is None:
                 print(
                     "Error... could not find 'lalpulsar_parameter_estimation_nested' in 'PATH'",
                     file=sys.stderr,
@@ -1372,7 +1374,7 @@ class knopeDAG(pipeline.CondorDAG):
             "pe", "pe_output_dir_background", cftype="dir", allownone=True
         )
         if self.pe_num_background != 0:
-            if self.pe_output_background_basedir == None:
+            if self.pe_output_background_basedir is None:
                 print(
                     "Error... no background analysis directory has been set",
                     file=sys.stderr,
@@ -1567,7 +1569,7 @@ class knopeDAG(pipeline.CondorDAG):
             )
             pen2pexec = self.find_exec_file("lalinference_nest2pos")
 
-            if pen2pexec == None:
+            if pen2pexec is None:
                 print(
                     "Error... could not find 'lalinference_nest2pos' in 'PATH'",
                     file=sys.stderr,
@@ -1578,7 +1580,7 @@ class knopeDAG(pipeline.CondorDAG):
                 self.pe_n2p_exec = pen2pexec
 
         self.pe_posterior_basedir = self.get_config_option("pe", "n2p_output_dir")
-        if self.pe_posterior_basedir == None:
+        if self.pe_posterior_basedir is None:
             print(
                 "Error... no 'n2p_output_dir' specified in '[pe]' giving path for posterior sample outputs",
                 file=sys.stderr,
@@ -1593,7 +1595,7 @@ class knopeDAG(pipeline.CondorDAG):
             self.pe_posterior_background_basedir = self.get_config_option(
                 "pe", "n2p_output_dir_background"
             )
-            if self.pe_posterior_background_basedir == None:
+            if self.pe_posterior_background_basedir is None:
                 print(
                     "Error... no 'n2p_output_dir_background' specified in '[pe]' giving path for posterior sample outputs",
                     file=sys.stderr,
@@ -1644,7 +1646,7 @@ class knopeDAG(pipeline.CondorDAG):
         )
 
         # create job for removing nested samples (use previous remove job if existing)
-        if self.remove_job == None:
+        if self.remove_job is None:
             rmjob = removeJob(
                 accgroup=self.accounting_group,
                 accuser=self.accounting_group_user,
@@ -2080,8 +2082,8 @@ class knopeDAG(pipeline.CondorDAG):
                     if paritem in ignore_pars:
                         continue
                     if (
-                        psr["%s_ERR" % paritem] != None
-                        and psr["%s_FIT" % paritem] != None
+                        psr["%s_ERR" % paritem] is not None
+                        and psr["%s_FIT" % paritem] is not None
                     ):  # get values with a given error (suffixed with _ERR)
                         if psr["%s_FIT" % paritem] == 1:
                             # set Gaussian prior with mean being the parameter value and sigma being the error
@@ -2112,9 +2114,9 @@ class knopeDAG(pipeline.CondorDAG):
                             else:
                                 # check if an eccentricity of between 0 and 0.001
                                 ecc = 0.0
-                                if psr["E"] != None:
+                                if psr["E"] is not None:
                                     ecc = psr["E"]
-                                elif psr["ECC"] != None:
+                                elif psr["ECC"] is not None:
                                     ecc = psr["ECC"]
 
                                 if ecc >= 0.0 and ecc < 0.001:
@@ -2521,25 +2523,25 @@ class knopeDAG(pipeline.CondorDAG):
                     # set upper limits for creating priors
                     if self.pe_model_type == "waveform":
                         if 1.0 in self.freq_factors:
-                            if requls["C21"] == None:
+                            if requls["C21"] is None:
                                 requls["C21"] = (
                                     ulspec[self.freq_factors.index(1.0)] * scalefactor
                                 )
                         if 2.0 in self.freq_factors:
-                            if requls["C22"] == None:
+                            if requls["C22"] is None:
                                 requls["C22"] = (
                                     ulspec[self.freq_factors.index(2.0)] * scalefactor
                                 )
                     if self.pe_model_type == "source":
                         if len(self.freq_factors) == 1:
-                            if requls["H0"] == None:
+                            if requls["H0"] is None:
                                 requls["H0"] = ulspec[0] * scalefactor
                         else:
                             if 1.0 in self.freq_factors and 2.0 in self.freq_factors:
                                 # set both I21 and I31 to use the maximum of the 1f and 2f estimate
-                                if requls["I21"] == None:
+                                if requls["I21"] is None:
                                     requls["I21"] = np.max(ulspec) * scalefactor
-                                if requls["I31"] == None:
+                                if requls["I31"] is None:
                                     requls["I31"] = np.max(ulspec) * scalefactor
 
             # get amplitude prior type
@@ -2557,7 +2559,7 @@ class knopeDAG(pipeline.CondorDAG):
             if posteriorfile is None:
                 # go through required upper limits and output a Fermi-Dirac prior that also has a 95% limit at that value
                 for ult in requls:
-                    if requls[ult] == None:
+                    if requls[ult] is None:
                         print(
                             "Error... a required upper limit for '%s' is not available."
                             % ult,
@@ -3039,7 +3041,7 @@ class knopeDAG(pipeline.CondorDAG):
             )
             hetexec = self.find_exec_file("lalpulsar_heterodyne")
 
-            if hetexec == None:
+            if hetexec is None:
                 print(
                     "Error... could not find 'lalpulsar_heterodyne' in 'PATH'",
                     file=sys.stderr,
@@ -3655,7 +3657,7 @@ class knopeDAG(pipeline.CondorDAG):
 
             splexec = self.find_exec_file("lalpulsar_SplInter")
 
-            if splexec == None:
+            if splexec is None:
                 print(
                     "Error... could not find 'lalpulsar_SplInter' in 'PATH'",
                     file=sys.stderr,
@@ -4238,10 +4240,10 @@ class knopeDAG(pipeline.CondorDAG):
                     # remove original files
                     if (
                         len(finefiles) > 1 or self.engine == "splinter"
-                    ) and concatnode != None:
+                    ) and concatnode is not None:
                         rmnode = removeNode(rmjob)
 
-                        if prevfile != None:  # remove previous files
+                        if prevfile is not None:  # remove previous files
                             finefiles.append(
                                 os.path.join(
                                     self.splinter_data_location[pitem][pifo][ff],
@@ -4265,7 +4267,7 @@ class knopeDAG(pipeline.CondorDAG):
 
         value = None  # return value for failure to parse option
 
-        if cftype == None or cftype == "string" or cftype == "dir":
+        if cftype is None or cftype == "string" or cftype == "dir":
             try:
                 value = self.config.get(section, option)
             except:
@@ -4899,9 +4901,9 @@ class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
         pipeline.AnalysisJob.__init__(self, None)
 
-        if accgroup != None:
+        if accgroup is not None:
             self.add_condor_cmd("accounting_group", accgroup)
-        if accuser != None:
+        if accuser is not None:
             self.add_condor_cmd("accounting_group_user", accuser)
 
         self.add_condor_cmd("getenv", "True")
@@ -4911,14 +4913,14 @@ class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
                 self.add_condor_cmd("request_memory", requestmemory)
 
         # set log files for job
-        if logdir != None:
+        if logdir is not None:
             self.set_stdout_file(os.path.join(logdir, "heterodyne-$(cluster).out"))
             self.set_stderr_file(os.path.join(logdir, "heterodyne-$(cluster).err"))
         else:
             self.set_stdout_file("heterodyne-$(cluster).out")
             self.set_stderr_file("heterodyne-$(cluster).err")
 
-        if rundir != None:
+        if rundir is not None:
             self.set_sub_file(os.path.join(rundir, subprefix + "heterodyne.sub"))
         else:
             self.set_sub_file(subprefix + "heterodyne.sub")
@@ -5112,9 +5114,9 @@ class splinterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
         pipeline.AnalysisJob.__init__(self, None)
 
-        if accgroup != None:
+        if accgroup is not None:
             self.add_condor_cmd("accounting_group", accgroup)
-        if accuser != None:
+        if accuser is not None:
             self.add_condor_cmd("accounting_group_user", accuser)
 
         self.add_condor_cmd("getenv", "True")
@@ -5124,14 +5126,14 @@ class splinterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
                 self.add_condor_cmd("request_memory", requestmemory)
 
         # set log files for job
-        if logdir != None:
+        if logdir is not None:
             self.set_stdout_file(os.path.join(logdir, "splinter-$(cluster).out"))
             self.set_stderr_file(os.path.join(logdir, "splinter-$(cluster).err"))
         else:
             self.set_stdout_file("splinter-$(cluster).out")
             self.set_stderr_file("splinter-$(cluster).err")
 
-        if rundir != None:
+        if rundir is not None:
             self.set_sub_file(os.path.join(rundir, "splinter.sub"))
         else:
             self.set_sub_file("splinter.sub")
@@ -5285,12 +5287,12 @@ class concatJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
         pipeline.AnalysisJob.__init__(self, None)
 
-        if accgroup != None:
+        if accgroup is not None:
             self.add_condor_cmd("accounting_group", accgroup)
-        if accuser != None:
+        if accuser is not None:
             self.add_condor_cmd("accounting_group_user", accuser)
 
-        if subfile == None:
+        if subfile is None:
             print(
                 "Error... Condor sub file required for concatenation job",
                 file=sys.stderr,
@@ -5299,7 +5301,7 @@ class concatJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         else:
             self.set_sub_file(subfile)
 
-        if output == None:
+        if output is None:
             print(
                 "Error... output file required for concatenation job", file=sys.stderr
             )
@@ -5307,7 +5309,7 @@ class concatJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         else:
             self.set_stdout_file(output)
 
-        if logdir != None:
+        if logdir is not None:
             self.set_stderr_file(os.path.join(logdir, "concat-$(cluster).err"))
         else:
             self.set_stderr_file("concat-$(cluster).err")
@@ -5354,13 +5356,13 @@ class removeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
         pipeline.AnalysisJob.__init__(self, None)
 
-        if accgroup != None:
+        if accgroup is not None:
             self.add_condor_cmd("accounting_group", accgroup)
-        if accuser != None:
+        if accuser is not None:
             self.add_condor_cmd("accounting_group_user", accuser)
 
         # set log files for job
-        if logdir != None:
+        if logdir is not None:
             self.set_stdout_file(os.path.join(logdir, "rm-$(cluster).out"))
             self.set_stderr_file(os.path.join(logdir, "rm-$(cluster).err"))
         else:
@@ -5371,7 +5373,7 @@ class removeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             "-f $(macrormfiles)"
         )  # macro for input files to be removed (use "-f" to force removal)
 
-        if rundir != None:
+        if rundir is not None:
             self.set_sub_file(os.path.join(rundir, "rm.sub"))
         else:
             self.set_sub_file("rm.sub")
@@ -5417,13 +5419,13 @@ class moveJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
         pipeline.AnalysisJob.__init__(self, None)
 
-        if accgroup != None:
+        if accgroup is not None:
             self.add_condor_cmd("accounting_group", accgroup)
-        if accuser != None:
+        if accuser is not None:
             self.add_condor_cmd("accounting_group_user", accuser)
 
         # set log files for job
-        if logdir != None:
+        if logdir is not None:
             self.set_stdout_file(os.path.join(logdir, "mv-$(cluster).out"))
             self.set_stderr_file(os.path.join(logdir, "mv-$(cluster).err"))
         else:
@@ -5434,7 +5436,7 @@ class moveJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             "$(macrosource) $(macrodestination)"
         )  # macro for source and destination files
 
-        if rundir != None:
+        if rundir is not None:
             self.set_sub_file(os.path.join(rundir, "mv.sub"))
         else:
             self.set_sub_file("mv.sub")
@@ -5486,13 +5488,13 @@ class copyJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
         pipeline.AnalysisJob.__init__(self, None)
 
-        if accgroup != None:
+        if accgroup is not None:
             self.add_condor_cmd("accounting_group", accgroup)
-        if accuser != None:
+        if accuser is not None:
             self.add_condor_cmd("accounting_group_user", accuser)
 
         # set log files for job
-        if logdir != None:
+        if logdir is not None:
             self.set_stdout_file(os.path.join(logdir, "cp-$(cluster).out"))
             self.set_stderr_file(os.path.join(logdir, "cp-$(cluster).err"))
         else:
@@ -5503,7 +5505,7 @@ class copyJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
             "$(macrosource) $(macrodestination)"
         )  # macro for source and destination files
 
-        if rundir != None:
+        if rundir is not None:
             self.set_sub_file(os.path.join(rundir, "cp.sub"))
         else:
             self.set_sub_file("cp.sub")
@@ -5561,9 +5563,9 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
         pipeline.AnalysisJob.__init__(self, None)
 
-        if accgroup != None:
+        if accgroup is not None:
             self.add_condor_cmd("accounting_group", accgroup)
-        if accuser != None:
+        if accuser is not None:
             self.add_condor_cmd("accounting_group_user", accuser)
 
         self.add_condor_cmd("getenv", "True")
@@ -5573,14 +5575,14 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
                 self.add_condor_cmd("request_memory", requestmemory)
 
         # set log files for job
-        if logdir != None:
+        if logdir is not None:
             self.set_stdout_file(os.path.join(logdir, "ppe$(logname)-$(cluster).out"))
             self.set_stderr_file(os.path.join(logdir, "ppe$(logname)-$(cluster).err"))
         else:
             self.set_stdout_file("ppe$(logname)-$(cluster).out")
             self.set_stderr_file("ppe$(logname)-$(cluster).err")
 
-        if rundir != None:
+        if rundir is not None:
             self.set_sub_file(os.path.join(rundir, "ppe.sub"))
         else:
             self.set_sub_file("ppe.sub")
@@ -6042,22 +6044,22 @@ class resultpageJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
         pipeline.AnalysisJob.__init__(self, None)
 
-        if accgroup != None:
+        if accgroup is not None:
             self.add_condor_cmd("accounting_group", accgroup)
-        if accuser != None:
+        if accuser is not None:
             self.add_condor_cmd("accounting_group_user", accuser)
 
         self.add_condor_cmd("getenv", "True")
 
         # set log files for job
-        if logdir != None:
+        if logdir is not None:
             self.set_stdout_file(os.path.join(logdir, "resultpage-$(cluster).out"))
             self.set_stderr_file(os.path.join(logdir, "resultpage-$(cluster).err"))
         else:
             self.set_stdout_file("resultpage-$(cluster).out")
             self.set_stderr_file("resultpage-$(cluster).err")
 
-        if rundir != None:
+        if rundir is not None:
             self.set_sub_file(os.path.join(rundir, "resultpage.sub"))
         else:
             self.set_sub_file("resultpage.sub")
@@ -6098,22 +6100,22 @@ class collateJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
         pipeline.AnalysisJob.__init__(self, None)
 
-        if accgroup != None:
+        if accgroup is not None:
             self.add_condor_cmd("accounting_group", accgroup)
-        if accuser != None:
+        if accuser is not None:
             self.add_condor_cmd("accounting_group_user", accuser)
 
         self.add_condor_cmd("getenv", "True")
 
         # set log files for job
-        if logdir != None:
+        if logdir is not None:
             self.set_stdout_file(os.path.join(logdir, "collate-$(cluster).out"))
             self.set_stderr_file(os.path.join(logdir, "collate-$(cluster).err"))
         else:
             self.set_stdout_file("collate-$(cluster).out")
             self.set_stderr_file("collate-$(cluster).err")
 
-        if rundir != None:
+        if rundir is not None:
             self.set_sub_file(os.path.join(rundir, "collate.sub"))
         else:
             self.set_sub_file("collate.sub")
@@ -6153,15 +6155,15 @@ class nest2posJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
         pipeline.AnalysisJob.__init__(self, None)
 
-        if accgroup != None:
+        if accgroup is not None:
             self.add_condor_cmd("accounting_group", accgroup)
-        if accuser != None:
+        if accuser is not None:
             self.add_condor_cmd("accounting_group_user", accuser)
 
         self.add_condor_cmd("getenv", "True")
 
         # set log files for job
-        if logdir != None:
+        if logdir is not None:
             self.set_stdout_file(os.path.join(logdir, "n2p-$(cluster).out"))
             self.set_stderr_file(os.path.join(logdir, "n2p-$(cluster).err"))
         else:
@@ -6171,7 +6173,7 @@ class nest2posJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.add_arg("--non-strict-versions")  # force use of --non-strict-versions flag
         self.add_arg("$(macroinputfiles)")  # macro for input nested sample files
 
-        if rundir != None:
+        if rundir is not None:
             self.set_sub_file(os.path.join(rundir, "n2p.sub"))
         else:
             self.set_sub_file("n2p.sub")

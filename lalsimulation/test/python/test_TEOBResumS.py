@@ -24,10 +24,12 @@ Some functions copied from test_phenomPv3HM.py.
 """
 
 import sys
+
+import numpy as np
 import pytest
+
 import lal
 import lalsimulation
-import numpy as np
 
 # -- utility functions ---------------------
 

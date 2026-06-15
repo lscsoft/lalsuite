@@ -15,14 +15,16 @@
 # or write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import configparser
+import copy
+import io
+from optparse import OptionGroup, OptionParser
+
+import numpy as np
+
 import lal
 import lalsimulation as lalsim
-import numpy as np
-import copy
-from optparse import OptionParser, OptionGroup
 from lalsimulation import git_version
-import io
-import configparser
 
 NEW_DATA_STR = '######### NEW DATASET #############\n'
 
@@ -261,7 +263,8 @@ def writeData(filename, polarisations, optsDict):
 
     # Write the waveform data section
     fp.write('\n[waveform-data]\n')
-    line = 'epoch = %.16e\n' % hp.epoch; fp.write(line)
+    line = 'epoch = %.16e\n' % hp.epoch
+    fp.write(line)
     if optsDict['domain']=='TD':
         fp.write('hp =')
         for x in hp.data.data:

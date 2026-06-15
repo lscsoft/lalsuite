@@ -6,9 +6,10 @@ include debian/lalsuite.mk
 DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 TEST_FOR_GNU_TYPE := x86_64-linux-gnu
 
+ifeq ($(DEB_BUILD_GNU_TYPE),$(TEST_FOR_GNU_TYPE))
 override_dh_auto_test:
-	if [ $(DEB_BUILD_GNU_TYPE) = $(TEST_FOR_GNU_TYPE) ]; then \
-	    dh_auto_test; \
-	else \
-	    echo Tests skipped for non-X86_64 architecture; \
-	fi
+	dh_auto_test
+else
+override_dh_auto_test:
+	echo Tests skipped for non-X86_64 architecture
+endif

@@ -30,15 +30,10 @@ import os.path
 import sys
 from optparse import OptionParser
 
-
 import igwn_segments as segments
-
-
 from lal.utils import CacheEntry
 
-
 from lal import git_version
-
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id

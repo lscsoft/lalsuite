@@ -19,10 +19,12 @@
 """
 
 import sys
+
+import numpy as np
 import pytest
+
 import lal
 import lalsimulation
-import numpy as np
 
 # -- utility functions ---------------------
 
@@ -46,10 +48,10 @@ def gen_test_data(spin1x, approximant, mode_array,  lalparams = None, type='bbh'
 
     """
 
-    if(lalparams == None):
+    if(lalparams is None):
         lalparams = lal.CreateDict()
 
-    if(mode_array!=None):
+    if(mode_array is not None):
         ModeArray = lalsimulation.SimInspiralCreateModeArray()
         for mode in mode_array:
             lalsimulation.SimInspiralModeArrayActivateMode(ModeArray, mode[0], mode[1])

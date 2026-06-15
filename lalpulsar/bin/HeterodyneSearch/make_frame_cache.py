@@ -6,10 +6,11 @@ times
 
 from __future__ import print_function
 
+import getopt
+import os
+
 # import modules
 import sys
-import os
-import getopt
 
 # program usage
 

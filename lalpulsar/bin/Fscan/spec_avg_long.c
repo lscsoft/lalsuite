@@ -20,7 +20,7 @@
 
 /**
 * \file
-* \ingroup lalpulsar_bin_fscan
+* \ingroup lalpulsar_bin_Tools
 */
 
 #include "config.h"

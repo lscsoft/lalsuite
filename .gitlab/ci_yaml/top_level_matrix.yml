@@ -1,0 +1,92 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: top-level build matrices
+# ----------------------------------------------------------------------
+
+lalsuite:linux:
+  extends:
+    - .top-level-job
+    - .linux-job
+  parallel:
+    matrix:
+
+      # --- Platforms --------------------------------------------------
+
+      # Enterprise Linux
+      - LCI_PLAT: "el8"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=rpm"
+        LCI_JOB_TYPE: ["push", "merge", "sched-devimg"]
+
+      # Debian
+      - LCI_PLAT: "bookworm"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=deb"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      # Ubuntu
+      - LCI_PLAT: "noble"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=deb"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      # Conda
+      - LCI_PLAT: "conda-py313"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=conda"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      # --- Compilers --------------------------------------------------
+
+      # GCC
+      - LCI_PLAT: "gcc-latest"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=deb CFLAGS=-O3"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      - LCI_PLAT: "gcc-14"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=deb CFLAGS=-O3"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      - LCI_PLAT: "gcc-13"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=deb CFLAGS=-O3"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      - LCI_PLAT: "gcc-12"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=deb CFLAGS=-O3"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      # Clang
+      - LCI_PLAT: "clang-latest"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=deb"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      - LCI_PLAT: "clang-22"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=deb"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      - LCI_PLAT: "clang-21"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=deb"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+      - LCI_PLAT: "clang-20"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=deb"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+lalsuite:macos-x86-64:
+  extends:
+    - .top-level-job
+    - .macos-x86-64-job
+  parallel:
+    matrix:
+
+      # Conda
+      - LCI_PLAT: "no-container"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=conda"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+
+lalsuite:macos-arm64:
+  extends:
+    - .top-level-job
+    - .macos-arm64-job
+  parallel:
+    matrix:
+
+      # Conda
+      - LCI_PLAT: "no-container"
+        LCI_ENV: "LCI_BLD=make LCI_PKG=conda"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]

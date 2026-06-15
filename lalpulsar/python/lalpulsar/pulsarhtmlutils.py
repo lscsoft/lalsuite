@@ -27,10 +27,10 @@ Some helper classes and functions for outputing html and LaTeX pages
 
 from __future__ import print_function
 
-import re
-import numpy as np
 import math
+import re
 
+import numpy as np
 from lalpulsar.pulsarpputils import rad_to_dms, rad_to_hms
 
 # some parameter names for special LaTeX treatment in figures
@@ -943,7 +943,7 @@ class latextable:
 
     def addhrule(self, rowidx=None):
         # add horizontal rule
-        if rowidx == None:  # add horizontal rule as new row
+        if rowidx is None:  # add horizontal rule as new row
             self.addrow(underline=True)
         else:
             self._rows[rowidx]["underline"] = True

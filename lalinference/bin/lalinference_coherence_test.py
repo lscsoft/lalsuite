@@ -6,13 +6,16 @@ given as input the B files for the run.
 
 from __future__ import print_function
 
-from optparse import OptionParser
-import sys
 import os
+import sys
+from optparse import OptionParser
+
 import matplotlib
+
 matplotlib.use("Agg")
+from math import exp, log
+
 from pylab import loadtxt
-from math import log,exp
 
 usage='''%prog [options] coherent_B.txt incoherent1_B.txt incoherent2_B.txt ... incoherentN_B.txt
 %prog takes a list of arguments which specify FIRST the coherent B.txt file, followed by all the
@@ -75,7 +78,8 @@ if len(incofiles)==0:
 	sys.exit(1)
 
 def logadd(a,b):
-    if(a>b): (a,b)=(b,a)
+    if(a>b):
+        (a,b)=(b,a)
     return (b+log(1+exp(a-b)))
 
 def get_metadata_old(Bfile,key):
@@ -108,6 +112,7 @@ Z_single_signal = [ get_metadata(inco,'log_evidence') for inco in incofiles]
 # sum over all posible permutations over mutually exclusive sub propositions
 
 from itertools import combinations
+
 try:
     from scipy.special import logsumexp
 except ImportError:  # scipy < 0.19.0

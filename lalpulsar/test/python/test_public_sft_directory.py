@@ -15,10 +15,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import sys
+
 import pytest
-
 from lalpulsar.public_sft_directory import public_sft_directory
-
 
 SFT_FILENAME_TO_DIRECTORY = (
     (

@@ -20,13 +20,12 @@ in a dictionary-like way.
 
 """
 
-from __future__ import division, absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import os
 import re
 
 import numpy as np
-
 from astropy import units as u
 
 import lal
@@ -446,7 +445,7 @@ class PulsarParametersPy(object):
 
         Args:
             name (str): a parameter name
-            value (float, list, :class:`numpy.ndarray`): the value of the parameter
+            value (float|list|:class:`numpy.ndarray`): the value of the parameter
             iserr (bool): state whether where converting the parameter's error value
 
         Returns:

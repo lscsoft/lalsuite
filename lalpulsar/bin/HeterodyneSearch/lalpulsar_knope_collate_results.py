@@ -27,29 +27,30 @@
 The KNOwn Pulsar pipelinE - lalpulsar_knope_collate_results
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function
 
 # standard library imports
 import argparse
 import ast
-import json
 import datetime
+import json
 import os
 import re
 import sys
 from configparser import ConfigParser
 
+import matplotlib
+
 # related third party imports
 import numpy as np
-
-import matplotlib
 
 matplotlib.use("Agg")
 
 # local application/library specific imports
-from lalpulsar import git_version
-from lalpulsar.pulsarpputils import *
 from lalpulsar.pulsarhtmlutils import *
+from lalpulsar.pulsarpputils import *
+
+from lalpulsar import git_version
 
 __author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__ = "git id {}".format(git_version.id)
@@ -261,7 +262,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
             if ".json" == os.path.splitext(fd)[-1]:
                 jsonfile = os.path.join(d, fd)
                 break
-        if jsonfile == None:  # no file found, so move on to next directory
+        if jsonfile is None:  # no file found, so move on to next directory
             continue
 
         # read in json file
@@ -512,7 +513,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
             # set footnotes for pulsar's that have had a "corrected" spin-down
             if "SDLIM" in prepar:
                 if (
-                    pulsar["Pulsar data"]["P1_I"] != None
+                    pulsar["Pulsar data"]["P1_I"] is not None
                 ):  # spin-down has been corrected for intrinsic motion effects
                     if (
                         pulsar["Pulsar data"]["P1_I"] > 0.0
@@ -520,7 +521,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
                         htmlsdtag = htmltag("sup", tagtext="&dagger;").text
                         latexsdtag = r"$\dagger$"
                         dagger = True
-                elif pulsar["Pulsar data"]["ASSOC"] != None:
+                elif pulsar["Pulsar data"]["ASSOC"] is not None:
                     if "GC" in pulsar["Pulsar data"]["ASSOC"]:
                         htmlsdtag = htmltag("sup", tagtext="&Dagger;").text
                         latexsdtag = r"$\ddagger$"
@@ -532,7 +533,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
                 pn = prepar
             if pn in pulsar["Pulsar data"]:
                 preval = pulsar["Pulsar data"][pn]
-                if preval == None:
+                if preval is None:
                     prevalhtml = "*"
                     prevallatex = "*"
                 else:
@@ -565,7 +566,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
                 if ln in pulsar[ifo][section]:
                     limval = pulsar[ifo][section][ln]
 
-                    if limval == None:
+                    if limval is None:
                         limvalhtml = "*"
                         limvallatex = "*"
                     else:
@@ -590,7 +591,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
                         bn = convdict[bu]
                         if bn in pulsar[ifo]["Bayes factors"]:
                             bval = pulsar[ifo]["Bayes factors"][bn]
-                            if bval == None:
+                            if bval is None:
                                 bvalhtml = "*"
                                 bvallatex = "*"
                             else:

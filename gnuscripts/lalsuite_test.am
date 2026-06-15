@@ -44,11 +44,10 @@ test_script_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
 test_script_runner_args = --verbose '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
 EXTRA_DIST += $(test_script_runner)
 
-test_script_compiler = $(test_script_runner) $(test_script_runner_args)
-
-SH_LOG_COMPILER = $(test_script_compiler) $(SHELL)
-M_LOG_COMPILER = $(test_script_compiler) "$(OCTAVE)" -fH
-PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)" -u
+LOG_COMPILER = $(test_script_compiler)
+SH_LOG_COMPILER = $(test_script_compiler) $(test_script_runner) $(test_script_runner_args) $(SHELL)
+M_LOG_COMPILER = $(test_script_compiler) $(test_script_runner) $(test_script_runner_args) "$(OCTAVE)" -fH
+PY_LOG_COMPILER = $(test_script_compiler) $(test_script_runner) $(test_script_runner_args) "$(PYTHON)" -u
 
 test-mostlyclean-local:
 	-rm -rf __pycache__ .pytest_cache junit*.xml

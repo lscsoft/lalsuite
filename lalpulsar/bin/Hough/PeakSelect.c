@@ -19,7 +19,7 @@
 
 /**
  * \file PeakSelect.c
- * \ingroup lalpulsar_bin_Hough
+ * \ingroup lalpulsar_bin_Apps
  * \author Sintes, A.M. and Krishnan, B.
  * \brief Functions for selecting peaks from SFTs.
  *

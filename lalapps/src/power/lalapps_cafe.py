@@ -33,12 +33,10 @@ LIGO Light-Weight XML Coincidence Analysis Front End.
 
 from optparse import OptionParser
 
-
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
-from lalburst import git_version
-from lalburst import cafe
 
+from lalburst import cafe, git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id

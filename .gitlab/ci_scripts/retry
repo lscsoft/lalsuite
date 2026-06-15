@@ -1,0 +1,139 @@
+#!/bin/sh
+
+# ----------------------------------------------------------------------
+# Run a command up to 5 times with delays, mainly to survive transient
+# network issues. The delay starts at --delay seconds, and increases by
+# --delay seconds after each retry. If all retried commands fail, exit
+# with a given exit code.
+#
+# Usage:
+#   retry [--exit-code <exit-code>]
+#         [--max-try <2--5>]
+#         [--delay <delay-seconds>]
+#         [--exit-patt <awk-pattern>]
+#         [--cleanup-cmd <cleanup-command>]
+#         [--]
+#         <command> <args>...
+#
+# Options:
+##   --exit-code:
+#       Exit code if all retries fail (1--255, default: 111).
+#   --max-try:
+#       How many times to try <command> (2--5, default: 3).
+#   --delay:
+#       How long to delay (in seconds, default: 15) after first failure;
+#       added cumulatively for subsequent failures.
+#   --exit-patt:
+#       Fail if <awk-pattern> is detected in the output of <command>. A
+#       default pattern may also be set using the $RETRY_EXIT_PATT
+#       environment variable.
+#   --cleanup-cmd:
+#       Run <cleanup-command> before retrying <command>. A default
+#       cleanup command may also be set using the $RETRY_CLEANUP_CMD
+#       environment variable.
+# ----------------------------------------------------------------------
+
+set -e
+
+exitcode=111
+max=3
+delay_base=15
+awkprog="{print}"
+if [ "X${RETRY_EXIT_PATT}" != X ]; then
+    awkprog="${awkprog} ${RETRY_EXIT_PATT} {exit ${exitcode}}"
+fi
+cleanup="${RETRY_CLEANUP_CMD}"
+
+while true; do
+    case "$1" in
+        --exit-code)
+            shift
+            if [ 1 -le $1 ] && [ $1 -le 255 ]; then
+                exitcode=$1
+            else
+                echo "$0: expected 1--255 as argument to --exit-code; got '$1'" >&2
+                exit 1
+            fi
+            shift
+            ;;
+        --max-try)
+            shift
+            if [ 2 -le $1 ] && [ $1 -le 5 ]; then
+                max=$1
+            else
+                echo "$0: expected 2--5 as argument to --max-try; got '$1'" >&2
+                exit 1
+            fi
+            shift
+            ;;
+        --delay)
+            shift
+            if [ "$1" -eq "$1" ] 2>/dev/null; then
+                delay_base=$1
+            else
+                echo "$0: expected an integer as argument to ----delay; got '$1'" >&2
+                exit 1
+            fi
+            shift
+            ;;
+        --exit-patt)
+            shift
+            awkprog="${awkprog} $1 {exit ${exitcode}}"
+            shift
+            ;;
+        --cleanup-cmd)
+            shift
+            if [ "X${cleanup}" != X ]; then
+                cleanup="${cleanup}; $1"
+            else
+                cleanup="$1"
+            fi
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+n=1
+delay=${delay_base}
+
+while true; do
+
+    tmpdir=$(mktemp -d "${LCI_TMPDIR}/retry.XXXXXX")
+    fifo="${tmpdir}/fifo"
+    mkfifo "${fifo}"
+    "$@" >"${fifo}" 2>&1 &
+    pid=$!
+    awk "${awkprog}" < "${fifo}"
+    wait ${pid} && ec=0 || ec=$?
+    rm -f "${fifo}"
+
+    if [ ${ec} -eq 0 ]; then
+        break
+    elif [ ${ec} -eq 77 ]; then
+        echo "$0: command exited with code 77, will not retry" >&2
+        exit ${ec}
+    else
+        if [ ${n} -lt ${max} ]; then
+            n=$((n+1))
+            echo "$0: command failed: $@"
+            if [ "X${cleanup}" != X ]; then
+                echo "$0: cleaning up: ${cleanup}"
+                eval ${cleanup}
+            fi
+            echo "$0: sleeping for ${delay} seconds..."
+            sleep ${delay}
+            delay=$((delay+${delay_base}))
+            echo "$0: attempt ${n}/${max}: $@"
+        else
+            echo "$0: command failed after ${n} attempts: $@" >&2
+            exit ${exitcode}
+        fi
+    fi
+done

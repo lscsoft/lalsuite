@@ -9,22 +9,26 @@ $Id:$
 """
 
 import matplotlib as mpl
+
 mpl.use('Agg')
+import gzip
+import os
+import pickle
+import sys
+import time
+from optparse import OptionParser
+
+import lalinference.imrtgr.imrtgrutils as tgr
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+from matplotlib import rc
 from scipy import interpolate
-from optparse import OptionParser
-import time, os
-import lalinference.imrtgr.imrtgrutils as tgr
-import pickle, gzip
-import sys
+from scipy.stats import gaussian_kde  #rahul: for KDE implementation
+
 from lalinference import git_version
 
-from scipy.stats import gaussian_kde   #rahul: for KDE implementation
-
-from matplotlib import rc
-import matplotlib
 matplotlib.rc('text.latex', preamble=r'\usepackage{txfonts}')
 
 rc('text', usetex=True)
@@ -206,7 +210,7 @@ if __name__ == '__main__':
   chi2z_inj = options.chi2z_inj
   phi12_inj = options.phi12_inj
 
-  if m1_inj == None or m2_inj == None or chi1_inj == None or chi2_inj == None or chi1z_inj == None or chi2z_inj == None or phi12_inj == None:
+  if m1_inj is None or m2_inj is None or chi1_inj is None or chi2_inj is None or chi1z_inj is None or chi2z_inj is None or phi12_inj is None:
     plot_injection_lines = False
   else:
     m1_inj = float(m1_inj)
@@ -299,17 +303,22 @@ if __name__ == '__main__':
     print('replacing lal P(Mfaf) with its KDE pdf')
     M_i,C_i=np.meshgrid(Mf_intp,chif_intp)
 
-    joint_data=np.vstack([Mf_i,chif_i]);kernel=gaussian_kde(joint_data)
+    joint_data=np.vstack([Mf_i,chif_i])
+    kernel=gaussian_kde(joint_data)
     f_i = lambda x,y:kernel.evaluate([x,y])
     print("for inspiral kernel",kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim]))
     P_Mfchif_i = np.vectorize(f_i)(M_i,C_i)/kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim])
 
-    joint_data=np.vstack([Mf_r,chif_r]);kernel=gaussian_kde(joint_data)#;M_i,C_i=np.meshgrid(Mf_bins,chif_bins)
+    joint_data=np.vstack([Mf_r,chif_r])
+    kernel=gaussian_kde(joint_data)
+    #M_i,C_i=np.meshgrid(Mf_bins,chif_bins)
     f_r = lambda x,y:kernel.evaluate([x,y])
     print("for post-inspiral kernel",kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim]))
     P_Mfchif_r = np.vectorize(f_r)(M_i,C_i)/kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim])
 
-    joint_data=np.vstack([Mf_imr,chif_imr]);kernel=gaussian_kde(joint_data)#;M_i,C_i=np.meshgrid(Mf_bins,chif_bins)
+    joint_data=np.vstack([Mf_imr,chif_imr])
+    kernel=gaussian_kde(joint_data)
+    #M_i,C_i=np.meshgrid(Mf_bins,chif_bins)
     f_imr = lambda x,y:kernel.evaluate([x,y])
     print("for imr kernel",kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim]))
     P_Mfchif_imr = np.vectorize(f_imr)(M_i,C_i)/kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim])

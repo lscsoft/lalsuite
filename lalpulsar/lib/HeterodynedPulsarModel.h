@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 /**
- * \ingroup lalpulsar
+ * \ingroup lalpulsar_inject
  * \author Matthew Pitkin
  * \date 2018
  *

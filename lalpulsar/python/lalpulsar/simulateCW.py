@@ -74,10 +74,10 @@ for file, i, N in S.write_frame_files(fs=1, Tframe=1800, comment="simCW"):
 
 from __future__ import division, print_function
 
-import os
-import sys
-import re
 import math
+import os
+import re
+import sys
 
 import lal
 import lalpulsar

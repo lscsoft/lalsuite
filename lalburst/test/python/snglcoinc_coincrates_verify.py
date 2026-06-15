@@ -1,10 +1,9 @@
-from numpy.testing import assert_allclose
 import sys
 import unittest
-import warnings
+
+from numpy.testing import assert_allclose
 
 from lalburst import snglcoinc
-
 
 # FIXME:  make this more strict when we can rely on a new-enough scipy
 rtol = 1e-3

@@ -26,17 +26,15 @@
 #
 
 
-from optparse import OptionParser
 import sys
-
+from optparse import OptionParser
 
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
-from lalburst import git_version
-from lalburst import burca
 from igwn_segments import utils as segmentsUtils
 
+from lalburst import burca, git_version
 
 process_program_name = "lalburst_coinc"
 

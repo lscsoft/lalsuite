@@ -18,10 +18,12 @@
 #Simple test to see if the PhenomT family models have changed: IMRPhenomT, IMRPhenomTHM, IMRPhenomTP and IMRPhenomTPHM.
 
 import sys
+
+import numpy as np
 import pytest
+
 import lal
 import lalsimulation
-import numpy as np
 
 # -- utility functions ---------------------
 
@@ -40,15 +42,15 @@ def gen_test_data(spin1x, approximant, mode_array, PV, FS):
     """
     lalparams = lal.CreateDict()
 
-    if(mode_array!=None):
+    if(mode_array is not None):
         ModeArray = lalsimulation.SimInspiralCreateModeArray()
         for mode in mode_array:
             lalsimulation.SimInspiralModeArrayActivateMode(ModeArray, mode[0], mode[1])
         lalsimulation.SimInspiralWaveformParamsInsertModeArray(lalparams, ModeArray)
 
-    if PV!=None:
+    if PV is not None:
         lalsimulation.SimInspiralWaveformParamsInsertPhenomXPrecVersion(lalparams, PV)
-    if FS!=None:
+    if FS is not None:
         lalsimulation.SimInspiralWaveformParamsInsertPhenomXPFinalSpinMod(lalparams, FS)
 
     common_pars=dict(

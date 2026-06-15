@@ -6,8 +6,5 @@ EXTRA_DIST = \
 	deactivate-lalsimulation.csh \
 	deactivate-lalsimulation.sh \
 	meta.yaml.in \
-	$(END_OF_LIST)
-
-SUBDIRS = \
 	migrations \
 	$(END_OF_LIST)

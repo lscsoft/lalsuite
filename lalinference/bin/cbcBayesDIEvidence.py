@@ -25,10 +25,12 @@
 #
 #
 
+from optparse import OptionParser
+
 import numpy as np
+
 from lalinference import bayespputils as bp
 from lalinference import git_version
-from optparse import OptionParser
 
 __author__="Will M. Farr <will.farr@ligo.org>"
 __version__="git id %s"%git_version.id

@@ -21,13 +21,16 @@ __email__ = "michalis.agathos@ligo.org"
 __version__ = "1.0.0"
 __status__ = "Production"
 
-import matplotlib as mpl
 import argparse
 import os
-import sys
 import random as rd
+import sys
+
+import matplotlib as mpl
+
 mpl.use('Agg')
 from pylab import *
+
 py_version = sys.version_info[:2]
 np_version = np.__version__
 

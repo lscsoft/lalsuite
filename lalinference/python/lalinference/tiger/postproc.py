@@ -30,21 +30,51 @@ hatch_default = ['..','//','||']
 ###############################################################################
 
 from configparser import ConfigParser
-from pickle import dump, load
 from datetime import datetime
-from itertools import combinations
-from itertools import cycle
-from matplotlib import use, rcParams, __version__ as mpl_version
+from itertools import combinations, cycle
+from pickle import dump, load
+
+from matplotlib import __version__ as mpl_version
+from matplotlib import rcParams, use
+
 use('Agg')
+from os import R_OK, access, makedirs, path
+from re import findall
+from subprocess import PIPE, Popen
+from sys import exit, float_info, stdout, version_info
+from time import time
+
 from matplotlib.pyplot import clf, figure
-from os import access, path, R_OK, makedirs
+from numpy import (
+	append,
+	arange,
+	argmax,
+	argsort,
+	array,
+	array_split,
+	column_stack,
+	concatenate,
+	empty,
+	exp,
+	hstack,
+	loadtxt,
+	log,
+	max,
+	min,
+	random,
+	reshape,
+	savetxt,
+	shape,
+	size,
+	sort,
+	sqrt,
+	subtract,
+	sum,
+	vstack,
+	zeros,
+)
 from scipy.stats import ks_2samp
 from scipy.stats.mstats import mquantiles
-from subprocess import Popen, PIPE
-from sys import exit, stdout, version_info, float_info
-from time import time
-from numpy import sqrt, array, empty, hstack, min, max, reshape, shape, loadtxt, vstack, append, arange, random, column_stack, concatenate, savetxt, log, exp, size, zeros, argmax, argsort, sort, sum, subtract, array_split
-from re import findall
 
 py_version = version_info[:2]
 if py_version < (2, 7):
@@ -119,14 +149,14 @@ def main():
 				type=str, help='preprocess data before sending to main script (NB: NOT WORKING!)')
 		args = parser.parse_args()
 
-	if (args.configfile == None) and (args.examplecfg == None) and (args.preprocessfile == None):
+	if (args.configfile is None) and (args.examplecfg is None) and (args.preprocessfile is None):
 		exit("Specify either -c/--config, -g/--generate or -p/--preprocess")
-	elif (args.configfile != None):
+	elif (args.configfile is not None):
 		stdout.write("****************************************\nTIGER post-process\n%s\n****************************************\n" % args.configfile)
 		TigerPostProcess(args.configfile)
-	elif (args.examplecfg != None):
+	elif (args.examplecfg is not None):
 		TigerCreateExampleConfigFile(args.examplecfg)
-	elif (args.preprocessfile != None):
+	elif (args.preprocessfile is not None):
 		TigerPreProcess(args.preprocessfile)
 	else:
 		exit('Unknown options - check input')
@@ -642,7 +672,7 @@ class TigerRun:
 				p = Popen(command, stdout=PIPE, stderr=PIPE,shell=True)
 				self.bayes.extend(loadtxt(p.stdout, usecols=[0]))
 			self.bayes = reshape(self.bayes, (self.nsources,len(self.subhyp)))
-			savetxt('test.dat',self.bayes);
+			savetxt('test.dat',self.bayes)
 		stdout.write("... pulling Bayes factors: %s\t%s - %d x %d dimension\n" % (self.cluster,self.directory, shape(self.bayes)[0],shape(self.bayes)[1]))
 
 	def pullsnr(self):

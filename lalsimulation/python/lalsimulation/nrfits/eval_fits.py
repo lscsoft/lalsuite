@@ -3,14 +3,16 @@
 
 Vijay Varma, 2019.
 """
-import numpy as np
 import warnings
+
+import numpy as np
 
 from lal import MSUN_SI
 
-from .NRSur7dq4Remnant import NRSur7dq4Remnant
-from .NRSur3dq8Remnant import NRSur3dq8Remnant
 from . import quaternion_utils
+from .NRSur3dq8Remnant import NRSur3dq8Remnant
+from .NRSur7dq4Remnant import NRSur7dq4Remnant
+
 
 #=============================================================================
 class FitAttributes(object):

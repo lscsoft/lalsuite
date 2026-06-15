@@ -29,7 +29,7 @@
 
 /**
  * \defgroup LALInferenceReadData_h Header LALInferenceReadData.h
- * \ingroup pkg_LALInference
+ * \ingroup lalinference_general
  * \brief Utility functions for handling IFO data
  */
 /** @{ */

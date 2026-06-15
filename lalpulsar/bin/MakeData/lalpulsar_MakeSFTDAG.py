@@ -22,23 +22,22 @@
 ## \ingroup lalpulsar_bin_SFTTools
 """Creates DAGs to run jobs that generates SFTs"""
 
-import math
 import argparse
+import math
 import os
 import re
 from pathlib import Path
 from urllib.parse import urlparse
 
 from gwdatafind import find_urls
-from gwdatafind.utils import filename_metadata, file_segment
-
+from gwdatafind.utils import file_segment, filename_metadata
 from igwn_segments import segment, segmentlist
 
 from lalpulsar import (
-    git_version,
-    SFTFilenameSpec,
-    FillSFTFilenameSpecStrings,
     BuildSFTFilenameFromSpec,
+    FillSFTFilenameSpecStrings,
+    SFTFilenameSpec,
+    git_version,
 )
 
 __author__ = "Evan Goetz <evan.goetz@ligo.org>, Greg Mendell"

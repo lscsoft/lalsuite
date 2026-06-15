@@ -23,10 +23,7 @@ AC_SUBST([LIBCURRENT],[25])
 AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[5])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
-AS_CASE([${host_os}],
-  [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR],[${LIBCURRENT}])],
-  [AC_SUBST([LIBMAJOR],[$((LIBCURRENT-LIBAGE))])]
-)
+AC_SUBST([LIBMAJOR],[$((LIBCURRENT-LIBAGE))])
 
 # set library api info - liblalsupport
 # 1. start with version information of "0:0:0" for each libtool library
@@ -46,10 +43,7 @@ AC_SUBST([LIBCURRENT_SUPPORT],[18])
 AC_SUBST([LIBREVISION_SUPPORT],[1])
 AC_SUBST([LIBAGE_SUPPORT],[4])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
-AS_CASE([${host_os}],
-  [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR_SUPPORT],[${LIBCURRENT_SUPPORT}])],
-  [AC_SUBST([LIBMAJOR_SUPPORT],[$((LIBCURRENT_SUPPORT-LIBAGE_SUPPORT))])]
-)
+AC_SUBST([LIBMAJOR_SUPPORT],[$((LIBCURRENT_SUPPORT-LIBAGE_SUPPORT))])
 
 
 # configure files
@@ -59,7 +53,6 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
-  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblal${LIBMAJOR}.install:debian/liblal.install.in \
@@ -140,7 +133,6 @@ LALSUITE_ENABLE_STRICT_DEFS
 LAL_WITH_DEFAULT_DEBUG_LEVEL
 LAL_ENABLE_MEMORY_FUNCTIONS
 LAL_ENABLE_PTHREAD_LOCK
-LALSUITE_ENABLE_NIGHTLY
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
@@ -363,6 +355,7 @@ AC_MSG_NOTICE([
 ==================================================
 LAL has now been successfully configured:
 
+* Version: $VERSION
 * Python support is $PYTHON_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * HDF5 support is $HDF5_ENABLE_VAL

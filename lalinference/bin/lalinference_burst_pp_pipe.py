@@ -7,14 +7,13 @@ from __future__ import print_function
 import os
 import sys
 import uuid
+from configparser import ConfigParser
 from optparse import OptionParser
 
-from configparser import ConfigParser
+from lalinference.lalinference_pipe_utils import mkdirs
 
 from lal import pipeline
-
 from lalinference import lalinference_pipe_utils as pipe_utils
-from lalinference.lalinference_pipe_utils import mkdirs
 
 usage=""" %prog [options] config.ini
 Setup a DAG to run an end-to-end lalinference test:

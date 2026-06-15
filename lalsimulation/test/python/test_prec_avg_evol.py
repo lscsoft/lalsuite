@@ -20,9 +20,9 @@ Based on test_nrfits.py
 """
 
 import sys
-import pytest
-import numpy as np
 
+import numpy as np
+import pytest
 from lalsimulation.tilts_at_infinity import prec_avg_tilt_comp
 
 # -- regression data for tilts at infinity ---------------------

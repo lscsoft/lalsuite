@@ -27,16 +27,15 @@
 
 
 import math
-from optparse import OptionParser
 import sys
-from tqdm import tqdm
-from PIL import Image
+from optparse import OptionParser
 
-
-from igwn_ligolw import ligolw
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
+from PIL import Image
+from tqdm import tqdm
+
 import lalburst
 import lalmetaio
 import lalsimulation

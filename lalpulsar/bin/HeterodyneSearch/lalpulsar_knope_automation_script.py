@@ -13,20 +13,20 @@ automatically update the times in the configuration file.
 """
 
 # make print statements python 3-proof
-from __future__ import print_function, division
-
-import sys
-import os
-import ast
-import calendar
-import numpy as np
-import subprocess as sp
-import socket
-import smtplib
-import stat
+from __future__ import division, print_function
 
 import argparse
+import ast
+import calendar
+import os
+import smtplib
+import socket
+import stat
+import subprocess as sp
+import sys
 from configparser import RawConfigParser
+
+import numpy as np
 
 from lalpulsar import git_version
 
@@ -213,7 +213,7 @@ A configuration .ini file is required.
             email = None
 
     # set email server
-    if email != None:
+    if email is not None:
         try:
             server = smtplib.SMTP("localhost")
         except:
@@ -224,7 +224,7 @@ A configuration .ini file is required.
 
     # set email sender (if this fails maybe just hardcode sender to be 'matthew.pitkin@ligo.org')
     FROM = None
-    if email != None:
+    if email is not None:
         try:
             HOST = socket.getfqdn()
             USER = os.environ["USER"]
@@ -254,7 +254,7 @@ A configuration .ini file is required.
             errmsg = "Error... no previous DAG file(s) have been set."
             print(errmsg, file=sys.stderr)
             remove_cron(cronid)  # remove cron job
-            if email != None:
+            if email is not None:
                 subject = sys.argv[0] + ": Error message"
                 send_email(FROM, email, subject, errmsg, server)
             sys.exit(1)
@@ -301,7 +301,7 @@ A configuration .ini file is required.
                 )
                 print(errmsg, file=sys.stderr)
                 remove_cron(cronid)
-                if email != None:
+                if email is not None:
                     subject = sys.argv[0] + ": Error message"
                     send_email(FROM, email, subject, errmsg, server)
                 sys.exit(1)
@@ -324,7 +324,7 @@ A configuration .ini file is required.
                 errmsg = "Error... rescue DAG has been run twice and there are still failures. Automation code is aborting. Fix the problem and then retry"
                 print(errmsg, file=sys.stderr)
                 remove_cron(cronid)  # remove cron job
-                if email != None:
+                if email is not None:
                     subject = sys.argv[0] + ": Error message"
                     send_email(FROM, email, subject, errmsg, server)
                 sys.exit(1)
@@ -345,7 +345,7 @@ A configuration .ini file is required.
                     % prevdags[-1]
                 )
                 remove_cron(cronid)  # remove cron job
-                if email != None:
+                if email is not None:
                     subject = sys.argv[0] + ": Error message"
                     send_email(FROM, email, subject, errmsg, server)
                 sys.exit(1)
@@ -395,7 +395,7 @@ A configuration .ini file is required.
                 errmsg = "Error... could not reset the crontab to wait for rescue DAG completion."
                 print(errmsg, file=sys.stderr)
                 remove_cron(cronid)
-                if email != None:
+                if email is not None:
                     subject = sys.argv[0] + ": Error message"
                     send_email(FROM, email, subject, errmsg, server)
                 sys.exit(1)
@@ -407,7 +407,7 @@ A configuration .ini file is required.
         except:
             errmsg = "Error... could not parse 'starttime' in '[times]'. A start time is required."
             print(errmsg, file=sys.stderr)
-            if email != None:
+            if email is not None:
                 subject = sys.argv[0] + ": Error message"
                 send_email(FROM, email, subject, errmsg, server)
             if not startcron:
@@ -418,7 +418,7 @@ A configuration .ini file is required.
     if starttime >= gpsnow:
         errmsg = "Error... start time (%f) must be in the past!" % starttime
         print(errmsg, file=sys.stderr)
-        if email != None:
+        if email is not None:
             subject = sys.argv[0] + ": Error message"
             send_email(FROM, email, subject, errmsg, server)
         if not startcron:
@@ -444,7 +444,7 @@ A configuration .ini file is required.
         print(errmsg, file=sys.stderr)
         if not startcron:
             remove_cron(cronid)  # remove cron job
-        if email != None:
+        if email is not None:
             subject = sys.argv[0] + ": Error message"
             send_email(FROM, email, subject, errmsg, server)
         sys.exit(1)
@@ -467,7 +467,7 @@ A configuration .ini file is required.
             print(errmsg, file=sys.stderr)
             if startcron:
                 remove_cron(cronid)  # remove cron job
-            if email != None:
+            if email is not None:
                 subject = sys.argv[0] + ": Error message"
                 send_email(FROM, email, subject, errmsg, server)
             sys.exit(1)
@@ -520,7 +520,7 @@ A configuration .ini file is required.
                 % runscript
             )
             print(errmsg, file=sys.stderr)
-            if email != None:
+            if email is not None:
                 subject = sys.argv[0] + ": Error message"
                 send_email(FROM, email, subject, errmsg, server)
             sys.exit(1)
@@ -529,7 +529,7 @@ A configuration .ini file is required.
         print(errmsg, file=sys.stderr)
         if not startcron:
             remove_cron(cronid)  # remove cron job
-        if email != None:
+        if email is not None:
             subject = sys.argv[0] + ": Error message"
             send_email(FROM, email, subject, errmsg, server)
         sys.exit(1)
@@ -549,7 +549,7 @@ A configuration .ini file is required.
             "analysis", "dag_name", dagname
         )  # add this dag file name to the automation code configuration script (to be used to check for DAG completion)
 
-        if prevdags != None:
+        if prevdags is not None:
             # add on new DAG file to list
             prevdags.append(os.path.join(rundir, dagname + ".dag"))
             cp.set(
@@ -579,7 +579,7 @@ A configuration .ini file is required.
         print(errmsg, file=sys.stderr)
         if not startcron:
             remove_cron(cronid)
-        if email != None:
+        if email is not None:
             subject = sys.argv[0] + ": Error message"
             send_email(FROM, email, subject, errmsg, server)
         sys.exit(1)
@@ -700,7 +700,7 @@ source {0} # source profile
         except:
             errmsg = "Error... could not create crontab job"
             print(errmsg, file=sys.stderr)
-            if email != None:
+            if email is not None:
                 subject = sys.argv[0] + ": Error message"
                 send_email(FROM, email, subject, errmsg, server)
             sys.exit(1)
@@ -717,7 +717,7 @@ source {0} # source profile
         print(errmsg, file=sys.stderr)
         if not startcron:
             remove_cron(cronid)
-        if email != None:
+        if email is not None:
             subject = sys.argv[0] + ": Error message"
             send_email(FROM, email, subject, errmsg, server)
         sys.exit(1)

@@ -18,7 +18,7 @@
  */
 /**
  * \file InspiralInjectionParams.c
- * \ingroup InspiralInjectionParams
+ * \ingroup InspiralInjectionParams_h
  * \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
  *
  * \brief Functions for generating random distributions of inspiral parameters

@@ -15,14 +15,17 @@
 # or write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import lal
-import lalsimulation as lalsim
-import numpy as np
+import configparser
+import io
+import os
+import sys
 import unittest
 from optparse import OptionParser
-import io
-import sys, os
-import configparser
+
+import numpy as np
+
+import lal
+import lalsimulation as lalsim
 
 NEW_DATA_STR = '######### NEW DATASET #############\n'
 DEFAULT_FILE = 'reviewed_waveforms.asc'
@@ -177,7 +180,7 @@ def generateAttributes(datasets, counter = ''):
                                 for name in ['m1', 'm2', 'spin1z', 'spin2z']]
                 iota = conf.getfloat('parameters', 'inclination')
                 cfac = np.cos(iota)
-                pfac = 0.5 * (1. + cfac*cfac);
+                pfac = 0.5 * (1. + cfac*cfac)
 
                 href = hpref / pfac + 1.j * hcref / cfac
                 h = hp.data.data / pfac + 1.j * hc.data.data / cfac
@@ -186,7 +189,7 @@ def generateAttributes(datasets, counter = ''):
                 xvals, xvals_ref = [np.linspace(0., dX * (x.size - 1), x.size) \
                                    for x in [h, href]]
 
-                if counter is not '':
+                if counter != '':
                     num = counter
                 else:
                     num = i

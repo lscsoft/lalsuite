@@ -1,10 +1,10 @@
 # Check SWIG Python bindings for LALSimulation
 # Author: Karl Wette, 2011--2014
 
+import gc
+import inspect
 import os
 import sys
-import inspect
-import gc
 
 import pytest
 
@@ -12,8 +12,8 @@ import pytest
 print("checking module load ...", file=sys.stderr)
 import lal
 import lalsimulation
-from lalsimulation import globalvar as lalsimulationglobalvar
 from lal import globalvar as lalglobalvar
+from lalsimulation import globalvar as lalsimulationglobalvar
 
 print("PASSED module load", file=sys.stderr)
 

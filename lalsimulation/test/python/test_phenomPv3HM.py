@@ -19,10 +19,12 @@
 """
 
 import sys
+
+import numpy as np
 import pytest
+
 import lal
 import lalsimulation
-import numpy as np
 
 # -- utility functions ---------------------
 

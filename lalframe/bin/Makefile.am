@@ -20,6 +20,7 @@ bin_PROGRAMS = \
 	lalfr-paste \
 	lalfr-stream \
 	lalfr-vis \
+	lalframe_libraries_available \
 	lalframe_version \
 	$(END_OF_LIST)
 
@@ -34,9 +35,11 @@ lalfr_cut_SOURCES = cut.c utils.c utils.h
 lalfr_paste_SOURCES = paste.c utils.c utils.h
 lalfr_stream_SOURCES = stream.c
 lalfr_vis_SOURCES = vis.c
+lalframe_libraries_available_SOURCES = libraries_available.c
 lalframe_version_SOURCES = version.c
 
 TESTS += \
+	lalframe_libraries_available \
 	lalframe_version \
 	$(END_OF_LIST)
 

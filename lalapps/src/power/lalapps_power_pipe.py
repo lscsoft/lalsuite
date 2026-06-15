@@ -34,22 +34,18 @@ Excess power offline pipeline construction script.
 
 
 import math
-from optparse import OptionParser
 import os
 import sys
 import tempfile
-from configparser import (ConfigParser, NoOptionError)
-
+from configparser import ConfigParser, NoOptionError
+from optparse import OptionParser
 
 import igwn_segments as segments
 from igwn_segments import utils as segmentsUtils
-from lal import LIGOTimeGPS
-from lal import pipeline
 from lal.utils import CacheEntry
-from lalburst import cafe
-from lalburst import timeslides
-from lalburst import power
 
+from lal import LIGOTimeGPS, pipeline
+from lalburst import cafe, power, timeslides
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __date__ = "$Date$"

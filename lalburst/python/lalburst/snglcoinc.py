@@ -30,6 +30,7 @@ Generic time interval coincidence engine.
 
 
 from bisect import bisect_left
+
 try:
 	from fpconst import NegInf
 except ImportError:
@@ -38,26 +39,25 @@ except ImportError:
 	NegInf = float("-inf")
 import itertools
 import math
-import numpy
 import random
-import scipy.optimize
-from scipy import spatial
 import sys
-from collections import ChainMap, Counter
 import warnings
+from collections import ChainMap, Counter
 
-
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
-from igwn_ligolw.utils import coincs as ligolw_coincs
 import igwn_segments as segments
-import lal
-from . import offsetvector
+import numpy
+import scipy.optimize
+from igwn_ligolw import ligolw, lsctables
+from igwn_ligolw.utils import coincs as ligolw_coincs
+from scipy import spatial
 
+import lal
+
+from . import git_version, offsetvector
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from .git_version import date as __date__
-from .git_version import version as __version__
+__date__ = git_version.date
+__version__ = git_version.version
 
 
 #

@@ -19,8 +19,9 @@
 """Tests for lalframe.utils.frtools
 """
 
-import sys
 import os
+import sys
+
 try:
     from pathlib import Path
 except ImportError as exc:  # probably macports

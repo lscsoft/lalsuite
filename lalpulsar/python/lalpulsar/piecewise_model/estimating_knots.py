@@ -28,8 +28,8 @@ import os.path
 import numpy as np
 
 from . import basis_functions as bf
-from . import mols_for_gte as mols
 from . import errors
+from . import mols_for_gte as mols
 from . import semicoherent_metric_methods as scmm
 
 knotarchivefile = None

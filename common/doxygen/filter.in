@@ -3,14 +3,18 @@ filename=`expr "X$1" : "^X.*/\([^/]*\)"`
 case "${filename}" in
     SWIG*.i)
         # Filter SWIG interface files
-        @SED@ -n -f @abs_srcdir@/filter_swig.sed "$1"
+        @SED@ -n -f @abs_srcdir@/filter_swig.sed "$1" | tee "$1.doxygen_filtered.txt"
         ;;
     *.py)
         # Filter Python source files
-        @PYTHON@ @abs_srcdir@/filter_py.py "$1"
+        doxypypy -a -c "$1" | tee "$1.doxygen_filtered.txt"
         ;;
     *)
         # Output all other files unfiltered
         cat "$1"
         ;;
 esac
+if test -f "$1.doxygen_filtered.txt"; then
+    @AWK@ '{printf "%6d|%s\n", NR, $0}' "$1.doxygen_filtered.txt" > "$1.doxygen_filtered.txt.tmp"
+    mv -f "$1.doxygen_filtered.txt.tmp" "$1.doxygen_filtered.txt"
+fi

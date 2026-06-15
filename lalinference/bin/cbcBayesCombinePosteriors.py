@@ -27,11 +27,15 @@ This is used for combining posterior samples together.
 
 #Import standard things
 import argparse
+
 try:
-    from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
+    from lalinference import (
+        LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name,
+    )
 except:
     posterior_grp_name = "posterior_samples"
 from collections import defaultdict
+
 import h5py
 import numpy as np
 

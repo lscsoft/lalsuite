@@ -29,31 +29,31 @@ The KNOwn Pulsar pipelinE - lalpulsar_knope_result_page
 Script from creating results pages for pulsars from the known pulsar search
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function
 
 import argparse
-from configparser import ConfigParser
-import sys
 import ast
-import numpy as np
-import re
 import copy
-import os
-import fnmatch
-import ast
 import datetime
-import json
-from scipy import stats
-import h5py
+import fnmatch
 import itertools
+import json
+import os
+import re
+import sys
+from configparser import ConfigParser
 
+import h5py
 import matplotlib
+import numpy as np
+from scipy import stats
 
 matplotlib.use("Agg")
 
-from lalpulsar.pulsarpputils import *
-from lalpulsar.pulsarhtmlutils import *
 from lalinference.bayespputils import Posterior, PosteriorOneDPDF
+from lalpulsar.pulsarhtmlutils import *
+from lalpulsar.pulsarpputils import *
+
 from lalinference import git_version
 
 __author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
@@ -190,9 +190,9 @@ def set_spin_down(p1_I, assoc, f0, f1, n=5.0):
     Otherwise just return the unadjusted spin-down.
     """
 
-    if p1_I != None and p1_I > 0.0:
+    if p1_I is not None and p1_I > 0.0:
         return -p1_I * f0**2  # convert period derivative into frequency derivative
-    elif assoc != None:
+    elif assoc is not None:
         if "GC" in assoc:  # check if a globular cluster pulsar
             return -f0 / ((n - 1.0) * 1.0e9 * 365.25 * 86400.0)
         else:
@@ -227,7 +227,7 @@ def create_psr_table(par):
 
     for param in paramdisplist:
         pa = par[param]
-        if pa != None:
+        if pa is not None:
             table.addrow()
             dispfunc = paramhtmldispfunc.__dict__[param]
             table.adddata(paramhtmldict[param])
@@ -1081,7 +1081,7 @@ class posteriors:
         scatter_kwargs={},
     ):
         # create a plot with the 1D and 2D joint posteriors (if ifo is None then use all ifos in class)
-        if ifo != None and ifo in self._ifos:
+        if ifo is not None and ifo in self._ifos:
             plotifos = [ifo]
         else:
             plotifos = self._ifos
@@ -1353,7 +1353,7 @@ class posteriors:
             )
             sys.exit(1)
 
-        if filename == None:  # use default file names
+        if filename is None:  # use default file names
             if len(parameters) == len(self._parameters):
                 outfilepre = os.path.join(self._outputdir, "all_posteriors")
             else:
@@ -1677,7 +1677,7 @@ class posteriors:
         cols = ["Detector", "max. poterior", "mean", "median", "&sigma;"]
         for ci in self._credint:
             cols.append("%d%% credible interval" % int(ci))
-        if self._injection_parameters != None:
+        if self._injection_parameters is not None:
             cols.insert(0, "Inj. value")  # prepend the injection value
         cols.insert(0, "&nbsp;")  # add empty cell as header line for the parameter name
 
@@ -1717,7 +1717,7 @@ class posteriors:
                 table.addrow()
                 if j == 0:  # add parameter name and injection value first)
                     table.adddata(pdisp, rowspan=len(self._ifos))
-                    if self._injection_parameters != None:
+                    if self._injection_parameters is not None:
                         if hasattr(self._injection_parameters, param.upper()):
                             table.adddata(
                                 dispfunc(
@@ -1757,12 +1757,12 @@ class posteriors:
 
                 for k, ci in enumerate(credints):
                     paramval = None
-                    if k == 0 and self._injection_parameters != None:
+                    if k == 0 and self._injection_parameters is not None:
                         if hasattr(self._injection_parameters, param.upper()):
                             paramval = self._injection_parameters[param.upper()]
                     low, high, cr = self.credible_interval(ifo, param, ci, paramval)
 
-                    if k == 0 and self._injection_parameters != None:
+                    if k == 0 and self._injection_parameters is not None:
                         if hasattr(self._injection_parameters, param.upper()):
                             self._injection_credible_regions[ifo][param] = cr
 
@@ -1875,7 +1875,7 @@ class posteriors:
                     table.adddata("{}".format(exp_str(h0ul)), dataclass=ifo)
 
                 # ellipticity
-                if dist == None:
+                if dist is None:
                     self._ellipticity[ifo] = None
                     table.adddata("*", dataclass=ifo)
                 else:
@@ -1887,7 +1887,7 @@ class posteriors:
                     )
 
                 # quadrupole
-                if dist == None:
+                if dist is None:
                     self._q22[ifo] = None
                     table.adddata("*", dataclass=ifo)
                 else:
@@ -1895,7 +1895,7 @@ class posteriors:
                     table.adddata("{}".format(exp_str(self._q22[ifo])), dataclass=ifo)
 
                 # get spin down limit ratio
-                if sdlim == None:
+                if sdlim is None:
                     self._sdratio[ifo] = None
                     table.adddata("*", dataclass=ifo)
                 else:
@@ -1953,7 +1953,7 @@ class posteriors:
         lowbound, highbound, _ = self._ci_loop(samples, ci)
 
         cival = None
-        if paramval != None:
+        if paramval is not None:
             cifound = False
             # loop over different credible intervals until finding the one that contains the injection
             for cit in range(1, 101):
@@ -2142,7 +2142,7 @@ class create_background(posteriors):
                         self._noise_evidence[ifo].append(noiseev)
                         self._maxL[ifo].append(maxL)
                         break
-                if Bsn == None:
+                if Bsn is None:
                     print(
                         "Error... no HDF5 file with 'posterior_samples' in the name was found in '%s'."
                         % pdir,
@@ -2275,7 +2275,7 @@ class create_background(posteriors):
             ).text
         )
 
-        if self._Bci_fore != None:
+        if self._Bci_fore is not None:
             bciplot = self.bci_plot(which="bci")
             table.adddata(
                 atag(
@@ -2287,7 +2287,7 @@ class create_background(posteriors):
             )
             cols += 1
 
-        if self._Bcin_fore != None:
+        if self._Bcin_fore is not None:
             bcinplot = self.bci_plot(which="bcin")
             table.adddata(
                 atag(
@@ -2312,9 +2312,9 @@ class create_background(posteriors):
         innertable.adddata("Detector", header=True)
         for ifo in self._ifos:
             innertable.adddata(ifo, dataclass=ifo)
-        if self._Bci_fore != None:
+        if self._Bci_fore is not None:
             innertable.adddata("B<sub>CvI</sub>")
-        if self._Bcin_fore != None:
+        if self._Bcin_fore is not None:
             innertable.adddata("B<sub>CvIN</sub>")
 
         innertable.addrow()
@@ -2322,10 +2322,10 @@ class create_background(posteriors):
         for ifo in self._ifos:
             innertable.adddata(exp_str(self.bsn_prob(ifo)), dataclass=ifo)
 
-        if self._Bci_fore != None:
+        if self._Bci_fore is not None:
             innertable.adddata(exp_str(float(self.bci_prob), 1))
 
-        if self._Bcin_fore != None:
+        if self._Bcin_fore is not None:
             innertable.adddata(exp_str(float(self.bcin_prob), 1))
 
         table.addrow()
@@ -2749,7 +2749,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
         titlename = "INJ " + pname
     else:
         titlename = "PSR " + pname
-    if atnfurl != None:
+    if atnfurl is not None:
         htmlinput["h1title"] = atag(atnfurl, linktext=titlename).text
     else:
         htmlinput["h1title"] = titlename
@@ -2839,7 +2839,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     linktable.set_tagtext(linkstable.tabletext)
 
     # set index page link
-    if indexpage != None:
+    if indexpage is not None:
         indexlink = htmltag(
             "div", tagstyle="text-align: left; float: right; padding-right: 8px"
         )

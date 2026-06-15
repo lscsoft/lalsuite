@@ -36,7 +36,8 @@ package
 # ::str_to_gps.
 #
 # \author Duncan Macleod <duncan.macleod@ligo.org>
-#@{
+
+##@{
 
 import datetime as _datetime
 from decimal import Decimal
@@ -45,12 +46,18 @@ from numbers import Number
 from dateutil.parser import parse as str_to_utc
 
 from . import (
-    LIGOTimeGPS,
     GPSTimeNow as _gps_time_now,
+)
+from . import (
     GPSToUTC as _gps_to_utc,
+)
+from . import (
+    LIGOTimeGPS,
+    git_version,
+)
+from . import (
     UTCToGPS as _utc_to_gps,
 )
-from . import git_version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.verbose_msg
@@ -139,10 +146,8 @@ def str_to_gps(time_string=None):
         - "tomorrow"
 
     Example:
-    \code
     >>> gpstime.str_to_gps("September 14 2011, 01:46:25")
     1000000000.000000000
-    \endcode
 
     @returns a LIGOTimeGPS
     """
@@ -176,10 +181,8 @@ def gps_to_str(gps, form=None):
 
     Example:
 
-    \code
     >>> gps_to_str(1000000000)
     'September 14 2011, 01:46:25 UTC'
-    \endcode
 
     @returns a string with the given format.
     """
@@ -204,14 +207,12 @@ def tconvert(arg=None, form=None):
 
     Example:
 
-    \code
     >>> tconvert()
     1048275013.000000000
     >>> tconvert("January 6 1980 00:00:00")
     0.000000000
     >>> tconvert(1000000000)
     'September 14 2011, 01:46:25 UTC'
-    \endcode
 
     @returns the LIGOTimeGPS of the given time string, OR, string
     representing the given GPS time

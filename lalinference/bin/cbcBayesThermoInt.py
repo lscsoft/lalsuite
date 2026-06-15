@@ -1,12 +1,15 @@
 ##python
 
-from optparse import OptionParser
-import sys
 import os
+import sys
+from optparse import OptionParser
+
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as pp
 import numpy as np
+
 try:
     from scipy.integrate import trapezoid
 except ImportError:

@@ -27,17 +27,15 @@
 import math
 import sys
 
-
 from igwn_ligolw import lsctables
 from igwn_ligolw.utils import process as ligolw_process
 from igwn_ligolw.utils import search_summary as ligolw_search_summary
-import igwn_segments as segments
-from . import snglcluster
 
+from . import git_version, snglcluster
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from .git_version import date as __date__
-from .git_version import version as __version__
+__date__ = git_version.date
+__version__ = git_version.version
 
 
 #

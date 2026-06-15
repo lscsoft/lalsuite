@@ -22,22 +22,29 @@
 following the convention detailed in the SFT spec (T040164)."""
 
 import argparse
+import logging
 import os
+import shutil
 import sys
 import time
-import shutil
-from contextlib import contextmanager
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import contextmanager
+
+from lalpulsar.public_sft_directory import (
+    public_sft_directory,
+    public_sft_directory_readme_md,
+)
 from tqdm import tqdm
-import logging
 
-from lal import LALERRORBIT, LALWARNINGBIT, LALINFOBIT, LALTRACEBIT
-from lal import GetDebugLevel, ClobberDebugLevel
-
-from lalpulsar import git_version
-from lalpulsar import ValidateSFTFile, SFTErrorMessage
-from lalpulsar.public_sft_directory import public_sft_directory
-from lalpulsar.public_sft_directory import public_sft_directory_readme_md
+from lal import (
+    LALERRORBIT,
+    LALINFOBIT,
+    LALTRACEBIT,
+    LALWARNINGBIT,
+    ClobberDebugLevel,
+    GetDebugLevel,
+)
+from lalpulsar import SFTErrorMessage, ValidateSFTFile, git_version
 
 __author__ = "Karl Wette <karl.wette@ligo.org>"
 __version__ = git_version.id

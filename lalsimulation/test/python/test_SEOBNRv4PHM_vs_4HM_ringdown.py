@@ -20,11 +20,13 @@ In particular we consider cases where the final spin is *negative* with respect 
  orbital angular momentum. """
 
 import sys
+
+import numpy as np
 import pytest
 from scipy.interpolate import InterpolatedUnivariateSpline
-import lalsimulation as ls
+
 import lal
-import numpy as np
+import lalsimulation as ls
 
 # -- test functions ---------------------
 

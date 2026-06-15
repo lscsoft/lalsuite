@@ -17,8 +17,9 @@
 """Tests for lalframe.frread
 """
 
-import sys
 import os
+import sys
+
 try:
     from pathlib import Path
 except ImportError as exc:  # probably macports
@@ -27,10 +28,9 @@ except ImportError as exc:  # probably macports
     sys.exit(77)
 
 import pytest
-
-import lal
 from lal.utils.cache import CacheEntry
 
+import lal
 from lalframe import frread
 
 try:

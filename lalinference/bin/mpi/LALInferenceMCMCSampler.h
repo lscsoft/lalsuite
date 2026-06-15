@@ -24,7 +24,7 @@
 
 /**
  * \file LALInferenceMCMCSampler.h
- * \ingroup lalapps_inspiral
+ * \ingroup lalinference_general
  * \brief Markov-Chain Monte Carlo sampler written for LALInference. Independent of model.
  *
  * Markov-Chain Monte Carlo sampler incorporating parallel tempering using MPI and

@@ -1,8 +1,20 @@
-# LALSuite
+# LVK Algorithm Library Suite - LALSuite
 
-This is the main LALSuite development repository. If you would like to just use
-a released version, see [here][igwnconda] for IGWN conda environments including
-LALSuite, or the project pages on [conda-forge][condaforge] and on [PyPI][pypi].
+LALSuite is comprised of various gravitational wave data analysis routines
+written in C (following the ISO/IEC 9899:1999 standard, more commonly referred
+to as C99) and Python. Its primary purpose is searching for and characterizing
+astrophysical signals in gravitational-wave time series data, particularly data
+from ground-based detectors such as [LIGO], [Virgo], and [KAGRA].
+
+* [Project homepage][projectrepo]
+* [Installation instructions][install]
+* [Frequently asked questions][lalsuitefaq]
+* [Reference documentation][lalsuitedocs]
+* [Building from source][buildfromsrc]
+* [Contributing guide][contributing]
+
+LALSuite is licensed under the [GNU General Public License v2.0 or
+later][GPL-2.0-or-later].
 
 ## Acknowledgment
 
@@ -10,198 +22,164 @@ We request that any academic report, publication, or other academic
 disclosure of results derived from the use of this software acknowledge
 the use of the software by an appropriate acknowledgment or citation.
 
-The whole LALSuite software suite can be cited with the DOI
-[10.7935/GT1W-FZ16][doi]. An example BibTeX entry could look like this:
+The LALSuite software suite as a whole may be linked to using the DOI
+[10.7935/GT1W-FZ16][doi], or cited using the following BibTeX entry:
 
-     @misc{lalsuite,
-           author         = "{LIGO Scientific Collaboration} and {Virgo Collaboration} and {KAGRA Collaboration}",
-           title          = "{LVK} {A}lgorithm {L}ibrary - {LALS}uite",
-           howpublished   = "Free software (GPL)",
-           doi            = "10.7935/GT1W-FZ16",
-           year           = "2018"
-     }
+    @misc{lalsuite,
+        author         = "{LIGO Scientific Collaboration}
+                          and {Virgo Collaboration}
+                          and {KAGRA Collaboration}",
+        title          = "{LVK} {A}lgorithm {L}ibrary - {LALS}uite",
+        howpublished   = "Free software (GPL)",
+        doi            = "10.7935/GT1W-FZ16",
+        year           = "2018"
+    }
 
-The [Python/Octave interfaces to LALSuite][swiglal] are described in this paper:
+If you make use of the [Python/Octave interfaces to LALSuite][swiglal], please
+cite the following paper:
 
-     @article{swiglal,
-              title     = "{SWIGLAL: Python and Octave interfaces to the LALSuite gravitational-wave data analysis libraries}",
-              author    = "Karl Wette",
-              journal   = "SoftwareX",
-              volume    = "12",
-              pages     = "100634",
-              year      = "2020",
-              doi       = "10.1016/j.softx.2020.100634"
-     }
+    @article{swiglal,
+        title     = "{SWIGLAL}: {P}ython and {O}ctave interfaces to the
+                     {LALSuite} gravitational-wave data analysis libraries}",
+        author    = "Karl Wette",
+        journal   = "SoftwareX",
+        volume    = "12",
+        pages     = "100634",
+        year      = "2020",
+        doi       = "10.1016/j.softx.2020.100634"
+    }
 
-In addition, some codes contained in this package may be directly based
-on one or several scientific papers, which should be cited when using
-those specific codes; some of these can be discovered through the
-documentation.
+In addition, some codes contained in LALSuite may be directly based on one or
+several scientific papers, which should be cited when using those specific
+codes; some of these can be discovered through the documentation.
 
-## Cloning the Repository
+## Components
 
-We now utilize [Git LFS][gitlfs] for the managament of large files and
-as such `git-lfs` needs to be installed and configured to correctly
-clone this repository. After installing `git-lfs` it can be configured
-using:
+LALSuite is comprised of the following components:
 
-     $ git lfs install
+- LAL: Core gravitational wave analysis routines
+- LALFrame: LAL wrapping of the LIGO/Virgo Frame library
+- LALMetaIO: LAL wrapping of the MetaIO LIGO_LW XML library
+- LALSimulation: LAL routines for gravitational waveform and noise generation
+- LALBurst: LAL routines for burst gravitational wave data analysis
+- LALInspiral: LAL routines for inspiral and ringdown CBC gravitational wave
+  data analysis
+- LALInference: LAL routines for Bayesian inference data analysis
+- LALPulsar: LAL routines for pulsar and continuous wave gravitational wave data
+  analysis
+- LALApps: Collection of gravitational wave data analysis codes and
+  pipelines utilising the LAL libraries
 
-This only needs to be done once for each machine you access the
-repository. It can then be cloned using:
+## Project Librarians
 
-     $ git clone git@git.ligo.org:lscsoft/lalsuite.git
+- Adam Mercer
+- Duncan Macleod
+- Karl Wette
 
-### LALSuite Extra Waveform Files
+The librarians may be contacted via the [help desk][helpdesk].
 
-The generation of some compact binary coalescence waveform models requires
-additional files which need to be downloaded either from Zenodo or from a
-Git repository.
+## Documentation
 
-The LALSuite extra waveform files are publicly available
-on [Zenodo][wfzenodo].
+[Installation instructions][install] and answers to [frequently asked questions][lalsuitefaq] may be found on the LALSuite [wiki][lalsuitewiki].
 
-Alternatively, for LALSuite versions >= 7.25 the data files
-are also available at the Git repository [lalsuite-waveform-data][wfnewgit],
-or for earlier LALSuite versions, the files in `lalsuite-extra` can be
-found in the Git repository [lalsuite-extra][wfoldgit].
+The [reference documentation][lalsuitedocs] for all LALSuite components is
+generated using Doxygen. Documentation is available for the latest development
+version of LALSuite, and for recent releases.
 
-Instructions for the installation and download of these
-files can be found in each link above. The environment variable `LAL_DATA_PATH`
-needs to be set according to the path to the downloaded files.
+The *LAL Specification and Style Guide* document (commonly known as the *LAL
+Spec*) contains the software specifications that code written for LALSuite
+should conform to. The most recent version of the *LAL Spec* can be found
+[here][lalspec].
 
-## Building from Source
+## Releases
 
-The recommended way to build LALSuite from source is in a `conda` environment.
-[A recipe file][condadevenv] is available with all main dependencies. This can
-serve as the base for custom recipes, or be used directly via:
+The latest release is LALSuite 7.26, released 22 May 2025 ([source tarball](https://software.igwn.org/lscsoft/source/lalsuite/lalsuite-7.26.tar.gz)), which is comprised of:
 
-     $ conda env create -f ./conda-dev-env.yml
+- LAL 7.7.0, released 22 May 2025 ([source tarball](https://software.igwn.org/lscsoft/source/lalsuite/lal-7.7.0.tar.xz))
+- LALFrame 3.0.7, released 22 May 2025 ([source tarball](https://software.igwn.org/lscsoft/source/lalsuite/lalframe-3.0.7.tar.xz))
+- LALMetaIO 4.0.6, released 22 May 2025 ([source tarball](https://software.igwn.org/lscsoft/source/lalsuite/lalmetaio-4.0.6.tar.xz))
+- LALSimulation 6.2.0, released 22 May 2025 ([source tarball](https://software.igwn.org/lscsoft/source/lalsuite/lalsimulation-6.2.0.tar.xz))
+- LALBurst 2.0.7, released 22 May 2025 ([source tarball](https://software.igwn.org/lscsoft/source/lalsuite/lalburst-2.0.7.tar.xz))
+- LALInspiral 5.0.3, released 22 May 2025 ([source tarball](https://software.igwn.org/lscsoft/source/lalsuite/lalinspiral-5.0.3.tar.xz))
+- LALInference 4.1.9, released 22 May 2025 ([source tarball](https://software.igwn.org/lscsoft/source/lalsuite/lalinference-4.1.9.tar.xz))
+- LALPulsar 7.1.1, released 22 May 2025 ([source tarball](https://software.igwn.org/lscsoft/source/lalsuite/lalpulsar-7.1.1.tar.xz))
+- LALApps 10.1.0, released 22 May 2025 ([source tarball](https://software.igwn.org/lscsoft/source/lalsuite/lalapps-10.1.0.tar.xz))
 
-Pulling in dependencies may take a while depending on your internet connection.
-After the environment setup succeeded, you can activate it with:
+Previous releases can be found by visiting the [IGWN analysis software source
+code server][lalsuitesources].
 
-     $ conda activate lalsuite-dev
+## Sources
 
-The first time building LALSuite from source, you need to set up the build
-system by running (from the top level of the Git repository):
+The LALSuite sources are located in the [LALSuite Git repository][projectrepo].
+See the following [clonerepo] on how to get started.
 
-     $ ./00boot
+## Mailing Lists
 
-The next step is to configure the LALSuite build system, which determines what
-components of LALSuite are built, and with what features. This is done by
-running (from the top level of the Git repository):
+There are several mailing lists related to LALSuite development:
 
-     $ ./configure [options...]
+- *LAL Announce*: General LALSuite announcements, including releases
+    ([subscribe/unsubscribe][lal-announce-s], [archive][lal-announce-a])
+- *LAL Discuss*: Discussions of modifying/using LALSuite
+    ([subscribe/unsubscribe][lal-discuss-s], [archive][lal-discuss-a])
+- *Computing Discuss*: General IGWN Computing discussion
+    ([subscribe/unsubscribe][cmp-discuss-s], [archive][cmp-discuss-a])
 
-A full list of options is available by running `./configure --help=recursive`.
-Some commonly-used options are:
+Developers should subscribe to the *LAL Discuss* and *Computing Discuss* mailing
+lists as important development information is regularly posted and discussed on
+these lists.
 
-- `--prefix=<path>`: Sets which `<path>` LALSuite will be installed into. By
-  default, LALSuite is installed into a directory `./_inst/` at the top level of
-  the Git repository.
+## Reporting Issues
 
-- `--enable-all-lal`: Build all component libraries of LALSuite, including
-  `lalapps`; the default.
+If you have `ligo.org` authentication, please report issues directly through
+GitLab. Otherwise, you can use the [help desk][helpdesk] to send bug reports by
+e-mail.
 
-- `--disable-all-lal`: Build only the `lal` library component of LALSuite.
+Before you file a ticket, please read and search through the list of
+[current][currentissues] and [previous][previousissues] issues to determine if
+your bug has already been reported.
 
-- `--enable-lal<name>`: Build the `lal<name>` component of LALSuite. This option
-  can be combined with the `--disable-all-lal` option to selectively build
-  LALSuite components, e.g. `--disable-all-lal --enable-lalframe
-  --enable-lalinference` will build only the `lal`, `lalframe`, and
-  `lalinference` components.
+If an issue already exists and has not been fixed, add any additional
+information to the existing report. If your bug exists and has been fixed,
+upgrade to the version detailed in the issue to confirm if it has been fixed
+correctly. If it was not, please reopen the issue.
 
-- `--enable-swig-python`, `--enable-swig-octave`: Build Python and/or Octave
-  interfaces to the LALSuite libraries (using the SWIG tool), which allow
-  LALSuite library functions to be called directly from Python/Octave. By
-  default, only the Python interface is built. Use `--enable-swig` to build both
-  interfaces.
+Please include as much detail as possible to reproduce the
+error, including information about your operating system and the version of each
+(relevant) component of LALSuite. If possible, please include a brief,
+self-contained code example that demonstrates the problem.
 
-- `--enable-fftw`, `--enable-intelfft`: Perform Fast Fourier Transforms using
-  either the FFTW library (the default) or the Intel MKL library. To enable
-  aligned memory optimisations with FFTW, use the `--enable-fftw3-memalign`
-  option.
+Note that when an issue is marked as *Confidential*, currently this means that
+most internal users will also not be able to see it, but only a small number of
+people with reporter, developer or maintainer status.
 
-- `--enable-framel`, `--enable-framec`: Read/write gravitational wave frame
-  files using either the FrameL or FrameCPPC libraries. By default, the LALSuite
-  build system will use whichever library is available on your system; if
-  neither are available, frame file reading/writing will be disabled.
+## Contributing
 
-- `--with-hdf5`: Build support for reading/writing to HDF5 files.
+The [guide to contributing to LALSuite][contributing] explains how to contribute
+fixes or new features using the fork and pull workflow. Please read and follow
+these directions.
 
-- `--with-cfitsio`: Build support for reading/writing to FITS files.
-
-- `--with-cuda=<path>`: Build CUDA code which runs on graphics processing
-  units. `<path>` should specify the top-level directory of a local install of
-  the CUDA Toolkit.
-
-- `PYTHON=<pythonX.Y>`: set the Python interpreter used by LALSuite to run
-  Python scripts and compile Python modules. By default the LALSuite build
-  system will find the default system Python interpreter, so this is only needed
-  if you want to build against a specific Python version `X.Y`.
-
-Once LALSuite has been configured, you can then build and install LALSuite by
-running (from the top level of the Git repository):
-
-     $ make [-j<processes>] && make install
-
-where `<processes>` optionally specifies the number of processes used for
-building in parallel. If the build is successful, `make install` will install
-LALSuite into the directory given by `--prefix`.
-
-After pulling updates or making your own changes, you will usually only need to
-call `make && make install` again, as reconfiguration and re-running `00boot`
-should be handled automatically if needed.
-
-If you prefer managing dependencies yourself without conda, see
-[here][lalsuitedeps].
-
-## Contributing to LALSuite
-
-The [guide to contributing to LALSuite][contributing] explains how to
-report issues and contribute fixes or new features using the fork and
-pull workflow. Please read and follow these directions.
-
-## Nightly Documentation
-
-The [LALSuite Doxygen documentation][nightlydocs] is built under
-GitLab-CI every night.
-
-## Notes on Ancient History
-
-LALSuite was transferred to `git.ligo.org` in December 2017. Older
-history has been imported, though commit hashes were rewritten during
-the [Git LFS][gitlfs] conversion. Please note:
-
-1. The `Original:` commit IDs quoted in each commit message can be used
-   to compare with the [archived reference repo][oldlalsuite], old issue
-   discussions on the [Redmine tracker][oldredmine], review wiki pages
-   etc.
-
-1. Commits before December 2017 may also include references to issues
-   (`#number`). These refer to the corresponding [Redmine
-   issue][oldredmine] (LVC-authorized access only), and any clickable
-   link the internal GitLab web interface produces for those old commits
-   will therefore be spurious.
-
-## For More Information
-
-Please visit the [LALSuite project page][project].
-
-[condadevenv]:  https://git.ligo.org/lscsoft/lalsuite/-/blob/master/conda-dev-env.yml
-[condaforge]:   https://anaconda.org/conda-forge/lalsuite
-[contributing]: https://lscsoft.docs.ligo.org/lalsuite/lalsuite/lalsuite_contributing.html
-[doi]:          https://doi.org/10.7935/GT1W-FZ16
-[gitlfs]:       https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client
-[igwnconda]:    https://computing.docs.ligo.org/conda/
-[lalsuitedeps]: https://wiki.ligo.org/Computing/LALSuite#Dependencies
-[nightlydocs]:  https://lscsoft.docs.ligo.org/lalsuite
-[oldlalsuite]:  https://git.ligo.org/lscsoft/lalsuite-archive
-[oldredmine]:   https://bugs.ligo.org/redmine/projects/lalsuite
-[project]:      https://wiki.ligo.org/Computing/LALSuite
-[pypi]:         https://pypi.org/project/lalsuite/
-[swiglal]:      https://lscsoft.docs.ligo.org/lalsuite/lalsuite/swiglal_tutorial.html
-[wfzenodo]:     https://zenodo.org/records/14999310
-[wfnewgit]:     https://git.ligo.org/waveforms/software/lalsuite-waveform-data
-[wfoldgit]:     https://git.ligo.org/lscsoft/lalsuite-extra
+[GPL-2.0-or-later]: https://spdx.org/licenses/GPL-2.0-or-later.html
+[KAGRA]:            https://gwcenter.icrr.u-tokyo.ac.jp/en/
+[LIGO]:             https://www.ligo.org
+[Virgo]:            https://www.virgo-gw.eu/
+[buildfromsrc]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis/BUILD
+[clonerepo]:        https://git.ligo.org/lscsoft/lalsuite/-/wikis/BUILD#cloning-the-git-repository
+[cmp-discuss-a]:    https://sympa.ligo.org/wws/info/computing-discuss
+[cmp-discuss-s]:    https://grouper.ligo.org/selfmanage/computing-discuss
+[contributing]:     https://git.ligo.org/lscsoft/lalsuite/-/blob/master/CONTRIBUTING.md
+[currentissues]:    https://git.ligo.org/lscsoft/lalsuite/issues
+[doi]:              https://doi.org/10.7935/GT1W-FZ16
+[helpdesk]:         mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
+[install]:          https://git.ligo.org/lscsoft/lalsuite/-/wikis/INSTALL
+[lal-announce-a]:   https://sympa.ligo.org/wws/info/lal-announce
+[lal-announce-s]:   https://grouper.ligo.org/selfmanage/lal-announce
+[lal-discuss-a]:    https://sympa.ligo.org/wws/info/lal-discuss
+[lal-discuss-s]:    https://grouper.ligo.org/selfmanage/lal-discuss
+[lalspec]:          https://dcc.ligo.org/LIGO-T990030/public
+[lalsuitedocs]:     https://lscsoft.docs.ligo.org/lalsuite
+[lalsuitefaq]:      https://git.ligo.org/lscsoft/lalsuite/-/wikis/FAQ
+[lalsuitesources]:  http://software.ligo.org/lscsoft/source/lalsuite/?C=M;O=D
+[lalsuitewiki]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis
+[previousissues]:   https://git.ligo.org/lscsoft/lalsuite/issues?scope=all&utf8=%E2%9C%93&state=closed
+[projectrepo]:      https://git.ligo.org/lscsoft/lalsuite
+[swiglal]:          https://lscsoft.docs.ligo.org/lalsuite/dev/swiglal_tutorial.html

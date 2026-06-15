@@ -1,0 +1,91 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: Python wheel build job
+# ----------------------------------------------------------------------
+
+.wheel-job:
+  stage: top-level
+  needs: []
+  artifacts:
+    expire_in: 18h
+    paths:
+      # built wheels
+      - wheelhouse/
+      # log files
+      - "lal*/**/config.log"
+      - "lal*/**/test-suite.log"
+      # generated sources
+      - "lal*/**/swiglal_lal*_octave.cpp"
+      - "lal*/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "lal*/**/Makefile"
+      - "lal*/**/libtool"
+    when: always
+  rules:
+    - !reference [.default-matrix-rule, rules]
+
+.wheel-linux-job:
+  extends:
+    - .wheel-job
+  parallel: !reference [.wheel-linux-matrix, parallel]
+  script:
+    # target Python is set by a compatibility tag
+    - export PYTHON="/opt/python/${PYTHON_TAG}/bin/python"
+    # build wheels
+    - ./00boot
+    - source ${LCI_SCRIPTS}/wheel.sh
+
+.wheel-macos-job:
+  extends:
+    - .wheel-job
+  parallel: !reference [.wheel-macos-matrix, parallel]
+  script:
+    # this build uses MacPorts for the libraries and Python
+    - source /opt/local/share/macports/setupenv.bash
+    # target Python is set by a version number
+    - export PYTHON="$(type -P python${PYTHON_VERSION})"
+    # build wheels
+    - ./00boot
+    - source ${LCI_SCRIPTS}/wheel.sh
+
+wheel:deploy:
+  extends:
+    - .generic-job
+    - .deploy-job
+  needs:
+    - job: wheel:linux-x86-64
+      optional: true
+    - job: wheel:linux-aarch64
+      optional: true
+    - job: wheel:macos-x86-64
+      optional: true
+    - job: wheel:macos-arm64
+      optional: true
+  script:
+    # check for any wheels to deploy, list them
+    - |
+      if [ ! -d wheelhouse/ ]; then
+         echo "No wheels to deploy!"
+         exit 1
+      fi
+      echo "===== Wheels to deploy ====="
+      ls wheelhouse/
+      echo "----------------------------"
+    # verify wheels
+    - python -m twine check --strict wheelhouse/*
+    # show old development wheels that might need cleaning up
+    - ${LCI_SCRIPTS}/retry pypi-cleanup --package lalsuite --days 365 --query-only
+    # upload wheels to PyPI
+    # - TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
+    - |
+      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        echo "WARNING: simulating execution of deployment actions"
+        exit 123
+      fi
+    - ${LCI_SCRIPTS}/retry python -m twine upload --non-interactive wheelhouse/*
+    # done
+  rules:
+    - !reference [.deploy-check-execute, rules]
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-snapshot"
+    - if: >-
+        $LCI_PIPE_TYPE == "lalsuite-tag"

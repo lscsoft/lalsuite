@@ -1,25 +1,10 @@
-[[_TOC_]]
-
 # Contributing to LALSuite
 
 This page outlines the recommended procedure for contributing changes to the
 LALSuite repository. Please read the [IGWN Computing Guide to
 GitLab][compguidegit] before you start.
 
-## Reporting issues
-
-If you have `ligo.org` authentication, please report issues directly through
-GitLab. Otherwise, you can use the [service desk address][helpdesk] to send bug
-reports by e-mail.
-
-In either case, please include as much detail as possible to reproduce the
-error, including information about your operating system and the version of each
-(relevant) component of LALSuite. If possible, please include a brief,
-self-contained code example that demonstrates the problem.
-
-Note that when an issue is marked as *Confidential*, currently this means that
-most internal users will also not be able to see it, but only a small number of
-people with reporter, developer or maintainer status.
+[[_TOC_]]
 
 ## Building LALSuite
 
@@ -40,14 +25,14 @@ You should first ensure that Git is correctly configured on your machine. In
 particular, you should set your name and email address; these will appear on any
 commits made to the LALSuite repository. To do this, run these commands:
 
-1. ```bash
+1. ```
    git config --global user.name "..."
    ```
 
    where `...` is replaced with your name (i.e. your human name, not your
    computer user/login name).
 
-1. ```bash
+1. ```
    git config --global user.email "..."
    ```
 
@@ -78,7 +63,7 @@ for your account profile photo in the top right-hand corner of the screen.
 
 Make sure that you have installed and configured [Git-LFS][gitlfs]:
 
-```bash
+```
 git lfs install
 ```
 
@@ -87,7 +72,7 @@ install your development fork.
 
 Then, clone your fork with
 
-```bash
+```
 git clone git@git.ligo.org:<namespace>/lalsuite.git
 ```
 
@@ -98,7 +83,7 @@ These are run by the [`pre-commit`][precommit] tool, which can be installed
 using `conda`, `pip`, etc. Once `pre-commit` is installed, it must be
 configured:
 
-```bash
+```
 cd lalsuite
 pre-commit install
 ```
@@ -118,7 +103,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and
 
 1. Link your fork to the main repository:
 
-    ```bash
+    ```
     cd lalsuite
     git remote add upstream git@git.ligo.org:lscsoft/lalsuite.git
     ```
@@ -127,7 +112,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and
 
 1. Update your `master` branch to track changes from upstream:
 
-    ```bash
+    ```
     git checkout master
     git fetch upstream
     git branch --set-upstream-to upstream/master
@@ -139,7 +124,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and
 1. Fetch new changes from the `upstream` repository, merge them with your master
    branch, and push them to your fork on `git.ligo.org`:
 
-    ```bash
+    ```
     git checkout master
     git pull
     git push origin master
@@ -147,7 +132,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and
 
 1. You can see which remotes are configured using
 
-   ```bash
+   ```
    git remote -v
    ```
 
@@ -165,7 +150,7 @@ complete. The workflow is:
 
 1. Create a new feature branch configured to track the `master` branch:
 
-   ```bash
+   ```
    git checkout master
    git pull
    git checkout -b my-new-feature upstream/master
@@ -190,19 +175,19 @@ complete. The workflow is:
    option to `push` to create a link between your new branch and the `origin`
    remote:
 
-    ```bash
+    ```
     git push --set-upstream origin my-new-feature
     ```
 
     Subsequent pushes can be made with just:
 
-    ```bash
+    ```
     git push
     ```
 
 1. Keep your feature branch up to date with the `upstream` repository by doing:
 
-   ```bash
+   ```
    git checkout master
    git pull
    git checkout my-new-feature
@@ -270,7 +255,7 @@ better. The reviewer will merge your request.
 Once the changes are merged into the upstream repository, you should remove the
 development branch from your clone using
 
-```bash
+```
 git branch -d my-new-feature
 ```
 
@@ -280,10 +265,10 @@ result in problems merging upstream changes.
 ### Continuous integration
 
 GitLab runs continuous integration (CI) pipelines on LALSuite to ensure that it
-builds and passes its test suite on a wide variety of platforms. There are 2
-main CI pipelines:
+builds and passes its test suite on a wide variety of platforms. The two CI
+pipelines of interest to developers are:
 
-1. The push CI pipeline runs whenever you push commit(s) to your LALSuite
+1. The *push* CI pipeline runs whenever you push commit(s) to your LALSuite
    fork. This pipeline performs some basic checks that LALSuite still builds and
    passes its tests with your changes:
 
@@ -298,110 +283,151 @@ main CI pipelines:
    - some basic checks for code style/formatting/whitespace errors, build
      byproduct files missing from `.gitignore`, etc.
 
-1. The merge CI pipeline runs when you are ready to submit your changes to the
+1. The *merge* CI pipeline runs when you are ready to submit your changes to the
    upstream LALSuite fork via a merge request. This pipeline runs a much more
    comprehensive series of checks that LALSuite still builds and passes its
-   tests with a wide variety of platforms (e.g. MacOS, various Linux
-   distributions) and compilers (e.g. `clang`, `icc`, `gcc`). It also checks
-   that LALSuite packages for a number of package management systems (e.g. RPM,
-   Debian, Conda, Python wheels) are built correctly.
+   tests with a wide variety of platforms (MacOS, various Linux distributions)
+   and compilers (`clang`, `gcc`). It also checks that LALSuite packages for a
+   number of package management systems (RPM, Debian, CUDA, Conda, Python
+   wheels) are built correctly.
 
-3. (A third CI pipeline runs nightly on the [main LALSuite
-   repository][lalsuiterepo] fork for deployment tasks, e.g. updating the
-   [online documentation][nightlydocs]).
+To trigger the *merge* CI pipeline from a regular commit push (in place of the
+*push* pipeline), you can add the special text `[ci merge]` to the commit
+message. For complicated developments, this is recommended as a check that your
+changes pass the *merge* CI pipeline before opening the merge request.
 
-You can request a subset of the jobs which normally run as part of the merge
-pipeline to also be run as part of the push pipeline. This is useful if you are
-making changes to LALSuite which could potentially cause problems with different
-platforms/compilers, or which could affect the packaging, and you want to test
-the effect of your changes before submitting a merge request.
+For reference, the following table gives the complete list of CI pipelines and
+how to trigger then:
 
-For individual commits, you can request a subset of merge pipeline jobs to run
-by adding key text to the commit message, as listed in the table below. If
-instead you have a branch where you want a subset of merge pipeline jobs to be
-run on every push, you can name the branch to match one of the regular
-expressions given in the table below.
-
-| If commit message contains | Or branch name matches    | Action                                                       |
-| -------------------------- | ------------------------- | ------------------------------------------------------------ |
-| `[ci compiler]`            | `/[-_]ci[-_]compiler/`    | Test different compilers (e.g. `clang`, `icc`, `gcc`)        |
-| `[ci conda]`               | `/[-_]ci[-_]conda/`       | Build Conda packages                                         |
-| `[ci coverage]`            | `/[-_]ci[-_]coverage/`    | Report test suite coverage                                   |
-| `[ci deb]`                 | `/[-_]ci[-_]deb/`         | Build Debian packages                                        |
-| `[ci docker]`              | `/[-_]ci[-_]docker/`      | Build Docker containers                                      |
-| `[ci docs]`                | `/[-_]ci[-_]docs/`        | Build the documentation                                      |
-| `[ci full]`                | n/a                       | Run all jobs in the merge pipeline                           |
-| `[ci integration]`         | `/[-_]ci[-_]integration/` | Longer-running integration/build configuration tests         |
-| `[ci lint]`                | `/[-_]ci[-_]lint/`        | Check for code quality issues, API changes, etc.             |
-| `[ci nightly]`             | n/a                       | Run all jobs in the nightly deployment pipeline              |
-| `[ci pkg]`                 | `/[-_]ci[-_]pkg/`         | Perform a basic package-level build from tarballs            |
-| `[ci platform]`            | `/[-_]ci[-_]platform/`    | Test different platforms (MacOS, various Linux distros)      |
-| `[ci rpm]`                 | `/[-_]ci[-_]rpm/`         | Build RPM packages                                           |
-| `[ci tags]`                | n/a                       | Run all pipeline jobs for release tags (`lalsuite-v*`)       |
-| `[ci wheels]`              | `/[-_]ci[-_]wheels/`      | Build Python wheel packages                                  |
-
-Note: The `[ci nightly]` and `[ci tags]` pipelines do not execute any deployment
-actions with external consequences, e.g. deploying documentation, pushing
-packages to repositories. These actions can only be executed by the third CI
-pipeline which runs nightly on the main `lscsoft/lalsuite` fork.
-
-### Pretty code formatting
-
-You may optionally specify that certain C or Python sources should be _pretty
-formatted_ in a consistent style, which will be enforced by the CI pipelines.
-
-* C code is pretty-formatted using [Artistic Style][prettyastyle], which
-  supports a number of C coding styles and options. It is enabled by creating
-  files with a `.pretty.astylerc` extension; the contents of these files are
-  read for the C coding style options to pass to Artistic Style. Three types of
-  files are supported:
-
-  * A C source level file, e.g. `lallib/path/to/.MyModule.pretty.astylerc`, will
-    pretty-format the C source file(s) `lallib/path/to/MyModule.[ch]`;
-
-  * A directory level file, e.g. `lallib/path/to/.pretty.astylerc` will
-    pretty-format all C source files in `lallib/path/to/`;
-
-  * A LALSuite library level file, e.g. `lallib/.pretty.astylerc`, will
-    pretty-format all C source files in `lallib/`.
-
-* Python code is pretty-formatted using [Black][prettyblack]. It is enabled by
-  creating files with a `.pretty.black` extension; since Black does not take any
-  coding style options, the contents of these files are not examined. Three
-  types of files are supported:
-
-  * A Python source level file, e.g. `lallib/path/to/.MyModule.pretty.black`,
-    will pretty-format the Python source file `lallib/path/to/MyModule.py`;
-
-  * A directory level file, e.g. `lallib/path/to/.pretty.black` will
-    pretty-format all Python source files in `lallib/path/to/`;
-
-  * A LALSuite library level file, e.g. `lallib/.pretty.black`, will
-    pretty-format all Python source files in `lallib/`.
-
-The pre-commit hooks will check that your local changes are pretty-formatted correctly.
+<table>
+    <thead>
+        <tr>
+            <th>Pipeline</th>
+            <th>Triggers</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Build and test Docker development images</td>
+            <td>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-devimg</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                <b>Note: this will execute deployment actions</b><br/>
+                <i>or</i><br/>
+                Branch name matches: <code>/^devimg/</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                <b>Note: this will execute deployment actions</b><br/>
+                <i>or</i><br/>
+                Commit message: <code>[ci sched devimg]</code><br/>
+                Branch location: not <code>lscsoft/lalsuite</code><br/>
+                Note: this will not execute deployment actions
+            </td>
+        </tr>
+        <tr>
+            <td>Build snapshot Docker images and wheels</td>
+            <td>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-snapshot</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                <b>Note: this will execute deployment actions</b><br/>
+                <i>or</i><br/>
+                Commit message: <code>[ci sched snapshot]</code><br/>
+                Branch location: not <code>lscsoft/lalsuite</code><br/>
+                Note: this will not execute deployment actions
+            </td>
+        </tr>
+        <tr>
+            <td>Rebuild release Docker images</td>
+            <td>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-release</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                <b>Note: this will execute deployment actions</b><br/>
+                <i>or</i><br/>
+                Commit message: <code>[ci sched release]</code><br/>
+                Branch location: not <code>lscsoft/lalsuite</code><br/>
+                Note: this will not execute deployment actions
+            </td>
+        </tr>
+        <tr>
+            <td>Build and deploy Doxygen documentation</td>
+            <td>
+                Schedule variable: <code>LCI_PIPE_TYPE=sched-doc</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                <b>Note: this will execute deployment actions</b><br/>
+                <i>or</i><br/>
+                Commit message: <code>[ci sched doc]</code><br/>
+                Branch location: not <code>lscsoft/lalsuite</code><br/>
+                Note: this will not execute deployment actions
+            </td>
+        </tr>
+        <tr>
+            <td>LALSuite release tag</td>
+            <td>
+                Branch name matches: <code>/^release/</code><br/>
+                Branch location: <code>lscsoft/lalsuite</code><br/>
+                Note: this will not execute deployment actions
+            </td>
+        </tr>
+        <tr>
+            <td>Merge request</td>
+            <td>
+                Commit message: <code>[ci merge]</code>
+            </td>
+        </tr>
+        <tr>
+            <td>Post-merge request tasks</td>
+            <td>
+                Commit message: <code>[ci postmerge]</code>
+            </td>
+        </tr>
+        <tr>
+            <td>Debug jobs that track API changes</td>
+            <td>
+                Commit message: <code>[ci debug api]</code>
+            </td>
+        </tr>
+    </tbody>
+</table>
 
 ## More information
 
 * More information regarding the usage of GitLab can be found in the main GitLab
   [documentation][githelp].
 
-* See also [the LALSuite gitlab wiki pages][lalsuitewiki] for some additional
+* See also [the LALSuite GitLab wiki pages][lalsuitewiki] for some additional
   developer FAQs.
 
-[buildfromsrc]:  https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md#building-from-source
-[compguidegit]:  https://computing.docs.ligo.org/guide/gitlab/
-[doxygen]:       https://doxygen.nl
-[forkworkflow]:  https://git.ligo.org/help/user/project/repository/forking_workflow.html
-[githelp]:       https://git.ligo.org/help
-[gitlfs]:        https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client
-[gitsetup]:      https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
-[helpdesk]:      mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
-[lalsuiteforks]: https://git.ligo.org/lscsoft/lalsuite/-/forks/new
-[lalsuiterepo]:  https://git.ligo.org/lscsoft/lalsuite
-[lalsuitewiki]:  https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
-[mergerequests]: https://git.ligo.org/help/user/project/merge_requests/index.html
-[nightlydocs]:   https://lscsoft.docs.ligo.org/lalsuite
-[precommit]:     https://pre-commit.com/
-[prettyastyle]:  https://astyle.sourceforge.net/
-[prettyblack]:   https://black.readthedocs.io/en/stable/
+## Appendix: Notes on Ancient History
+
+LALSuite was transferred to `git.ligo.org` in December 2017. Older
+history has been imported, though commit hashes were rewritten during
+the [Git LFS][gitlfs] conversion. Please note:
+
+1. The `Original:` commit IDs quoted in each commit message can be used
+   to compare with the [archived reference repo][oldlalsuite], old issue
+   discussions on the [Redmine tracker][oldredmine], review wiki pages
+   etc.
+
+1. Commits before December 2017 may also include references to issues
+   (`#number`). These refer to the corresponding [Redmine
+   issue][oldredmine] (LVC-authorized access only), and any clickable
+   link the internal GitLab web interface produces for those old commits
+   will therefore be spurious.
+
+[buildfromsrc]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis/BUILD
+[compguidegit]:     https://computing.docs.ligo.org/guide/gitlab/
+[doxygen]:          https://doxygen.nl
+[forkworkflow]:     https://git.ligo.org/help/user/project/repository/forking_workflow.html
+[githelp]:          https://git.ligo.org/help
+[gitlfs]:           https://wiki.ligo.org/Computing/GitLFS
+[gitsetup]:         https://git-scm.com/book/en/v2/Getting-Started-First-Time-Git-Setup
+[helpdesk]:         mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
+[lalsuitedocs]:     https://lscsoft.docs.ligo.org/lalsuite
+[lalsuiteforks]:    https://git.ligo.org/lscsoft/lalsuite/-/forks/new
+[lalsuiterepo]:     https://git.ligo.org/lscsoft/lalsuite
+[lalsuitewiki]:     https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
+[mergerequests]:    https://git.ligo.org/help/user/project/merge_requests/index.html
+[oldlalsuite]:      https://git.ligo.org/lscsoft/lalsuite-archive
+[oldredmine]:       https://bugs.ligo.org/redmine/projects/lalsuite
+[precommit]:        https://pre-commit.com/
+[prettyastyle]:     https://astyle.sourceforge.net/
+[prettyblack]:      https://black.readthedocs.io/en/stable/

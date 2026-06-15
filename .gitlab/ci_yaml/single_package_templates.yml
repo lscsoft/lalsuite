@@ -1,0 +1,225 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: templates for single-package test jobs
+# ----------------------------------------------------------------------
+
+# -- platform matrix ---------------------------------------------------
+
+.single-pkg-matrix:
+  parallel:
+    matrix:
+
+      # --- Enterprise Linux -------------------------------------------
+
+      - LCI_PLAT: "el8"
+        LCI_ENV: "LCI_BLD=rpm"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+        LCI_SINGLE_PKG: "rpm"
+
+      # --- Debian -----------------------------------------------------
+
+      - LCI_PLAT: "bookworm"
+        LCI_ENV: "LCI_BLD=deb"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+        LCI_SINGLE_PKG: "deb"
+
+      # --- Conda ------------------------------------------------------
+
+      - LCI_PLAT: "conda-py313"
+        LCI_ENV: "LCI_BLD=conda LCI_CONDA_PLAT_BASE=linux_64 LCI_CONDA_PLAT_lal=fft_implfftw LCI_CONDA_ABI=cp313"
+        LCI_JOB_TYPE: ["merge", "sched-devimg"]
+        LCI_SINGLE_PKG: "conda"
+
+# -- templates ---------------------------------------------------------
+
+.single-pkg-job:
+  extends:
+    - .pkg-level-job
+    - .single-pkg-matrix
+  script:
+    # set up builder environment
+    - eval export "${LCI_ENV}"
+    - eval export "${LCI_SINGLE_PKG_ENV}"
+    - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
+    - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
+    - mkdir -p ${PACKAGE_DIR}
+    # unpack tarball
+    - mkdir -p build/
+    - cd build/
+    - export TARBALL=$(ls -1 ${CI_PROJECT_DIR}/tarballs/${PACKAGE}-*.tar.*)
+    - tar xf ${TARBALL}
+    - cd ${PACKAGE}-*/
+    # install upstream packages
+    - source ${LCI_SCRIPTS}/pkg_install_upstream_${LCI_PKG}.sh
+    # install build dependencies
+    - TOP_BUILDDEP_SUBDIRS="."
+    - source ${LCI_SCRIPTS}/top_builddep_${LCI_PKG}.sh
+  rules:
+    # do not run in platform not selected by $LCI_SINGLE_PKG_SELECT
+    - if: >-
+        $LCI_SINGLE_PKG !~ $LCI_SINGLE_PKG_SELECT
+      when: never
+    - !reference [.pkg-level-job, rules]
+
+# -- package dependencies ----------------------------------------------
+
+.single-pkg:lal:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lal, needs]
+  variables:
+    PACKAGE: lal
+
+.single-pkg:lal:after:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lal, needs]
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lal
+
+.single-pkg:lalframe:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalframe, needs]
+  variables:
+    PACKAGE: lalframe
+
+.single-pkg:lalframe:after:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalframe, needs]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalframe
+
+.single-pkg:lalmetaio:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalmetaio, needs]
+  variables:
+    PACKAGE: lalmetaio
+
+.single-pkg:lalmetaio:after:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalmetaio, needs]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalmetaio
+
+.single-pkg:lalsimulation:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalsimulation, needs]
+  variables:
+    PACKAGE: lalsimulation
+
+.single-pkg:lalsimulation:after:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalsimulation, needs]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalsimulation
+
+.single-pkg:lalburst:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalburst, needs]
+  variables:
+    PACKAGE: lalburst
+
+.single-pkg:lalburst:after:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalburst, needs]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalburst
+
+.single-pkg:lalinspiral:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalinspiral, needs]
+  variables:
+    PACKAGE: lalinspiral
+
+.single-pkg:lalinspiral:after:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalinspiral, needs]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalinspiral
+
+.single-pkg:lalinference:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalinference, needs]
+  variables:
+    PACKAGE: lalinference
+
+.single-pkg:lalinference:after:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalinference, needs]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalinference
+
+.single-pkg:lalpulsar:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalpulsar, needs]
+  variables:
+    PACKAGE: lalpulsar
+
+.single-pkg:lalpulsar:after:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalpulsar, needs]
+    - job: lalpulsar
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalpulsar
+
+.single-pkg:lalapps:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalapps, needs]
+  variables:
+    PACKAGE: lalapps
+
+.single-pkg:lalapps:after:
+  extends:
+    - .single-pkg-job
+  needs:
+    - !reference [lalapps, needs]
+    - job: lalapps
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalapps

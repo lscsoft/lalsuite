@@ -33,16 +33,15 @@ import os
 import sys
 import time
 
-
 import igwn_segments as segments
 from igwn_segments import utils as segmentsUtils
-import lal
-from lal import iterutils
-from lal import pipeline
 from lal.utils import CacheEntry
-import lalburst
-from . import cafe
 
+import lal
+import lalburst
+from lal import iterutils, pipeline
+
+from . import cafe
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __date__ = "$Date$"
@@ -432,8 +431,9 @@ class PowerNode(pipeline.AnalysisNode):
 	def set_mdccache(self, file):
 		"""
 		Set the LAL frame cache to to use. The frame cache is
-		passed to the job with the --frame-cache argument.  @param
-		file: calibration file to use.
+		passed to the job with the --frame-cache argument.
+
+                @param file: calibration file to use.
 		"""
 		self.add_var_opt("mdc-cache", file)
 		self.add_input_file(file)

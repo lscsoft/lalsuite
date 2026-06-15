@@ -1,8 +1,8 @@
-#!/bin/bash
-
 set -ex
 
-LALINFERENCE_DIR=$(cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}"))"/.. && pwd)
+LALINFERENCE_DIR=${LALINFERENCE_DIR:-.}
+cd ${LALINFERENCE_DIR}
+
 export USER=albert.einstein
 export OMP_NUM_THREADS=1
 sed \
@@ -35,7 +35,7 @@ distance-max=1500|' \
   -e 's|^#.*mtotal-min=2|mtotal-min=55|' \
   -e 's|^#.*mtotal-max=35|mtotal-max=65|' \
   -e '/^#.*maxmcmc=/c\maxmcmc=100' \
-  ${LALINFERENCE_DIR}/lib/lalinference_pipe_example.ini > example.ini
-lalinference_pipe --run-path ./example -I lalinference/test/injection_standard.xml --daglog-path ./daglog ./example.ini
-cd example/4s
+  ./lib/lalinference_pipe_example.ini > ./example.ini
+lalinference_pipe --run-path ./example -I ./test/injection_standard.xml --daglog-path ./daglog ./example.ini
+cd ./example/4s
 time bash -ex ./lalinference_441417463-441417627.sh

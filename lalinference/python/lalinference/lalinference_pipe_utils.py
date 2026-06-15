@@ -2,28 +2,30 @@
 #flow DG Class definitions for LALInference Pipeline
 # (C) 2012 John Veitch, Vivien Raymond, Kiersten Ruisard, Kan Wang
 
+import ast
 import itertools
-from lal import pipeline
+import math
+import os
+import random
+import socket
+import sys
+import uuid
+from functools import reduce
+from glob import glob
+from itertools import permutations
+from math import ceil, floor, log, pow
+
 import igwn_segments as segments
+import numpy as np
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
-import os
-import socket
-import uuid
-import ast
-from math import floor,ceil,log,pow
-import sys
-import random
-from itertools import permutations
-import numpy as np
-from glob import glob
-import math
-from functools import reduce
+
+from lal import pipeline
+
 try:
     from configparser import NoOptionError, NoSectionError
 except ImportError:
     from ConfigParser import NoOptionError, NoSectionError
-import numpy
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -47,11 +49,11 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
         GPS period to analyse
     """
     try:
+        import gwpy
+        import gwpy.segments
+        import gwpy.timeseries
         from glue.lal import Cache
         from gwdatafind import find_urls
-        import gwpy
-        import gwpy.timeseries
-        import gwpy.segments
     except ImportError:
         print('Unable to import necessary modules. Querying science segments not possible. Please try installing gwdatafind and gwpy')
         raise
@@ -166,10 +168,12 @@ class Event():
             self.event_id=next(Event.new_id)
         if self.injection is not None:
             self.trig_time=self.injection.geocent_end_time + 1.0e-9*self.injection.geocent_end_time_ns
-            if event_id is None: self.event_id=self.injection.simulation_id
+            if event_id is None:
+                self.event_id=self.injection.simulation_id
         if self.burstinjection is not None:
             self.trig_time=self.burstinjection.time_geocent + 1.0e-9*self.burstinjection.time_geocent_ns
-            if event_id is None: self.event_id=self.burstinjection.simulation_id
+            if event_id is None:
+                self.event_id=self.burstinjection.simulation_id
         if self.sngltrigger is not None:
             self.trig_time=self.sngltrigger.end_time + 1.0e-9 * self.sngltrigger.end_time_ns
             self.event_id=self.sngltrigger.event_id
@@ -213,14 +217,14 @@ def create_events_from_coinc_and_psd(
     """
     output=[]
     import lal
-    from lalsimulation import SimInspiralChirpTimeBound, IMRPhenomDGetPeakFreq
+    from lalsimulation import IMRPhenomDGetPeakFreq, SimInspiralChirpTimeBound
     try:
         from gstlal import reference_psd
     except ImportError:
         reference_psd = None
     try:
-        from gwpy.frequencyseries import FrequencySeries
         from gwpy.astro import inspiral_range
+        from gwpy.frequencyseries import FrequencySeries
     except ImportError:
         inspiral_range = None
     coinc_events = lsctables.CoincInspiralTable.get_table(coinc_xml_obj)
@@ -319,8 +323,9 @@ def open_pipedown_database(database_filename,tmp_space):
     """
     if not os.access(database_filename,os.R_OK):
         raise Exception('Unable to open input file: %s'%(database_filename))
-    from igwn_ligolw import dbtables
     import sqlite3
+
+    from igwn_ligolw import dbtables
     working_filename=dbtables.get_connection_filename(database_filename,tmp_path=tmp_space)
     connection = sqlite3.connect(working_filename)
     if tmp_space:
@@ -336,8 +341,10 @@ def get_zerolag_lloid(database_connection, dumpfile=None, gpsstart=None, gpsend=
     max_cfar to select by combined FAR
     """
     output={}
-    if gpsstart is not None: gpsstart=float(gpsstart)
-    if gpsend is not None: gpsend=float(gpsend)
+    if gpsstart is not None:
+        gpsstart=float(gpsstart)
+    if gpsend is not None:
+        gpsend=float(gpsend)
     # Get coincs
     get_coincs = "SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq,coinc_inspiral.combined_far \
             FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name=='sngl_inspiral' and coinc_event_map.event_id ==\
@@ -379,8 +386,10 @@ def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpse
     max_cfar to select by combined FAR
     """
     output={}
-    if gpsstart is not None: gpsstart=float(gpsstart)
-    if gpsend is not None: gpsend=float(gpsend)
+    if gpsstart is not None:
+        gpsstart=float(gpsstart)
+    if gpsend is not None:
+        gpsend=float(gpsend)
     # Get coincs
     get_coincs = "SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq,coinc_inspiral.combined_far \
             FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name=='sngl_inspiral' and coinc_event_map.event_id ==\
@@ -420,8 +429,10 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
     with times and timeslide offsets
     """
     output={}
-    if gpsstart is not None: gpsstart=float(gpsstart)
-    if gpsend is not None: gpsend=float(gpsend)
+    if gpsstart is not None:
+        gpsstart=float(gpsstart)
+    if gpsend is not None:
+        gpsend=float(gpsend)
     db_segments=[]
     sql_seg_query="SELECT search_summary.out_start_time, search_summary.out_end_time from search_summary join process on process.process_id==search_summary.process_id where process.program=='thinca'"
     db_out = database_connection.cursor().execute(sql_seg_query)
@@ -470,8 +481,10 @@ def mkdirs(path):
     Helper function. Make the given directory, creating intermediate
     dirs if necessary, and don't complain about it already existing.
     """
-    if os.access(path,os.W_OK) and os.path.isdir(path): return
-    else: os.makedirs(path)
+    if os.access(path,os.W_OK) and os.path.isdir(path):
+        return
+    else:
+        os.makedirs(path)
 
 def chooseEngineNode(name):
     if name=='lalinferencenest':
@@ -670,12 +683,12 @@ def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
     mc_min = min([prange[0] for prange in mc_priors.values()])
     mc_max = max([prange[1] for prange in mc_priors.values()])
     scale_factor = 1.
-    if force_flow == None and trigger_mchirp != None:
+    if force_flow is None and trigger_mchirp is not None:
         if trigger_mchirp >= mc_max:
             scale_factor = 2.**(floor(trigger_mchirp/mc_max))
         if trigger_mchirp <= mc_min:
             scale_factor = (2./3.2)**(ceil(trigger_mchirp/mc_min))
-    elif force_flow != None:
+    elif force_flow is not None:
         scale_factor = 20./force_flow
     return scale_factor
 
@@ -742,7 +755,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         self.segments={}
         if cp.has_option('datafind','veto-categories'):
             self.veto_categories=cp.get('datafind','veto-categories')
-        else: self.veto_categories=[]
+        else:
+            self.veto_categories=[]
         for ifo in self.ifos:
             self.segments[ifo]=[]
         self.computeroqweightsnode={}
@@ -842,7 +856,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 self.config.write(conffile)
 
         # Generate the DAG according to the config given
-        for event in self.events: self.add_full_analysis(event)
+        for event in self.events:
+            self.add_full_analysis(event)
         if self.config.has_option('analysis','upload-to-gracedb'):
             if self.config.getboolean('analysis','upload-to-gracedb'):
                 self.add_gracedb_FITSskymap_upload(self.events[0],engine=self.engine)
@@ -862,13 +877,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     def write_wrapper_script(self, path):
         script = """#!/usr/bin/env bash
-		    echo "Making placeholder output files"
-		    IFS=','
-		    for f in $@; do
-			touch $f;
-			echo "created $f";
-		    done;
-		"""
+                    echo "Making placeholder output files"
+                    IFS=','
+                    for f in $@; do
+                        touch $f;
+                        echo "created $f";
+                    done;
+                """
         with open(path,'w') as scr:
             scr.write(script)
         import stat
@@ -1007,7 +1022,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             if(self.config.has_option('input','segment-overlap')):
                 overlap=self.config.getfloat('input','segment-overlap')
             else:
-                overlap=32.;
+                overlap=32.
             if(overlap>seglen):
                 print('ERROR: segment-overlap is greater than seglen')
                 sys.exit(1)
@@ -1145,7 +1160,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         elif self.config.has_option('input','pipedown-db'):
             queryfunc=get_zerolag_pipedown
             dbname=self.config.get('input','pipedown-db')
-        else: dbname=None
+        else:
+            dbname=None
         if dbname:
             db_connection = open_pipedown_database(dbname,None)[0]
             # Timeslides
@@ -1181,7 +1197,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Check whether to add spin evolution job
     def spin_evol_checks(self):
         if self.config.has_section('spin_evol'):
-            from lalsimulation import SimInspiralGetApproximantFromString, SimInspiralGetSpinSupportFromApproximant
+            from lalsimulation import (
+                SimInspiralGetApproximantFromString,
+                SimInspiralGetSpinSupportFromApproximant,
+            )
 
             tidal_run_tests = self.config.has_option('engine', 'tidal') or self.config.has_option('engine', 'tidalT')
 
@@ -1434,8 +1453,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
                 temp_node=self.add_gracedb_info_node(respagenode,ugid,analysis='LIB',email=emailto,server=gdb_srv)
         if self.config.has_option('condor','ligo-skymap-plot') and self.config.has_option('condor','ligo-skymap-from-samples'):
-            if self.engine=='lalinferenceburst': prefix='LIB'
-            else: prefix='LALInference'
+            if self.engine=='lalinferenceburst':
+                prefix='LIB'
+            else:
+                prefix='LALInference'
             mapnode = SkyMapNode(self.mapjob, posfile = mergenode.get_pos_file(), parent=mergenode,
                     prefix= prefix, outdir=pagedir, ifos=self.ifos)
             plotmapnode = PlotSkyMapNode(self.plotmapjob, parent=mapnode, inputfits = mapnode.outfits, output=os.path.join(pagedir,'skymap.png'))
@@ -2258,7 +2279,7 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
         before generating DAG.
         """
         from shutil import copyfile
-        from subprocess import check_output, CalledProcessError
+        from subprocess import CalledProcessError, check_output
 
         try:
             res = check_output(['grid-proxy-info','-path'])
@@ -2580,7 +2601,8 @@ class EngineNode(LALInferenceDAGNode):
             self.channels[ifo]=channelname
             self.job().requires_frames=True
             return 1
-        else: return 0
+        else:
+            return 0
 
     def set_cache(self,filename,ifo):
         """
@@ -2606,14 +2628,17 @@ class EngineNode(LALInferenceDAGNode):
             elif not self.lfns:
                 self.add_file_opt('%s-cache'%(ifo),self.cachefiles[ifo])
             self.add_var_opt('%s-channel'%(ifo),self.channels[ifo])
-            if self.flows: self.add_var_opt('%s-flow'%(ifo),self.flows[ifo])
-            if self.fhighs: self.add_var_opt('%s-fhigh'%(ifo),self.fhighs[ifo])
+            if self.flows:
+                self.add_var_opt('%s-flow'%(ifo),self.flows[ifo])
+            if self.fhighs:
+                self.add_var_opt('%s-fhigh'%(ifo),self.fhighs[ifo])
             if self.psds:
                 if os.path.exists(self.psds[ifo]):
                     self.add_file_opt('%s-psd'%(ifo),self.psds[ifo])
                 else:
                     self.add_var_opt('%s-psd'%(ifo),self.psds[ifo])
-            if any(self.timeslides): self.add_var_opt('%s-timeslide'%(ifo),self.timeslides[ifo])
+            if any(self.timeslides):
+                self.add_var_opt('%s-timeslide'%(ifo),self.timeslides[ifo])
 
         """ The logic here is the following:
                 The CBC code starts from the earliest commont time, but that means that if you run on *the same trigtime* the PSD start and PSDlength you'll get will be different, depending on wheather you are running on only one event or several, and the exact position of the event you are interested in in the list of times.
@@ -3133,7 +3158,8 @@ class CoherenceTestNode(LALInferenceDAGNode):
         """
         Construct command line
         """
-        if self.finalized==True: return
+        if self.finalized==True:
+            return
         self.finalized=True
         self.add_file_arg(self.coherent_parent.get_pos_file())
         for inco in self.incoherent_parents:
@@ -3264,7 +3290,8 @@ class GraceDBNode(LALInferenceDAGNode):
             # Message need to be a string
             # Upfile is the full path of the file to be uploaded
         super(GraceDBNode,self).__init__(gracedb_job)
-        if gid: self.set_gid(gid)
+        if gid:
+            self.set_gid(gid)
         if parent:
             if isinstance(parent, list):
                 for p in parent:
@@ -3433,7 +3460,8 @@ class SkyMapNode(pipeline.CondorDAGNode):
         """
         Construct command line
         """
-        if self.finalized==True: return
+        if self.finalized==True:
+            return
         self.finalized=True
         self.add_file_opt('samples',self.posfile)
         self.add_file_opt('fitsoutname',self.outfits, file_is_output_file=True)
@@ -3502,7 +3530,8 @@ class PlotSkyMapNode(LALInferenceDAGNode):
         """
         Construct command line
         """
-        if self.finalized==True: return
+        if self.finalized==True:
+            return
         self.finalized=True
         self.add_input_file(self.fitsfile)
         self.add_file_arg(self.fitsfile)

@@ -100,9 +100,9 @@ class TBank:
         if args.knotnum:
             self.knotnum = args.knotnum
 
-        if args.flags_bbox is not []:
+        if args.flags_bbox != []:
             self.flags_bbox = args.flags_bbox
-        if args.flags_intbox is not []:
+        if args.flags_intbox != []:
             self.flags_intbox = args.flags_intbox
 
         if args.tstart:

@@ -1,35 +1,30 @@
 # -*- coding: utf-8 -*-
 
-"""
-LIGO Scientific Collaboration Algorithm Library - minimal Python package
+"""# Quick Installation
 
-LALSuite is the LIGO Scientific Collaboration Algorithm Library for
-gravitational-wave analysis. Its primary purpose is searching for and
-characterizing astrophysical signals in gravitational-wave time series data,
-particularly data from ground-based detectors such as `LIGO
-<https://www.ligo.org>`_ and `Virgo <http://www.virgo-gw.eu>`_.
+Basic installation:
+```
+$ pip install lalsuite
+```
 
-LALSuite consists of a set of ``configure``-``make``-``install`` style software
-packages organized by problem domain or source classification. This Python
-package provides a standalone, dependency-free binary distribution of the
-libraries and Python modules in LALSuite for Linux and macOS.
+Optional dependencies:
 
-Installing LALSuite from the Python Package Index requires pip >= 19.3.
+* Packages needed by LALInference for Bayesian inference data analysis e.g. [GWDataFind](https://pypi.org/project/gwdatafind/), [GWpy](https://pypi.org/project/gwpy/):
+  ```
+  $ pip install lalsuite[lalinference]
+  ```
 
-To install, simply run::
+* Packages needed by LALPulsar for pulsar and continuous wave gravitational wave data analysis, e.g. [solar system ephemerides](https://pypi.org/project/solar_system_ephemerides/):
+  ```
+  $ pip install lalsuite[lalpulsar]
+  ```
 
-    $ pip install lalsuite
+* Packages needed for testing:
+  ```
+  $ pip install lalsuite[test]
+  ```
 
-Optional dependencies, which can be installed as ``pip install lalsuite[option]``:
-
-* ``lalinference`` (pulls in
-  `gwdatafind <https://pypi.org/project/gwdatafind/>`_
-  and `gwpy <https://pypi.org/project/gwpy/>`_)
-* ``lalpulsar`` (pulls in
-  `solar_system_ephemerides <https://pypi.org/project/solar-system-ephemerides/>`_
-  to provide ephemeris files which, until LALSuite 7.15, were still included in
-  the main package)
-* ``test`` (pulls in `pytest <https://pypi.org/project/pytest/>`_)
+# Overview
 """
 
 import os
@@ -67,13 +62,7 @@ subst['exec_prefix'] = Template('@exec_prefix@').substitute(**subst)
 BINDIR = Path(Template('@bindir@').substitute(**subst))
 DATADIR = Path(Template('$prefix/share').substitute(**subst))
 PYTHONDIR = Path(Template('@pythondir@').substitute(**subst))
-BASE_VERSION = '@BASE_VERSION@'
-NIGHTLY_VERSION = '@NIGHTLY_VERSION@'
-
-if NIGHTLY_VERSION:
-    VERSION = BASE_VERSION + '.' + NIGHTLY_VERSION
-else:
-    VERSION = BASE_VERSION
+VERSION = '@VERSION@'
 
 SHLIB_SUFFIX = sysconfig.get_config_var("SHLIB_SUFFIX")
 
@@ -129,15 +118,21 @@ class build_scripts(_build_scripts):
             _build_scripts.run(self)
             self.scripts = old_scripts
 
+with open("@abs_top_srcdir@/README.md") as f:
+    readme = f.readlines()
+
+description = readme[0].lstrip("#").strip()
+long_description = __doc__.strip() + "\n\n" + "".join(readme[1:]).strip()
 
 setup(
     # metadata
     name='lalsuite',
     license='GPL-2.0-or-later',
     version=VERSION,
-    description=__doc__.strip().split('\n')[0],
-    long_description='\n'.join(__doc__.strip().split('\n')[1:]).strip(),
-    author='LIGO Scientific Collaboration',
+    description=description,
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    author='LIGO Scientific Collaboration and Virgo Collaboration and KAGRA Collaboration',
     author_email='lal-discuss@ligo.org',
     maintainer='Adam Mercer',
     maintainer_email='adam.mercer@ligo.org',

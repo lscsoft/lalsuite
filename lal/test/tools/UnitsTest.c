@@ -57,8 +57,9 @@
 int main(void) {
 
   int errnum;
-  LALUnit unit1, unit2, unit3, *punit;
-  RAT4 power;
+  LALUnit XLAL_INIT_DECL(unit1);
+  LALUnit unit2, unit3, *punit;
+  RAT4 XLAL_INIT_DECL(power);
   CHAR *string, buffer[LALUnitTextSize];
   UINT4 length;
 

@@ -1,6 +1,7 @@
-import sys
 import csv
 import subprocess
+import sys
+
 import numpy as np
 
 maxd = 2e-3
@@ -12,8 +13,8 @@ try:
     import matplotlib as mpl
 
     mpl.use("Agg")
-    import matplotlib.pyplot as plt
     import matplotlib.gridspec as gridspec
+    import matplotlib.pyplot as plt
 
     plot = True
 except:

@@ -2,8 +2,8 @@ import inspect
 import os
 import re
 import sys
-import warnings
 import textwrap
+import warnings
 
 __all__ = ('warn',)
 

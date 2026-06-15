@@ -1,11 +1,14 @@
-import lal
-import lalsimulation as lalsim
+import math
+import warnings
+
 import numpy as np
 from astropy import units as u
-from . import waveform as wave
+
+import lal
+import lalsimulation as lalsim
+
 from . import conditioning_subroutines as cond
-import warnings
-import math
+from . import waveform as wave
 
 # This is basically the same conditioning as done in LALSimulation.
 # Specifically, what is done in "LALSimInspiralGeneratorConditioning.c".
@@ -195,7 +198,7 @@ def generate_conditioned_td_waveform_from_fd(parameter_dict, generator):
     hp *= phase_shift
     hc *= phase_shift
 
-    if hp.epoch==None or hc.epoch==None:
+    if hp.epoch is None or hc.epoch is None:
         hp.epoch=tshift*u.s
         hc.epoch=tshift*u.s
     else:
@@ -211,8 +214,8 @@ def generate_conditioned_td_waveform_from_fd(parameter_dict, generator):
     hct = cond.high_pass_time_series(hct, dt, original_f_min, 0.99, 8.)
 
     # Resize time series
-    fstart = lalsim.SimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp, m1, m2);
-    tchirp = lalsim.SimInspiralChirpTimeBound(fstart, m1, m2, s1z, s2z);
+    fstart = lalsim.SimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp, m1, m2)
+    tchirp = lalsim.SimInspiralChirpTimeBound(fstart, m1, m2, s1z, s2z)
 
     #total expected chirp length includes merger
 
@@ -319,7 +322,7 @@ def generate_conditioned_fd_waveform_from_fd(parameter_dict, generator):
     tchirp = lalsim.SimInspiralChirpTimeBound(fstart, m1, m2, s1z, s2z)
 
     # Get length required for full waveform with padding upto power of 2
-    chirplen = round((tchirp + tmerge + 2.0 * textra) / deltaT);
+    chirplen = round((tchirp + tmerge + 2.0 * textra) / deltaT)
     truth, exponent = check_pow_of_2(chirplen)
     chirplen = 2**exponent
 

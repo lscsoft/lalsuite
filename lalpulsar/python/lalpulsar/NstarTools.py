@@ -18,11 +18,13 @@
 Tools to estimate Nstar and related functions
 
 """
-from __future__ import division, absolute_import, print_function
 
-import pprint
+from __future__ import absolute_import, division, print_function
+
 import itertools
 import logging
+import pprint
+
 import numpy as np
 
 try:
@@ -149,6 +151,7 @@ def get_Nstar_estimate(
     spin-down uncertainty. The calculated estimate using `get_Nstar_estimate`
     agrees with this input value.
 
+    ```
     >>> from lalpulsar import NstarTools
     >>> nsegs = 1
     >>> minStartTime = 1000000000
@@ -172,6 +175,7 @@ def get_Nstar_estimate(
     >>> print NstarTools.get_Nstar_estimate(
     >>>     nsegs, tref, minStartTime, maxStartTime, prior, detector_names)
     1000.00000009
+    ```
 
     Note
     ----

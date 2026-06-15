@@ -14,14 +14,14 @@ def fail(msg):
 
 
 # get input arguments
-install_dir, install_dirmap = sys.argv[1:]
+toplevel_reldir, install_dir, install_dirmap = sys.argv[1:]
 
 # install regex built from install directory map
 # - make 'to_dir' relative to install_dir to ensure
 #   Doxygen documentation does not contain absolute paths
 #   and hence is relocatable
 for elem in install_dirmap.split():
-    (from_dir, to_dir) = elem.split(":")
+    from_dir, to_dir = elem.split(":")
     if len(from_dir) == 0:
         fail("from-directory in install directory map is empty")
     if len(to_dir) == 0:
@@ -30,8 +30,20 @@ for elem in install_dirmap.split():
 
 # install regex for top-level navigation tabs
 print(r"s|\.\./\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|../\1/index.html|g")
-print(r"s|\.\./\.\./\.\./doxygen/out/index\.html|../lalsuite/index.html|g")
-print(r"s|\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|../\1/index.html|g")
+print(r"s|\.\./\.\./\.\./doxygen/out/index\.html|../index.html|g")
+print(r"s|\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|./\1/index.html|g")
+
+# install regex for top-level README and contributing guide
+print(
+    r"s|https://git\.ligo\.org/lscsoft/lalsuite/-/blob/master/README\.md|"
+    + toplevel_reldir
+    + r"/index.html|g"
+)
+print(
+    r"s|https://git\.ligo\.org/lscsoft/lalsuite/-/blob/master/CONTRIBUTING\.md|"
+    + toplevel_reldir
+    + r"/lalsuite_contributing.html|g"
+)
 
 # output
 print("p")

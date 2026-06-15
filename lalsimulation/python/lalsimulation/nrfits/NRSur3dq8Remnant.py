@@ -6,10 +6,12 @@ Vijay Varma, 2019.
 """
 
 import numpy as np
-import lalsimulation as lalsim
+
 import lal
+import lalsimulation as lalsim
 
 from .nrfits import NRFits
+
 
 class NRSur3dq8Remnant(NRFits):
     r"""

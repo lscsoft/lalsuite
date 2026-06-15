@@ -1,0 +1,78 @@
+# syntax=docker/dockerfile:1
+
+ARG DEB_VERSION
+
+FROM debian:${DEB_VERSION}-slim
+
+ARG DEB_VERSION
+
+LABEL name="LALSuite Release Image - Debian ${DEB_VERSION}"
+LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
+LABEL support="Best Effort"
+
+SHELL ["/bin/bash", "-c"]
+
+# copy packages
+COPY ./packages/ /packages/
+
+# run debconf noninteractively
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN <<EOF
+set -ex
+
+# update APT cache
+apt-get -y -q update
+
+# upgrade distribution
+apt-get -y -q upgrade
+
+# install required packages
+apt-get -y -q install \
+    apt-transport-https \
+    apt-utils \
+    curl \
+    gpg \
+    ;
+
+# cleanup
+apt-get clean
+
+EOF
+
+# add lscsoft repository
+COPY <<EOF /etc/apt/sources.list.d/lscsoft.list
+deb [signed-by=/etc/apt/trusted.gpg.d/hypatia-key.asc] https://hypatia.aei.mpg.de/debian/ ${DEB_VERSION} lvk
+EOF
+
+RUN <<EOF
+set -ex
+
+# set up lscsoft repository
+cat /etc/apt/sources.list.d/lscsoft.list
+curl -O https://hypatia.aei.mpg.de/debian/keys/hypatia-keyring.deb
+dpkg -i hypatia-keyring.deb
+rm -f hypatia-keyring.deb
+
+# update APT cache
+apt-get -y -q update
+
+# upgrade distribution
+apt-get -y -q upgrade
+
+# install upstream .debs
+upstream_debs=$(find /packages -name '*.deb')
+echo "===== upstream .debs"
+printf "%s\n" ${upstream_debs}
+echo "====="
+apt-get -y -q install ${upstream_debs}
+apt-get -y -q autoremove
+
+# print info
+dpkg-query --list
+
+# cleanup
+apt-get clean
+rm -rf /packages
+
+EOF

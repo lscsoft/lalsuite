@@ -1,0 +1,38 @@
+swig:
+  options: >-
+    --style=otbs
+    --indent=spaces=2
+    --unpad-paren
+    --pad-paren-in
+    --pad-header
+    --pad-oper
+    --align-pointer=name
+    --convert-tabs
+  include:
+    - swig/
+
+lalpulsar:
+  check: false   ### TOFIX
+  options: >-
+    --style=otbs
+    --indent=spaces=2
+    --unpad-paren
+    --pad-paren-in
+    --pad-header
+    --pad-oper
+    --align-pointer=name
+    --convert-tabs
+  include:
+    - lalpulsar/
+
+ignore:
+  check: false
+  include:
+    - lal/
+    - lalapps/
+    - lalburst/
+    - lalframe/
+    - lalinference/
+    - lalinspiral/
+    - lalmetaio/
+    - lalsimulation/

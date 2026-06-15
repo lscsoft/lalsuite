@@ -6,6 +6,7 @@ Archisman Ghosh, Nathan K. Johnson-McDaniel, P. Ajith, 2015-04-09
 
 import numpy as np
 import scipy.optimize as so
+
 try:
     import lal
 except ImportError:
@@ -511,9 +512,7 @@ def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, 
     chi1, chi2 : dimensionless spins of two BHs
     tilt1, tilt2 : tilts (in radians) in the new spin convention
     phi12: angle (in radians) between in-plane spin components
-    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014 (aligned+augmentation),
-                                              PhenomD (aligned+augmentation), UIB2016 (aligned+augmentation),
-                                              HL2016 (aligned+augmentation), HBR2016 (precessing)
+    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014 (aligned+augmentation), PhenomD (aligned+augmentation), UIB2016 (aligned+augmentation), HL2016 (aligned+augmentation), HBR2016 (precessing)
 
     Returns
     -------

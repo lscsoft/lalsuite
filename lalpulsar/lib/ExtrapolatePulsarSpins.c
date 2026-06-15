@@ -32,7 +32,7 @@
 /*********************************************************************************/
 /**
  * \file
- * \ingroup ExtrapolatePulsarSpins
+ * \ingroup ExtrapolatePulsarSpins_h
  * \author Reinhard Prix
  *
  * \brief Defines functions to extrapolate the pulsar spin-paramters

@@ -21,21 +21,19 @@ These functions are tested against fiducial outputs from the reviewed
 lalpulsar_parameter_estimation_nested code.
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function
 
 import os
 import sys
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
-
 import pytest
-
-import lal
-
-import lalpulsar
 from lalpulsar.PulsarParametersWrapper import PulsarParametersPy
 from lalpulsar.simulateHeterodynedCW import HeterodynedCWSimulator
+from numpy.testing import assert_allclose, assert_equal
+
+import lal
+import lalpulsar
 
 """
 The first test output is to create a signal model for a source assuming that

@@ -2,9 +2,9 @@
 Compare two ini files and print out their differences
 """
 
+import configparser
 import sys
 from optparse import *
-import configparser
 
 usage = """usage: %prog [options]
 """

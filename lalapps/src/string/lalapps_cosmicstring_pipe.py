@@ -20,25 +20,22 @@ the standalone ring code on LIGO data
 
 from __future__ import print_function
 
-
 import itertools
-from optparse import OptionParser
 import os
 import sys
 import tempfile
 from configparser import ConfigParser
+from optparse import OptionParser
 
-
+import igwn_segments as segments
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import segments as ligolw_segments
-from lal import LIGOTimeGPS
-from lal import pipeline
 from lal.utils import CacheEntry
-from lalburst import offsetvector
-from lalburst import power
+
+from lal import LIGOTimeGPS, pipeline
 from lalapps import cosmicstring
-import igwn_segments as segments
+from lalburst import offsetvector, power
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'

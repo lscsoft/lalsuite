@@ -7,6 +7,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_library_top.am
 ACLOCAL_AMFLAGS = -I gnuscripts
 
 EXTRA_DIST += \
+	gnuscripts/lalframe_test_compiler \
 	lalframe.spec \
 	rpmlintrc \
 	$(DATA)

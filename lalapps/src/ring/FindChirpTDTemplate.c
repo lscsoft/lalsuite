@@ -28,7 +28,6 @@
 /**
  * \author Brown, D. A., and Creighton, J. D. E.
  * \file
- * \ingroup FindChirpTD_h
  *
  * \brief Provides functions to create time domain inspiral templates in a
  * form that can be used by the <tt>FindChirpFilter()</tt> function.

@@ -27,27 +27,20 @@
 
 from __future__ import print_function
 
-
 import math
-from optparse import OptionParser
 import sqlite3
 import string
 import sys
+from optparse import OptionParser
 
-
-from lal.utils import CacheEntry
-
-
-from igwn_ligolw import dbtables
-from igwn_ligolw import ligolw
+import igwn_segments as segments
+from igwn_ligolw import dbtables, ligolw
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
 from igwn_ligolw.utils import search_summary as ligolw_search_summary
-from lalburst import SnglBurstUtils
-from lalburst import git_version
-from lalburst import stringutils
-import igwn_segments as segments
+from lal.utils import CacheEntry
 
+from lalburst import SnglBurstUtils, git_version, stringutils
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id

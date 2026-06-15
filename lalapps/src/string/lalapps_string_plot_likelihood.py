@@ -28,9 +28,10 @@
 
 from __future__ import print_function
 
-
 import math
+
 import matplotlib
+
 matplotlib.rcParams.update({
 	"font.size": 8.0,
 	"axes.titlesize": 10.0,
@@ -44,18 +45,14 @@ matplotlib.rcParams.update({
 	"grid.linestyle": "-",
 	"grid.linewidth": 0.25
 })
-from matplotlib import figure
-from matplotlib import cm
-from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
-import numpy
-from optparse import OptionParser
 import sys
+from optparse import OptionParser
 
+import numpy
+from matplotlib import cm, figure
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-from lalburst import git_version
-from lalburst import snglcoinc
-from lalburst import stringutils
-
+from lalburst import git_version, snglcoinc, stringutils
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id

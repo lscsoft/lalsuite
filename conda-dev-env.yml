@@ -6,11 +6,11 @@ dependencies:
   - autoconf
   - automake
   - bc
+  - c-compiler
   - cfitsio
-  - doxygen
+  - doxygen ==1.12.*
   - fftw
   - freezegun
-  - c-compiler
   - gsl
   - gwpy
   - h5py
@@ -29,6 +29,7 @@ dependencies:
   - mpmath >=1.0.0
   - numpy
   - openmpi
+  - pandoc
   - pillow
   - pip
   - pkg-config >=0.18.0
@@ -41,3 +42,5 @@ dependencies:
   - tqdm
   - xz
   - zlib
+  - pip:
+      - doxypypy

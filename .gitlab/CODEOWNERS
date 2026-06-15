@@ -59,7 +59,6 @@ lalapps/src/string/             @adam-mercer @florent-robinet @kipp
 *.spec.in                       @adam-mercer @duncanmmacleod @karl-wette
 .coafile                        @adam-mercer @duncanmmacleod @karl-wette
 .gitignore                      @adam-mercer @duncanmmacleod @karl-wette
-.gitlab-*.Dockerfile            @adam-mercer @duncanmmacleod @karl-wette
 .gitlab-ci.yml                  @adam-mercer @duncanmmacleod @karl-wette
 .gitlab/                        @adam-mercer @duncanmmacleod @karl-wette
 .mailmap                        @adam-mercer @duncanmmacleod @karl-wette

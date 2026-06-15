@@ -20,13 +20,12 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from . import git_version
+
 __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __version__ = "git id %s" % git_version.id
 __date__ = git_version.date
 
-from collections import OrderedDict
 import configparser
-import igwn_segments as segments
 import itertools
 import math
 import os
@@ -35,7 +34,10 @@ import re
 import stat
 import sys
 import time
+from collections import OrderedDict
 from hashlib import md5
+
+import igwn_segments as segments
 
 
 class CondorError(Exception):
@@ -941,8 +943,10 @@ class CondorDAGNode(object):
     instead of an input file.  The default is to have it be an input.
     """
     self.add_var_opt(opt,filename)
-    if file_is_output_file: self.add_output_file(filename)
-    else: self.add_input_file(filename)
+    if file_is_output_file:
+      self.add_output_file(filename)
+    else:
+      self.add_input_file(filename)
 
   def add_var_arg(self, arg,quote=False):
     """
@@ -1866,7 +1870,8 @@ class ScienceSegment(object):
     Allows iteration over and direct access to the AnalysisChunks contained
     in this ScienceSegment.
     """
-    if i < 0: raise IndexError("list index out of range")
+    if i < 0:
+      raise IndexError("list index out of range")
     return self.__chunks[i]
 
   def __len__(self):
@@ -2652,7 +2657,8 @@ class LsyncCache(object):
       # see if the seglist overlaps with our search
       overlap = seglist.intersects(searchlist)
 
-      if not overlap: continue
+      if not overlap:
+        continue
 
       # the seglist does overlap with search so build file paths
       # but reject those outside of the search segment

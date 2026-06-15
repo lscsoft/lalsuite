@@ -4,13 +4,13 @@ Code to use post-Newtonian equations [from Ajith, PRD 84, 084037 (2011), arXiv:1
 P. Ajith, A. Gupta, and N. K. Johnson-McDaniel, 04.2016, based on earlier code
 """
 
-from scipy.integrate import ode
 import numpy as np
-import lalsimulation as lalsim
-from lal import PI, MTSUN_SI, MSUN_SI, GAMMA
 from numpy import log
 from numpy.linalg import norm
+from scipy.integrate import ode
 
+import lalsimulation as lalsim
+from lal import GAMMA, MSUN_SI, MTSUN_SI, PI
 
 """Preccesion frequency spins """
 def Omega(v, m1, m2, S1, S2, Ln): #S1, S2 are full spin vector while Ln is a unit vector
@@ -29,7 +29,13 @@ def denergy_by_flux(v, eta, delta, chiadL, chisdL, chiasqr, chissqr, chisdchia, 
     ''' Eqs.(3.2) of Ajith (2011) http://arxiv.org/pdf/1107.1267v2.pdf '''
 
     # different powers of v
-    v2 = v*v; v3 = v2*v; v4 = v3*v; v5 = v4*v; v6 = v5*v; v7 = v6*v; v9 = v7*v2
+    v2 = v*v
+    v3 = v2*v
+    v4 = v3*v
+    v5 = v4*v
+    v6 = v5*v
+    v7 = v6*v
+    v9 = v7*v2
 
     # initialize the cofficients
     dEbF0 = dEbF2 = dEbF3 = dEbF4 = dEbF5 = dEbF6 = dEbF6L = dEbF7 = 0.
@@ -59,55 +65,55 @@ def denergy_by_flux(v, eta, delta, chiadL, chisdL, chiasqr, chissqr, chisdchia, 
 
 
 def precession_eqns(t, y_vec, m1, m2):
-	""" The coupled set of ODEs containing the PN precession eqns as well as the evolution of dv/dt
-	    All these equations are listed in Ajith (2011) (http://arxiv.org/pdf/1107.1267v2.pdf).
-	"""
+        """ The coupled set of ODEs containing the PN precession eqns as well as the evolution of dv/dt
+            All these equations are listed in Ajith (2011) (http://arxiv.org/pdf/1107.1267v2.pdf).
+        """
 
-	# unpack the vector of variables
-	v, S1x, S1y, S1z, S2x, S2y, S2z, Lx, Ly, Lz = y_vec
+        # unpack the vector of variables
+        v, S1x, S1y, S1z, S2x, S2y, S2z, Lx, Ly, Lz = y_vec
 
-	m1_sqr = m1*m1
-	m2_sqr = m2*m2
-	m = m1+m2
-	eta = m1*m2/(m1+m2)**2
-	delta = (m1-m2)/(m1+m2)
+        m1_sqr = m1*m1
+        m2_sqr = m2*m2
+        m = m1+m2
+        eta = m1*m2/(m1+m2)**2
+        delta = (m1-m2)/(m1+m2)
 
-	# spin and angular momentum vectors
-	Ln = np.array([Lx, Ly, Lz])
-	S1 = np.array([S1x, S1y, S1z])
-	S2 = np.array([S2x, S2y, S2z])
-	chi1 = S1/m1_sqr
-	chi2 = S2/m2_sqr
-	chi_s = (chi1+chi2)/2.
-	chi_a = (chi1-chi2)/2.
+        # spin and angular momentum vectors
+        Ln = np.array([Lx, Ly, Lz])
+        S1 = np.array([S1x, S1y, S1z])
+        S2 = np.array([S2x, S2y, S2z])
+        chi1 = S1/m1_sqr
+        chi2 = S2/m2_sqr
+        chi_s = (chi1+chi2)/2.
+        chi_a = (chi1-chi2)/2.
 
-	#print 'v = ', v , ' chi1 = ', chi1, ' chi2 = ', chi2
+        #print 'v = ', v , ' chi1 = ', chi1, ' chi2 = ', chi2
 
-	# dot products
-	chiadL = np.dot(chi_a, Ln)
-	chisdL = np.dot(chi_s, Ln)
-	chissqr = np.dot(chi_s, chi_s)
-	chiasqr = np.dot(chi_a, chi_a)
-	chisdchia = np.dot(chi_s, chi_a)
+        # dot products
+        chiadL = np.dot(chi_a, Ln)
+        chisdL = np.dot(chi_s, Ln)
+        chissqr = np.dot(chi_s, chi_s)
+        chiasqr = np.dot(chi_a, chi_a)
+        chisdchia = np.dot(chi_s, chi_a)
 
-	# magnitude of the orb ang momentum. The prefactor of dLN/dt in Eq.(3.6) of Ajith (2011)
-	Lmag = (eta*m**2./v)*(1.+(1.5+eta/6.)*v**2.)
+        # magnitude of the orb ang momentum. The prefactor of dLN/dt in Eq.(3.6) of Ajith (2011)
+        Lmag = (eta*m**2./v)*(1.+(1.5+eta/6.)*v**2.)
 
-	# precession freqs. Eqs.(3.8) of Ajith (2011)
-	Omega1= Omega(v, m1, m2, S1, S2, Ln)
-	Omega2= Omega(v, m2, m1, S2, S1, Ln)
+        # precession freqs. Eqs.(3.8) of Ajith (2011)
+        Omega1= Omega(v, m1, m2, S1, S2, Ln)
+        Omega2= Omega(v, m2, m1, S2, S1, Ln)
 
-	# spin precession eqns. Eqs.(3.7) of Ajith (2011)
-	dS1_dt = np.cross(Omega1, S1)
-	dS2_dt = np.cross(Omega2, S2)
+        # spin precession eqns. Eqs.(3.7) of Ajith (2011)
+        dS1_dt = np.cross(Omega1, S1)
+        dS2_dt = np.cross(Omega2, S2)
 
-	# ang momentum precession eqn. Eqs.(3.6) of Ajith (2011)
-	dL_dt =-(dS1_dt+dS2_dt)/Lmag
+        # ang momentum precession eqn. Eqs.(3.6) of Ajith (2011)
+        dL_dt =-(dS1_dt+dS2_dt)/Lmag
 
-	# orb frequency evolution. Eqs.(3.5) of Ajith (2011)
-	dv_dt = -1./(m*denergy_by_flux(v, eta, delta, chiadL, chisdL, chiasqr, chissqr, chisdchia, 7))
+        # orb frequency evolution. Eqs.(3.5) of Ajith (2011)
+        dv_dt = -1./(m*denergy_by_flux(v, eta, delta, chiadL, chisdL, chiasqr, chissqr, chisdchia, 7))
 
-	return  [dv_dt, dS1_dt[0], dS1_dt[1], dS1_dt[2], dS2_dt[0], dS2_dt[1], dS2_dt[2], dL_dt[0], dL_dt[1], dL_dt[2]]
+        return  [dv_dt, dS1_dt[0], dS1_dt[1], dS1_dt[2], dS2_dt[0], dS2_dt[1], dS2_dt[2], dL_dt[0], dL_dt[1], dL_dt[2]]
 
 def evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt):
         """ evolve the spins and orb ang momentum according to the PN precession eqns."""

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[7.26.4.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[7.26.13.1],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -23,6 +23,9 @@ AM_INIT_AUTOMAKE([ \
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
+# define version/configure info
+LALSUITE_VERSION_CONFIGURE_INFO
+
 # use silent build rules
 AM_SILENT_RULES([yes])
 
@@ -30,7 +33,6 @@ AM_SILENT_RULES([yes])
 AC_PROG_AWK
 AC_PROG_SED
 
-LALSUITE_ENABLE_NIGHTLY
 LALSUITE_CHECK_PYTHON([])   # use default minimum Python version
 LALSUITE_CHECK_GIT_REPO
 
@@ -188,6 +190,7 @@ AC_MSG_NOTICE([
 ==================================================
 LALSuite has now been successfully configured:
 
+* Version: $VERSION
 * LALFrame library support is $LALFRAME_ENABLE_VAL
 * LALMetaIO library support is $LALMETAIO_ENABLE_VAL
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL

@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+
+"""Merge coverage reports. They're just XML, after all."""
+
+__author__ = "Leo Singer"
+__copyright__ = "Copyright (C) 2020 Leo Singer"
+
+import lxml.etree
+
+# read inputs
+doc1 = lxml.etree.parse("py-coverage.xml")
+doc2 = lxml.etree.parse("c-coverage.xml")
+
+root1 = doc1.getroot()
+root2 = doc2.getroot()
+
+attrib1 = root1.attrib
+attrib2 = root1.attrib
+
+# combine counts
+for key in ("lines-covered", "lines-valid", "branches-covered", "branches-valid"):
+    attrib1[key] = str(int(attrib1[key]) + int(attrib2[key]))
+
+# recalculate rates
+for key, covered, valid in (
+    ("line-rate", "lines-covered", "lines-valid"),
+    ("branch-rate", "branches-covered", "branches-valid"),
+):
+    try:
+        attrib1[key] = str(int(attrib1[covered]) / int(attrib1[valid]))
+    except ZeroDivisionError:
+        attrib1[key] = "0"
+
+# combine file coverage reports
+packages = root1.find("./packages")
+packages.extend(root2.iterfind("./packages/package"))
+
+# write new file
+doc1.write("coverage.xml")

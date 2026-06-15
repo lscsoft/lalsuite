@@ -15,18 +15,19 @@
 
 
 # Import base python packages
-import numpy as np
 import sys
-import lal
+
+import numpy as np
 
 # Import astropy and GWPy - skip test if they are unavailable
-
 import pytest
+
+import lal
 
 try:
     import astropy.units as u
-    from gwpy.timeseries import TimeSeries
     from gwpy.frequencyseries import FrequencySeries
+    from gwpy.timeseries import TimeSeries
 except ModuleNotFoundError:
     import warnings
     warnings.warn("Astropy or GwPy not installed")
@@ -37,7 +38,6 @@ ts = TimeSeries([10,10])
 
 # Import GWSignal packagess
 import lalsimulation.gwsignal.core.waveform as wfm
-
 
 #####################################################################
 ## simple tests for basic TD functionality

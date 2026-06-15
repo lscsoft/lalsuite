@@ -33,17 +33,16 @@ summary tables.
 
 
 import glob
-from optparse import OptionParser
 import os
 import sys
-
-from lal.utils import CacheEntry
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
-from igwn_ligolw import utils as ligolw_utils
 from functools import reduce
-from lal import git_version
+from optparse import OptionParser
 
+from igwn_ligolw import ligolw, lsctables
+from igwn_ligolw import utils as ligolw_utils
+from lal.utils import CacheEntry
+
+from lal import git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id

@@ -21,12 +21,10 @@ Based on test_prec_avg_evol.py
 
 import os
 import sys
-import pytest
+
 import numpy as np
-
+import pytest
 from lalsimulation.tilts_at_infinity import calc_tilts_at_infty_hybrid_evolve
-
-import sys
 
 if sys.version_info[0] < 3:
 

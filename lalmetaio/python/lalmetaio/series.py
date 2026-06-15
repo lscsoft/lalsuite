@@ -27,10 +27,10 @@ the DMT to store time- and frequency-series data in XML files,
 """
 
 
-from igwn_ligolw import ligolw
-import lal
 import numpy as np
+from igwn_ligolw import ligolw
 
+import lal
 
 Attributes = ligolw.sax.xmlreader.AttributesImpl
 

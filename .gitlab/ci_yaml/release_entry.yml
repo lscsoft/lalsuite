@@ -1,0 +1,94 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: create a release entry on GitLab
+# ----------------------------------------------------------------------
+
+release-entry:info:
+  extends:
+    - .generic-job
+    - .linux-job
+    - .deploy-job
+  script:
+    # configure
+    - ./00boot
+    # get LALSuite version
+    - |
+      lalsuite_vers="$(autoconf --warnings=none --trace 'AC_INIT:$2' configure.ac | cut -d. -f1-3)"
+      if [ "X${lalsuite_vers}" = X ]; then
+          echo "ERROR: could not determine lalsuite version"
+          exit 1
+      fi
+    # get LALSuite package versions
+    - |
+      packages_name_vers=
+      for subdir in ${LCI_PKGLIST}; do
+          pkg_name="$(autoconf --warnings=none --trace 'AC_INIT:$1' ${subdir}/configure.ac)"
+          if [ "X${pkg_name}" = X ]; then
+              echo "ERROR: could not determine ${subdir} name"
+              exit 1
+          fi
+          pkg_vers="$(autoconf --warnings=none --trace 'AC_INIT:$2' ${subdir}/configure.ac | cut -d. -f1-3)"
+          if [ "X${pkg_vers}" = X ]; then
+              echo "ERROR: could not determine ${subdir} version"
+              exit 1
+          fi
+          if [ "X${packages_name_vers}" != X ]; then
+              packages_name_vers="${packages_name_vers}, "
+          fi
+          packages_name_vers="${packages_name_vers}${pkg_name} ${pkg_vers}"
+      done
+    # build description
+    - |
+      desc="LALSuite ${lalsuite_vers}, comprising: ${packages_name_vers}"
+    # export release info
+    - echo "VERSION=${lalsuite_vers}" > release_info.env
+    - echo "DESCRIPTION=${desc}" >> release_info.env
+    # show release info
+    - cat release_info.env
+  artifacts:
+    reports:
+      dotenv: release_info.env
+  rules:
+    - if: >
+        $LCI_PIPE_TYPE == "lalsuite-tag"
+
+release-entry:
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  extends:
+    - .deploy-job
+  needs:
+    # needs release info
+    - job: release-entry:info
+      artifacts: true
+    # needs documentation path prefix
+    - job: doxygen-doc
+      artifacts: true
+    # ensure that all release products are successfully deployed first
+    - job: wheel:deploy
+      artifacts: false
+  before_script:
+    # print environment variables for debugging
+    - export -p
+  script:
+    - |
+      cat <<EOF
+      tag_name: ${CI_COMMIT_TAG}
+      name: LALSuite ${VERSION}
+      description: ${DESCRIPTION}
+      EOF
+    - |
+      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
+        echo "WARNING: simulating execution of deployment actions"
+        exit 123
+      fi
+  release:
+    tag_name: "${CI_COMMIT_TAG}"
+    name: "LALSuite ${VERSION}"
+    description: "${DESCRIPTION}"
+    assets:
+      links:
+        - name: "Documentation"
+          url: "${CI_PAGES_URL}/${PATH_PREFIX}"
+  rules:
+    - !reference [.deploy-check-execute, rules]
+    - if: >
+        $LCI_PIPE_TYPE == "lalsuite-tag"

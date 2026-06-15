@@ -17,9 +17,11 @@
 
 
 import sys
-import lal
+
 import numpy as np
 import pytest
+
+import lal
 import lalsimulation as lalsim
 
 np.set_printoptions(precision=17)

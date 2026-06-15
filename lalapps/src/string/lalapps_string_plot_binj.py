@@ -28,22 +28,17 @@
 
 from __future__ import print_function
 
-
 import math
-from optparse import OptionParser
 import sqlite3
 import sys
+from optparse import OptionParser
 
-
+import igwn_segments as segments
 from igwn_ligolw import dbtables
 from igwn_ligolw import utils as ligolw_utils
-from lalburst import rate
 from lal.utils import CacheEntry
-from lalburst import git_version
-from lalburst import SimBurstUtils
-from lalburst import SnglBurstUtils
-import igwn_segments as segments
 
+from lalburst import SimBurstUtils, SnglBurstUtils, git_version, rate
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id

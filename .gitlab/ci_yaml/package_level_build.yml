@@ -1,0 +1,373 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: package-level build jobs
+# ----------------------------------------------------------------------
+
+# -- templates ---------------------------------------------------------
+
+.pkg-level-job:
+  stage: package-level
+  image: "${LCI_DEV_IMG}:${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
+  extends:
+    - .linux-job
+    - .tarball-build-job
+  variables:
+    GIT_STRATEGY: none
+    PACKAGE_ROOT_DIR: "${CI_PROJECT_DIR}/packages"
+    PACKAGE_DIR: "${PACKAGE_ROOT_DIR}/${PACKAGE}"
+  script:
+    # set up builder environment
+    - eval export "${LCI_ENV}"
+    - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
+    - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
+    - mkdir -p ${PACKAGE_DIR}
+    # unpack tarball
+    - mkdir -p build/
+    - cd build/
+    - export TARBALL=$(ls -1 ${CI_PROJECT_DIR}/tarballs/${PACKAGE}-*.tar.*)
+    - tar xf ${TARBALL}
+    - cd ${PACKAGE}-*/
+    # install upstream packages
+    - source ${LCI_SCRIPTS}/pkg_install_upstream_${LCI_PKG}.sh
+    # run package-level build
+    - source ${LCI_SCRIPTS}/pkg_build_${LCI_BLD}.sh
+    # check/concatenate code quality reports
+    - cd ${CI_PROJECT_DIR}
+    - ${LCI_SCRIPTS}/check_code_quality -o concat-code-quality.json $(find build/ -name 'code-quality-*.json')
+  artifacts:
+    expire_in: 18h
+    paths:
+      # packages
+      - "packages/${PACKAGE}"
+      # log files
+      - "build/${PACKAGE}-*/**/config.log"
+      - "build/${PACKAGE}-*/**/test-suite.log"
+      # generated sources
+      - "build/${PACKAGE}-*/**/swiglal_lal*_octave.cpp"
+      - "build/${PACKAGE}-*/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "build/${PACKAGE}-*/**/Makefile"
+      - "build/${PACKAGE}-*/**/libtool"
+      # package system files
+      - "build/${PACKAGE}-*/${LCI_BLD}-specific/"
+    reports:
+      codequality: concat-code-quality.json
+      junit: "build/**/*junit*.xml"
+    when: always
+  rules:
+    # do not run when rebuilding release Docker images
+    - if: >-
+        $LCI_JOB_TYPE == "sched-release"
+      when: never
+    - !reference [.default-matrix-rule, rules]
+
+# matches CI package job needs across build matrix
+# - e.g. "lalframe [LCI_PLAT=...]" needs "lal [LCI_PLAT=...]"
+.pkg-level-needs:
+  parallel:
+    matrix:
+      - LCI_PLAT: '$[[ matrix.LCI_PLAT ]]'
+        LCI_ENV: '$[[ matrix.LCI_ENV ]]'
+        LCI_JOB_TYPE: '$[[ matrix.LCI_JOB_TYPE ]]'
+
+# -- package jobs ------------------------------------------------------
+
+lal:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
+    - job: ci-scripts
+    # tarballs
+    - job: tarballs:lal
+  variables:
+    PACKAGE: lal
+
+lalframe:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
+    - job: ci-scripts
+    # tarballs
+    - job: tarballs:pkg
+    # LALSuite library dependencies
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalframe
+
+lalmetaio:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
+    - job: ci-scripts
+    # tarballs
+    - job: tarballs:pkg
+    # LALSuite library dependencies
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalmetaio
+
+lalsimulation:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
+    - job: ci-scripts
+    # tarballs
+    - job: tarballs:pkg
+    # LALSuite library dependencies
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalsimulation
+
+lalburst:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
+    - job: ci-scripts
+    # tarballs
+    - job: tarballs:pkg
+    # LALSuite library dependencies
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalburst
+
+lalinspiral:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
+    - job: ci-scripts
+    # tarballs
+    - job: tarballs:pkg
+    # LALSuite library dependencies
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalinspiral
+
+lalinference:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
+    - job: ci-scripts
+    # tarballs
+    - job: tarballs:pkg
+    # LALSuite library dependencies
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalinference
+
+lalpulsar:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
+    - job: ci-scripts
+    # tarballs
+    - job: tarballs:pkg
+    # LALSuite library dependencies
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalpulsar
+
+lalapps:
+  extends:
+    - .pkg-level-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
+    - job: ci-scripts
+    # tarballs
+    - job: tarballs:pkg
+    # LALSuite library dependencies
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalpulsar
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE: lalapps
+
+# -- package upgrade job -----------------------------------------------
+
+upgrade:
+  stage: package-level
+  image: "${LCI_DEV_IMG}:${LCI_PLAT}${LCI_DEV_TAG_SUFFIX}"
+  extends:
+    - .linux-job
+    - .tarball-build-job
+  parallel: !reference [.pkg-level-matrix, parallel]
+  needs:
+    # ensure the Docker development images are built first
+    - job: dev-image:conda
+      optional: true
+    - job: dev-image:other
+      optional: true
+    # CI scripts
+    - job: ci-scripts
+    # LALSuite library dependencies
+    - job: lal
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalframe
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalmetaio
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalsimulation
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalburst
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalpulsar
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinspiral
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalinference
+      parallel: !reference [.pkg-level-needs, parallel]
+    - job: lalapps
+      parallel: !reference [.pkg-level-needs, parallel]
+  variables:
+    PACKAGE_ROOT_DIR: "${CI_PROJECT_DIR}/packages"
+  script:
+    # set builder environment
+    - eval export "${LCI_ENV}"
+    - echo "LCI_BLD=${LCI_BLD} LCI_PKG=${LCI_PKG:=${LCI_BLD}}"
+    - source ${LCI_SCRIPTS}/init_${LCI_PKG}.sh
+    # check for a LALSuite release to upgrade
+    - |
+      if test -f /no-lalsuite; then
+          cat /no-lalsuite
+          exit 77
+      fi
+    # upgrade packages
+    - source ${LCI_SCRIPTS}/pkg_upgrade_${LCI_BLD}.sh
+    # check that packages have been upgraded
+    - |
+      echo "CI commit SHA: ${CI_COMMIT_SHA}"
+      for pkg in ${LCI_PKGLIST}; do
+          pkg_sha=$(${pkg}_version --verbose | grep -i "${pkg}-id" | cut -d ' ' -f2)
+          echo "${pkg} commit SHA: ${pkg_sha}"
+          if test "X${pkg_sha}" != "X${CI_COMMIT_SHA}"; then
+              echo "ERROR: commit SHAs do not match"
+              echo "ERROR: output from '${pkg}_version --verbose' is:"
+              ${pkg}_version --verbose
+              exit 1
+          fi
+      done
+  rules:
+    # do not runs if the job is not a plain make build
+    - if: >-
+        $LCI_ENV =~ /LCI_BLD=make/
+      when: never
+    - !reference [.pkg-level-job, rules]
+  allow_failure:
+    # returned if container does not have a
+    # LALSuite release installed to upgrade
+    exit_codes: 77

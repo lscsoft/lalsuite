@@ -1,11 +1,14 @@
+import warnings
 from operator import xor
-import lal
-import lalsimulation as lalsim
+
 import numpy as np
 from astropy import units as u
 
+import lal
+import lalsimulation as lalsim
+
 from . import parameter_conventions as pc
-import warnings
+
 
 def from_lal_value(val):
     """
@@ -152,8 +155,10 @@ def check_dict_parameters(waveform_dict,generic_param_dict=None):
 
 
     #Check and extend parameter list if applicable
-    if generic_param_dict is not None: full_parameter_list = np.concatenate([pc.full_parameter_list,list(generic_param_dict.keys())])
-    else : full_parameter_list = pc.full_parameter_list
+    if generic_param_dict is not None:
+        full_parameter_list = np.concatenate([pc.full_parameter_list,list(generic_param_dict.keys())])
+    else:
+        full_parameter_list = pc.full_parameter_list
 
     # Check if python dictionary contains any key not included in this list & units of selected parameters
     for k in waveform_dict.keys():
@@ -162,8 +167,10 @@ def check_dict_parameters(waveform_dict,generic_param_dict=None):
             raise(TypeError( ("Parameter %s not in accepted list of parameters"%(k))))
     #Check the units of the parameteres are correct
         elif k in pc.units_dict[default_unit_sys].keys():
-            try : waveform_dict[k].unit #Check if it has units at all. Otherwise will give no clue about the parameter giving error
-            except: raise(TypeError( ("Parameter {} does not have units, please pass a parameter with astropy units equivalent to u.[{}]".format(k,pc.units_dict[default_unit_sys][k]))))
+            try:
+                waveform_dict[k].unit #Check if it has units at all. Otherwise will give no clue about the parameter giving error
+            except:
+                raise(TypeError( ("Parameter {} does not have units, please pass a parameter with astropy units equivalent to u.[{}]".format(k,pc.units_dict[default_unit_sys][k]))))
             assert waveform_dict[k].unit.is_equivalent(pc.units_dict[default_unit_sys][k]), "Parameter {} does not have proper units, units should be equivalent to u.[{}]".format(k,pc.units_dict[default_unit_sys][k])
         elif k=='condition':
             if int(waveform_dict[k])==0 or int(waveform_dict[k])==1:
@@ -175,8 +182,10 @@ def check_dict_parameters(waveform_dict,generic_param_dict=None):
                 raise(ValueError("lmax must be >=0"))
             continue
         elif generic_param_dict is not None:
-            try : waveform_dict[k].unit #Check if it has units at all. Otherwise will give no clue about the parameter giving error
-            except: raise(TypeError( ("Parameter {} does not have units, please pass a parameter with astropy units equivalent to u.[{}]".format(k,generic_param_dict[k]))))
+            try:
+                waveform_dict[k].unit #Check if it has units at all. Otherwise will give no clue about the parameter giving error
+            except:
+                raise(TypeError( ("Parameter {} does not have units, please pass a parameter with astropy units equivalent to u.[{}]".format(k,generic_param_dict[k]))))
             assert waveform_dict[k].unit.is_equivalent(generic_param_dict[k]), "Parameter {} does not have proper units, units should be equivalent to u.[{}]".format(k,generic_param_dict[k])
 
 
@@ -264,12 +273,16 @@ def CheckDeterminationOfMasses(waveform_dict):
 
 
     for param in dimensionful_masses:
-        if param in waveform_dict.keys(): dim_number += 1
+        if param in waveform_dict.keys():
+            dim_number += 1
     for param in dimensionless_masses:
-        if param in waveform_dict.keys(): nodim_number += 1
+        if param in waveform_dict.keys():
+            nodim_number += 1
     for param in symetric_masses:
-        if param in waveform_dict.keys(): sym_number += 1
-    if ("mass1" in waveform_dict.keys()) & ("mass2" in waveform_dict.keys()): sym_number = 0
+        if param in waveform_dict.keys():
+            sym_number += 1
+    if ("mass1" in waveform_dict.keys()) & ("mass2" in waveform_dict.keys()):
+        sym_number = 0
 
     if ((dim_number == 2 and nodim_number == 0) or (dim_number == 1 and nodim_number == 1)):
         if(sym_number == 2):
@@ -309,21 +322,29 @@ def CheckDeterminationOfSpins(waveform_dict):
     spherical = ['_norm','_tilt','_phi']
 
     for sfx in cartesian:
-        if 'spin1'+sfx in waveform_dict.keys(): spin1_number += 1
-        if 'spin2'+sfx in waveform_dict.keys(): spin2_number += 1
+        if 'spin1'+sfx in waveform_dict.keys():
+            spin1_number += 1
+        if 'spin2'+sfx in waveform_dict.keys():
+            spin2_number += 1
 
-    if spin1_number >0: cartesian_1=True
-    if spin2_number >0: cartesian_2=True
+    if spin1_number >0:
+        cartesian_1=True
+    if spin2_number >0:
+        cartesian_2=True
 
     spin1_number = 0
     spin2_number = 0
 
     for sfx in spherical:
-        if 'spin1'+sfx in waveform_dict.keys(): spin1_number += 1
-        if 'spin2'+sfx in waveform_dict.keys(): spin2_number += 1
+        if 'spin1'+sfx in waveform_dict.keys():
+            spin1_number += 1
+        if 'spin2'+sfx in waveform_dict.keys():
+            spin2_number += 1
 
-    if spin1_number >0: spherical_1=True
-    if spin2_number >0: spherical_2=True
+    if spin1_number >0:
+        spherical_1=True
+    if spin2_number >0:
+        spherical_2=True
 
     if not(xor(cartesian_1,spherical_1)) or not(xor(cartesian_2,spherical_2)):
         raise(TypeError( "Please specify the 3 spin parameters in either spherical or cartesian coordinates."))

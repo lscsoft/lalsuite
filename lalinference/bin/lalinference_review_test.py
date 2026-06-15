@@ -1,13 +1,13 @@
 ##python
 import argparse
-import shutil
-import os
-import sys
-import subprocess
 import glob
-import lalinference
-
+import os
+import shutil
+import subprocess
+import sys
 from configparser import ConfigParser
+
+import lalinference
 
 prefix=''
 try:
@@ -72,7 +72,7 @@ if 'UNCLEAN' in lalinference.InferenceVCSInfo.vcsId:
 else:
     default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSInfo.vcsId+'/'+args.engine.replace(',','_')+'/'
 
-if args.output == None:
+if args.output is None:
     web_outputdir=default_outputdir
     args.output=os.path.abspath(default_outputdir)
 else:
@@ -156,13 +156,13 @@ if args.bns_injection:
         cpBNS.write(cpfile)
 
     lalinferenceargs = [ 'lalinference_pipe'
-    		     , '-I'
-    		     , args.bns_injection
-    		     , '-r'
-    		     , './run'
-    		     , '-p'
-    		     , './daglog'
-    		     , BNS_ini_file ]
+                     , '-I'
+                     , args.bns_injection
+                     , '-r'
+                     , './run'
+                     , '-p'
+                     , './daglog'
+                     , BNS_ini_file ]
 
     if args.condor_submit:
         lalinferenceargs.append('--condor-submit')

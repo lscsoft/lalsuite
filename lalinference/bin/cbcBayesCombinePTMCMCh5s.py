@@ -28,6 +28,7 @@ from optparse import OptionParser
 import h5py
 
 from lalinference import git_version
+
 __author__="Ben Farr <benjamin.farr@ligo.org>"
 __version__= "git id %s"%git_version.id
 __date__= git_version.date

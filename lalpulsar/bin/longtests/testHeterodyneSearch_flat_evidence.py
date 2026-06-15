@@ -6,11 +6,12 @@ flat as the prior range increases.
 """
 
 import os
+import subprocess as sp
 import sys
 import time
-import numpy as np
-import subprocess as sp
+
 import h5py
+import numpy as np
 
 if os.environ["LALINFERENCE_ENABLED"] == "false":
     print("Skipping test: requires LALInference")

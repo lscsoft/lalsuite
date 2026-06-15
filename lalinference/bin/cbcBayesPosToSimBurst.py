@@ -31,10 +31,10 @@
 Populate a sim_inspiral table with random draws from an ASCII table.
 """
 from optparse import Option, OptionParser
-import numpy as np
-from igwn_ligolw import ligolw
-from igwn_ligolw import lsctables
+
 import igwn_ligolw.utils.process
+import numpy as np
+from igwn_ligolw import ligolw, lsctables
 
 # Create a datatype for all relavent fields to be filled in the sim_inspiral table
 sim_inspiral_dt = [
@@ -69,7 +69,8 @@ def get_input_filename(parser, args):
 
 def standardize_param_name(params, possible_names, desired_name):
     for name in possible_names:
-        if name in params: params[params.index(name)] = desired_name
+        if name in params:
+            params[params.index(name)] = desired_name
 
 def standardize_param_names(params):
     standardize_param_name(params, ['frequency','freq',], 'frequency')
@@ -208,7 +209,8 @@ if __name__ == "__main__":
     # Add empty rows to the sim_inspiral table
     for inj in range(N):
         row = sim_table.RowType()
-        for slot in row.__slots__: setattr(row, slot, 0)
+        for slot in row.__slots__:
+            setattr(row, slot, 0)
         sim_table.append(row)
 
     # Fill in IDs
@@ -219,7 +221,8 @@ if __name__ == "__main__":
     # Fill rows
     for field in injections.dtype.names:
         vals = injections[field]
-        for row, val in zip(sim_table, vals): setattr(row, field, val)
+        for row, val in zip(sim_table, vals):
+            setattr(row, field, val)
 
     # Write file
     output_file = open(opts.output, 'w')

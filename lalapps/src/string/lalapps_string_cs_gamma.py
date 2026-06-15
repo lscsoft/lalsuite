@@ -34,13 +34,13 @@
 from __future__ import print_function
 
 import math
-import numpy
-from optparse import OptionParser
-import scipy.integrate
 import sys
+from optparse import OptionParser
 
-from lalburst import cs_gamma
-from lalburst import git_version
+import numpy
+import scipy.integrate
+
+from lalburst import cs_gamma, git_version
 
 #Constants from cs_lambda_cosmo.h
 LAMBDA_Z_EQ = 5440.0
