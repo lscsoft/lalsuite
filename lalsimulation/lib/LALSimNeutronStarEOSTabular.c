@@ -271,7 +271,7 @@ static double eos_piece_v_of_h_tabular(double h, EOSPiece * eos)
 {
     double p, dedp, log_cs2, log_h;
     double tol = 1e-12;
-    if (eos->data.tabular->ncol == 2)
+    if (eos->data.tabular->ncol < 4)
     {
         p = eos_piece_p_of_h_tabular(h, eos);
         dedp = eos_piece_dedp_of_p_tabular(p, eos);
@@ -563,7 +563,28 @@ static EOSPiece * eos_piece_alloc_tabular(double *nbdat, double *edat, double *p
         gsl_interp_accel_free(dhdp_of_p_acc_temp);
         LALFree(integrand);
     }
-    else if (ncol > 2) {
+    else if (ncol == 3) {
+        while (*pdat == 0.0 || *edat == 0.0 || *hdat == 0.0) {
+            ++pdat;
+            ++edat;
+            ++hdat;
+            --ndat;
+        }
+
+        data->ncol = ncol;
+        data->ndat = ndat;
+        data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
+        data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
+        data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
+
+        /* take log of eos data */
+        for (i = 0; i < ndat; ++i) {
+            data->log_pdat[i] = log(pdat[i]);
+            data->log_edat[i] = log(edat[i]);
+            data->log_hdat[i] = log(hdat[i]);
+        }
+    }
+    else if (ncol > 3) {
         /* allocate memory for eos data; ignore first points if 0 */
         while (*pdat == 0.0 || *edat == 0.0 || *hdat == 0.0) {
             ++pdat;
@@ -604,8 +625,17 @@ static EOSPiece * eos_piece_alloc_tabular(double *nbdat, double *edat, double *p
     // Find rho from e, p, and h: rho = (e+p)/exp(h),
     // definition of the enthalpy for a cold perfect fluid + first law of thermodynamics,
     // See Shapiro & Teukolsky book (chapter 2), or Eqs(7-9) in Haensel & Potekhin 2004.
-    for (i = 0; i < ndat; i++)
-        data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
+    for (i = 0; i < ndat; i++) {
+      data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
+      if( i >0){
+	if(data->log_rhodat[i] < data -> log_rhodat[i-1]){
+	  printf("Warning: non monotonic rest mass density in the EoS\n");
+	  printf("Density values %e\t %e\n",exp(data -> log_rhodat[i-1]),exp(data-> log_rhodat[i]));
+	  printf("The value will be modified to remain monotonic, baryon mass calculation can be affected \n");
+	  data-> log_rhodat[i] = log(exp(data-> log_rhodat[i-1])*1.01);
+	}
+      }
+    }
     eos->pmax = exp(data->log_pdat[ndat - 1]);
     eos->hmax = exp(data->log_hdat[ndat - 1]);
     eos->pmin = exp(data->log_pdat[0]);
@@ -630,10 +660,15 @@ static EOSPiece * eos_piece_alloc_tabular(double *nbdat, double *edat, double *p
     data->log_p_of_log_rho_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
 
     gsl_interp_init(data->log_e_of_log_p_interp, data->log_pdat, data->log_edat, ndat);
+
     gsl_interp_init(data->log_h_of_log_p_interp, data->log_pdat, data->log_hdat, ndat);
+
     gsl_interp_init(data->log_e_of_log_h_interp, data->log_hdat, data->log_edat, ndat);
+
     gsl_interp_init(data->log_p_of_log_h_interp, data->log_hdat, data->log_pdat, ndat);
+
     gsl_interp_init(data->log_rho_of_log_h_interp, data->log_hdat, data->log_rhodat, ndat);
+
     gsl_interp_init(data->log_p_of_log_e_interp, data->log_edat, data->log_pdat, ndat);
     gsl_interp_init(data->log_p_of_log_rho_interp, data->log_rhodat, data->log_pdat, ndat);
 
@@ -691,16 +726,31 @@ static EOSPiece * eos_piece_alloc_tabular_index( double *nbdat, double *edat, do
             cs2dat_cut[i]  = 0.0;
         }
     } else {
+      if (nbdat == NULL){
+	ncol = 3;
         for (size_t i = 0 ; i < ndat ; i++){
-            nbdat_cut[i]   = nbdat[begin_index+i];
-            edat_cut[i]    = edat[begin_index+i];
-            pdat_cut[i]    = pdat[begin_index+i];
-            mubdat_cut[i]  = mubdat[begin_index+i];
-            muedat_cut[i]  = muedat[begin_index+i];
-            hdat_cut[i]    = hdat[begin_index+i];
-            yedat_cut[i]   = yedat[begin_index+i];
-            cs2dat_cut[i]  = cs2dat[begin_index+i];
+	  nbdat_cut[i]   = 0.0;
+	  edat_cut[i]    = edat[begin_index+i];
+	  pdat_cut[i]    = pdat[begin_index+i];
+	  mubdat_cut[i]  = 0.0;
+	  muedat_cut[i]  = 0.0;
+	  hdat_cut[i]    = hdat[begin_index+i];
+	  yedat_cut[i]   = 0.0;
+	  cs2dat_cut[i]  = 0.0;
+	}
+      }
+      else{
+        for (size_t i = 0 ; i < ndat ; i++){
+	  nbdat_cut[i]   = nbdat[begin_index+i];
+	  edat_cut[i]    = edat[begin_index+i];
+	  pdat_cut[i]    = pdat[begin_index+i];
+	  mubdat_cut[i]  = mubdat[begin_index+i];
+	  muedat_cut[i]  = muedat[begin_index+i];
+	  hdat_cut[i]    = hdat[begin_index+i];
+	  yedat_cut[i]   = yedat[begin_index+i];
+	  cs2dat_cut[i]  = cs2dat[begin_index+i];
         }
+      }
     }
 
     eos =     eos_piece_alloc_tabular(nbdat_cut, edat_cut, pdat_cut, mubdat_cut, muedat_cut, hdat_cut, yedat_cut, cs2dat_cut, ndat, ncol);
@@ -713,7 +763,7 @@ static EOSPiece * eos_piece_alloc_tabular_index( double *nbdat, double *edat, do
     LALFree(hdat_cut);
     LALFree(yedat_cut);
     LALFree(cs2dat_cut);
-
+    
     return eos;
 }
 
@@ -849,9 +899,9 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) {
         fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
         XLAL_ERROR_NULL(XLAL_EDOM);
     }
-
+    // by default we are not looking for dirty phase transitions
     eos = sim_eos_from_tabulated_data_dirty_pt(nbdat, edat, pdat, mubdat, muedat, hdat,
-                                                                    yedat, cs2dat, ndat, 1);
+                                                                    yedat, cs2dat, ndat, 0);
     XLALFree(f_dat);
     LALFree(nbdat);
     LALFree(edat);
@@ -877,7 +927,7 @@ static LALSimNeutronStarEOS *sim_eos_from_tabulated_data_dirty_pt(double *nbdat,
         printf("Variable dirty should be either 0 or 1.\n");
         XLAL_ERROR_NULL(XLAL_EINVAL);
     }
-    if(hdat == NULL) dirty = 0;
+
     /* Inquire about phase transitions in the equation of state */
     int *indices_phase_transition = NULL;
     indices_phase_transition = eos_find_phase_transition(ndat, edat, pdat, dirty);
@@ -972,6 +1022,7 @@ static LALSimNeutronStarEOS *sim_eos_from_tabulated_data_dirty_pt(double *nbdat,
 
         size_t ndat_total = 0;
         for (int i = 0; i <= number_pt; i++){
+
             size_t ndat_piece = eos->eos_piece[i]->data.tabular->ndat;
             if (i == 0){
                 for (size_t j = 0 ; j < ndat_piece; j++){
@@ -994,6 +1045,9 @@ static LALSimNeutronStarEOS *sim_eos_from_tabulated_data_dirty_pt(double *nbdat,
                 }
             }
         }
+        for (int i = 1; i <= number_pt; i++){
+	  eos_correct_phase_transition(edat_recal, pdat_recal, hdat_recal, indices_phase_transition[i]) ;}
+
         // Refill the EOS structure
         bottom_index = 0, upper_index = 0;
         for (int i = 0; i <= number_pt; i++){
@@ -1003,8 +1057,8 @@ static LALSimNeutronStarEOS *sim_eos_from_tabulated_data_dirty_pt(double *nbdat,
                 eos->eos_piece[i] = NULL;
             }
             eos->eos_piece[i] = eos_piece_alloc_tabular_index(
-                nbdat, edat, pdat,
-                mubdat, muedat, hdat,
+                nbdat, edat_recal, pdat_recal,
+                mubdat, muedat, hdat_recal,
                 yedat, cs2dat,
                 bottom_index, upper_index
             );
