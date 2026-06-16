@@ -93,36 +93,7 @@ doxygen-index:
           -j CI_JOB_TOKEN ${CI_SERVER_URL} lscsoft/lalsuite \
           doxygen-index
     # add 404 error page
-    - |
-      cat > 404.html <<EOF
-      <!DOCTYPE html>
-      <html>
-      <head>
-      <title>404 Not Found - LALSuite Documentation</title>
-      </head>
-      <body>
-      <h1>404 Not Found - LALSuite Documentation</h1>
-      <p>
-      No LALSuite documentation could be found at this URL.
-      Please check the URL and try again.
-      </p>
-      <p>
-      LALSuite documentation is now versioned.
-      From <a href="${CI_PAGES_URL}">here</a> you can select which version you want.
-      To update old LALSuite documentation URLs, replace <code>/lalsuite/</code> in the URL with either:
-      <ul>
-      <li>
-      <code>/lalsuite/dev/</code> for the latest development version.
-      </li>
-      <li>
-      <code>/lalsuite/&lt;major&gt;.&lt;minor&gt;/</code> for LALSuite version <i>&lt;major&gt;.&lt;minor&gt;.*</i>;
-      see <a href="${CI_PAGES_URL}">here</a> for available versions.
-      </li>
-      </ul>
-      </p>
-      </body>
-      </html>
-      EOF
+    - sed "s|@CI_PAGES_URL@|${CI_PAGES_URL}|g" "${CI_PROJECT_DIR}/.gitlab/ci_html/documentation_404.html" > 404.html
   artifacts:
     expose_as: html
     paths:
