@@ -24,8 +24,9 @@ BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: help2man >= 1.37
 BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
+BuildRequires: ldas-tools-framecpp-c-devel <  @MAX_FRAMECPPC_VERSION@
 BuildRequires: libframel-devel >= @MIN_FRAMEL_VERSION@
-BuildRequires: libframel-devel < 9.0.0
+BuildRequires: libframel-devel <  @MAX_FRAMEL_VERSION@
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
@@ -57,7 +58,9 @@ This package provides the runtime tools.
 %package -n lib%{name}
 Summary: LVK Algorithm Frame Library - library package
 Requires: ldas-tools-framecpp-c >= @MIN_FRAMECPPC_VERSION@
+Requires: ldas-tools-framecpp-c <  @MAX_FRAMECPPC_VERSION@
 Requires: libframel >= @MIN_FRAMEL_VERSION@
+Requires: libframel <  @MAX_FRAMEL_VERSION@
 Requires: liblal >= @MIN_LAL_VERSION@
 Conflicts: lalframe <= 1.5.2-1
 %description -n lib%{name}
@@ -70,7 +73,9 @@ that use the LAL Frame library.
 Summary: Files and documentation needed for compiling programs that use LAL Frame
 Requires: lib%{name} = %{version}-%{release}
 Requires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
+Requires: ldas-tools-framecpp-c-devel <  @MAX_FRAMECPPC_VERSION@
 Requires: libframel-devel >= @MIN_FRAMEL_VERSION@
+Requires: libframel-devel <  @MAX_FRAMEL_VERSION@
 Requires: liblal-devel >= @MIN_LAL_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 1.5.3-1
