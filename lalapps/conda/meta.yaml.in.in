@@ -8,7 +8,8 @@
 {% set version = "@VERSION@" %}
 
 # dependencies
-{% set framel_version = "@MIN_FRAMEL_VERSION@" %}
+{% set framel_version = "@MIN_FRAMEL_VERSION@,<@MAX_FRAMEL_VERSION@a0" %}
+{% set framecpp_version = "@MIN_FRAMECPPC_VERSION@,<@MAX_FRAMECPPC_VERSION@a0" %}
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set lalburst_version = "@MIN_LALBURST_VERSION@a0" %}
 {% set lalframe_version = "@MIN_LALFRAME_VERSION@a0" %}
@@ -108,7 +109,7 @@ test:
     - lalapps
     - lalapps.cosmicstring
   requires:
-    - ldas-tools-framecpp
+    - ldas-tools-framecpp >={{ framecpp_version }}
   commands:
     # set up test data (creates Z-ilwd_test_frame-600000000-1.gwf)
     - framecpp_sample --version=8

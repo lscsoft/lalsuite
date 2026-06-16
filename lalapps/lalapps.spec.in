@@ -17,6 +17,7 @@ BuildRequires: bc
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: libframel-devel >= @MIN_FRAMEL_VERSION@
+BuildRequires: libframel-devel <  @MAX_FRAMEL_VERSION@
 BuildRequires: gcc
 BuildRequires: gsl-devel
 BuildRequires: help2man >= 1.37
@@ -47,6 +48,7 @@ Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: less
 Requires: libframel >= @MIN_FRAMEL_VERSION@
+Requires: libframel <  @MAX_FRAMEL_VERSION@
 Requires: libmetaio >= @MIN_METAIO_VERSION@
 Requires: python3 >= @MIN_PYTHON_VERSION@
 Requires: python3dist(h5py)
