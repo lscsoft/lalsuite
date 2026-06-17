@@ -98,3 +98,10 @@ cat mean2F_hgrm_C.txt | awk '{ hgrm[$1] += $3 } END { for (x in hgrm) { printf "
 diff mean_hgrm_123.txt mean_hgrm_CCC.txt
 set +x
 echo
+
+echo "=== Concatenate output files with F-statistic consistency veto ==="
+set -x
+lalpulsar_WeaveConcat --Fstat-consistency-veto=mean2F --output-result-file=WeaveOutC_FCV.fits --input-result-files=WeaveOut1.fits,WeaveOut2.fits,WeaveOut3.fits
+lalpulsar_fits_overview WeaveOutC_FCV.fits
+set +x
+echo

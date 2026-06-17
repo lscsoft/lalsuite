@@ -205,6 +205,20 @@ const char *const WeaveToplistHelpString = \
     ENTRY_2_HELPSTR( ENTRY_BtSGLtL ) \
     ;
 
+// Subset of statistics for F-statistic consistency veto
+const UserChoices WeaveFstatConsistencyVetoChoices = {
+  ENTRY_2_CHOICES( ENTRY_NONE ),
+  ENTRY_2_CHOICES( ENTRY_COH2F ),
+  ENTRY_2_CHOICES( ENTRY_SUM2F ),
+  ENTRY_2_CHOICES( ENTRY_MEAN2F )
+};
+const char *const WeaveFstatConsistencyVetoHelpString = \
+    ENTRY_2_HELPSTR( ENTRY_NONE ) \
+    ENTRY_2_HELPSTR( ENTRY_COH2F ) \
+    ENTRY_2_HELPSTR( ENTRY_SUM2F ) \
+    ENTRY_2_HELPSTR( ENTRY_MEAN2F ) \
+    ;
+
 ///
 /// Set all bits in 'deps' corresponding to *direct* dependencies of the set of input statistics 'stat'
 ///
