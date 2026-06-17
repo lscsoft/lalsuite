@@ -68,6 +68,10 @@
         LCI_PLAT_BASE: "gcc"
         LCI_DOCKER_ARGS: "GCC_VERSION_NAME=latest GCC_IMAGE_TAG=latest DEB_VERSION=trixie"
 
+      - LCI_PLAT: "gcc-15"
+        LCI_PLAT_BASE: "gcc"
+        LCI_DOCKER_ARGS: "GCC_VERSION_NAME=15 GCC_IMAGE_TAG=15-trixie DEB_VERSION=trixie"
+
       - LCI_PLAT: "gcc-14"
         LCI_PLAT_BASE: "gcc"
         LCI_DOCKER_ARGS: "GCC_VERSION_NAME=14 GCC_IMAGE_TAG=14-bookworm DEB_VERSION=bookworm"
@@ -75,10 +79,6 @@
       - LCI_PLAT: "gcc-13"
         LCI_PLAT_BASE: "gcc"
         LCI_DOCKER_ARGS: "GCC_VERSION_NAME=13 GCC_IMAGE_TAG=13-bookworm DEB_VERSION=bookworm"
-
-      - LCI_PLAT: "gcc-12"
-        LCI_PLAT_BASE: "gcc"
-        LCI_DOCKER_ARGS: "GCC_VERSION_NAME=12 GCC_IMAGE_TAG=12-bookworm DEB_VERSION=bookworm"
 
       # Clang
       - LCI_PLAT: "clang-latest"
