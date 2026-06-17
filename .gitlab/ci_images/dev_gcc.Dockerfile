@@ -1,15 +1,16 @@
 # syntax=docker/dockerfile:1
 
-ARG GCC_IMAGE_TAG
+ARG GCC_VERSION
+ARG DEB_VERSION
 
-FROM gcc:${GCC_IMAGE_TAG}
+FROM gcc:${GCC_VERSION}-${DEB_VERSION}
 
-ARG GCC_VERSION_NAME
+ARG GCC_VERSION
 ARG DEB_VERSION
 ARG LCI_PKGLIST_X_LALAPPS
 ARG TARBALL_NAME
 
-LABEL name="LALSuite CI Image - GCC ${GCC_VERSION_NAME}"
+LABEL name="LALSuite CI Image - GCC ${GCC_VERSION}"
 LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
 LABEL support="Best Effort"
 
