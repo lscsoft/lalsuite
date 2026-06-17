@@ -20,10 +20,16 @@ Based on test_prec_avg_evol.py
 """
 
 import sys
-import pytest
+
 import numpy as np
+import pytest
+
 import lal
-from lalsimulation import SimInspiralSpinTaylorPNEccentricEvolveOrbit, SimInspiralSpinTaylorEccentricComputePeriastronPrecession, SimInspiralWaveformParamsInsertInitialPeriastronPrecession
+from lalsimulation import (
+    SimInspiralSpinTaylorEccentricComputePeriastronPrecession,
+    SimInspiralSpinTaylorPNEccentricEvolveOrbit,
+    SimInspiralWaveformParamsInsertInitialPeriastronPrecession,
+)
 
 # Regression data
 
