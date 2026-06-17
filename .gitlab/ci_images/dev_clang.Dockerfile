@@ -4,13 +4,12 @@ ARG DEB_VERSION
 
 FROM debian:${DEB_VERSION}-slim
 
-ARG CLANG_VERSION_NAME
-ARG CLANG_VERSION_SUFFIX
+ARG CLANG_VERSION
 ARG DEB_VERSION
 ARG LCI_PKGLIST_X_LALAPPS
 ARG TARBALL_NAME
 
-LABEL name="LALSuite CI Image - Clang ${CLANG_VERSION_NAME}"
+LABEL name="LALSuite CI Image - Clang ${CLANG_VERSION}"
 LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
 LABEL support="Best Effort"
 
@@ -22,8 +21,8 @@ WORKDIR /tmp
 COPY ./${TARBALL_NAME} .
 
 # set compilers
-ENV CC="clang${CLANG_VERSION_SUFFIX}"
-ENV CXX="clang++${CLANG_VERSION_SUFFIX}"
+ENV CC="clang-${CLANG_VERSION}"
+ENV CXX="clang++-${CLANG_VERSION}"
 
 # run debconf noninteractively
 ENV DEBIAN_FRONTEND=noninteractive
@@ -74,7 +73,7 @@ EOF
 
 # add llvm repository
 COPY <<EOF /etc/apt/sources.list.d/llvm.list
-deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${DEB_VERSION}/ llvm-toolchain-${DEB_VERSION}${CLANG_VERSION_SUFFIX} main
+deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${DEB_VERSION}/ llvm-toolchain-${DEB_VERSION}-${CLANG_VERSION} main
 EOF
 
 RUN <<EOF
@@ -105,7 +104,7 @@ for subdir in ${LCI_PKGLIST_X_LALAPPS} lalapps; do
 done
 
 # install Clang
-apt-get -y -q install clang${CLANG_VERSION_SUFFIX}
+apt-get -y -q install clang-${CLANG_VERSION}
 
 # print info
 dpkg-query --list
