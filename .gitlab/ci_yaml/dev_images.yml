@@ -68,6 +68,10 @@
         LCI_PLAT_BASE: "gcc"
         LCI_DOCKER_ARGS: "GCC_VERSION_NAME=latest GCC_IMAGE_TAG=latest DEB_VERSION=trixie"
 
+      - LCI_PLAT: "gcc-15"
+        LCI_PLAT_BASE: "gcc"
+        LCI_DOCKER_ARGS: "GCC_VERSION_NAME=15 GCC_IMAGE_TAG=15-trixie DEB_VERSION=trixie"
+
       - LCI_PLAT: "gcc-14"
         LCI_PLAT_BASE: "gcc"
         LCI_DOCKER_ARGS: "GCC_VERSION_NAME=14 GCC_IMAGE_TAG=14-bookworm DEB_VERSION=bookworm"
