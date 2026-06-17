@@ -32,3 +32,8 @@ select = [
 "lalburst/bin/*" = ["E101"]
 "lalburst/python/*" = ["E101"]
 "lalburst/test/*" = ["E101"]
+
+[lint.isort]
+known-first-party = [
+    "lalpulsar",
+]
