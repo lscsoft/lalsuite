@@ -97,6 +97,8 @@ for subdir in ${LCI_PKGLIST_X_LALAPPS} lalapps; do
 done
 
 # print info
+${CC} --version
+${CXX} --version
 dpkg-query --list
 python3 -m pip list
 

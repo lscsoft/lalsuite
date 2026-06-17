@@ -107,6 +107,8 @@ done
 apt-get -y -q install clang-${CLANG_VERSION}
 
 # print info
+${CC} --version
+${CXX} --version
 dpkg-query --list
 python3 -m pip list
 
