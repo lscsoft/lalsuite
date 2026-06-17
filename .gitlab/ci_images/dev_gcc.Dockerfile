@@ -21,8 +21,8 @@ WORKDIR /tmp
 COPY ./${TARBALL_NAME} .
 
 # set compilers
-ENV CC="gcc"
-ENV CXX="g++"
+ENV CC="/usr/local/bin/gcc"
+ENV CXX="/usr/local/bin/g++"
 
 # run debconf noninteractively
 ENV DEBIAN_FRONTEND=noninteractive
