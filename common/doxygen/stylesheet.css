@@ -1,15 +1,35 @@
+/* Make titles larger */
 .title {
     font-size: 150%;
 }
-
 h1 {
     font-size: 130%;
 }
-
 h2 {
     font-size: 115%;
 }
-
 h3 {
     font-size: 100%;
+}
+
+/* Scroll LALSuite navigation tabs for narrow displays */
+.sm.sm-dox.lalsuite-nav-tab-container {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-left: 0px;
+}
+.sm.sm-dox.lalsuite-nav-tab {
+    flex: 0 0 auto;
+}
+
+/* Hide navigation side bar for narrow displays */
+@media screen and (max-width: 767px) {
+    #side-nav {
+        display: none !important;
+    }
+    #doc-content {
+        margin-left: 0 !important;
+    }
 }

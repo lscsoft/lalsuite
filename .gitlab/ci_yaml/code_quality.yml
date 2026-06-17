@@ -204,3 +204,6 @@ coverage-check:
   rules:
     - if: >-
         $LCI_PIPE_TYPE == "merge"
+    # run on the main branch at lscsoft/lalsuite for coverage badge
+    - if: >-
+        $LCI_PIPE_TYPE == "postmerge"

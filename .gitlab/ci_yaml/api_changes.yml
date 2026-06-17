@@ -117,7 +117,7 @@ cmp-merge-request-api:
     - |
       ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
           ${CI_SERVER_URL} lscsoft/lalsuite \
-          get-artifacts ${CI_DEFAULT_BRANCH} lint:api-dump-master   ### TOFIX ###
+          get-artifacts ${CI_DEFAULT_BRANCH} dump-main-api
       api_dump_tarball="api-dump-main-v${API_DUMP_VERSION}.tar.bz2"
       if [ ! -f ${api_dump_tarball} ]; then
         echo "WARNING: API dump tarball not found: ${api_dump_tarball}"

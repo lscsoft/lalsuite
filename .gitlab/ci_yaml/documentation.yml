@@ -92,6 +92,8 @@ doxygen-index:
       ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
           -j CI_JOB_TOKEN ${CI_SERVER_URL} lscsoft/lalsuite \
           doxygen-index
+    # add 404 error page
+    - sed "s|@CI_PAGES_URL@|${CI_PAGES_URL}|g" "${CI_PROJECT_DIR}/.gitlab/ci_html/documentation_404.html" > 404.html
   artifacts:
     expose_as: html
     paths:
