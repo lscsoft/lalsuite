@@ -2,6 +2,9 @@
 # LALSuite GitLab-CI: upgrade Conda packages
 # ----------------------------------------------------------------------
 
+# remove package pins
+conda config --remove-key pinned_packages
+
 # activate environment for testing package upgrade
 conda activate lalsuite-ci-upgrade
 conda list --name lalsuite-ci-upgrade

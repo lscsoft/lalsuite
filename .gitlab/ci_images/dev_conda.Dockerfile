@@ -45,6 +45,7 @@ apt-get -y -q install \
     git \
     git-lfs \
     xz-utils \
+    yq \
     ;
 
 # install Git LFS
@@ -76,12 +77,46 @@ conda install --quiet --name base \
     conda-libmamba-solver \
     ;
 
-# create environment for CI jobs
-conda create --quiet --name lalsuite-ci python=="${PYTHON_VERSION}"
-conda activate lalsuite-ci
+# pin Python version in conda-dev-env.yml to ${PYTHON_VERSION}
+yq -i -y '( .dependencies[] | select(type == "string" and match("^python .*$")) ) = "python =='"${PYTHON_VERSION}"'"' ./conda-dev-env.yml
+cat ./conda-dev-env.yml
 
-# pin Python version to PYTHON_VERSION
-conda config --add pinned_packages python=="${PYTHON_VERSION}"
+# create environment for CI jobs and install LALSuite build dependencies
+conda env create --quiet --name lalsuite-ci --file ./conda-dev-env.yml
+
+# pin LALSuite build dependencies to prevent aggressive upgrades
+yq -r '.dependencies[] | select(type == "string")' ./conda-dev-env.yml | while IFS= read -r pkg_dep; do
+    pkg_name=$(echo "${pkg_dep}" | sed 's/[ <=>].*//')
+    pkg_vers=$(echo "${pkg_dep}" | sed "s/^${pkg_name} *//")
+
+    # check if package already has a pin
+    pkg_existing_pin=$(conda config --show pinned_packages | yq -r '.pinned_packages[] | select(test("^'"${pkg_name}"'[<=>]"))')
+    if [ "X${pkg_existing_pin}" = X ]; then
+        pkg_version=$(conda list --name lalsuite-ci --full-name ${pkg_name} --json | yq -r '.[0].version')
+
+        # if package has not maximum version restriction, use the currently installed version as a maximum
+        case "${pkg_vers}" in
+            '='*)          # matches =, ==
+                pkg_pin="${pkg_dep}"
+                ;;
+            *'<'*)         # matches <, <=
+                pkg_pin="${pkg_dep}"
+                ;;
+            *'>'*)         # matches >, >=
+                pkg_pin="${pkg_dep},<=${pkg_version}"
+                ;;
+            '')            # no version specifier
+                pkg_pin="${pkg_name} <=${pkg_version}"
+                ;;
+            *)
+                echo "ERROR: could not parse Conda version specifier '${pkg_vers}'"
+                exit 1
+                ;;
+        esac
+        conda config --add pinned_packages "${pkg_pin}"
+
+    fi
+done
 
 # install required CI packages
 conda install --quiet --name lalsuite-ci \
@@ -112,13 +147,6 @@ python3 -m pip install \
     python-rpm-spec \
     twine \
     ;
-
-# ignore Python version constraints in conda-dev-env.yml
-# - Python version is already pinned above
-sed -i 's/- python .*$/- python/' ./conda-dev-env.yml
-
-# install LALSuite build dependencies
-conda env update --quiet --name lalsuite-ci --file ./conda-dev-env.yml
 
 # create environment for testing package upgrade
 conda create --quiet --name lalsuite-ci-upgrade
