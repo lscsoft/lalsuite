@@ -27,6 +27,7 @@ test_scripts += \
 	test_IMRPhenomXAS_NRTidalv3.py \
 	test_IMRPhenomXP_NRTidalv3.py \
 	test_SEOBNRv5_ROM_NRTidalv3.py \
+	test_ecc_spin_evol.py \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \

@@ -104,6 +104,18 @@ extern "C" {
  * @brief natural log of 2, ln(2)
  * @see http://oeis.org/A002162
  *
+ * @def LAL_LN3
+ * @brief natural log of 3, ln(3)
+ * @see http://oeis.org/A002391
+ *
+ * @def LAL_LN5
+ * @brief natural log of 5, ln(5)
+ * @see http://oeis.org/A016628
+ *
+ * @def LAL_LN7
+ * @brief natural log of 7, ln(7)
+ * @see http://oeis.org/A016630
+ *
  * @def LAL_LN10
  * @brief natural log of 10, ln(10)
  * @see http://oeis.org/A002392
@@ -170,6 +182,9 @@ extern "C" {
 #define LAL_LOG2E 1.442695040888963407359924681001892137
 #define LAL_LOG10E 0.434294481903251827651128918916605082
 #define LAL_LN2 0.693147180559945309417232121458176568
+#define LAL_LN3 1.098612288668109691395245236922525705
+#define LAL_LN5 1.609437912434100374600759333226187640
+#define LAL_LN7 1.945910149055313305105352743443179730
 #define LAL_LN10 2.302585092994045684017991454684364208
 #define LAL_SQRT2 1.414213562373095048801688724209698079
 #define LAL_SQRT1_2 0.707106781186547524400844362104849039

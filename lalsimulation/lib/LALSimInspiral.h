@@ -25,6 +25,7 @@
 #include <lal/LALSimInspiralTestGRParams.h>
 #include <lal/LALSimInspiralWaveformFlags.h>
 #include <lal/LALSimInspiralWaveformParams.h>
+#include <lal/LALSimInspiralSpinEccentricityFlags.h>
 
 #include <gsl/gsl_matrix.h>
 
@@ -846,6 +847,7 @@ int XLALSimInspiralPrecessingPTFQWaveforms(REAL8TimeSeries **Q1, REAL8TimeSeries
 int XLALSimInspiralInitialConditionsPrecessingApproxs(REAL8 *inc, REAL8 *S1x, REAL8 *S1y, REAL8 *S1z, REAL8 *S2x, REAL8 *S2y, REAL8 *S2z, const REAL8 inclIn, const REAL8 S1xIn, const REAL8 S1yIn, const REAL8 S1zIn, const REAL8 S2xIn, const REAL8 S2yIn, const REAL8 S2zIn, const REAL8 m1, const REAL8 m2, const REAL8 fRef, const REAL8 phiRef, LALSimInspiralFrameAxis axisChoice);
 INT4 XLALSimInspiralSpinDerivativesAvg(REAL8 *dLNhx, REAL8 *dLNhy, REAL8 *dLNhz, REAL8 *dE1x, REAL8 *dE1y, REAL8 *dE1z, REAL8 *dS1x, REAL8 *dS1y, REAL8 *dS1z, REAL8 *dS2x, REAL8 *dS2y, REAL8 *dS2z, const REAL8 v, const REAL8 LNhx, const REAL8 LNhy, const REAL8 LNhz, const REAL8 E1x, const REAL8 E1y, const REAL8 E1z, const REAL8 S1x, const REAL8 S1y, const REAL8 S1z, const REAL8 S2x, const REAL8 S2y, const REAL8 S2z, const REAL8 LNhdotS1, const REAL8 LNhdotS2, XLALSimInspiralSpinTaylorTxCoeffs *params);
 INT4 XLALSimInspiralSpinTaylorT4DerivativesAvg(REAL8 t, const REAL8 values[], REAL8 dvalues[], void *mparams);
+int XLALSimInspiralSpinEccentricTaylorT4DerivativesAvg(double t, const double y[], double ydot[], void *mparams);
 int XLALSimInspiralSpinTaylorT5Setup(XLALSimInspiralSpinTaylorTxCoeffs **params, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 lscorr);
 int XLALSimInspiralSpinTaylorT1Setup(XLALSimInspiralSpinTaylorTxCoeffs **params, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 lscorr);
 INT4 XLALSimInspiralSpinTaylorT4Setup(XLALSimInspiralSpinTaylorTxCoeffs **params, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 lscorr, INT4 phenomtp);
@@ -952,7 +954,6 @@ int XLALSimLorentzInvarianceViolationTerm(COMPLEX16FrequencySeries **hptilde, CO
 /** Incoplete type for waveform generator */
 struct tagLALSimInspiralGenerator;
 typedef struct tagLALSimInspiralGenerator LALSimInspiralGenerator;
-
 
 /* legacy generator templates */
 extern const LALSimInspiralGenerator lalEOBNRv2HMGeneratorTemplate;
@@ -1177,6 +1178,18 @@ void XLALSimInspiralParseDictionaryToChooseFDModes(
 int XLALSimInspiralTDFromTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 distance, REAL8 inclination, REAL8 phiRef, REAL8 longAscNodes, REAL8 eccentricity, REAL8 meanPerAno, REAL8 deltaT, REAL8 f_min, REAL8 f_ref, LALDict *LALparams, Approximant approximant);
 int XLALSimInspiralTDFromFD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 distance, REAL8 inclination, REAL8 phiRef, REAL8 longAscNodes, REAL8 eccentricity, REAL8 meanPerAno, REAL8 deltaT, REAL8 f_min, REAL8 f_ref, LALDict *LALparams, Approximant approximant);
 
+/**
+ * Evolve precessing spinning binaries orbital elements in module LALSimInspiralSpinEccentricityEvolution.c
+ */
+int XLALSimInspiralSpinTaylorPNEccentricEvolveOrbit(REAL8TimeSeries **Omega, REAL8TimeSeries **et, REAL8TimeSeries **l, REAL8TimeSeries **lamb, REAL8TimeSeries **S1x, REAL8TimeSeries **S1y, REAL8TimeSeries **S1z, REAL8TimeSeries **S2x, REAL8TimeSeries **S2y, REAL8TimeSeries **S2z, REAL8TimeSeries **LNhatx, REAL8TimeSeries **LNhaty, REAL8TimeSeries **LNhatz, REAL8TimeSeries **Phatx, REAL8TimeSeries **Phaty, REAL8TimeSeries **Phatz, REAL8TimeSeries **k, REAL8 deltaT, REAL8 m1_SI, REAL8 m2_SI, REAL8 fStart, REAL8 fEnd, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 eccentricity, REAL8 l0, REAL8 lamb0, REAL8 phatx, REAL8 phaty, REAL8 phatz, LALSimInspiralSpinOrder spinO, LALSimInspiralSpinEccPolyEccOrder EccOrder, INT4 phaseO, EnhancementFunction enhancementFunc, EvolutionType type, LALDict *LALparams);
+
+/**
+ * Compute peristron advance parameter at arbitrary frequency for a binary
+ */
+REAL8 XLALSimInspiralSpinTaylorEccentricComputePeriastronPrecession( REAL8 fgw, REAL8 m1_SI, REAL8 m2_SI,
+                        REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z,
+                        REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 eccentricity,
+                        LALSimInspiralSpinOrder SpinOrder, INT4 PhaseOrder);
 
 #if 0
 { /* so that editors will match succeeding brace */

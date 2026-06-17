@@ -422,6 +422,11 @@ DEFINE_INSERT_FUNC(PhenomXCPZETA1l3m3, REAL8, "ZETA1l3m3", 0)
 DEFINE_INSERT_FUNC(PhenomXCPZETA2l3m3, REAL8, "ZETA2l3m3", 0)
 
 
+/* Eccentric SpinTaylor */
+DEFINE_INSERT_FUNC(EccEvol2PNSpinFlag, INT4, "EccEvol2PNSpinFlag", 1)
+DEFINE_INSERT_FUNC(EccEvolAlwaysOutput, INT4, "EccEvolAlwaysOutput", 0)
+DEFINE_INSERT_FUNC(InitialPeriastronPrecession, REAL8, "InitialPeriastronPrecession", -1)
+
 /* FLEXIBLE INPUT PARAMETERS FUNCTIONS */
 
 /* Auxiliar mass arguments transformation functions */
@@ -1514,6 +1519,11 @@ DEFINE_LOOKUP_FUNC(PhenomXCPNU5l3m3, REAL8, "NU5l3m3", 0)
 DEFINE_LOOKUP_FUNC(PhenomXCPNU6l3m3, REAL8, "NU6l3m3", 0)
 DEFINE_LOOKUP_FUNC(PhenomXCPZETA1l3m3, REAL8, "ZETA1l3m3", 0)
 DEFINE_LOOKUP_FUNC(PhenomXCPZETA2l3m3, REAL8, "ZETA2l3m3", 0)
+
+/* Eccentric SpinTaylor */
+DEFINE_LOOKUP_FUNC(EccEvol2PNSpinFlag, INT4, "EccEvol2PNSpinFlag", 1)
+DEFINE_LOOKUP_FUNC(EccEvolAlwaysOutput, INT4, "EccEvolAlwaysOutput", 0)
+DEFINE_LOOKUP_FUNC(InitialPeriastronPrecession, REAL8, "InitialPeriastronPrecession", -1)
 
 /* ISDEFAULT FUNCTIONS */
 

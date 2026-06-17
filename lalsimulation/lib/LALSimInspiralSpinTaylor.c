@@ -2485,10 +2485,10 @@ static int XLALSimInspiralSpinTaylorStoppingTest(double UNUSED t,
     // Copy current value of domega to prev. value of domega for next call
     params->prev_domega = dvalues[1];
 
-    if( fabs(omegaEnd) > LAL_REAL4_EPS && omegaEnd > omegaStart
+    if( fabs(omegaEnd) > LAL_REAL8_EPS && omegaEnd > omegaStart
                 && omega > omegaEnd) /* freq. above bound */
         return LALSIMINSPIRAL_ST_TEST_FREQBOUND;
-    else if( fabs(omegaEnd) > LAL_REAL4_EPS && omegaEnd < omegaStart
+    else if( fabs(omegaEnd) > LAL_REAL8_EPS && omegaEnd < omegaStart
                 && omega < omegaEnd) /* freq. below bound */
         return LALSIMINSPIRAL_ST_TEST_FREQBOUND;
     else if (test < 0.0) /* energy test fails! */
@@ -3227,7 +3227,7 @@ int XLALSimInspiralSpinTaylorDriver(
     else
     {
     /* if fRef=0, just integrate from start to end. Let phiRef=phiC */
-    if( fRef < LAL_REAL4_EPS )
+    if( fRef < LAL_REAL8_EPS )
     {
         fS = fStart;
         fE = XLALSimInspiralWaveformParamsLookupFinalFreq(LALparams);
@@ -3250,7 +3250,7 @@ int XLALSimInspiralSpinTaylorDriver(
         }
     }
     /* if fRef=fStart, just integrate from start to end. Let phiRef=phiStart */
-    else if( fabs(fRef - fStart) < LAL_REAL4_EPS )
+    else if( fabs(fRef - fStart) < LAL_REAL8_EPS )
     {
         fS = fStart;
         fE = XLALSimInspiralWaveformParamsLookupFinalFreq(LALparams);
@@ -4268,20 +4268,20 @@ int XLALSimInspiralInitialConditionsPrecessingApproxs(
  *
  */
 int XLALSimInspiralSpinTaylorPNEvolveOrbit(
-	REAL8TimeSeries **V,            /**< post-Newtonian parameter [returned]*/
-	REAL8TimeSeries **Phi,          /**< orbital phase            [returned]*/
-	REAL8TimeSeries **S1x,	        /**< Spin1 vector x component [returned]*/
-	REAL8TimeSeries **S1y,	        /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **S1z,	        /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **S2x,	        /**< Spin2 vector x component [returned]*/
-	REAL8TimeSeries **S2y,	        /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **S2z,	        /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **LNhatx,       /**< unit orbital ang. mom. x [returned]*/
-	REAL8TimeSeries **LNhaty,       /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **LNhatz,       /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **E1x,	        /**< orb. plane basis vector x[returned]*/
-	REAL8TimeSeries **E1y,	        /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **E1z,	        /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **V,            /**< post-Newtonian parameter                  [returned]*/
+	REAL8TimeSeries **Phi,          /**< orbital phase                             [returned]*/
+	REAL8TimeSeries **S1x,	        /**< Spin1 vector x component                  [returned]*/
+	REAL8TimeSeries **S1y,	        /**< Spin1 vector y component                  [returned]*/
+	REAL8TimeSeries **S1z,	        /**< Spin1 vector z component                  [returned]*/
+	REAL8TimeSeries **S2x,	        /**< Spin2 vector x component                  [returned]*/
+	REAL8TimeSeries **S2y,	        /**< Spin2 vector y component                  [returned]*/
+	REAL8TimeSeries **S2z,	        /**< Spin2 vector z component                  [returned]*/
+	REAL8TimeSeries **LNhatx,       /**< unit orbital angular momentum x component [returned]*/
+	REAL8TimeSeries **LNhaty,       /**< unit orbital angular momentum y component [returned]*/
+	REAL8TimeSeries **LNhatz,       /**< unit orbital angular momentum z component [returned]*/
+	REAL8TimeSeries **E1x,	        /**< orbital plane basis vector x component    [returned]*/
+	REAL8TimeSeries **E1y,	        /**< orbital plane basis vector y component    [returned]*/
+	REAL8TimeSeries **E1z,	        /**< orbital plane basis vector z component    [returned]*/
 	const REAL8 deltaT,   	        /**< sampling interval (s) */
 	const REAL8 m1_SI,     	        /**< mass of companion 1 (kg) */
 	const REAL8 m2_SI,     	        /**< mass of companion 2 (kg) */
