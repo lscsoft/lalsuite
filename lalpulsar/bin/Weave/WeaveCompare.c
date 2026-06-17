@@ -195,7 +195,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_FAIL( file != NULL, XLAL_EFUNC );
 
     // Read output results
-    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_1, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_1, 0, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Close result file
     XLALFITSFileClose( file );
@@ -209,7 +209,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_FAIL( file != NULL, XLAL_EFUNC );
 
     // Read output results
-    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_2, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_2, 0, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Close result file
     XLALFITSFileClose( file );

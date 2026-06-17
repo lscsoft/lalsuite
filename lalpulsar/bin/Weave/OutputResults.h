@@ -29,6 +29,7 @@
 #include "Weave.h"
 #include "SetupData.h"
 #include "ComputeResults.h"
+#include "ResultsToplist.h"
 
 #include <lal/UserInputParse.h>
 #include <lal/LFTandTSutils.h>
@@ -57,7 +58,9 @@ void XLALWeaveOutputResultsDestroy(
 int XLALWeaveOutputResultsAdd(
   WeaveOutputResults *out,
   const WeaveSemiResults *semi_res,
-  const UINT4 semi_nfreqs
+  const UINT4 semi_nfreqs,
+  WeaveResultsToplistItemSelect toplist_select_fcn,
+  const void *toplist_select_extra_params
 );
 int XLALWeaveOutputResultsCompletionLoop(
   WeaveOutputResults *out
@@ -69,7 +72,9 @@ int XLALWeaveOutputResultsWrite(
 int XLALWeaveOutputResultsReadAppend(
   FITSFile *file,
   WeaveOutputResults **out,
-  UINT4 toplist_limit
+  UINT4 toplist_limit,
+  WeaveResultsToplistItemSelect toplist_select_fcn,
+  const void *toplist_select_extra_params
 );
 int XLALWeaveOutputResultsCompare(
   BOOLEAN *equal,

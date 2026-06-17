@@ -962,7 +962,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Read output results
-      XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out, toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+      XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out, toplist_limit, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Restore state of main loop iterator
       XLAL_CHECK_MAIN( XLALWeaveSearchIteratorRestore( main_loop_itr, file ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
@@ -1072,7 +1072,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_SEMI, WEAVE_SEARCH_TIMING_OUTPUT ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Add semicoherent results to output
-    XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Switch timing section
     XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_OUTPUT, WEAVE_SEARCH_TIMING_OTHER ) == XLAL_SUCCESS, XLAL_EFUNC );

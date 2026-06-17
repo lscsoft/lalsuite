@@ -29,7 +29,6 @@
 #include "Weave.h"
 #include "SetupData.h"
 #include "ComputeResults.h"
-#include "OutputResults.h"
 
 #include <lal/LALHeap.h>
 #include <lal/LFTandTSutils.h>
@@ -77,6 +76,11 @@ typedef REAL4( *WeaveResultsToplistItemGetRankStat )( const WeaveResultsToplistI
 ///
 typedef void ( *WeaveResultsToplistItemSetRankStat )( WeaveResultsToplistItem *item, const REAL4 value );
 
+///
+/// Function which decides whether a toplist item is selected for a context-specific purpose
+///
+typedef BOOLEAN( *WeaveResultsToplistItemSelect )( const WeaveResultsToplistItem *item, const WeaveStatisticsParams *params, const void *extra_params );
+
 WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const size_t nspins,
   WeaveStatisticsParams *statistics_params,
@@ -93,7 +97,9 @@ void XLALWeaveResultsToplistDestroy(
 int XLALWeaveResultsToplistAdd(
   WeaveResultsToplist *toplist,
   const WeaveSemiResults *semi_res,
-  const UINT4 semi_nfreqs
+  const UINT4 semi_nfreqs,
+  WeaveResultsToplistItemSelect select_fcn,
+  const void *select_extra_params
 );
 int XLALWeaveResultsToplistCompletionLoop(
   WeaveResultsToplist *toplist
@@ -104,7 +110,9 @@ int XLALWeaveResultsToplistWrite(
 );
 int XLALWeaveResultsToplistReadAppend(
   FITSFile *file,
-  WeaveResultsToplist *toplist
+  WeaveResultsToplist *toplist,
+  WeaveResultsToplistItemSelect select_fcn,
+  const void *select_extra_params
 );
 int XLALWeaveResultsToplistCompare(
   BOOLEAN *equal,

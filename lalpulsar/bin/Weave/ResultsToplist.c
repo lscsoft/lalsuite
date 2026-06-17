@@ -715,7 +715,9 @@ void XLALWeaveResultsToplistDestroy(
 int XLALWeaveResultsToplistAdd(
   WeaveResultsToplist *toplist,
   const WeaveSemiResults *semi_res,
-  const UINT4 semi_nfreqs
+  const UINT4 semi_nfreqs,
+  WeaveResultsToplistItemSelect select_fcn,
+  const void *select_extra_params
 )
 {
   // Check input
@@ -758,6 +760,11 @@ int XLALWeaveResultsToplistAdd(
 
     // Set ranking statistic of toplist item
     toplist->item_set_rank_stat_fcn( item, toplist_rank_stats[freq_idx] );
+
+    // Decide whether to add toplist item
+    if ( select_fcn != NULL && !select_fcn( toplist->saved_item, params, select_extra_params ) ) {
+      continue;
+    }
 
     // Possibly add toplist item to heap
     XLAL_CHECK( XLALHeapAdd( toplist->heap, ( void ** ) &toplist->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -912,7 +919,9 @@ int XLALWeaveResultsToplistWrite(
 ///
 int XLALWeaveResultsToplistReadAppend(
   FITSFile *file,
-  WeaveResultsToplist *toplist
+  WeaveResultsToplist *toplist,
+  WeaveResultsToplistItemSelect select_fcn,
+  const void *select_extra_params
 )
 {
 
@@ -930,6 +939,7 @@ int XLALWeaveResultsToplistReadAppend(
   XLAL_CHECK( toplist_fits_table_init( file, toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Read all items from FITS table
+  const WeaveStatisticsParams *params = toplist->statistics_params;
   while ( nrows > 0 ) {
 
     // Create a new toplist item if needed
@@ -944,6 +954,11 @@ int XLALWeaveResultsToplistReadAppend(
     // Save highest serial in toplist
     if ( toplist->serial < toplist->saved_item->serial ) {
       toplist->serial = toplist->saved_item->serial;
+    }
+
+    // Decide whether to add toplist item
+    if ( select_fcn != NULL && !select_fcn( toplist->saved_item, params, select_extra_params ) ) {
+      continue;
     }
 
     // Add item to heap

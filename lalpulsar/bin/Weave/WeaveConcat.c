@@ -124,7 +124,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK( XLALFITSHeaderReadREAL8( file, "cpu total", &cpu_total_i ) == XLAL_SUCCESS, XLAL_EFUNC );
       cpu_total += cpu_total_i;
     }
-    XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out, uvar->toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out, uvar->toplist_limit, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLALFITSFileClose( file );
     LogPrintf( LOG_NORMAL, "Closed input result file '%s'\n", uvar->input_result_files->data[i] );
   }
