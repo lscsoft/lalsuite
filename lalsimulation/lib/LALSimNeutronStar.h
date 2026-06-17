@@ -180,6 +180,7 @@ double XLALSimNeutronStarEOSSpeedOfSound(double h, LALSimNeutronStarEOS * eos);
 /* FUNCTIONS TO FILL THE EQUATION OF STATE STRUCTURE */
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFileChoiceDirtyPT(const char *fname,int dirty);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(
     const REAL8Vector *nbdat, const REAL8Vector *edat, const REAL8Vector *pdat,
     const REAL8Vector *mubdat, const REAL8Vector *muedat, const REAL8Vector *hdat,

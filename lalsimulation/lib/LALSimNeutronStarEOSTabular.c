@@ -796,6 +796,38 @@ static LALSimNeutronStarEOS *sim_eos_from_tabulated_data_dirty_pt(double *nbdat,
  * is tested for phase transitions which are numerically defined by a pressure
  * plateau or near like plateau associated to a jump in energy density.
  * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 EOSPiece
+ * equation of state pieces. By default only clean phase transitions are identified. If the user wants to check for dirty phase transitions, i.e. a pressure plateau which is numerically not exactly a plateau, please use XLALSimNeutronStarEOSFromFileChoiceDirtyPT.
+ *
+ * @param[in] fname The path of the file to open.
+ * @return A pointer to neutron star equation of state structure LALSimNeutronStarEOS.
+ */
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) {
+  return XLALSimNeutronStarEOSFromFileChoiceDirtyPT(fname, 0);
+  }
+
+/**
+ * @brief Reads a data file containing tabulated equation of state data
+ * to create the LALSimNeutronStarEOS equation of state structure that can handle
+ * equations of state with phase transitions.
+ * @details Read a data file specified by a path fname that contains either
+ * i) 2 whitespace separated columns of equation of state data ("old" LAL EoS format)
+ * with the pressure in /m^2 (first column) and the energy density in /m^2 (second column).
+ * ii) 9 whitespace separated columns of equation of state data ("new" LAL EoS format)
+ * with the table index, the baryon density in /fm^3, the energy density in g/cm^3,
+ * the pressure in dyn/cm^2, the baryon chemical potential in MeV, the electron
+ * chemical potential in MeV, the pseudo-enthalpy, the lepton fraction and the
+ * square of the speed of sound normalized to light velocity.
+ *
+ * Every line beginning with the character '#' is ignored.
+ * If the path is an absolute path then this specific file is opened;
+ * otherwise, search for the file in paths given in the environment variable
+ * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
+ *
+ * This function builds the LALSimNeutronStarEOS structure from equation of state
+ * data that can include a first order phase transition. The equation of state data
+ * is tested for phase transitions which are numerically defined by a pressure
+ * plateau or near like plateau associated to a jump in energy density.
+ * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 EOSPiece
  * equation of state pieces.
  *
  * We define a "dirty" phase transition by an intended first order phase
@@ -820,14 +852,13 @@ static LALSimNeutronStarEOS *sim_eos_from_tabulated_data_dirty_pt(double *nbdat,
  * advised to provide equations of state containing phase transition in the
  * "new" LAL format.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the EOSPiece structure and the corresponding
- * XLALSimNeutronStarEOSFromFile; note that it cannot be used in the
- * solver for neutron star's astrophysical parameters that accounts for the
- * necessary phase transition corrections.
+ * corrected, use
+ * XLALSimNeutronStarEOSFromFile.
  * @param[in] fname The path of the file to open.
+ * @param dirty Integer to test for dirty phase transitions (1) or clean ones only (0).
  * @return A pointer to neutron star equation of state structure LALSimNeutronStarEOS.
  */
-LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) {
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFileChoiceDirtyPT(const char *fname, int dirty) {
 
     LALSimNeutronStarEOS *eos;
 
@@ -901,7 +932,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname) {
     }
     // by default we are not looking for dirty phase transitions
     eos = sim_eos_from_tabulated_data_dirty_pt(nbdat, edat, pdat, mubdat, muedat, hdat,
-                                                                    yedat, cs2dat, ndat, 0);
+                                                                    yedat, cs2dat, ndat, dirty);
     XLALFree(f_dat);
     LALFree(nbdat);
     LALFree(edat);
@@ -1045,8 +1076,6 @@ static LALSimNeutronStarEOS *sim_eos_from_tabulated_data_dirty_pt(double *nbdat,
                 }
             }
         }
-        for (int i = 1; i <= number_pt; i++){
-	  eos_correct_phase_transition(edat_recal, pdat_recal, hdat_recal, indices_phase_transition[i]) ;}
 
         // Refill the EOS structure
         bottom_index = 0, upper_index = 0;
@@ -1164,10 +1193,7 @@ cleanup:
  * have been modified to obtain a clean phase transition: this implies that
  * P(pt,+) and eps(pt,+) are not thermodynamically coherent together.
  * In the event that the user does not wish for the phase transition to be
- * corrected, use the EOSPiece structure and the corresponding
- * XLALSimNeutronStarEOSFromTabulatedData function; note that it cannot be used in the
- * solver for neutron star's astrophysical parameters that accounts for the
- * necessary phase transition corrections.
+ * corrected, set the variable dirty to 0.
  *
  * @param nbdat Array for the baryon density (in /fm^3).
  * @param edat Array for the energy density (in m^-2).
@@ -1237,7 +1263,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT(
  * is tested for phase transitions which are defined by a pressure
  * plateau associated to a jump in energy density.
  * If N phase transitions are found, LALSimNeutronStarEOS contains N+1 EOSPiece
- * equation of state pieces.
+ * equation of state pieces. By default only clean phase transitions are identified. If the user wants to check for dirty phase transitions, i.e. a pressure plateau which is numerically not exactly a plateau, please use XLALSimNeutronStarEOSFromTabulatedDataChoiceDirtyPT.
  *
  * All array inputs are REAL8Vector, making this function callable from Python via SWIG.
  * The physics described above is implemented in sim_eos_from_tabulated_data_dirty_pt function
