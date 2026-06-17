@@ -87,7 +87,7 @@
       # Clang
       - LCI_PLAT: "clang-22"
         LCI_PLAT_BASE: "clang"
-        LCI_DOCKER_ARGS: "CLANG_VERSION_NAME=22 CLANG_VERSION_SUFFIX=-22 DEB_VERSION=bookworm"
+        LCI_DOCKER_ARGS: "CLANG_VERSION_NAME=22 CLANG_VERSION_SUFFIX=-22 DEB_VERSION=trixie"
 
       - LCI_PLAT: "clang-21"
         LCI_PLAT_BASE: "clang"
