@@ -31,6 +31,7 @@ import math
 import re
 
 import numpy as np
+
 from lalpulsar.pulsarpputils import rad_to_dms, rad_to_hms
 
 # some parameter names for special LaTeX treatment in figures
