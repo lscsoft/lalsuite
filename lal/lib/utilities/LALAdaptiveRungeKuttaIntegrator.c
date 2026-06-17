@@ -251,7 +251,7 @@ int XLALAdaptiveRungeKutta4Hermite(LALAdaptiveRungeKuttaIntegrator * integrator,
 
     dim = integrator->sys->dimension;
 
-    outputlen = ((int)(tend_in - tinit) / deltat);
+    outputlen = (int) ((tend_in - tinit) / deltat);
     //if (outputlen < 0) outputlen = -outputlen;
     if (outputlen < 0) {
         XLALPrintError
@@ -440,6 +440,7 @@ int XLALAdaptiveRungeKutta4HermiteOnlyFinal(LALAdaptiveRungeKuttaIntegrator * in
     REAL8 t, tintp, h;
 
     REAL8 *ytemp = NULL;
+    REAL8 *ytemp2 = NULL;
 
     REAL8 tend = tend_in;
 
@@ -465,11 +466,13 @@ int XLALAdaptiveRungeKutta4HermiteOnlyFinal(LALAdaptiveRungeKuttaIntegrator * in
     }
 
     ytemp = XLALCalloc(dim, sizeof(REAL8));
+    ytemp2 = XLALCalloc(dim, sizeof(REAL8));
 
-    if (!ytemp) {
+    if (!ytemp || !ytemp2) {
         errnum = XLAL_ENOMEM;
         goto bail_out;
     }
+
 
     /* Initialize ytemp[1] with the initial value of yinit[1] so that the initial check below is satisfied even if we are integrating backwards */
     ytemp[1] = yinit[1];
@@ -514,15 +517,23 @@ int XLALAdaptiveRungeKutta4HermiteOnlyFinal(LALAdaptiveRungeKuttaIntegrator * in
         }
 
         /* If we're at the final timestep, interpolate to get the output at the desired final value, y1_final.
-         * Note we square to get an absolute value, because we may be
-         * integrating t in the positive or negative direction
 	 * We multiply yinit, ytemp[1], and y1_final by deltat so that this check works when integrating forward or backward */
 	if (deltat*yinit[1] >= deltat*y1_final) {
-	        tintp = told;
+	            tintp = told;
 
-		REAL8 hUsed = t - told;
+		        REAL8 hUsed = t - told;
 
-		while (deltat*ytemp[1] < deltat*y1_final) {
+                /* Save initial value to allow for the case where the stopping condition is triggered at i = 1 */
+
+                /* First grab the k's from the integrator state. */
+                rkf45_state_t *rkfState = integrator->step->state;
+                REAL8 *k1 = rkfState->k1;
+                REAL8 *k6 = rkfState->k6;
+                REAL8 *y0 = rkfState->y0;
+
+                memcpy(ytemp, y0, dim * sizeof(*y0));
+
+		while (1) {
 		  tintp += deltat;
 
 		  /* tintp = told + (t-told)*theta, 0 <= theta <= 1.  We have to
@@ -537,15 +548,18 @@ int XLALAdaptiveRungeKutta4HermiteOnlyFinal(LALAdaptiveRungeKuttaIntegrator * in
 		  REAL8 i6 = -4.0 * theta * theta * (theta - 1.0);
 		  REAL8 iend = theta * theta * (4.0 * theta - 3.0);
 
-		  /* Grab the k's from the integrator state. */
-		  rkf45_state_t *rkfState = integrator->step->state;
-		  REAL8 *k1 = rkfState->k1;
-		  REAL8 *k6 = rkfState->k6;
-		  REAL8 *y0 = rkfState->y0;
-
 		  for (i = 0; i < dim; i++) {
-		    ytemp[i] = i0 * y0[i] + iend * yinit[i] + hUsed * i1 * k1[i] + hUsed * i6 * k6[i];
+		    ytemp2[i] = i0 * y0[i] + iend * yinit[i] + hUsed * i1 * k1[i] + hUsed * i6 * k6[i];
 		  }
+
+		  /* Output the final interpolated timestep before the desired final frequency is reached */
+		  if(deltat*ytemp2[1] < deltat*y1_final) {
+		     memcpy(ytemp, ytemp2, dim * sizeof(*ytemp2));
+                  }
+          else {
+                    break;
+                  }
+
 		}
 	}
 
@@ -575,6 +589,7 @@ int XLALAdaptiveRungeKutta4HermiteOnlyFinal(LALAdaptiveRungeKuttaIntegrator * in
 
     /* If we have an error, then we should free allocated memory, and
      * then return. */
+    XLALFree(ytemp2);
     XLALFree(ytemp);
 
     if (errnum) {

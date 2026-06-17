@@ -245,6 +245,18 @@ print(r"""
  * @brief natural log of 2, ln(2)
  * @see http://oeis.org/A002162
  *
+ * @def LAL_LN3
+ * @brief natural log of 3, ln(3)
+ * @see http://oeis.org/A002391
+ *
+ * @def LAL_LN5
+ * @brief natural log of 5, ln(5)
+ * @see http://oeis.org/A016628
+ *
+ * @def LAL_LN7
+ * @brief natural log of 7, ln(7)
+ * @see http://oeis.org/A016630
+ *
  * @def LAL_LN10
  * @brief natural log of 10, ln(10)
  * @see http://oeis.org/A002392
@@ -311,6 +323,9 @@ LAL_EXPGAMMA = D('1.7810724179901979852365041031071795491696452143034302053')
 
 LAL_E = D('1').exp()
 LAL_LN2 = D('2').ln()
+LAL_LN3 = D('3').ln()
+LAL_LN5 = D('5').ln()
+LAL_LN7 = D('7').ln()
 LAL_LN10 = D('10').ln()
 LAL_LOG2E = D('1') / LAL_LN2
 LAL_LOG10E = LAL_E.log10()
@@ -331,6 +346,15 @@ print(str(LAL_LOG10E.quantize(quantize)))
 
 print('#define LAL_LN2', end=' ')
 print(str(LAL_LN2.quantize(quantize)))
+
+print('#define LAL_LN3', end=' ')
+print(str(LAL_LN3.quantize(quantize)))
+
+print('#define LAL_LN5', end=' ')
+print(str(LAL_LN5.quantize(quantize)))
+
+print('#define LAL_LN7', end=' ')
+print(str(LAL_LN7.quantize(quantize)))
 
 print('#define LAL_LN10', end=' ')
 print(str(LAL_LN10.quantize(quantize)))

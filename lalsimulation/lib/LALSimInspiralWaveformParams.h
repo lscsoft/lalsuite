@@ -269,6 +269,10 @@ int XLALSimInspiralWaveformParamsInsertNLTidesF2(LALDict *params, REAL8 value);
 INT4 XLALSimInspiralWaveformParamsInsertEOBChooseNumOrAnalHamDer(LALDict *params, INT4 value);
 INT4 XLALSimInspiralWaveformParamsInsertEOBEllMaxForNyquistCheck(LALDict *params, INT4 value);
 
+/* Eccentric SpinTaylor */
+INT4 XLALSimInspiralWaveformParamsInsertEccEvol2PNSpinFlag(LALDict *params, INT4 value);
+INT4 XLALSimInspiralWaveformParamsInsertEccEvolAlwaysOutput(LALDict *params, INT4 value);
+INT4 XLALSimInspiralWaveformParamsInsertInitialPeriastronPrecession(LALDict *params, REAL8 value);
 
 /* new interface */
 REAL8 XLALSimInspiralWaveformParamsLookupMass1(LALDict *params);
@@ -550,6 +554,11 @@ REAL8 XLALSimInspiralWaveformParamsLookupNLTidesF2(LALDict *params);
 /* SEOBNRv4P */
 INT4 XLALSimInspiralWaveformParamsLookupEOBChooseNumOrAnalHamDer(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupEOBEllMaxForNyquistCheck(LALDict *params);
+
+/* Eccentric SpinTaylor */
+INT4 XLALSimInspiralWaveformParamsLookupEccEvol2PNSpinFlag(LALDict *params);
+INT4 XLALSimInspiralWaveformParamsLookupEccEvolAlwaysOutput(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupInitialPeriastronPrecession(LALDict *params);
 
 int XLALSimInspiralWaveformParamsLmaxIsDefault(LALDict *params);
 
