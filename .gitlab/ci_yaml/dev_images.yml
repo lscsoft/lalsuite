@@ -89,7 +89,7 @@
       #   CLANG_VERSION_ARG=latest)
       - LCI_PLAT: "clang-latest"
         LCI_PLAT_BASE: "clang"
-        LCI_DOCKER_ARGS: "CLANG_VERSION=22 CLANG_VERSION_ARG=latest DEB_VERSION=bookworm"
+        LCI_DOCKER_ARGS: "CLANG_VERSION=22 CLANG_VERSION_ARG=latest DEB_VERSION=trixie"
 
       - LCI_PLAT: "clang-21"
         LCI_PLAT_BASE: "clang"
