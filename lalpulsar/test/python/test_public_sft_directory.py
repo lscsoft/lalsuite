@@ -17,6 +17,7 @@
 import sys
 
 import pytest
+
 from lalpulsar.public_sft_directory import public_sft_directory
 
 SFT_FILENAME_TO_DIRECTORY = (
