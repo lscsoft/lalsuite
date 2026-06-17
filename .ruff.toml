@@ -35,5 +35,12 @@ select = [
 
 [lint.isort]
 known-first-party = [
+    "lal",
+    "lalframe",
+    "lalmetaio",
+    "lalsimulation",
+    "lalburst",
+    "lalinspiral",
+    "lalinference",
     "lalpulsar",
 ]
