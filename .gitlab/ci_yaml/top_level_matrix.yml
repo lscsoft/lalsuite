@@ -55,10 +55,6 @@ lalsuite:linux:
         LCI_JOB_TYPE: ["merge", "sched-devimg"]
 
       # Clang
-      - LCI_PLAT: "clang-latest"
-        LCI_ENV: "LCI_BLD=make LCI_PKG=deb"
-        LCI_JOB_TYPE: ["merge", "sched-devimg"]
-
       - LCI_PLAT: "clang-22"
         LCI_ENV: "LCI_BLD=make LCI_PKG=deb"
         LCI_JOB_TYPE: ["merge", "sched-devimg"]
