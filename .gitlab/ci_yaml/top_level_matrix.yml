@@ -34,7 +34,7 @@ lalsuite:linux:
       # --- Compilers --------------------------------------------------
 
       # GCC
-      - LCI_PLAT: "gcc-latest"
+      - LCI_PLAT: "gcc-16"
         LCI_ENV: "LCI_BLD=make LCI_PKG=deb CFLAGS=-O3"
         LCI_JOB_TYPE: ["merge", "sched-devimg"]
 
