@@ -47,10 +47,9 @@ import numpy as np
 matplotlib.use("Agg")
 
 # local application/library specific imports
+from lalpulsar import git_version
 from lalpulsar.pulsarhtmlutils import *
 from lalpulsar.pulsarpputils import *
-
-from lalpulsar import git_version
 
 __author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__ = "git id {}".format(git_version.id)
