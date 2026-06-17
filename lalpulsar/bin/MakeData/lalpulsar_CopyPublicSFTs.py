@@ -30,10 +30,6 @@ import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from contextlib import contextmanager
 
-from lalpulsar.public_sft_directory import (
-    public_sft_directory,
-    public_sft_directory_readme_md,
-)
 from tqdm import tqdm
 
 from lal import (
@@ -45,6 +41,10 @@ from lal import (
     GetDebugLevel,
 )
 from lalpulsar import SFTErrorMessage, ValidateSFTFile, git_version
+from lalpulsar.public_sft_directory import (
+    public_sft_directory,
+    public_sft_directory_readme_md,
+)
 
 __author__ = "Karl Wette <karl.wette@ligo.org>"
 __version__ = git_version.id
