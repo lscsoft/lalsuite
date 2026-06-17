@@ -136,8 +136,8 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
 {
     /* ode integration variables */
     const double epsabs = 0.0;
-    double y[TOV_ODE_VARS_DIM];
-    double dy[TOV_ODE_VARS_DIM];
+    double y[TOV_ODE_VARS_DIM] = {0.0};
+    double dy[TOV_ODE_VARS_DIM] = {0.0};
     struct tov_ode_vars *vars = tov_ode_vars_cast(y);
     gsl_odeiv_system sys = { tov_ode, NULL, TOV_ODE_VARS_DIM, eos };
     gsl_odeiv_step *step =
@@ -325,8 +325,8 @@ int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *ma
 {
     /* ode integration variables */
     const double epsabs = 0.0;
-    double y[TOV_VIRIAL_ODE_VARS_DIM];
-    double dy[TOV_VIRIAL_ODE_VARS_DIM];
+    double y[TOV_VIRIAL_ODE_VARS_DIM] = {0.0};
+    double dy[TOV_VIRIAL_ODE_VARS_DIM] = {0.0};
     struct tov_virial_ode_vars *vars = tov_virial_ode_vars_cast(y);
     gsl_odeiv_system sys = { tov_virial_ode, NULL, TOV_VIRIAL_ODE_VARS_DIM, eos };
     gsl_odeiv_step *step =
