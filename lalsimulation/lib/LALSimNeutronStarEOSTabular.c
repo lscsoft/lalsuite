@@ -763,7 +763,7 @@ static EOSPiece * eos_piece_alloc_tabular_index( double *nbdat, double *edat, do
     LALFree(hdat_cut);
     LALFree(yedat_cut);
     LALFree(cs2dat_cut);
-    
+
     return eos;
 }
 
