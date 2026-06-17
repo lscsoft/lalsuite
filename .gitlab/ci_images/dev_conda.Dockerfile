@@ -73,6 +73,7 @@ conda install --quiet --name lalsuite-ci \
     requests \
     texlive-core \
     urllib3 \
+    yq \
     ;
 python3 -m pip install \
     "py-api-dumper>=4.0" \
@@ -87,6 +88,15 @@ sed -i 's/- python .*$/- python/' ./conda-dev-env.yml
 
 # install LALSuite build dependencies
 conda env update --quiet --name lalsuite-ci --file ./conda-dev-env.yml
+
+# pin LALSuite build dependencies to prevent aggressive upgrades
+for pkg_name in $(yq -r '.dependencies[] | select(type == "string") | split("[<=>]"; "")[0]' conda-dev-env.yml); do
+    pkg_existing_pin=$(conda config --show pinned_packages | yq -r '.pinned_packages[] | select(test("^'"${pkg_name}"'[<=>]"))')
+    if [ "X${pkg_existing_pin}" = X ]; then
+        pkg_version=$(conda list --name lalsuite-ci --full-name ${pkg_name} --json | yq -r '.[0].version')
+        conda config --add pinned_packages "${pkg_name}<=${pkg_version}"
+    fi
+done
 
 # create environment for testing package upgrade
 conda create --quiet --name lalsuite-ci-upgrade
