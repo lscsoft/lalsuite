@@ -52,7 +52,7 @@
     - docker run --rm ${IMG_PATHS%% *} lalapps_version
     # push image to registry
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - ${LCI_SCRIPTS}/retry --delay 180 docker compose push -q
+    - ${LCI_SCRIPTS}/retry --delay 200 docker compose push -q
 
 snapshot-image:deploy:
   extends:

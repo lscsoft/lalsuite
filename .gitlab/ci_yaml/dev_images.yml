@@ -140,7 +140,7 @@ dev-image:conda:
     - ${LCI_SCRIPTS}/retry docker compose build
     # push image to registry
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - ${LCI_SCRIPTS}/retry --delay 180 docker compose push -q
+    - ${LCI_SCRIPTS}/retry --delay 200 docker compose push -q
 
 dev-image:other:
   extends:
@@ -169,7 +169,7 @@ dev-image:other:
     - ${LCI_SCRIPTS}/retry docker compose build
     # push image to registry
     - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - ${LCI_SCRIPTS}/retry --delay 180 docker compose push -q
+    - ${LCI_SCRIPTS}/retry --delay 200 docker compose push -q
 
 .dev-image-deploy-job:
   extends:
@@ -185,9 +185,9 @@ dev-image:other:
         exit 123
       fi
     # copy testing image to production image
-    - ${LCI_SCRIPTS}/retry --delay 180 crane copy ${TESTING_IMG_PATH} ${FINAL_IMG_PATH}
+    - ${LCI_SCRIPTS}/retry --delay 200 crane copy ${TESTING_IMG_PATH} ${FINAL_IMG_PATH}
     # delete testing image
-    - ${LCI_SCRIPTS}/retry --delay 180 crane delete ${TESTING_IMG_PATH}
+    - ${LCI_SCRIPTS}/retry --delay 200 crane delete ${TESTING_IMG_PATH}
   rules:
     - if: >-
         $LCI_PIPE_TYPE == "sched-devimg"
