@@ -2,7 +2,8 @@
 # LALSuite GitLab-CI: check test coverage
 # ----------------------------------------------------------------------
 
-coverage-check:
+# computes test coverage
+.coverage-compute-job:
   extends:
     - .code-quality-job
   variables:
@@ -47,7 +48,14 @@ coverage-check:
     - ${LCI_SCRIPTS}/merge_coverage_xml
     # write HTML coverage report and show coverage summary
     - pycobertura show coverage.xml -f html -o coverage.html
-    - pycobertura show coverage.xml | tail -n 1
+    - pycobertura show coverage.xml | tail -n 1 > coverage.txt
+    # display coverage
+    - cat coverage.txt
+
+# check test coverage in merge requests
+coverage-check:
+  extends:
+    - .coverage-compute-job
   coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
   artifacts:
     expose_as: coverage
@@ -70,6 +78,60 @@ coverage-check:
   rules:
     - if: >-
         $LCI_PIPE_TYPE == "merge"
-    # run on the main branch at lscsoft/lalsuite for coverage badge
+
+# store coverage during post-merge request build
+coverage-store:
+  extends:
+    - .coverage-compute-job
+  artifacts:
+    paths:
+      # report
+      - coverage.html
+      - coverage.txt
+      # combined coverage
+      - coverage.xml
+      # C coverage
+      - c-coverage.xml
+      # Python coverage
+      - py-coverage.xml
+  rules:
     - if: >-
         $LCI_PIPE_TYPE == "postmerge"
+
+# emit coverage from every pipeline on the main branch at lscsoft/lalsuite
+coverage-emit:
+  extends:
+    - .code-quality-job
+  needs:
+    # ensure that this runs after the coverage has been stored
+    - job: coverage-store
+      optional: true
+  script:
+    # download coverage data from the main branch at lscsoft/lalsuite
+    - |
+      ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
+          ${CI_SERVER_URL} lscsoft/lalsuite \
+          get-artifacts ${CI_DEFAULT_BRANCH} coverage-store
+    # display coverage
+    - cat coverage.txt
+  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
+  artifacts:
+    expose_as: coverage
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      # report
+      - coverage.html
+      # combined coverage
+      - coverage.xml
+      # C coverage
+      - c-coverage.xml
+      # Python coverage
+      - py-coverage.xml
+  rules:
+    # run on the main branch at lscsoft/lalsuite
+    - if: >-
+        $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
