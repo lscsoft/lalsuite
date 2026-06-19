@@ -536,6 +536,12 @@ double XLALSimNeutronStarFamMinMass(LALSimNeutronStarFamily *fam)
 }
 
 
+/* DEPRECATED: old name of XLALSimNeutronStarFamMinMass */
+double XLALSimNeutronStarFamMinimumMass(LALSimNeutronStarFamily *fam){
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarFamMinMass");
+    return XLALSimNeutronStarFamMinMass(fam);
+}
+
 /*
  * Returns the maximum mass of a neutron star branch in kg.
  */
@@ -567,6 +573,12 @@ double XLALSimNeutronStarFamMaxMassPerBranch(LALSimNeutronStarFamily *fam, int b
 double XLALSimNeutronStarFamMaxMass(LALSimNeutronStarFamily *fam)
 {
     return find_max_mass_for_multiple_branches(fam);
+}
+
+/* DEPRECATED: old name of XLALSimNeutronStarFamMaxMass */
+double XLALSimNeutronStarMaximumMass(LALSimNeutronStarFamily *fam){
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarFamMaxMass");
+    return XLALSimNeutronStarFamMaxMass(fam);
 }
 
 /*
@@ -711,6 +723,20 @@ REAL8Vector * XLALSimNeutronStarFamRadiusOfMass(double m, LALSimNeutronStarFamil
     return r;
 }
 
+/* DEPRECATED: old name of XLALSimNeutronStarFamRadiusOfMass */
+double XLALSimNeutronStarRadius(double m, LALSimNeutronStarFamily * fam){
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarFamRadiusOfMass");
+    REAL8Vector *r = XLALSimNeutronStarFamRadiusOfMass(m, fam);
+    if (!r) XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid interpolated radius r");
+    if (r->length != 1) {
+        XLALDestroyREAL8Vector(r);
+        XLAL_ERROR_REAL8( XLAL_EFUNC, "The NS astrophysical parameters present twin stars at the interpolating mass. XLALSimNeutronStarRadius can only handle sequences without twin stars. Use XLALSimNeutronStarFamRadiusOfMass instead.");
+    }
+    double r_double = r->data[0];
+    XLALDestroyREAL8Vector(r);
+    return r_double;
+}
+
 /*
  * Returns the central pressure in Pa corresponding to a given mass in kg in the neutron star branch.
  */
@@ -764,6 +790,21 @@ REAL8Vector * XLALSimNeutronStarFamCentralPressureOfMass(double m, LALSimNeutron
     LALFree(twin_indices);
     return pc;
 }
+
+/* DEPRECATED: old name of XLALSimNeutronStarFamCentralPressureOfMass */
+double XLALSimNeutronStarCentralPressure(double m, LALSimNeutronStarFamily * fam){
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarFamCentralPressureOfMass");
+    REAL8Vector *pc = XLALSimNeutronStarFamCentralPressureOfMass(m, fam);
+    if (!pc) XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid interpolated central pressure pc");
+    if (pc->length != 1) {
+        XLALDestroyREAL8Vector(pc);
+        XLAL_ERROR_REAL8( XLAL_EFUNC, "The NS astrophysical parameters present twin stars at the interpolating mass. XLALSimNeutronStarCentralPressure can only handle sequences without twin stars. Use XLALSimNeutronStarFamCentralPressureOfMass instead.");
+    }
+    double pc_double = pc->data[0];
+    XLALDestroyREAL8Vector(pc);
+    return pc_double;
+}
+
 
 /*
  * Returns the mass in kg corresponding to a given central pressure in Pa in the neutron star branch.
@@ -929,6 +970,21 @@ REAL8Vector * XLALSimNeutronStarFamLoveNumberK2OfMass(double m, LALSimNeutronSta
         k2->data[i] = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(m, fam, twin_indices[i]);
     LALFree(twin_indices);
     return k2;
+}
+
+
+/* DEPRECATED: old name of XLALSimNeutronStarFamLoveNumberK2OfMass */
+double XLALSimNeutronStarLoveNumberK2(double m, LALSimNeutronStarFamily * fam){
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarFamLoveNumberK2OfMass");
+    REAL8Vector *k2 = XLALSimNeutronStarFamLoveNumberK2OfMass(m, fam);
+    if (!k2) XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid interpolated k2 Love number");
+    if (k2->length != 1) {
+        XLALDestroyREAL8Vector(k2);
+        XLAL_ERROR_REAL8( XLAL_EFUNC, "The NS astrophysical parameters present twin stars at the interpolating mass. XLALSimNeutronStarLoveNumberK2 can only handle sequences without twin stars. Use XLALSimNeutronStarFamLoveNumberK2OfMass instead.");
+    }
+    double k2_double = k2->data[0];
+    XLALDestroyREAL8Vector(k2);
+    return k2_double;
 }
 
 /*

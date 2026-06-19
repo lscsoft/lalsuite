@@ -164,7 +164,7 @@ double XLALSimNeutronStarEOSPressureOfRestMassDensityPerPiece(double rho, LALSim
 double XLALSimNeutronStarEOSPressureOfRestMassDensityGeometrized(double rho, LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSPressureOfRestMassDensity(double rho, LALSimNeutronStarEOS * eos);
 
-// /* DEPRECATED: old misspelling of Geometrized and missing "OfPseudoEnthalpy" for coherence*/
+/* DEPRECATED: old misspelling of Geometrized and missing "OfPseudoEnthalpy" for coherence*/
 double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSPseudoEnthalpyOfPressureGeometerized(double p, LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(double p, LALSimNeutronStarEOS * eos);
@@ -253,6 +253,9 @@ double XLALSimNeutronStarFamMinCentralPressurePerBranch(LALSimNeutronStarFamily 
 double XLALSimNeutronStarFamMinCentralPressure(LALSimNeutronStarFamily *fam);
 double XLALSimNeutronStarFamMaxCentralPressurePerBranch(LALSimNeutronStarFamily *fam, int branch_id);
 double XLALSimNeutronStarFamMaxCentralPressure(LALSimNeutronStarFamily *fam);
+/* DEPRECATED: old name of NS astrophysics min and max mass functions */
+double XLALSimNeutronStarFamMinimumMass(LALSimNeutronStarFamily *fam);
+double XLALSimNeutronStarMaximumMass(LALSimNeutronStarFamily * fam);
 
 double XLALSimNeutronStarFamRadiusOfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
 REAL8Vector * XLALSimNeutronStarFamRadiusOfMass(double m, LALSimNeutronStarFamily * fam);
@@ -269,6 +272,10 @@ REAL8Vector * XLALSimNeutronStarFamLoveNumberK3OfMass(double m, LALSimNeutronSta
 double XLALSimNeutronStarFamLoveNumberK4OfMassPerBranch(double m, LALSimNeutronStarFamily * fam, int branch_id);
 REAL8Vector * XLALSimNeutronStarFamLoveNumberK4OfMass(double m, LALSimNeutronStarFamily * fam);
 
+/* DEPRECATED: old name of NS astrophysics parameters interpolation */
+double XLALSimNeutronStarRadius(double m, LALSimNeutronStarFamily * fam);
+double XLALSimNeutronStarCentralPressure(double m, LALSimNeutronStarFamily * fam);
+double XLALSimNeutronStarLoveNumberK2(double m, LALSimNeutronStarFamily * fam);
 #endif /* _LALSIMNEUTRONSTAR_H */
 
 /** @} */
