@@ -1,5 +1,6 @@
-import pytest
 from copy import deepcopy
+
+import pytest
 
 from .test_utilities import compute_match
 
@@ -8,8 +9,8 @@ N_SAMPLES = 15
 
 
 def assert_indistinguishable(wf1, wf2):
-    from gwpy.timeseries.timeseries import TimeSeries
     import numpy as np
+    from gwpy.timeseries.timeseries import TimeSeries
 
 
     if isinstance(wf1, TimeSeries):
@@ -60,8 +61,9 @@ def test_mass_inversion_symmetry(parameters, gen):
 @pytest.mark.skip(reason='Additional modules are not available in CI yet')
 @pytest.mark.parametrize("scale_factor", [2.0, 10.0])
 def test_mass_scaling(parameters, scale_factor, plot, gen):
-    from ..core import waveform as wfm
     from scipy.interpolate import interp1d
+
+    from ..core import waveform as wfm
 
 
     hp, hc = wfm.GenerateTDWaveform(parameters, gen)
@@ -97,9 +99,10 @@ def test_sample_rate_scaling(parameters, scale_factor, plot, gen):
     # these values reproduce the ones used for the v5 review,
     # https://git.ligo.org/waveforms/reviews/seobnrv5/-/blob/main/aligned/sanity_checks/standard_tests/plots/varying_srate.pdf
 
-    from ..core import waveform as wfm
-    from scipy.interpolate import interp1d
     import astropy.units as u
+    from scipy.interpolate import interp1d
+
+    from ..core import waveform as wfm
 
     hp, hc = wfm.GenerateTDWaveform(parameters, gen)
 
@@ -137,9 +140,9 @@ def test_sample_rate_scaling(parameters, scale_factor, plot, gen):
 
 @pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_distance_scaling(parameters, plot, gen):
-    from ..core import waveform as wfm
-    from scipy.interpolate import interp1d
     import astropy.units as u
+
+    from ..core import waveform as wfm
 
     distances = np.geomspace(10, 10000, num=N_SAMPLES) * u.Mpc
 
@@ -183,13 +186,12 @@ def test_distance_scaling(parameters, plot, gen):
 
 @pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_inclination_dependence(parameters, plot, gen):
-    from ..core import waveform as wfm
-    from scipy.interpolate import interp1d
     import astropy.units as u
     import numpy as np
-
     from pycbc.filter import sigma
     from pycbc.types import TimeSeries as PyCBCTimeSeries
+
+    from ..core import waveform as wfm
 
 
     inclinations = np.linspace(0, np.pi, num=N_SAMPLES) * u.rad
@@ -227,10 +229,9 @@ def test_inclination_dependence(parameters, plot, gen):
     reason="Times are strangely defined - is the epoch supposed not to be zero?"
 )
 def test_delta_t_close_to_zero(gen, parameters):
-    from ..core import waveform as wfm
-    from scipy.interpolate import interp1d
-    import astropy.units as u
     import numpy as np
+
+    from ..core import waveform as wfm
 
     hp, hc = wfm.GenerateTDWaveform(parameters, gen)
 
@@ -241,10 +242,10 @@ def test_delta_t_close_to_zero(gen, parameters):
 
 @pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_orbital_phase(gen, parameters, plot):
-    from ..core import waveform as wfm
-    from scipy.interpolate import interp1d
     import astropy.units as u
     import numpy as np
+
+    from ..core import waveform as wfm
 
     parameters["eccentricity"] = 0.01 * u.dimensionless_unscaled
 
@@ -285,12 +286,9 @@ def test_orbital_phase(gen, parameters, plot):
 
 @pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_modearray_parameter(parameters, gen):
-    from ..core.gw import SpinWeightedSphericalHarmonicMode
 
     from ..core import waveform as wfm
-    from scipy.interpolate import interp1d
-    import astropy.units as u
-    import numpy as np
+    from ..core.gw import SpinWeightedSphericalHarmonicMode
 
     # when giving a ModeArray, only those modes should be returned
     parameters["ModeArray"] = [[2, 2], [3, 3]]
@@ -312,9 +310,9 @@ def test_modearray_parameter(parameters, gen):
 
 @pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_modearray_parameter_polarizations(parameters, gen):
-    from ..core import waveform as wfm
-    import astropy.units as u
     import numpy as np
+
+    from ..core import waveform as wfm
 
     hp1, hc1 = wfm.GenerateTDWaveform(parameters, gen)
     hp2, hc2 = wfm.GenerateTDWaveform(parameters | {"ModeArray": [[2, 2]]}, gen)

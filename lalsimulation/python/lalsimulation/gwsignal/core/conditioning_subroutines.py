@@ -4,10 +4,10 @@ import warnings
 import numpy as np
 from astropy import units as u
 from gwpy.timeseries import TimeSeries
-from lalsimulation import SimInspiralREAL8WaveTaper
+from scipy.signal import butter, sosfiltfilt
+
 import lal
-import warnings
-from scipy.signal import butter, sosfiltfilt, find_peaks
+from lalsimulation import SimInspiralREAL8WaveTaper
 
 # Routine to high-pass time series
 

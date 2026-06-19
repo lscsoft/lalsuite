@@ -1,8 +1,10 @@
 from copy import deepcopy
-import pytest
+
 import numpy as np
+import pytest
 
 from .test_utilities import compute_match
+
 
 @pytest.mark.skip(reason='Additional modules are not available in CI yet')
 @pytest.mark.parametrize("eccentricity", np.linspace(0, 0.9, num=10))
@@ -28,10 +30,9 @@ def test_circular_conversion(eccentricity):
 def test_eccentricity_value(gen, parameters, plot):
 
     import astropy.units as u
-    from ..core import waveform as wfm
     from gw_eccentricity import measure_eccentricity
-    from pycbc.filter import match, optimized_match
-    from pycbc.types import TimeSeries as PyCBCTimeSeries
+
+    from ..core import waveform as wfm
 
     parameters["f22_start"] = 10.0 * u.Hz
     parameters["f22_ref"] = 10.0 * u.Hz
@@ -69,10 +70,8 @@ def test_eccentricity_value(gen, parameters, plot):
 def test_quasicircular_limit(gen, parameters, plot):
 
     import astropy.units as u
+
     from ..core import waveform as wfm
-    from gw_eccentricity import measure_eccentricity
-    from pycbc.filter import match, optimized_match
-    from pycbc.types import TimeSeries as PyCBCTimeSeries
 
 
     eccentricities = np.geomspace(1e-6, 1e-3, num=20)

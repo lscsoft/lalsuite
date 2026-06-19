@@ -248,7 +248,7 @@ def generate_conditioned_td_waveform_from_fd(parameter_dict, generator):
     hp *= phase_shift
     hc *= phase_shift
 
-    if hp.epoch == None or hc.epoch == None:
+    if hp.epoch is None or hc.epoch is None:
         hp.epoch = tshift * u.s
         hc.epoch = tshift * u.s
     else:

@@ -1,5 +1,5 @@
 def compute_match(h1, h2):
-    from pycbc.filter import match, optimized_match
+    from pycbc.filter import optimized_match
     from pycbc.types import TimeSeries as PyCBCTimeSeries
 
     h1_pycbc = PyCBCTimeSeries(h1.data, delta_t=h1.dt.value)

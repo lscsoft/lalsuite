@@ -27,8 +27,7 @@ def plot(request):
 
 
 def pytest_generate_tests(metafunc):
-    from ..models import teobresums
-    from ..models import pyseobnr_model
+    from ..models import pyseobnr_model, teobresums
 
     ALL_MODELS = {
         "TEOBResumSDALI": teobresums.TEOBResumSDALI,

@@ -1,7 +1,6 @@
 import pytest
 
 
-
 @pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_modes_dictionary():
     from ...models import teobresums
@@ -20,8 +19,9 @@ def test_modes_dictionary_backreference():
 @pytest.mark.skip(reason='Additional modules are not available in CI yet')
 def test_modes_gen(gen, parameters):
 
-    from ...core import waveform as wfm
     from gwpy.timeseries import TimeSeries
+
+    from ...core import waveform as wfm
 
     hlm = wfm.GenerateTDModes(parameters, gen)
 
@@ -31,9 +31,10 @@ def test_modes_gen(gen, parameters):
 @pytest.fixture
 def hphc_native_vs_gwsignal(gen, parameters):
 
+    import EOBRun_module
+
     from ...core import waveform as wfm
     from ...models import teobresums
-    import EOBRun_module
 
     if gen.__class__.__name__ != "TEOBResumSDALI":
         pytest.skip()

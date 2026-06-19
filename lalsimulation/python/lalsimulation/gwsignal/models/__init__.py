@@ -1,9 +1,11 @@
 import sys
 from importlib import import_module
+
+import pyseobnr_model as pyseobnr_model
+
 import lalsimulation as lalsim
 
 from ..core.waveform import LALCompactBinaryCoalescenceGenerator
-from . import pyseobnr_model
 
 GWSIGNAL_APPROXIMANTS = {
     "SEOBNRv5HM": ('pyseobnr_model', 'SEOBNRv5HM'),

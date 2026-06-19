@@ -7,27 +7,23 @@
 """
 
 import warnings
-from typing import Optional
 
 try:
     import EOBRun_module
 except ImportError as e:
     warnings.warn("The TEOBResumS package has failed to load")
 
-from importlib_metadata import metadata
-import numpy as np
-from astropy.coordinates import Angle, SkyCoord
-from gwpy.timeseries import TimeSeries
-import astropy.units as u
 import astropy.constants as ac
+import astropy.units as u
+import numpy as np
+from gwpy.timeseries import TimeSeries
 
-from ..core.waveform import CompactBinaryCoalescenceGenerator
-from ..core.gw import GravitationalWaveModes
-from ..core.utils import add_params_units
 from ..core.eccentricity_utils import (
     eccentric_anomaly_from_mean,
     true_anomaly_from_eccentric,
 )
+from ..core.gw import GravitationalWaveModes
+from ..core.waveform import CompactBinaryCoalescenceGenerator
 
 
 def modes_to_k(modes):
