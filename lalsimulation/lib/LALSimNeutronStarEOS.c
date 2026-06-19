@@ -448,7 +448,7 @@ double XLALSimNeutronStarEOSMaxPressureGeometrized(LALSimNeutronStarEOS * eos)
 /* DEPRECATED: old misspelling of XLALSimNeutronStarEOSMaxPressureGeometrized */
 double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS * eos)
 {
-    XLAL_PRINT_DEPRECATION_WARNING("sim_eos_piece_max_pressure_geo");
+    XLAL_PRINT_DEPRECATION_WARNING("XLALSimNeutronStarEOSMaxPressureGeometrized");
     return XLALSimNeutronStarEOSMaxPressureGeometrized(eos);
 }
 
