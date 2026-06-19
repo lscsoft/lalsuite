@@ -115,9 +115,8 @@ static double get_central_pressure_mext(LALSimNeutronStarEOS *eos, int index, do
 
 /** @endcond */
 
-/**
- * @brief Frees the memory associated with a pointer to a neutron star branch.
- * @param branch Pointer to the neutron star branch structure to be freed.
+/*
+ * Frees the memory associated with a pointer to a neutron star branch.
  */
 static void XLALDestroySimNeutronStarBranch(FamBranch * branch)
 {
@@ -454,12 +453,9 @@ int XLALSimNeutronStarFamNumberOfBranches(LALSimNeutronStarFamily *fam)
     return fam->number_of_branches;
 }
 
-/**
- * @brief Returns the ith branch of a neutron star family.
- * @param fam Pointer to the neutron star family structure.
- * @param branch_id Integer for the branch number.
- * @return The number of branches (stable hydrostatic configurations) for a given neutron star family.
- */
+/*
+ * Returns the ith branch of a neutron star family.
+*/
 static FamBranch * XLALSimNeutronStarFamSelectBranch(LALSimNeutronStarFamily * fam, int branch_id)
 {
     if (branch_id < 0 || branch_id >= fam->number_of_branches)
@@ -506,10 +502,8 @@ double XLALSimNeutronStarFamMassTOVLimit(LALSimNeutronStarFamily *fam)
     return mtov;
 }
 
-/**
- * @brief Returns the minimum mass of a neutron star branch in kg.
- * @param branch Pointer to the neutron star branch structure.
- * @return The minimum mass of the branch in kg.
+/*
+ * Returns the minimum mass of a neutron star branch in kg.
  */
 static double XLALSimNeutronStarBranchMinMass(FamBranch * branch)
 {
@@ -542,10 +536,8 @@ double XLALSimNeutronStarFamMinMass(LALSimNeutronStarFamily *fam)
 }
 
 
-/**
- * @brief Returns the maximum mass of a neutron star branch in kg.
- * @param branch Pointer to the neutron star branch structure.
- * @return The maximum mass of the branch in kg.
+/*
+ * Returns the maximum mass of a neutron star branch in kg.
  */
 static double XLALSimNeutronStarBranchMaxMass(FamBranch * branch)
 {
@@ -577,10 +569,8 @@ double XLALSimNeutronStarFamMaxMass(LALSimNeutronStarFamily *fam)
     return find_max_mass_for_multiple_branches(fam);
 }
 
-/**
- * @brief Returns the minimum central central pressure of a neutron star branch in Pa.
- * @param branch Pointer to the neutron star branch structure.
- * @return The minimum central pressure in Pa of a neutron star branch.
+/*
+ * Returns the minimum central central pressure of a neutron star branch in Pa.
  */
 static double XLALSimNeutronStarBranchMinCentralPressure(FamBranch * branch)
 {
@@ -613,10 +603,8 @@ double XLALSimNeutronStarFamMinCentralPressure(LALSimNeutronStarFamily *fam)
 }
 
 
-/**
- * @brief Returns the maximum central central pressure of a neutron star branch in Pa.
- * @param branch Pointer to the neutron star branch structure.
- * @return The maximum central pressure in Pa of a neutron star branch.
+/*
+ * Returns the maximum central central pressure of a neutron star branch in Pa.
  */
 static double XLALSimNeutronStarBranchMaxCentralPressure(FamBranch * branch)
 {
@@ -651,11 +639,8 @@ double XLALSimNeutronStarFamMaxCentralPressure(LALSimNeutronStarFamily *fam)
 
 /* FUNCTIONS RELATED TO INTERPOLATION IN NS FAMILY */
 
-/**
- * @brief Returns the radius in m corresponding to a given mass in kg in the neutron star branch.
- * @param m Mass in kg at which the radius is interpolated.
- * @param branch Pointer to the neutron star branch structure.
- * @return The radius in m interpolated at mass m in kg for the neutron star branch.
+/*
+ * Returns the radius in m corresponding to a given mass in kg in the neutron star branch.
  */
 static double XLALSimNeutronStarBranchRadiusOfMass(double m, FamBranch * branch)
 {
@@ -726,11 +711,8 @@ REAL8Vector * XLALSimNeutronStarFamRadiusOfMass(double m, LALSimNeutronStarFamil
     return r;
 }
 
-/**
- * @brief Returns the central pressure in Pa corresponding to a given mass in kg in the neutron star branch.
- * @param m Mass in kg at which the central pressure is interpolated.
- * @param branch Pointer to the neutron star branch structure.
- * @return The central pressure in Pa interpolated at mass m in kg for the neutron star branch.
+/*
+ * Returns the central pressure in Pa corresponding to a given mass in kg in the neutron star branch.
  */
 static double XLALSimNeutronStarBranchCentralPressureOfMass(double m, FamBranch * branch)
 {
@@ -783,11 +765,8 @@ REAL8Vector * XLALSimNeutronStarFamCentralPressureOfMass(double m, LALSimNeutron
     return pc;
 }
 
-/**
- * @brief Returns the mass in kg corresponding to a given central pressure in Pa in the neutron star branch.
- * @param p Central pressure in Pa at which the mass is interpolated.
- * @param branch Pointer to the neutron star branch structure.
- * @return The mass interpolated at central pressure p for the neutron star branch.
+/*
+ * Returns the mass in kg corresponding to a given central pressure in Pa in the neutron star branch.
  */
 static double XLALSimNeutronStarBranchMassOfCentralPressure(double p, FamBranch * branch)
 {
@@ -842,12 +821,9 @@ double XLALSimNeutronStarFamMassOfCentralPressure(double p, LALSimNeutronStarFam
     return XLALSimNeutronStarFamMassOfCentralPressurePerBranch(p, fam, index_branch);
 }
 
-/**
- * @brief Returns the baryonic mass in kg corresponding to a given
+/*
+ * Returns the baryonic mass in kg corresponding to a given
  * (gravitationnal) mass in kg in the neutron star branch.
- * @param m (Gravitational) Mass in kg at which the baryonic mass is interpolated.
- * @param branch Pointer to the neutron star branch structure.
- * @return The baryonic mass in kg interpolated at mass m for the neutron star branch.
  */
 static double XLALSimNeutronStarBranchBaryonicMassOfMass(double m, FamBranch * branch)
 {
@@ -901,13 +877,10 @@ REAL8Vector * XLALSimNeutronStarFamBaryonicMassOfMass(double m, LALSimNeutronSta
     return mb;
 }
 
-/**
- * @brief Returns k2 Love number (dimensionless) corresponding to a
+/*
+ * Returns k2 Love number (dimensionless) corresponding to a
  * given mass in kg in the neutron star branch.
- * @param m Mass in kg at which the k2 Love number is interpolated.
- * @param branch Pointer to the neutron star branch structure.
- * @return The k2 Love number (dimensionless) interpolated at mass m for the neutron star branch.
- */
+*/
 static double XLALSimNeutronStarBranchLoveNumberK2OfMass(double m, FamBranch * branch)
 {
     if (!branch || !branch->k2_of_m_interp || !branch->k2_of_m_acc || !branch->mdat || !branch->k2dat)
@@ -958,12 +931,9 @@ REAL8Vector * XLALSimNeutronStarFamLoveNumberK2OfMass(double m, LALSimNeutronSta
     return k2;
 }
 
-/**
- * @brief Returns k3 Love number (dimensionless) corresponding to a given mass
+/*
+ * Returns k3 Love number (dimensionless) corresponding to a given mass
  * in kg in the neutron star branch.
- * @param m Mass in kg at which the k3 Love number is interpolated.
- * @param branch Pointer to the neutron star branch structure.
- * @return The k3 Love number (dimensionless) interpolated at mass m for the neutron star branch.
  */
 static double XLALSimNeutronStarBranchLoveNumberK3OfMass(double m, FamBranch * branch)
 {
@@ -1017,12 +987,9 @@ REAL8Vector * XLALSimNeutronStarFamLoveNumberK3OfMass(double m, LALSimNeutronSta
     return k3;
 }
 
-/**
- * @brief Returns k4 Love number (dimensionless) corresponding to a given mass
+/*
+ * Returns k4 Love number (dimensionless) corresponding to a given mass
  * in kg in the neutron star branch.
- * @param m Mass in kg at which the k4 Love number is interpolated.
- * @param branch Pointer to the neutron star branch structure.
- * @return The k4 Love number (dimensionless) interpolated at mass m for the neutron star branch.
  */
 static double XLALSimNeutronStarBranchLoveNumberK4OfMass(double m, FamBranch * branch)
 {
