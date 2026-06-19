@@ -1,3 +1,18 @@
 #!/usr/bin/make -f
 CONFIGUREARGS = --enable-swig
+
+# To build without FrameC support: export DEB_BUILD_PROFILES="pkg.lalframe.noframec"
+ifneq ($(filter pkg.lalframe.noframec,$(DEB_BUILD_PROFILES)),)
+    CONFIGUREARGS += --disable-framec
+else
+    CONFIGUREARGS += --enable-framec
+endif
+
+# To build without FrameL support: export DEB_BUILD_PROFILES="pkg.lalframe.noframel"
+ifneq ($(filter pkg.lalframe.noframel,$(DEB_BUILD_PROFILES)),)
+    CONFIGUREARGS += --disable-framel
+else
+    CONFIGUREARGS += --enable-framel
+endif
+
 include debian/lalsuite.mk

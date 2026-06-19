@@ -22,6 +22,7 @@ source ${LCI_SCRIPTS}/build_env.sh
 rpmbuild --rebuild --noclean \
     --define "_topdir ${topdir}" \
     --define '__spec_clean_body %{nil}' \
+    ${LCI_RPMBUILD_OPTS} \
     ${srpm}
 rpms=$(ls -1 ${topdir}/RPMS/*/*${PACKAGE}-*.rpm)
 

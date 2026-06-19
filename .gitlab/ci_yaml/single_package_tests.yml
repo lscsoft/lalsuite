@@ -28,6 +28,60 @@ lal:conda-mkl:
       # package system files
       - "build/${PACKAGE}-*/${LCI_BLD}-specific/"
 
+# lalframe - build RPM/.deb packages without FrameC support
+lalframe:no-framec:
+  variables:
+    LCI_SINGLE_PKG_SELECT: "rpm|deb"
+    LCI_RPMBUILD_OPTS: "--without framec"
+    DEB_BUILD_PROFILES: "pkg.lalframe.noframec"
+  extends:
+    - .single-pkg:lalframe
+  script:
+    - !reference [.single-pkg-job, script]
+    # run package-level build
+    - source ${LCI_SCRIPTS}/pkg_build_${LCI_BLD}.sh
+  artifacts:
+    expire_in: 18h
+    paths:
+      # log files
+      - "build/${PACKAGE}-*/**/config.log"
+      - "build/${PACKAGE}-*/**/test-suite.log"
+      # generated sources
+      - "build/${PACKAGE}-*/**/swiglal_lal*_octave.cpp"
+      - "build/${PACKAGE}-*/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "build/${PACKAGE}-*/**/Makefile"
+      - "build/${PACKAGE}-*/**/libtool"
+      # package system files
+      - "build/${PACKAGE}-*/${LCI_BLD}-specific/"
+
+# lalframe - build RPM/.deb packages without FrameL support
+lalframe:no-framel:
+  variables:
+    LCI_SINGLE_PKG_SELECT: "rpm|deb"
+    LCI_RPMBUILD_OPTS: "--without framel"
+    DEB_BUILD_PROFILES: "pkg.lalframe.noframel"
+  extends:
+    - .single-pkg:lalframe
+  script:
+    - !reference [.single-pkg-job, script]
+    # run package-level build
+    - source ${LCI_SCRIPTS}/pkg_build_${LCI_BLD}.sh
+  artifacts:
+    expire_in: 18h
+    paths:
+      # log files
+      - "build/${PACKAGE}-*/**/config.log"
+      - "build/${PACKAGE}-*/**/test-suite.log"
+      # generated sources
+      - "build/${PACKAGE}-*/**/swiglal_lal*_octave.cpp"
+      - "build/${PACKAGE}-*/**/swiglal_lal*_python.c"
+      # generated build system files
+      - "build/${PACKAGE}-*/**/Makefile"
+      - "build/${PACKAGE}-*/**/libtool"
+      # package system files
+      - "build/${PACKAGE}-*/${LCI_BLD}-specific/"
+
 # lalinference - run test nested sampling job
 lalinference:test-job:
   variables:
