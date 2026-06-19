@@ -80,8 +80,8 @@ $(pybin_scripts) $(noinst_pybin_scripts): Makefile
 		printf "\nERROR: $(srcdir)/$@.py must not be executable\n\n" >&2; \
 		exit 1; \
 	fi; \
-	if test "x`$(SED) -n -e \"1{\|^##python$$|p;}\" $(srcdir)/$@.py`" = x; then \
-		printf "\nERROR: $(srcdir)/$@.py must start with the line '##python' (which will be replaced with '$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)' upon installation)\n\n" >&2; \
+	if test "x`$(SED) -n -e \"1{\|^#[# ]python$$|p;}\" $(srcdir)/$@.py`" = x; then \
+		printf "\nERROR: $(srcdir)/$@.py must start with the line '##python' or '# python' (which will be replaced with '$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)' upon installation)\n\n" >&2; \
 		exit 1; \
 	fi; \
 	echo "$${shebang}/bin/sh" > .libs/$@.bin; \
@@ -113,7 +113,7 @@ pybin-install-exec-local:
 		fi; \
 		for file in $(pybin_scripts); do \
 			if test "x$(prefix)" = "x$(LALSUITE_PYTHON_SYS_PREFIX)"; then \
-				$(SED) -e "1{s|^##python$$|$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)|;};s|@LALSUITE_BINDIR@|$(bindir)|g" "$(srcdir)/$${file}.py" > .libs/$${file}.bin || exit 1; \
+				$(SED) -e "1{s|^#[# ]python$$|$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)|;};s|@LALSUITE_BINDIR@|$(bindir)|g" "$(srcdir)/$${file}.py" > .libs/$${file}.bin || exit 1; \
 			else \
 				echo "$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)" > .libs/$${file}.bin; \
 				echo "import os, sys" >> .libs/$${file}.bin; \

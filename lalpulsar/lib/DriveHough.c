@@ -35,7 +35,7 @@
 
 #define SQ(x) (x) * (x)
 
-static void LALComputeAM (LALStatus *, AMCoeffs *coe, LIGOTimeGPS *ts, AMCoeffsParams *params);
+static void LALComputeAM( LALStatus *, AMCoeffs *coe, LIGOTimeGPS *ts, AMCoeffsParams *params );
 
 /** \addtogroup LALHough_h */
 /** @{ */
@@ -51,13 +51,13 @@ static void LALComputeAM (LALStatus *, AMCoeffs *coe, LIGOTimeGPS *ts, AMCoeffsP
  * \f$ \in\, [0, \f$ \c nfSize) is <em>the pointer</em> which
  * identifies the position of the  \c fBinMin row in the circular-cylinder buffer.
  */
-void LALHOUGHConstructSpacePHMD  (LALStatus            *status,	/**< pointer to LALStatus structure */
-				  PHMDVectorSequence   *phmdVS, /**< Cylindrical buffer of PHMDs */
-				  HOUGHPeakGramVector  *pgV, 	/**< Vetor of peakgrams */
-				  HOUGHptfLUTVector    *lutV 	/**< vector of look up tables */)
+void LALHOUGHConstructSpacePHMD( LALStatus            *status,  /**< pointer to LALStatus structure */
+                                 PHMDVectorSequence   *phmdVS, /**< Cylindrical buffer of PHMDs */
+                                 HOUGHPeakGramVector  *pgV,  /**< Vetor of peakgrams */
+                                 HOUGHptfLUTVector    *lutV  /**< vector of look up tables */ )
 {
 
-  UINT4    k,j;
+  UINT4    k, j;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
   UINT8    fBinMin;   /* present minimum frequency bin */
@@ -65,74 +65,74 @@ void LALHOUGHConstructSpacePHMD  (LALStatus            *status,	/**< pointer to 
 
 
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (phmdVS, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (pgV,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (lutV,   status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( pgV,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( lutV,   status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
-  ASSERT (phmdVS->phmd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (pgV->pg,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (lutV->lut,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS->phmd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( pgV->pg,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( lutV->lut,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (pgV->length == lutV->length, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
-  ASSERT (pgV->length == phmdVS->length, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+  ASSERT( pgV->length == lutV->length, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
+  ASSERT( pgV->length == phmdVS->length, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
   /* -------------------------------------------   */
 
   /* Make sure there are elements to be computed*/
-  ASSERT (phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
-  ASSERT (phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  ASSERT( phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
+  ASSERT( phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
 
   /* at the  beggining, the  fBinMin line corresponds to the first row */
   phmdVS->breakLine = 0; /* mark [0,nfSize) (of the circular buffer)
-			    pointing to the starting of the fBinMin line */
+          pointing to the starting of the fBinMin line */
 
   length = phmdVS->length;
   nfSize = phmdVS->nfSize;
   fBinMin = phmdVS->fBinMin;
   phmdVS->deltaF = lutV->lut[0].deltaF;   /* frequency resolution */
 
-  for ( k=0; k<length; ++k ){
+  for ( k = 0; k < length; ++k ) {
 
     /* make sure all deltaF are consistent */
-    ASSERT (phmdVS->deltaF == lutV->lut[k].deltaF,
-	    status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+    ASSERT( phmdVS->deltaF == lutV->lut[k].deltaF,
+            status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
 
     fBin = fBinMin;
 
-    for ( j=0; j<  nfSize; ++j ){
-      phmdVS->phmd[ j*length+k ].fBin = fBin;
+    for ( j = 0; j <  nfSize; ++j ) {
+      phmdVS->phmd[ j * length + k ].fBin = fBin;
 
-      TRY( LALHOUGHPeak2PHMD(status->statusPtr,
-			     &(phmdVS->phmd[ j*length+k ]),
-			     &(lutV->lut[k]), &(pgV->pg[k]) ), status);
+      TRY( LALHOUGHPeak2PHMD( status->statusPtr,
+                              &( phmdVS->phmd[ j * length + k ] ),
+                              &( lutV->lut[k] ), &( pgV->pg[k] ) ), status );
       ++fBin;
     }
   }
 
 
-  DETATCHSTATUSPTR (status);
-   /* normal exit */
-  RETURN (status);
+  DETATCHSTATUSPTR( status );
+  /* normal exit */
+  RETURN( status );
 }
 
 /**
  * This function updates the space of <tt>phmd</tt> increasing the frequency <tt>phmdVS->fBinMin</tt> by one.
  */
-void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
-				  PHMDVectorSequence   *phmdVS,
-				  HOUGHPeakGramVector  *pgV,
-				  HOUGHptfLUTVector    *lutV)
+void LALHOUGHupdateSpacePHMDup( LALStatus            *status,
+                                PHMDVectorSequence   *phmdVS,
+                                HOUGHPeakGramVector  *pgV,
+                                HOUGHptfLUTVector    *lutV )
 {
-  UINT4    k,breakLine;
+  UINT4    k, breakLine;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
   UINT8    fBinMin;   /* minimum frequency bin */
@@ -140,32 +140,32 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 
 
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (phmdVS, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (pgV,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (lutV,   status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( pgV,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( lutV,   status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
-  ASSERT (phmdVS->phmd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (pgV->pg,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (lutV->lut,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS->phmd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( pgV->pg,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( lutV->lut,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (pgV->length == lutV->length, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
-  ASSERT (pgV->length == phmdVS->length, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+  ASSERT( pgV->length == lutV->length, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
+  ASSERT( pgV->length == phmdVS->length, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
   /* -------------------------------------------   */
 
   /* Make sure there are elements to be computed*/
-  ASSERT (phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
-  ASSERT (phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
- /* -------------------------------------------   */
+  ASSERT( phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
+  ASSERT( phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
+  /* -------------------------------------------   */
 
 
   length = phmdVS->length;
@@ -175,7 +175,7 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
   fBinMin = phmdVS->fBinMin; /* initial frequency value  */
 
   /* Make sure initial breakLine is in [0,nfSize)  */
-  ASSERT ( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+  ASSERT( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
 
   /* -------------------------------------------   */
 
@@ -183,27 +183,27 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 
   fBin = fBinMin + nfSize;
 
-  for ( k=0; k<length; ++k ){
+  for ( k = 0; k < length; ++k ) {
     /* make sure all deltaF are consistent */
-    ASSERT (phmdVS->deltaF == lutV->lut[k].deltaF,
-	    status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+    ASSERT( phmdVS->deltaF == lutV->lut[k].deltaF,
+            status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
 
-    phmdVS->phmd[ breakLine*length+k ].fBin = fBin;
-    TRY( LALHOUGHPeak2PHMD(status->statusPtr,
-			   &(phmdVS->phmd[ breakLine*length+k ]),
-			   &(lutV->lut[k]), &(pgV->pg[k]) ), status);
+    phmdVS->phmd[ breakLine * length + k ].fBin = fBin;
+    TRY( LALHOUGHPeak2PHMD( status->statusPtr,
+                            &( phmdVS->phmd[ breakLine * length + k ] ),
+                            &( lutV->lut[k] ), &( pgV->pg[k] ) ), status );
   }
 
   /* Shift fBinMin and its mark */
   ++phmdVS->fBinMin;
 
-  phmdVS->breakLine = (breakLine +1) % nfSize;
+  phmdVS->breakLine = ( breakLine + 1 ) % nfSize;
   /* mark [0,nfSize) (of the circular buffer, modulus nfSize)
      pointing to the starting of the new fBinMin line */
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -212,43 +212,43 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
  * frequency bin -- the highest frequency bin is dropped and an
  * extra frequency bin is added at the lowest frequency
  */
-void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
-				 PHMDVectorSequence   *phmdVS,
-				 HOUGHPeakGramVector  *pgV,
-				 HOUGHptfLUTVector    *lutV)
+void LALHOUGHupdateSpacePHMDdn( LALStatus            *status,
+                                PHMDVectorSequence   *phmdVS,
+                                HOUGHPeakGramVector  *pgV,
+                                HOUGHptfLUTVector    *lutV )
 {
-  UINT4    k,breakLine;
+  UINT4    k, breakLine;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
 
   UINT8    fBin;      /* present frequency bin */
 
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (phmdVS, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (pgV,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (lutV,   status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( pgV,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( lutV,   status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
-  ASSERT (phmdVS->phmd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (pgV->pg,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (lutV->lut,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS->phmd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( pgV->pg,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( lutV->lut,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (pgV->length == lutV->length, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
-  ASSERT (pgV->length == phmdVS->length, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+  ASSERT( pgV->length == lutV->length, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
+  ASSERT( pgV->length == phmdVS->length, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
   /* -------------------------------------------   */
 
   /* Make sure there are elements to be computed*/
-  ASSERT (phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
-  ASSERT (phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  ASSERT( phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
+  ASSERT( phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
   /* -------------------------------------------   */
 
   length = phmdVS->length;
@@ -257,7 +257,7 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
   breakLine = phmdVS->breakLine; /* old Break Line */
 
   /* Make sure initial breakLine is in [0,nfSize)  */
-  ASSERT ( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+  ASSERT( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
 
   /* -------------------------------------------   */
 
@@ -266,28 +266,28 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
   /* Shift fBinMin and its mark */
   fBin =  --phmdVS->fBinMin; /* initial frequency value  */
 
-  phmdVS->breakLine = (breakLine + nfSize- 1) % nfSize;
+  phmdVS->breakLine = ( breakLine + nfSize - 1 ) % nfSize;
   /* mark [0,nfSize) (of the circular buffer, modulus nfSize)
      pointing to the starting of the new fBinMin line */
 
   breakLine = phmdVS->breakLine; /* the new Break Line */
 
-  for ( k=0; k<length; ++k ){
+  for ( k = 0; k < length; ++k ) {
     /* make sure all deltaF are consistent */
-    ASSERT (phmdVS->deltaF == lutV->lut[k].deltaF,
-	    status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+    ASSERT( phmdVS->deltaF == lutV->lut[k].deltaF,
+            status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
 
-    phmdVS->phmd[ breakLine*length+k ].fBin = fBin;
-    TRY( LALHOUGHPeak2PHMD(status->statusPtr,
-			   &(phmdVS->phmd[ breakLine*length+k ]),
-			   &(lutV->lut[k]), &(pgV->pg[k]) ), status);
+    phmdVS->phmd[ breakLine * length + k ].fBin = fBin;
+    TRY( LALHOUGHPeak2PHMD( status->statusPtr,
+                            &( phmdVS->phmd[ breakLine * length + k ] ),
+                            &( lutV->lut[k] ), &( pgV->pg[k] ) ), status );
   }
 
 
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -298,52 +298,52 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
  * to form a Hough map, the function LALHOUGHConstructHMT() produces the
  * total Hough map.
  */
-void LALHOUGHConstructHMT  (LALStatus                  *status,	/**< pointer to LALStatus structure */
-			    HOUGHMapTotal              *ht, 	/**< The output hough map */
-			    UINT8FrequencyIndexVector  *freqInd,/**< time-frequency trajectory */
-			    PHMDVectorSequence         *phmdVS 	/**< set of partial hough map derivatives */)
+void LALHOUGHConstructHMT( LALStatus                  *status,  /**< pointer to LALStatus structure */
+                           HOUGHMapTotal              *ht,   /**< The output hough map */
+                           UINT8FrequencyIndexVector  *freqInd,/**< time-frequency trajectory */
+                           PHMDVectorSequence         *phmdVS  /**< set of partial hough map derivatives */ )
 {
 
 
-  UINT4    k,j;
+  UINT4    k, j;
   UINT4    breakLine;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
   UINT8    fBinMin;   /* present minimum frequency bin */
   INT8     fBin;      /* present frequency bin */
-  UINT2    xSide,ySide;
+  UINT2    xSide, ySide;
 
   HOUGHMapDeriv hd; /* the Hough map derivative */
 
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (phmdVS,  status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (ht,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (freqInd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS,  status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( ht,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( freqInd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
-  ASSERT (phmdVS->phmd,  status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (freqInd->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS->phmd,  status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( freqInd->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (freqInd->length == phmdVS->length, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
-  ASSERT (freqInd->deltaF == phmdVS->deltaF, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+  ASSERT( freqInd->length == phmdVS->length, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
+  ASSERT( freqInd->deltaF == phmdVS->deltaF, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
   /* -------------------------------------------   */
 
   /* Make sure there are elements  */
-  ASSERT (phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
-  ASSERT (phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  ASSERT( phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
+  ASSERT( phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
   /* -------------------------------------------   */
 
-   /* Make sure the ht map contains some pixels */
-  ASSERT (ht->xSide, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
-  ASSERT (ht->ySide, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  /* Make sure the ht map contains some pixels */
+  ASSERT( ht->xSide, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
+  ASSERT( ht->ySide, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
 
   length = phmdVS->length;
   nfSize = phmdVS->nfSize;
@@ -357,44 +357,44 @@ void LALHOUGHConstructHMT  (LALStatus                  *status,	/**< pointer to 
   ySide = ht->ySide;
 
   /* Make sure initial breakLine is in [0,nfSize)  */
-  ASSERT ( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+  ASSERT( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
 
   /* -------------------------------------------   */
 
   /* Initializing  hd map and memory allocation */
   hd.xSide = xSide;
   hd.ySide = ySide;
-  hd.map = (HoughDT *)LALMalloc(ySide*(xSide+1)*sizeof(HoughDT));
-  if (hd. map == NULL) {
-    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
+  hd.map = ( HoughDT * )LALMalloc( ySide * ( xSide + 1 ) * sizeof( HoughDT ) );
+  if ( hd. map == NULL ) {
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM );
   }
   /* -------------------------------------------   */
 
 
-  TRY( LALHOUGHInitializeHD(status->statusPtr, &hd), status);
-  for ( k=0; k<length; ++k ){
+  TRY( LALHOUGHInitializeHD( status->statusPtr, &hd ), status );
+  for ( k = 0; k < length; ++k ) {
     /* read the frequency index and make sure is in the proper interval*/
-    fBin =freqInd->data[k] -fBinMin;
+    fBin = freqInd->data[k] - fBinMin;
 
-    ASSERT ( fBin < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
-    ASSERT ( fBin >= 0,     status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+    ASSERT( fBin < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
+    ASSERT( fBin >= 0,     status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
 
     /* find index */
-    j = (fBin + breakLine) % nfSize;
+    j = ( fBin + breakLine ) % nfSize;
 
     /* Add the corresponding PHMD to HD */
-    TRY( LALHOUGHAddPHMD2HD(status->statusPtr,
-			    &hd, &(phmdVS->phmd[j*length+k]) ), status);
+    TRY( LALHOUGHAddPHMD2HD( status->statusPtr,
+                             &hd, &( phmdVS->phmd[j * length + k] ) ), status );
   }
 
-  TRY( LALHOUGHIntegrHD2HT(status->statusPtr, ht, &hd), status);
+  TRY( LALHOUGHIntegrHD2HT( status->statusPtr, ht, &hd ), status );
 
   /* Free memory and exit */
-  LALFree(hd.map);
+  LALFree( hd.map );
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -405,10 +405,10 @@ void LALHOUGHConstructHMT  (LALStatus                  *status,	/**< pointer to 
  * frequency bin of a source <tt>UINT8 *f0Bin</tt>, and information regarding the
  * time and the residual spin down parameters HOUGHResidualSpinPar *rs.
  */
-void LALHOUGHComputeFBinMap (LALStatus             *status,
-			     UINT8                 *fBinMap,
-			     UINT8                 *f0Bin,
-			     HOUGHResidualSpinPar  *rs)
+void LALHOUGHComputeFBinMap( LALStatus             *status,
+                             UINT8                 *fBinMap,
+                             UINT8                 *f0Bin,
+                             HOUGHResidualSpinPar  *rs )
 {
 
   UINT4    i;
@@ -421,43 +421,43 @@ void LALHOUGHComputeFBinMap (LALStatus             *status,
   REAL8   timeDiffProd;
   REAL8   deltaF;  /*  df=1/TCOH  */
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (fBinMap, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (f0Bin,   status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (rs,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( fBinMap, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( f0Bin,   status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( rs,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
   /*   Make sure the Input/Output pointers are not the same */
-  ASSERT (fBinMap != f0Bin, status, LALHOUGHH_ESAME, LALHOUGHH_MSGESAME);
+  ASSERT( fBinMap != f0Bin, status, LALHOUGHH_ESAME, LALHOUGHH_MSGESAME );
 
   shiftFBin = 0;
   shiftF = 0.0;
 
   spinOrder = rs->spinRes.length;
 
-  if(spinOrder){
-    ASSERT (rs->spinRes.data , status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  if ( spinOrder ) {
+    ASSERT( rs->spinRes.data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
     timeDiff = rs->timeDiff;
     timeDiffProd =  timeDiff;
 
     deltaF = rs->deltaF;
     spinF = rs->spinRes.data;
 
-    for (i=0; i<spinOrder; ++i ){
+    for ( i = 0; i < spinOrder; ++i ) {
       shiftF += spinF[i] * timeDiffProd;
       timeDiffProd *= timeDiff;
     }
-    shiftFBin = rint( shiftF/deltaF) ; /* positive or negative */
+    shiftFBin = rint( shiftF / deltaF ) ; /* positive or negative */
   }
 
   *fBinMap = *f0Bin + shiftFBin;
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -471,52 +471,52 @@ void LALHOUGHComputeFBinMap (LALStatus             *status,
  * sensitivity at different sky-locations.
  */
 
-void LALHOUGHConstructHMT_W (LALStatus                  *status,	/**< pointer to LALStatus structure */
-			     HOUGHMapTotal              *ht, 		/**< The output hough map */
-			     UINT8FrequencyIndexVector  *freqInd, 	/**< time-frequency trajectory */
-			     PHMDVectorSequence         *phmdVS 	/**< set of partial hough map derivatives */)
+void LALHOUGHConstructHMT_W( LALStatus                  *status,  /**< pointer to LALStatus structure */
+                             HOUGHMapTotal              *ht,    /**< The output hough map */
+                             UINT8FrequencyIndexVector  *freqInd,   /**< time-frequency trajectory */
+                             PHMDVectorSequence         *phmdVS   /**< set of partial hough map derivatives */ )
 {
 
 
-  UINT4    k,j;
+  UINT4    k, j;
   UINT4    breakLine;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
   UINT8    fBinMin;   /* present minimum frequency bin */
   INT8     fBin;      /* present frequency bin */
-  UINT2    xSide,ySide;
+  UINT2    xSide, ySide;
 
   HOUGHMapDeriv hd; /* the Hough map derivative */
 
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (phmdVS,  status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (ht,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (freqInd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS,  status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( ht,      status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( freqInd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
-  ASSERT (phmdVS->phmd,  status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (freqInd->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS->phmd,  status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( freqInd->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (freqInd->length == phmdVS->length, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
-  ASSERT (freqInd->deltaF == phmdVS->deltaF, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+  ASSERT( freqInd->length == phmdVS->length, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
+  ASSERT( freqInd->deltaF == phmdVS->deltaF, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
   /* -------------------------------------------   */
 
   /* Make sure there are elements  */
-  ASSERT (phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
-  ASSERT (phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  ASSERT( phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
+  ASSERT( phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
   /* -------------------------------------------   */
 
-   /* Make sure the ht map contains some pixels */
-  ASSERT (ht->xSide, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
-  ASSERT (ht->ySide, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  /* Make sure the ht map contains some pixels */
+  ASSERT( ht->xSide, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
+  ASSERT( ht->ySide, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
 
   length = phmdVS->length;
   nfSize = phmdVS->nfSize;
@@ -530,44 +530,44 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,	/**< pointer to
   ySide = ht->ySide;
 
   /* Make sure initial breakLine is in [0,nfSize)  */
-  ASSERT ( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+  ASSERT( breakLine < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
 
   /* -------------------------------------------   */
 
   /* Initializing  hd map and memory allocation */
   hd.xSide = xSide;
   hd.ySide = ySide;
-  hd.map = (HoughDT *)LALMalloc(ySide*(xSide+1)*sizeof(HoughDT));
-  if (hd. map == NULL) {
-    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
+  hd.map = ( HoughDT * )LALMalloc( ySide * ( xSide + 1 ) * sizeof( HoughDT ) );
+  if ( hd. map == NULL ) {
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM );
   }
 
   /* -------------------------------------------   */
 
-  TRY( LALHOUGHInitializeHD(status->statusPtr, &hd), status);
-  for ( k=0; k<length; ++k ){
+  TRY( LALHOUGHInitializeHD( status->statusPtr, &hd ), status );
+  for ( k = 0; k < length; ++k ) {
     /* read the frequency index and make sure is in the proper interval*/
-    fBin =freqInd->data[k] -fBinMin;
+    fBin = freqInd->data[k] - fBinMin;
 
-    ASSERT ( fBin < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
-    ASSERT ( fBin >= 0,     status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
+    ASSERT( fBin < nfSize, status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
+    ASSERT( fBin >= 0,     status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL );
 
     /* find index */
-    j = (fBin + breakLine) % nfSize;
+    j = ( fBin + breakLine ) % nfSize;
 
     /* Add the corresponding PHMD to HD */
-    TRY( LALHOUGHAddPHMD2HD_W(status->statusPtr,
-			    &hd, &(phmdVS->phmd[j*length+k]) ), status);
+    TRY( LALHOUGHAddPHMD2HD_W( status->statusPtr,
+                               &hd, &( phmdVS->phmd[j * length + k] ) ), status );
   }
 
-  TRY( LALHOUGHIntegrHD2HT(status->statusPtr, ht, &hd), status);
+  TRY( LALHOUGHIntegrHD2HT( status->statusPtr, ht, &hd ), status );
 
   /* Free memory and exit */
-  LALFree(hd.map);
+  LALFree( hd.map );
 
-  DETATCHSTATUSPTR (status);
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
 
 
@@ -577,87 +577,87 @@ void LALHOUGHConstructHMT_W (LALStatus                  *status,	/**< pointer to
  * weights must be calculated outside this function.
  */
 
-void LALHOUGHWeighSpacePHMD  (LALStatus            *status,	/**< pointer to LALStatus structure */
-			      PHMDVectorSequence   *phmdVS, 	/**< partial hough map derivatives */
-			      REAL8Vector *weightV 		/**< vector of weights */)
+void LALHOUGHWeighSpacePHMD( LALStatus            *status,  /**< pointer to LALStatus structure */
+                             PHMDVectorSequence   *phmdVS,   /**< partial hough map derivatives */
+                             REAL8Vector *weightV    /**< vector of weights */ )
 {
 
-  UINT4    k,j;
+  UINT4    k, j;
   UINT4    nfSize;    /* number of different frequencies */
   UINT4    length;    /* number of elements for each frequency */
   /* --------------------------------------------- */
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (phmdVS, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (weightV,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( weightV,    status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
-  ASSERT (phmdVS->phmd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (weightV->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( phmdVS->phmd, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( weightV->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (weightV->length == phmdVS->length, status,
-	  LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+  ASSERT( weightV->length == phmdVS->length, status,
+          LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
   /* -------------------------------------------   */
 
   /* Make sure there are elements to be computed*/
-  ASSERT (phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
-  ASSERT (phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  ASSERT( phmdVS->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
+  ASSERT( phmdVS->nfSize, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
 
 
   length = phmdVS->length;
   nfSize = phmdVS->nfSize;
 
   /* weigh the phmds according to weightV */
-  for ( k=0; k<length; ++k ){
-    for ( j=0; j<  nfSize; ++j ){
-      phmdVS->phmd[ j*length+k ].weight = (HoughDT)weightV->data[k];
+  for ( k = 0; k < length; ++k ) {
+    for ( j = 0; j <  nfSize; ++j ) {
+      phmdVS->phmd[ j * length + k ].weight = ( HoughDT )weightV->data[k];
     }
   }
 
 
-  DETATCHSTATUSPTR (status);
-   /* normal exit */
-  RETURN (status);
+  DETATCHSTATUSPTR( status );
+  /* normal exit */
+  RETURN( status );
 }
 
 
 
 /** Initializes weight factors to unity */
 
-void LALHOUGHInitializeWeights  (LALStatus  *status,	/**< pointer to LALStatus structure */
-				REAL8Vector *weightV 	/**< vector of weights */)
+void LALHOUGHInitializeWeights( LALStatus  *status,   /**< pointer to LALStatus structure */
+                                REAL8Vector *weightV  /**< vector of weights */ )
 {
 
   UINT4 j, length;
 
-   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  /* --------------------------------------------- */
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (weightV->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( weightV->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
   /* Make sure there are elements to be computed*/
-  ASSERT (weightV->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  ASSERT( weightV->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
 
   length = weightV->length;
 
-  for (j=0; j<length; j++) {
+  for ( j = 0; j < length; j++ ) {
     weightV->data[j] = 1.0;
   }
 
-  DETATCHSTATUSPTR (status);
-   /* normal exit */
-  RETURN (status);
+  DETATCHSTATUSPTR( status );
+  /* normal exit */
+  RETURN( status );
 }
 
 
@@ -665,42 +665,42 @@ void LALHOUGHInitializeWeights  (LALStatus  *status,	/**< pointer to LALStatus s
 
 /** Normalizes weight factors so that their sum is N */
 
-void LALHOUGHNormalizeWeights  (LALStatus  *status,	/**< pointer to LALStatus structure */
-				REAL8Vector *weightV 	/**< vector of weights */)
+void LALHOUGHNormalizeWeights( LALStatus  *status,  /**< pointer to LALStatus structure */
+                               REAL8Vector *weightV  /**< vector of weights */ )
 {
 
   UINT4 j, length;
   REAL8 sum;
 
-   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  /* --------------------------------------------- */
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (weightV->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( weightV->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
   /* Make sure there are elements to be computed*/
-  ASSERT (weightV->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  ASSERT( weightV->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
 
   length = weightV->length;
 
   /* calculate sum of weights */
   sum = 0.0;
-  for (j=0; j<length; j++) {
+  for ( j = 0; j < length; j++ ) {
     sum += weightV->data[j];
   }
 
   /* normalize weights */
-  for (j=0; j<length; j++) {
-    weightV->data[j] *= length/sum;
+  for ( j = 0; j < length; j++ ) {
+    weightV->data[j] *= length / sum;
   }
 
-  DETATCHSTATUSPTR (status);
-   /* normal exit */
-  RETURN (status);
+  DETATCHSTATUSPTR( status );
+  /* normal exit */
+  RETURN( status );
 }
 
 
@@ -709,13 +709,13 @@ void LALHOUGHNormalizeWeights  (LALStatus  *status,	/**< pointer to LALStatus st
  * Computes weight factors arising from amplitude modulation -- it multiplies
  * an existing weight vector
  */
-void LALHOUGHComputeAMWeights  (LALStatus          *status,
-				REAL8Vector        *weightV,
-				LIGOTimeGPSVector  *timeV,
-				LALDetector        *detector,
-				EphemerisData      *edat,
-				REAL8              alpha,
-				REAL8              delta)
+void LALHOUGHComputeAMWeights( LALStatus          *status,
+                               REAL8Vector        *weightV,
+                               LIGOTimeGPSVector  *timeV,
+                               LALDetector        *detector,
+                               EphemerisData      *edat,
+                               REAL8              alpha,
+                               REAL8              delta )
 {
 
   UINT4 length, j;
@@ -723,40 +723,40 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
   /* amplitude modulation stuff */
   REAL4Vector *aVec, *bVec;
   REAL8 A, B, a, b;
-  AMCoeffs XLAL_INIT_DECL(amc);
+  AMCoeffs XLAL_INIT_DECL( amc );
   AMCoeffsParams *amParams;
   EarthState earth;
   BarycenterInput baryinput;
 
-   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  /* --------------------------------------------- */
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
 
   /*   Make sure the arguments are not NULL: */
-  ASSERT (weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (timeV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (detector, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (edat, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( timeV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( detector, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( edat, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
 
-  ASSERT (weightV->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (timeV->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( weightV->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( timeV->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (weightV->length == timeV->length, status, LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+  ASSERT( weightV->length == timeV->length, status, LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
   /* -------------------------------------------   */
 
   /* Make sure there are elements to be computed*/
-  ASSERT (timeV->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE);
+  ASSERT( timeV->length, status, LALHOUGHH_ESIZE, LALHOUGHH_MSGESIZE );
 
   length = timeV->length;
 
 
   /* detector location */
-  baryinput.site.location[0] = detector->location[0]/LAL_C_SI;
-  baryinput.site.location[1] = detector->location[1]/LAL_C_SI;
-  baryinput.site.location[2] = detector->location[2]/LAL_C_SI;
+  baryinput.site.location[0] = detector->location[0] / LAL_C_SI;
+  baryinput.site.location[1] = detector->location[1] / LAL_C_SI;
+  baryinput.site.location[2] = detector->location[2] / LAL_C_SI;
   baryinput.dInv = 0.e0;
 
   /* alpha and delta must come from the skypatch */
@@ -769,19 +769,19 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
 
   /* Allocate space for amParams stucture */
   /* Here, amParams->das is the Detector and Source info */
-  amParams = (AMCoeffsParams *)LALMalloc(sizeof(AMCoeffsParams));
-  if (amParams == NULL) {
-    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
+  amParams = ( AMCoeffsParams * )LALMalloc( sizeof( AMCoeffsParams ) );
+  if ( amParams == NULL ) {
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM );
   }
 
-  amParams->das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
-  if (amParams->das == NULL) {
-    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
+  amParams->das = ( LALDetAndSource * )LALMalloc( sizeof( LALDetAndSource ) );
+  if ( amParams->das == NULL ) {
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM );
   }
 
-  amParams->das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
-  if (amParams->das->pSource == NULL) {
-    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
+  amParams->das->pSource = ( LALSource * )LALMalloc( sizeof( LALSource ) );
+  if ( amParams->das->pSource == NULL ) {
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM );
   }
 
   /* Fill up AMCoeffsParams structure */
@@ -801,58 +801,58 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
   /*   TRY( LALSCreateVector( status, &(amc.b), length), status); */
 
   amc.a = NULL;
-  amc.a = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
-  if (amc.a == NULL) {
-    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
+  amc.a = ( REAL4Vector * )LALMalloc( sizeof( REAL4Vector ) );
+  if ( amc.a == NULL ) {
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM );
   }
 
   amc.a->length = length;
-  amc.a->data = (REAL4 *)LALMalloc(length*sizeof(REAL4));
-  if (amc.a->data == NULL) {
-    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
+  amc.a->data = ( REAL4 * )LALMalloc( length * sizeof( REAL4 ) );
+  if ( amc.a->data == NULL ) {
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM );
   }
 
   amc.b = NULL;
-  amc.b = (REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
-  if (amc.b == NULL) {
-    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
+  amc.b = ( REAL4Vector * )LALMalloc( sizeof( REAL4Vector ) );
+  if ( amc.b == NULL ) {
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM );
   }
 
   amc.b->length = length;
-  amc.b->data = (REAL4 *)LALMalloc(length*sizeof(REAL4));
-  if (amc.b->data == NULL) {
-    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM);
+  amc.b->data = ( REAL4 * )LALMalloc( length * sizeof( REAL4 ) );
+  if ( amc.b->data == NULL ) {
+    ABORT( status, LALHOUGHH_EMEM, LALHOUGHH_MSGEMEM );
   }
 
-  TRY (LALComputeAM( status->statusPtr, &amc, timeV->data, amParams), status);
+  TRY( LALComputeAM( status->statusPtr, &amc, timeV->data, amParams ), status );
   aVec = amc.a; /* a and b are as defined in JKS */
   bVec = amc.b;
   A = amc.A; /* note A is twice average of a[i]^2 */
   B = amc.B; /* note B is twice average of b[i]^2 */
 
-  for(j=0; j<length; j++){
+  for ( j = 0; j < length; j++ ) {
     a = aVec->data[j];
     b = bVec->data[j];
-    weightV->data[j] *= 2.0*(a*a + b*b)/(A+B);
+    weightV->data[j] *= 2.0 * ( a * a + b * b ) / ( A + B );
   }
 
   /* normalize weights */
-  TRY( LALHOUGHNormalizeWeights( status->statusPtr, weightV ), status);
+  TRY( LALHOUGHNormalizeWeights( status->statusPtr, weightV ), status );
 
   /*   TRY( LALSDestroyVector( status, &(amc.a)), status); */
   /*   TRY( LALSDestroyVector( status, &(amc.b)), status); */
-  LALFree(amc.a->data);
-  LALFree(amc.b->data);
-  LALFree(amc.a);
-  LALFree(amc.b);
+  LALFree( amc.a->data );
+  LALFree( amc.b->data );
+  LALFree( amc.a );
+  LALFree( amc.b );
 
-  LALFree(amParams->das->pSource);
-  LALFree(amParams->das);
-  LALFree(amParams);
+  LALFree( amParams->das->pSource );
+  LALFree( amParams->das );
+  LALFree( amParams );
 
-  DETATCHSTATUSPTR (status);
-   /* normal exit */
-  RETURN (status);
+  DETATCHSTATUSPTR( status );
+  /* normal exit */
+  RETURN( status );
 }
 
 
@@ -862,113 +862,116 @@ void LALHOUGHComputeAMWeights  (LALStatus          *status,
  * Computes weight factors arising from amplitude modulation -- it multiplies
  * an existing weight vector
  */
-void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
-					REAL8Vector        *weightV,
-					SFTCatalog         *catalog,
-					EphemerisData      *edat,
-					REAL8              UNUSED alpha,
-					REAL8              UNUSED delta)
+void LALHOUGHComputeMultiIFOAMWeights( LALStatus          *status,
+                                       REAL8Vector        *weightV,
+                                       SFTCatalog         *catalog,
+                                       EphemerisData      *edat,
+                                       REAL8              UNUSED alpha,
+                                       REAL8              UNUSED delta )
 {
 
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
-  ASSERT (weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (catalog, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (edat, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( weightV, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( catalog, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( edat, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
 
-  ASSERT (weightV->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
-  ASSERT (catalog->data,status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL);
+  ASSERT( weightV->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
+  ASSERT( catalog->data, status, LALHOUGHH_ENULL, LALHOUGHH_MSGENULL );
 
   /* Make sure there is no size mismatch */
-  ASSERT (weightV->length == catalog->length, status, LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM);
+  ASSERT( weightV->length == catalog->length, status, LALHOUGHH_ESZMM, LALHOUGHH_MSGESZMM );
 
-  (void)weightV;
-  (void)catalog;
-  (void)edat;
+  ( void )weightV;
+  ( void )catalog;
+  ( void )edat;
 
-  DETATCHSTATUSPTR (status);
-   /* normal exit */
-  RETURN (status);
+  DETATCHSTATUSPTR( status );
+  /* normal exit */
+  RETURN( status );
 }
 
 
 /**
  * Original antenna-pattern function by S Berukoff
  */
-void LALComputeAM (LALStatus          *status,
-		   AMCoeffs           *coe,
-		   LIGOTimeGPS        *ts,
-		   AMCoeffsParams     *params)
+void LALComputeAM( LALStatus          *status,
+                   AMCoeffs           *coe,
+                   LIGOTimeGPS        *ts,
+                   AMCoeffsParams     *params )
 {
 
   REAL4 zeta;                  /* sine of angle between detector arms        */
   INT4 i;                      /* temporary loop index                       */
   LALDetAMResponse response;   /* output of LALComputeDetAMResponse          */
 
-  REAL4 sumA2=0.0;
-  REAL4 sumB2=0.0;
-  REAL4 sumAB=0.0;             /* variables to store scalar products         */
-  INT4 length=coe->a->length;  /* length of input time series                */
+  REAL4 sumA2 = 0.0;
+  REAL4 sumB2 = 0.0;
+  REAL4 sumAB = 0.0;           /* variables to store scalar products         */
+  INT4 length = coe->a->length; /* length of input time series                */
 
   REAL4 cos2psi;
   REAL4 sin2psi;               /* temp variables                             */
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /* Must put an ASSERT checking that ts vec and coe vec are same length */
 
   /* Compute the angle between detector arms, then the reciprocal */
   {
     LALFrDetector det = params->das->pDetector->frDetector;
-    zeta = 1.0/(sin(det.xArmAzimuthRadians - det.yArmAzimuthRadians));
-    if(params->das->pDetector->type == LALDETECTORTYPE_CYLBAR) zeta=1.0;
+    zeta = 1.0 / ( sin( det.xArmAzimuthRadians - det.yArmAzimuthRadians ) );
+    if ( params->das->pDetector->type == LALDETECTORTYPE_CYLBAR ) {
+      zeta = 1.0;
+    }
   }
 
-  cos2psi = cos(2.0 * params->polAngle);
-  sin2psi = sin(2.0 * params->polAngle);
+  cos2psi = cos( 2.0 * params->polAngle );
+  sin2psi = sin( 2.0 * params->polAngle );
 
   /* Note the length is the same for the b vector */
-  for(i=0; i<length; ++i)
-    {
-      REAL4 *a = coe->a->data;
-      REAL4 *b = coe->b->data;
+  for ( i = 0; i < length; ++i ) {
+    REAL4 *a = coe->a->data;
+    REAL4 *b = coe->b->data;
 
-      /* Compute F_plus, F_cross */
-      LALComputeDetAMResponse(status->statusPtr, &response, params->das, &ts[i]);
+    /* Compute F_plus, F_cross */
+    LALComputeDetAMResponse( status->statusPtr, &response, params->das, &ts[i] );
 
-      /*  Compute a, b from JKS eq 10,11
-       *  a = zeta * (F_plus*cos(2\psi)-F_cross*sin(2\psi))
-       *  b = zeta * (F_cross*cos(2\psi)+Fplus*sin(2\psi))
-       */
-      a[i] = zeta * (response.plus*cos2psi-response.cross*sin2psi);
-      b[i] = zeta * (response.cross*cos2psi+response.plus*sin2psi);
+    /*  Compute a, b from JKS eq 10,11
+     *  a = zeta * (F_plus*cos(2\psi)-F_cross*sin(2\psi))
+     *  b = zeta * (F_cross*cos(2\psi)+Fplus*sin(2\psi))
+     */
+    a[i] = zeta * ( response.plus * cos2psi - response.cross * sin2psi );
+    b[i] = zeta * ( response.cross * cos2psi + response.plus * sin2psi );
 
-      /* Compute scalar products */
-      sumA2 += SQ(a[i]);                       /*  A  */
-      sumB2 += SQ(b[i]);                       /*  B  */
-      sumAB += (a[i]) * (b[i]);                /*  C  */
-    }
+    /* Compute scalar products */
+    sumA2 += SQ( a[i] );                     /*  A  */
+    sumB2 += SQ( b[i] );                     /*  B  */
+    sumAB += ( a[i] ) * ( b[i] );            /*  C  */
+  }
 
   {
     /* Normalization factor */
-    REAL8 L = 2.0/(REAL8)length;
+    REAL8 L = 2.0 / ( REAL8 )length;
 
     /* Assign output values and normalise */
-    coe->A = L*sumA2;
-    coe->B = L*sumB2;
-    coe->C = L*sumAB;
-    coe->D = ( coe->A * coe->B - SQ(coe->C) );
+    coe->A = L * sumA2;
+    coe->B = L * sumB2;
+    coe->C = L * sumAB;
+    coe->D = ( coe->A * coe->B - SQ( coe->C ) );
     /* protection against case when AB=C^2 */
-    if(coe->D == 0) coe->D=1.0e-9;
+    if ( coe->D == 0 ) {
+      coe->D = 1.0e-9;
+    }
   }
 
   /* Normal exit */
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 
 } /* LALComputeAM() */
 

@@ -30,7 +30,7 @@
 #include <altivec.h>
 
 ///
-/// \file ComputeFstat_DemodHL_Altivec.c
+/// \file
 /// \ingroup ComputeFstat_Demod_c
 /// \brief Akos hotloop Altivec code (Dterms=8)
 ///

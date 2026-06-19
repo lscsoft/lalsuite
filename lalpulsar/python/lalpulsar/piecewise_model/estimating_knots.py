@@ -82,6 +82,7 @@ def setknotarchivepath(path):
 # inspection, not used in any methods except for printing.
 parameterspacings = []
 
+
 # Returns the parameter spacing associated with the zeroth derivative at the lth knot. Note, if the knotslist variable
 # in the basis_functions is never updated, then this method will only work for l = 0
 def metricelementspacingonl(l, coeffs, mu):
@@ -653,6 +654,7 @@ def knotatleffusinggivenknotlist(
 # knotlist = [0, 2.107421875, 4.18438720703125]
 # ints = len(knotlist)
 # logging.debug(knotatleffusinggivenknotlist(ints - 1, 1, ints, 1, 10, 30, knotlist, checkfirst=True, ps=knotlist[-1]))
+
 
 # Calculates and adds the next knot to the KnotArchive file with the appropriate specifications by using the
 # knotatleffusinggivenknotlist method

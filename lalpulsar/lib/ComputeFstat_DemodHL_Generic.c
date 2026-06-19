@@ -27,7 +27,7 @@
 #include <lal/SinCosLUT.h>
 
 ///
-/// \file ComputeFstat_DemodHL_Generic.c
+/// \file
 /// \ingroup ComputeFstat_Demod_c
 /// \brief Old (pre-Akos) LALDemod hotloop variant (unrestricted Dterms)
 ///

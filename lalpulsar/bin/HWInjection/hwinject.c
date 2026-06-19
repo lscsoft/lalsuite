@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalpulsar_bin_Tools
+ * \ingroup lalpulsar_bin_HWInject
  * \author Bruce Allen, Peter Shawhan
  * \brief Multipulsar injection routine
  *

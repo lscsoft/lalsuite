@@ -68,15 +68,9 @@ def ParamTransformationMatrix(tstart, tend, reftime, s):
                 - dref**5 / (2.0 * dt**3)
                 + (3 * dref**4) / (2.0 * dt**2)
                 - (3 * dref**3) / (2.0 * dt),
-                (6 * dref**5) / dt**5
-                - (15 * dref**4) / dt**4
-                + (10 * dref**3) / dt**3,
-                (-3 * dref**5) / dt**4
-                + (7 * dref**4) / dt**3
-                - (4 * dref**3) / dt**2,
-                dref**5 / (2.0 * dt**3)
-                - dref**4 / dt**2
-                + dref**3 / (2.0 * dt),
+                (6 * dref**5) / dt**5 - (15 * dref**4) / dt**4 + (10 * dref**3) / dt**3,
+                (-3 * dref**5) / dt**4 + (7 * dref**4) / dt**3 - (4 * dref**3) / dt**2,
+                dref**5 / (2.0 * dt**3) - dref**4 / dt**2 + dref**3 / (2.0 * dt),
             ],
             [
                 (-30 * dref**4) / dt**5
@@ -104,22 +98,11 @@ def ParamTransformationMatrix(tstart, tend, reftime, s):
                 (-120 * dref**3) / dt**5
                 + (180 * dref**2) / dt**4
                 - (60 * dref) / dt**3,
-                (-60 * dref**3) / dt**4
-                + (96 * dref**2) / dt**3
-                - (36 * dref) / dt**2,
-                1
-                - (10 * dref**3) / dt**3
-                + (18 * dref**2) / dt**2
-                - (9 * dref) / dt,
-                (120 * dref**3) / dt**5
-                - (180 * dref**2) / dt**4
-                + (60 * dref) / dt**3,
-                (-60 * dref**3) / dt**4
-                + (84 * dref**2) / dt**3
-                - (24 * dref) / dt**2,
-                (10 * dref**3) / dt**3
-                - (12 * dref**2) / dt**2
-                + (3 * dref) / dt,
+                (-60 * dref**3) / dt**4 + (96 * dref**2) / dt**3 - (36 * dref) / dt**2,
+                1 - (10 * dref**3) / dt**3 + (18 * dref**2) / dt**2 - (9 * dref) / dt,
+                (120 * dref**3) / dt**5 - (180 * dref**2) / dt**4 + (60 * dref) / dt**3,
+                (-60 * dref**3) / dt**4 + (84 * dref**2) / dt**3 - (24 * dref) / dt**2,
+                (10 * dref**3) / dt**3 - (12 * dref**2) / dt**2 + (3 * dref) / dt,
             ],
             [
                 (-360 * dref**2) / dt**5 + (360 * dref) / dt**4 - 60 / dt**3,

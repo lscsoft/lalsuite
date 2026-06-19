@@ -1,4 +1,4 @@
-##python
+# python
 # Copyright (C) 2013, 2014, 2020--2024 Evan Goetz
 # Copyright (C) 2011, 2021, 2022 Karl Wette
 # Copyright (C) 2005, 2007 Gregory Mendell
@@ -616,6 +616,7 @@ makesfts_group.add_argument(
     action="store_false",
     help="do not validate created SFTs",
 )
+
 
 ##### DEPRECATED OPTIONS #####
 class DeprecateAction(argparse.Action):

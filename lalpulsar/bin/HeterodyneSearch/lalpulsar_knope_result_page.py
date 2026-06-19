@@ -1,4 +1,4 @@
-##python
+# python
 # -*- coding: utf-8 -*-
 #
 #       lalpulsar_knope_result_page.py
@@ -51,10 +51,10 @@ from scipy import stats
 matplotlib.use("Agg")
 
 from lalinference.bayespputils import Posterior, PosteriorOneDPDF
-from lalpulsar.pulsarhtmlutils import *
-from lalpulsar.pulsarpputils import *
 
 from lalinference import git_version
+from lalpulsar.pulsarhtmlutils import *
+from lalpulsar.pulsarpputils import *
 
 __author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__ = "git id %s" % git_version.id
@@ -1732,9 +1732,7 @@ class posteriors:
                             )  # no value for this parameter
 
                 if i == 0:
-                    self._injection_credible_regions[
-                        ifo
-                    ] = (
+                    self._injection_credible_regions[ifo] = (
                         {}
                     )  # dictionary for injection minimal credible regions to be input for each parameter
                 maxL, maxLparams = self._posteriors[ifo].maxL

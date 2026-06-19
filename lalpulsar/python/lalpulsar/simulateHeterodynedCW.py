@@ -96,6 +96,7 @@ model = het.model(parupdate, usephase=True, updateSSB=True)
 ~~~
 
 """
+
 ## @{
 
 from __future__ import division, print_function

@@ -19,7 +19,7 @@
 
 /**
 * \file
-* \ingroup lalpulsar_bin_Tools
+* \ingroup lalpulsar_bin_SFTTools
 * \author Pep Covas, David Keitel
 * \brief Read data in the form of Virgo Collaboration's SFDBs, convert to SFTs in the usual LALSuite format, and write those to disk.
 */

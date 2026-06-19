@@ -20,7 +20,7 @@
 
 /**
  * \file
- * \ingroup lalpulsar_bin_SFTTools
+ * \ingroup lalpulsar_bin_Fscan
  */
 
 #include <libgen.h>

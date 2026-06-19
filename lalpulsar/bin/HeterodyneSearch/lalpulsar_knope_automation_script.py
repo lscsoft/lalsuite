@@ -1,4 +1,4 @@
-##python
+# python
 ## \file
 ## \ingroup lalpulsar_bin_HeterodyneSearch
 """
@@ -636,17 +636,14 @@ A configuration .ini file is required.
         try:
             # set the cron wrapper script (which will re-run this script)
             cronwrapperscript = os.path.splitext(inifile)[0] + ".sh"
-            cronwrapper = (
-                """#!/bin/bash
+            cronwrapper = """#!/bin/bash
 source {0} # source profile
 {1}        # enable virtual environment (assumes you have virtualenvwrapper.sh/conda)
 {2}        # export kerberos certificate location (if required)
 {3}        # generate kerberos certificate (if required)
 {4}        # create proxy (if required)
 %s {5}     # re-run this script
-"""
-                % sys.argv[0]
-            )
+""" % sys.argv[0]
 
             fp = open(cronwrapperscript, "w")
             fp.write(

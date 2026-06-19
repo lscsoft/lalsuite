@@ -87,4 +87,4 @@ repos:
       - id: black
         name: prettify Python code (black)
         args: [--target-version=py310]
-        files: ^.gitlab/ci_scripts/|^common/   ### |^lalpulsar/ TOFIX
+        files: ^.gitlab/ci_scripts/|^common/|^lalpulsar/

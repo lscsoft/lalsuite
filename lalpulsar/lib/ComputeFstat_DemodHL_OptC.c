@@ -27,7 +27,7 @@
 #include <lal/SinCosLUT.h>
 
 ///
-/// \file ComputeFstat_DemodHL_OptC.c
+/// \file
 /// \ingroup ComputeFstat_Demod_c
 /// \brief Akos generic hotloop code (Dterms <= 20)
 ///

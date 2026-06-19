@@ -17,6 +17,10 @@
 *  MA  02110-1301  USA
 */
 
+/**
+ * \defgroup lalpulsar_bin_Fscan Fscan Data Characterization Tools
+ * \ingroup lalpulsar_bin_Tools
+ */
 
 #ifndef __FSCANUTILS_H__
 #define __FSCANUTILS_H__

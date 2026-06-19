@@ -12,7 +12,6 @@ swig:
     - swig/
 
 lalpulsar:
-  check: false   ### TOFIX
   options: >-
     --style=otbs
     --indent=spaces=2

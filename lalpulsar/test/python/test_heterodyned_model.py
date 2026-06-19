@@ -28,12 +28,12 @@ import sys
 
 import numpy as np
 import pytest
-from lalpulsar.PulsarParametersWrapper import PulsarParametersPy
-from lalpulsar.simulateHeterodynedCW import HeterodynedCWSimulator
 from numpy.testing import assert_allclose, assert_equal
 
 import lal
 import lalpulsar
+from lalpulsar.PulsarParametersWrapper import PulsarParametersPy
+from lalpulsar.simulateHeterodynedCW import HeterodynedCWSimulator
 
 """
 The first test output is to create a signal model for a source assuming that
