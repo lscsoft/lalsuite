@@ -656,8 +656,8 @@ int XLALSimNeutronStarTOVODEExtendedIntegrateWithTolerance(double *radius, doubl
     params->eos = eos;
     params->piece_id = XLALSimNeutronStarEOSNumberPieces(eos) - 1;
 
-    double y[TOV_EXT_ODE_VARS_DIM];
-    double dy[TOV_EXT_ODE_VARS_DIM];
+    double y[TOV_EXT_ODE_VARS_DIM] = {0.0};
+    double dy[TOV_EXT_ODE_VARS_DIM]= {0.0};
     struct tov_ext_ode_vars *vars = tov_ext_ode_vars_cast(y);
     /* Set up the actual ODE system to solve with tov_virial_ode */
     gsl_odeiv_system sys = {tov_ext_ode, NULL, TOV_EXT_ODE_VARS_DIM, params};
@@ -896,8 +896,8 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     params->eos = eos;
     params->piece_id = XLALSimNeutronStarEOSNumberPieces(eos) - 1;
 
-    double y[TOV_ODE_VARS_DIM]; // array for the variables of the ODE equations
-    double dy[TOV_ODE_VARS_DIM];
+    double y[TOV_ODE_VARS_DIM] = {0.0};
+    double dy[TOV_ODE_VARS_DIM]= {0.0};
     struct tov_ode_vars *vars = tov_ode_vars_cast(y);
     /* Set up the actual ODE system to solve with tov_virial_ode */
     gsl_odeiv_system sys = {tov_ode, NULL, TOV_ODE_VARS_DIM, params};
