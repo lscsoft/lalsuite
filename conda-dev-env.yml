@@ -24,7 +24,7 @@ dependencies:
   - ligo-gracedb
   - lscsoft-glue >=2.0.0
   - make
-  - matplotlib-base
+  - matplotlib-base <4.0.0a0
   - metaio
   - mpmath >=1.0.0
   - numpy
