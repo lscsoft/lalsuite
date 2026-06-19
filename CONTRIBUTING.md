@@ -314,10 +314,6 @@ how to trigger then:
                 Branch location: <code>lscsoft/lalsuite</code><br/>
                 <b>Note: this will execute deployment actions</b><br/>
                 <i>or</i><br/>
-                Branch name matches: <code>/^devimg/</code><br/>
-                Branch location: <code>lscsoft/lalsuite</code><br/>
-                <b>Note: this will execute deployment actions</b><br/>
-                <i>or</i><br/>
                 Commit message: <code>[ci sched devimg]</code><br/>
                 Branch location: not <code>lscsoft/lalsuite</code><br/>
                 Note: this will not execute deployment actions

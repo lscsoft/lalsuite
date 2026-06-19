@@ -173,24 +173,6 @@ workflow:
         LCI_PIPE_NAME: "Build and test Docker development images"
         # - test the new Docker development image tags
         LCI_DEV_TAG_SUFFIX: "-testing"
-        # - execute deployment actions
-        LCI_DEPLOY_EXECUTE: "yes"
-
-    # runs if:
-    # - the trigger is a commit push
-    # - the branch is the devimg-update branch at lscsoft/lalsuite
-    - if: >-
-        $CI_PIPELINE_SOURCE == "push"
-        && $CI_PROJECT_PATH == "lscsoft/lalsuite"
-        && $CI_COMMIT_REF_NAME =~ "devimg-update"
-      when: always
-      variables:
-        LCI_PIPE_NAME: "[update] Build and test Docker development images"
-        LCI_PIPE_TYPE: sched-devimg
-        # - test the new Docker development image tags
-        LCI_DEV_TAG_SUFFIX: "-testing"
-        # - execute deployment actions
-        LCI_DEPLOY_EXECUTE: "yes"
 
     # runs if:
     # - the trigger is a commit push

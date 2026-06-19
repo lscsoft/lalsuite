@@ -180,11 +180,6 @@ dev-image:other:
   dependencies: []
   script:
     - crane auth login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
-    - |
-      if test "${LCI_DEPLOY_EXECUTE}" != "yes"; then
-        echo "WARNING: simulating execution of deployment actions"
-        exit 123
-      fi
     # copy testing image to production image
     - ${LCI_SCRIPTS}/retry crane copy ${TESTING_IMG_PATH} ${FINAL_IMG_PATH}
     # delete testing image
