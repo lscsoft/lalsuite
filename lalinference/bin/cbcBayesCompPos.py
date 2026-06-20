@@ -1,4 +1,4 @@
-##python
+# python
 # -*- coding: utf-8 -*-
 #
 #       cbcBayesCompPos.py Copyright 2010--2012 Benjamin Aylott

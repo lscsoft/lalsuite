@@ -1,4 +1,4 @@
-##python
+# python
 # -*- coding: utf-8 -*-
 #
 #       cbcBayesDIEvidence.py: compute the direct-integration evidence

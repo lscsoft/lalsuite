@@ -1,4 +1,4 @@
-##python
+# python
 """
 Perform the consistency check between the inspiral and ringdown estimates of the mass and spin of the final
 black hole in a binary black hole merger.

@@ -1,4 +1,4 @@
-##python
+# python
 #
 # Copyright (C) 2008--2017  Kipp Cannon
 #
