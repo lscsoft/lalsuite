@@ -347,10 +347,14 @@ workflow:
         # - pipeline error message
         LCI_PIPE_ERROR_MESSAGE: |
           ------------------------------------------------------------------------
-          This merge request cannot run the CI pipeline of the target repository
-          $CI_MERGE_REQUEST_PROJECT_URL
-          The most likely reason is you do not have Developer access permissions.
-          Please request to be added as a Developer to this repository.
+          The LALSuite Gitlab-CI failed to run a merged results pipeline.
+          This error could have the following causes:
+          1. You do not have Developer access permissions to the target repository
+             $CI_MERGE_REQUEST_PROJECT_URL
+             Please request to be added as a Developer to this repository.
+          2. The merge request has changes which conflict with upstream changes in
+             the target repository. Please rebase this merge request against the
+             latest version of the target repository and push the updated changes.
           ------------------------------------------------------------------------
 
     # runs if:
