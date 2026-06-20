@@ -146,15 +146,38 @@ def get_artifacts(server, repo, args):
     else:
         ref_name = args.ref_name
 
+    # iterate backwards through successful pipelines to find job
+    LOGGER.info(
+        f"finding the last successful pipeline for ref={ref_name} that contains job={args.job_name}"
+    )
+    pipelines = repo.pipelines.list(
+        ref=ref_name, status="success", order_by="id", sort="desc", iterator=True
+    )
+    artifact_job = None
+    for pipeline in pipelines:
+        LOGGER.info(f"looking at pipeline #{pipeline.id} for job={args.job_name}")
+        for job in pipeline.jobs.list(all=True):
+            if job.name == args.job_name and job.status == "success":
+                LOGGER.info(
+                    f"found successful job #{job.id} in pipeline #{pipeline.id}"
+                )
+                artifact_job = repo.jobs.get(job.id, lazy=True)
+                break
+        if artifact_job:
+            break
+    if not artifact_job:
+        LOGGER.info(
+            f"could not find a successful pipeline for ref={ref_name} that contains job={args.job_name}"
+        )
+        sys.exit(1)
+
     # download latest artifacts as ZIP archive
     log_message = (
         f"downloading latest artifacts for ref={ref_name}, job={args.job_name}"
     )
     LOGGER.info(f"{log_message}: started")
     artifacts_archive = BytesIO()
-    repo.artifacts.download(
-        ref_name,
-        args.job_name,
+    artifact_job.artifacts(
         streamed=True,
         action=write_artifact_download_progress(log_message, artifacts_archive),
     )
