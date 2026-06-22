@@ -318,9 +318,10 @@ static EOSPiece * sim_eos_select_piece(LALSimNeutronStarEOS * eos, int piece_id)
 /**
  * @brief The name of the Equation Of State (EOS).
  * @param[in] eos Pointer to the LALSimNeutronStarEOS structure.
- * @return Pointer to a string containing the name of the EOS.
- * @warning The pointer returned might be shallow and might be left
- * dangling if the @a eos structure is freed.
+ * @return Pointer to a newly allocated string containing the name of
+ * the EOS.
+ * @note The returned string is allocated with LALMalloc; it is the
+ * responsibility of the caller to free it with LALFree.
  */
 char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos)
 {
