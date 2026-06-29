@@ -960,6 +960,7 @@ static LALSimNeutronStarEOS *sim_eos_from_tabulated_data_dirty_pt(double *nbdat,
     }
 
     /* Inquire about phase transitions in the equation of state */
+    LALSimNeutronStarEOS *eos = NULL;
     int *indices_phase_transition = NULL;
     indices_phase_transition = eos_find_phase_transition(ndat, edat, pdat, dirty);
     if (!indices_phase_transition) goto cleanup;
@@ -973,7 +974,7 @@ static LALSimNeutronStarEOS *sim_eos_from_tabulated_data_dirty_pt(double *nbdat,
 //     eos->number_of_pieces = number_eos;
 //     /* Allocate each piece of the equation of state separated by a phase transition */
 //     eos->eos_piece = XLALCalloc(number_eos, sizeof(EOSPiece *));
-    LALSimNeutronStarEOS * eos = XLALCreateSimNeutronStarEOS(number_eos);
+    eos = XLALCreateSimNeutronStarEOS(number_eos);
     if (!eos->eos_piece) goto cleanup;
 
 
