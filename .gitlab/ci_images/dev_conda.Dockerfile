@@ -22,6 +22,39 @@ ENV CONDA_ROOT=/opt/conda
 # Python version
 ENV LCI_PYTHON_VERSION=${PYTHON_VERSION}
 
+# run debconf noninteractively
+ENV DEBIAN_FRONTEND=noninteractive
+
+# APT configuration
+COPY <<EOF /etc/apt/apt.conf.d/99norecommends
+APT::Install-Recommends "false";
+APT::Install-Suggests "false";
+EOF
+
+RUN <<EOF
+set -ex
+
+# update APT cache
+apt-get -y -q update
+
+# upgrade distribution
+apt-get -y -q upgrade
+
+# install required packages
+apt-get -y -q install \
+    git \
+    git-lfs \
+    xz-utils \
+    ;
+
+# install Git LFS
+git lfs install
+
+# cleanup
+apt-get clean
+
+EOF
+
 RUN <<EOF
 set -ex
 
@@ -41,7 +74,6 @@ conda install --quiet --name base \
     "conda>=25" \
     conda-forge-pinning \
     conda-libmamba-solver \
-    xz \
     ;
 
 # create environment for CI jobs

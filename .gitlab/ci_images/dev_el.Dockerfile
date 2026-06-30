@@ -47,6 +47,8 @@ dnf -y -q install \
     createrepo \
     curl \
     findutils \
+    git \
+    git-lfs \
     igwn-packaging-tools \
     rpm-build \
     rpmlint \
@@ -54,6 +56,9 @@ dnf -y -q install \
     ;
 python3 -m pip install --upgrade pip
 python3 -m pip install rpmlint-codeclimate
+
+# install Git LFS
+git lfs install
 
 # install LALSuite build dependencies
 tar xf ./${TARBALL_NAME}
