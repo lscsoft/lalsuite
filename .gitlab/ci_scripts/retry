@@ -21,7 +21,7 @@
 #   --max-try:
 #       How many times to try <command> (2--5, default: 3).
 #   --delay:
-#       How long to delay (in seconds, default: 15) after first failure;
+#       How long to delay (in seconds, default: 150) after first failure;
 #       added cumulatively for subsequent failures.
 #   --exit-patt:
 #       Fail if <awk-pattern> is detected in the output of <command>. A
@@ -37,7 +37,7 @@ set -e
 
 exitcode=111
 max=3
-delay_base=15
+delay_base=150
 awkprog="{print}"
 if [ "X${RETRY_EXIT_PATT}" != X ]; then
     awkprog="${awkprog} ${RETRY_EXIT_PATT} {exit ${exitcode}}"
