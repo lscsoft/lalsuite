@@ -2,10 +2,36 @@
 # LALSuite GitLab-CI: check test coverage
 # ----------------------------------------------------------------------
 
-# computes test coverage
-.coverage-compute-job:
+.coverage-job:
   extends:
     - .code-quality-job
+  script:
+    # show coverage summary
+    - cat coverage.txt
+  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
+  artifacts:
+    expose_as: coverage
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      # report
+      - coverage.html
+      - coverage.txt
+      # combined coverage
+      - coverage.xml
+      # C coverage
+      - c-coverage.xml
+      # Python coverage
+      - py-coverage.xml
+      # for debugging failures
+      - Makefile
+      - config.log
+
+coverage-check:
+  extends:
+    - .coverage-job
   variables:
     COVERAGE_RCFILE: "${CI_PROJECT_DIR}/.coveragerc"
     COVERAGE_FILE: "${CI_PROJECT_DIR}/.coverage"
@@ -46,92 +72,37 @@
     - python3 -m coverage xml -o py-coverage.xml
     # merge coverage reports
     - ${LCI_SCRIPTS}/merge_coverage_xml
-    # write HTML coverage report and show coverage summary
+    # write HTML coverage report
     - pycobertura show coverage.xml -f html -o coverage.html
     - pycobertura show coverage.xml | tail -n 1 > coverage.txt
-    # display coverage
-    - cat coverage.txt
-
-# check test coverage in merge requests
-coverage-check:
-  extends:
-    - .coverage-compute-job
-  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
-  artifacts:
-    expose_as: coverage
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
-    paths:
-      # report
-      - coverage.html
-      # combined coverage
-      - coverage.xml
-      # C coverage
-      - c-coverage.xml
-      # Python coverage
-      - py-coverage.xml
-      # for debugging failures
-      - Makefile
-      - config.log
+    # show coverage summary
+    - !reference [.coverage-job, script]
   rules:
+    # check coverage for merge requests
     - if: >-
         $LCI_PIPE_TYPE == "merge"
-
-# store coverage during post-merge request build
-coverage-store:
-  extends:
-    - .coverage-compute-job
-  artifacts:
-    paths:
-      # report
-      - coverage.html
-      - coverage.txt
-      # combined coverage
-      - coverage.xml
-      # C coverage
-      - c-coverage.xml
-      # Python coverage
-      - py-coverage.xml
-  rules:
+    # store coverage data on the main branch at lscsoft/lalsuite
     - if: >-
         $LCI_PIPE_TYPE == "postmerge"
 
-# emit coverage from every pipeline on the main branch at lscsoft/lalsuite
 coverage-emit:
   extends:
-    - .code-quality-job
-  needs:
-    # ensure that this runs after the coverage has been stored
-    - job: coverage-store
-      optional: true
+    - .coverage-job
   script:
     # download coverage data from the main branch at lscsoft/lalsuite
     - |
       ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
           ${CI_SERVER_URL} lscsoft/lalsuite \
-          get-artifacts ${CI_DEFAULT_BRANCH} coverage-store
-    # display coverage
-    - cat coverage.txt
-  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
-  artifacts:
-    expose_as: coverage
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
-    paths:
-      # report
-      - coverage.html
-      # combined coverage
-      - coverage.xml
-      # C coverage
-      - c-coverage.xml
-      # Python coverage
-      - py-coverage.xml
+          get-artifacts ${CI_DEFAULT_BRANCH} coverage-check
+    # show coverage summary
+    - !reference [.coverage-job, script]
   rules:
-    # run on the main branch at lscsoft/lalsuite
+    # do not run in the post-merge request pipeline, which runs coverage-check
+    - if: >-
+        $LCI_PIPE_TYPE == "postmerge"
+      when: never
+    # otherwise, run in every pipeline on the main branch at lscsoft/lalsuite,
+    # so that GitLab can always find coverage data in the latest pipeline
     - if: >-
         $CI_PROJECT_PATH == "lscsoft/lalsuite"
         && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
