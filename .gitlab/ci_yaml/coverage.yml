@@ -1,0 +1,137 @@
+# ----------------------------------------------------------------------
+# LALSuite GitLab-CI: check test coverage
+# ----------------------------------------------------------------------
+
+# computes test coverage
+.coverage-compute-job:
+  extends:
+    - .code-quality-job
+  variables:
+    COVERAGE_RCFILE: "${CI_PROJECT_DIR}/.coveragerc"
+    COVERAGE_FILE: "${CI_PROJECT_DIR}/.coverage"
+  # Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap
+  script:
+    # install build dependencies
+    - source ${LCI_SCRIPTS}/top_builddep_conda.sh
+    # configure
+    - ./00boot
+    - source ${LCI_SCRIPTS}/build_env.sh
+    - eval ./configure "${LCI_CONFIGURE_FLAGS}"
+    # common configuration for coverage.py
+    - |
+      cat > ${COVERAGE_RCFILE} <<EOF
+      [run]
+      omit =
+          ${LCI_TMPDIR}/*
+          */test/*
+          */swig/*
+          */bin/*/test*
+      parallel = True
+      EOF
+    # run unit tests with Python scripts instrumented by coverage.py
+    # - set C flags here to avoid generating coverage for autoconf tests
+    - make -j${CPU_COUNT} check
+          CFLAGS="-O3 --coverage -fprofile-abs-path"
+          PY_LOG_FLAGS="-m coverage run --source \"${PWD}\""
+          PYBIN_SCRIPT_PY_FLAGS="-m coverage run"
+    # output C coverage data in Cobertura format
+    - gcovr -j ${CPU_COUNT}
+          --exclude '.+?/test/'
+          --exclude '.+?/swig/'
+          --exclude '.+?/bin/.+?/test'
+          --gcov-ignore-parse-errors 'suspicious_hits.warn'
+          --xml c-coverage.xml
+    # combine and output Python coverage data in Cobertura format
+    - python3 -m coverage combine
+    - python3 -m coverage xml -o py-coverage.xml
+    # merge coverage reports
+    - ${LCI_SCRIPTS}/merge_coverage_xml
+    # write HTML coverage report and show coverage summary
+    - pycobertura show coverage.xml -f html -o coverage.html
+    - pycobertura show coverage.xml | tail -n 1 > coverage.txt
+    # display coverage
+    - cat coverage.txt
+
+# check test coverage in merge requests
+coverage-check:
+  extends:
+    - .coverage-compute-job
+  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
+  artifacts:
+    expose_as: coverage
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      # report
+      - coverage.html
+      # combined coverage
+      - coverage.xml
+      # C coverage
+      - c-coverage.xml
+      # Python coverage
+      - py-coverage.xml
+      # for debugging failures
+      - Makefile
+      - config.log
+  rules:
+    - if: >-
+        $LCI_PIPE_TYPE == "merge"
+
+# store coverage during post-merge request build
+coverage-store:
+  extends:
+    - .coverage-compute-job
+  artifacts:
+    paths:
+      # report
+      - coverage.html
+      - coverage.txt
+      # combined coverage
+      - coverage.xml
+      # C coverage
+      - c-coverage.xml
+      # Python coverage
+      - py-coverage.xml
+  rules:
+    - if: >-
+        $LCI_PIPE_TYPE == "postmerge"
+
+# emit coverage from every pipeline on the main branch at lscsoft/lalsuite
+coverage-emit:
+  extends:
+    - .code-quality-job
+  needs:
+    # ensure that this runs after the coverage has been stored
+    - job: coverage-store
+      optional: true
+  script:
+    # download coverage data from the main branch at lscsoft/lalsuite
+    - |
+      ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
+          ${CI_SERVER_URL} lscsoft/lalsuite \
+          get-artifacts ${CI_DEFAULT_BRANCH} coverage-store
+    # display coverage
+    - cat coverage.txt
+  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
+  artifacts:
+    expose_as: coverage
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      # report
+      - coverage.html
+      # combined coverage
+      - coverage.xml
+      # C coverage
+      - c-coverage.xml
+      # Python coverage
+      - py-coverage.xml
+  rules:
+    # run on the main branch at lscsoft/lalsuite
+    - if: >-
+        $CI_PROJECT_PATH == "lscsoft/lalsuite"
+        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH

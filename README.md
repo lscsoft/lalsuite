@@ -1,5 +1,7 @@
 # LVK Algorithm Library Suite - LALSuite
 
+[![Latest release](https://git.ligo.org/lscsoft/lalsuite/-/badges/release.svg?key_text=latest%20release&key_width=88&value_width=122)](https://git.ligo.org/lscsoft/lalsuite/-/releases) [![Coverage](https://git.ligo.org/lscsoft/lalsuite/badges/master/coverage.svg)](https://git.ligo.org/lscsoft/lalsuite/-/commits/master) [![Pipeline](https://git.ligo.org/lscsoft/lalsuite/badges/master/pipeline.svg)](https://git.ligo.org/lscsoft/lalsuite/-/pipelines)
+
 LALSuite is a collection of data analysis routines whose primary application is
 to search for and characterize astrophysical signals in gravitational-wave time
 series data, in particular from ground-based detectors such as [LIGO], [Virgo],
