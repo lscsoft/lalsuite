@@ -40,6 +40,7 @@ requirements:
   host:
     - liblal >={{ lal_version }}
     - libmetaio >={{ metaio_version }}
+    - swig-abi
 
 outputs:
   - name: liblalmetaio
@@ -57,6 +58,7 @@ outputs:
       host:
         - liblal >={{ lal_version }}
         - libmetaio >={{ metaio_version }}
+        - swig-abi
       run:
         - liblal >={{ lal_version }}
         - libmetaio >={{ metaio_version }}
@@ -108,6 +110,7 @@ outputs:
         - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
+        - swig-abi
       run:
         - {{ pin_subpackage('liblalmetaio', exact=True) }}
         - igwn-ligolw >={{ python_ligo_lw_version }}

@@ -41,6 +41,7 @@ requirements:
     - ldas-tools-framecpp >={{ framecpp_version }}
     - libframel >={{ framel_version }}
     - liblal >={{ lal_version }}
+    - swig-abi
 
 outputs:
   - name: liblalframe
@@ -59,6 +60,7 @@ outputs:
         - ldas-tools-framecpp >={{ framecpp_version }}
         - libframel >={{ framel_version }}
         - liblal >={{ lal_version }}
+        - swig-abi
       run:
         - ldas-tools-framecpp >={{ framecpp_version }}
         - libframel >={{ framel_version }}
@@ -114,6 +116,7 @@ outputs:
         - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
+        - swig-abi
         # extras to help the solver
         - icu *
       run:

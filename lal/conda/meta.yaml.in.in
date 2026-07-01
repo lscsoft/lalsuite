@@ -17,7 +17,7 @@
 
 # avoid circular imports that would break migrations
 {% set migrating = False %}
-{% set migrating = True %}  # [python_impl!='cpython' or py>=313]
+{% set migrating = True %}  # [python_impl!='cpython' or py>=314]
 
 package:
   name: {{ name }}-split
@@ -48,6 +48,7 @@ requirements:
     - gsl
     - hdf5
     - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
+    - swig-abi
     - zlib
 
 outputs:
@@ -69,6 +70,7 @@ outputs:
         - gsl
         - hdf5
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
+        - swig-abi
         - zlib
       run_constrained:
         # make sure downstream packages are updated beyond the first
@@ -136,6 +138,7 @@ outputs:
         - numpy
         - pytest  # [build_platform == target_platform]
         - python
+        - swig-abi
         - zlib
         # provided to assist the solver, but not actually used
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]

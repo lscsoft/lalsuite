@@ -44,6 +44,7 @@ requirements:
     - liblal >={{ lal_version }}
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalsimulation >={{ lalsimulation_version }}
+    - swig-abi
 
 outputs:
   - name: liblalburst
@@ -62,6 +63,7 @@ outputs:
         - liblal >={{ lal_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
+        - swig-abi
       run:
         - gsl
         - liblal >={{ lal_version }}
@@ -121,6 +123,7 @@ outputs:
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - scipy >={{ scipy_version }}
+        - swig-abi
         - tqdm
       run:
         - gsl
