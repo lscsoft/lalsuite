@@ -118,8 +118,8 @@ lalpulsar:frame-libs:
     # configure
     - eval ./configure "${LCI_CONFIGURE_FLAGS}"
     # build, test, and install package
-    - make -j${CPU_COUNT} all
-    - make -j${CPU_COUNT} install
+    - make -j${CPU_COUNT} VERBOSE=${VERBOSE} all
+    - make -j${CPU_COUNT} VERBOSE=${VERBOSE} install
     # test finding data files
     - env LAL_DEBUG_LEVEL=info lalpulsar_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
     # run tests using available frame libraries
@@ -127,7 +127,7 @@ lalpulsar:frame-libs:
       for frame_library in $(lalframe_libraries_available); do
           export LAL_FRAME_LIBRARY=${frame_library}
           echo ">>>>>>> Running tests with LAL_FRAME_LIBRARY=${LAL_FRAME_LIBRARY}"
-          make -j${CPU_COUNT} check -C bin/
+          make -j${CPU_COUNT} VERBOSE=${VERBOSE} check -C bin/
           echo "^^^^^^^ Tests above were run with LAL_FRAME_LIBRARY=${LAL_FRAME_LIBRARY}"
       done
   artifacts:
@@ -157,12 +157,12 @@ lalpulsar:long-tests:
     # configure
     - eval ./configure "${LCI_CONFIGURE_FLAGS}"
     # build, test, and install package
-    - make -j${CPU_COUNT} all
-    - make -j${CPU_COUNT} install
+    - make -j${CPU_COUNT} VERBOSE=${VERBOSE} all
+    - make -j${CPU_COUNT} VERBOSE=${VERBOSE} install
     # test finding data files
     - env LAL_DEBUG_LEVEL=info lalpulsar_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
     # run long-running tests
-    - make -j${CPU_COUNT} check -C bin/longtests/ LONGTESTS=1
+    - make -j${CPU_COUNT} VERBOSE=${VERBOSE} check -C bin/longtests/ LONGTESTS=1
   artifacts:
     expire_in: 18h
     paths:

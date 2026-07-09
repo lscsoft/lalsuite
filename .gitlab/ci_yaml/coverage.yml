@@ -58,7 +58,7 @@
       EOF
     # run unit tests with Python scripts instrumented by coverage.py
     # - set C flags here to avoid generating coverage for autoconf tests
-    - make -j${CPU_COUNT} check
+    - make -j${CPU_COUNT} VERBOSE=${VERBOSE} check
           CFLAGS="-O3 --coverage -fprofile-abs-path"
           PY_LOG_FLAGS="-m coverage run --source \"${PWD}\""
           PYBIN_SCRIPT_PY_FLAGS="-m coverage run"

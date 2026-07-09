@@ -75,7 +75,7 @@ variables:
   CPU_COUNT: 4
 
   # enable more verbose build output and error messaegs
-  # - Automake prints test suite logs
+  # - output all Automake test logs to test-suite.log
   VERBOSE: "yes"
   # - print any errors from libtool static linking
   LALSUITE_LIBTOOL_NO_SUPPRESS: "yes"

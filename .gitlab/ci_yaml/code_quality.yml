@@ -104,8 +104,8 @@ gitignore-check:
     - source ${LCI_SCRIPTS}/build_env.sh
     - eval ./configure "${LCI_CONFIGURE_FLAGS}"
     # build in source directory, including tests
-    - make -j${CPU_COUNT} VERBOSE=1 all
-    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
+    - make -j${CPU_COUNT} VERBOSE=${VERBOSE} all
+    - make -j${CPU_COUNT} VERBOSE=${VERBOSE} check TESTS=
     # install pre-commit hooks
     - ${LCI_SCRIPTS}/retry pre-commit install-hooks
     # check for build files not in .gitignore

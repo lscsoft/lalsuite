@@ -46,7 +46,7 @@ case ${os} in
             "${LCI_CONFIGURE_FLAGS}"
 
         # build wheel
-        make -j${CPU_COUNT} wheel
+        make -j${CPU_COUNT} VERBOSE=${VERBOSE} wheel
 
         # bundle and fix up dependent shared libraries
         auditwheel repair wheel/*.whl
@@ -79,7 +79,7 @@ case ${os} in
             "${LCI_CONFIGURE_FLAGS}"
 
         # build wheel
-        make -j${CPU_COUNT} wheel
+        make -j${CPU_COUNT} VERBOSE=${VERBOSE} wheel
 
         # bundle and fix up dependent shared libraries
         python -m delocate.cmd.delocate_wheel -v -w wheelhouse wheel/*.whl
