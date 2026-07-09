@@ -21,7 +21,7 @@ doxygen-doc:
     # build and install documentation
     # - on failure, save outputs from Doxygen documentation filters for debugging
     - |
-      if make -j${CPU_COUNT} install-html; then
+      if make -j${CPU_COUNT} VERBOSE=${VERBOSE} install-html; then
           mv _inst/share/doc/lalsuite/ html/
       else
           for path in $(find -name '*.doxygen_filtered.txt'); do

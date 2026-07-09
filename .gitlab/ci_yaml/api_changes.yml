@@ -49,8 +49,8 @@
     - source ${LCI_SCRIPTS}/build_env.sh
     - eval ./configure "${LCI_CONFIGURE_FLAGS}"
     # build and install in source directory
-    - make -j${CPU_COUNT} all
-    - make -j${CPU_COUNT} install
+    - make -j${CPU_COUNT} VERBOSE=${VERBOSE} all
+    - make -j${CPU_COUNT} VERBOSE=${VERBOSE} install
     - source _inst/etc/lalsuite-user-env.sh
 
 dump-main-api:

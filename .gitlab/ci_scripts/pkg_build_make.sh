@@ -25,7 +25,7 @@ source ${LCI_SCRIPTS}/build_env.sh
 eval ./configure "${LCI_CONFIGURE_FLAGS}"
 
 # build, test, and install package
-make -j${CPU_COUNT} all
-make -j${CPU_COUNT} check
-make -j${CPU_COUNT} install
-make -j${CPU_COUNT} installcheck
+make -j${CPU_COUNT} VERBOSE=${VERBOSE} all
+make -j${CPU_COUNT} VERBOSE=${VERBOSE} check
+make -j${CPU_COUNT} VERBOSE=${VERBOSE} install
+make -j${CPU_COUNT} VERBOSE=${VERBOSE} installcheck

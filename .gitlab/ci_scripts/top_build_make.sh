@@ -14,5 +14,5 @@ eval ./configure "${LCI_CONFIGURE_FLAGS}"
 
 # build targets
 for target in ${MAKE_TARGETS:-distcheck}; do
-    make -j${CPU_COUNT} ${target}
+    make -j${CPU_COUNT} VERBOSE=${VERBOSE} ${target}
 done
