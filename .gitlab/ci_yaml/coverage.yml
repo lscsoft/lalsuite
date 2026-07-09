@@ -2,6 +2,7 @@
 # LALSuite GitLab-CI: check test coverage
 # ----------------------------------------------------------------------
 
+# base coverage job
 .coverage-job:
   extends:
     - .code-quality-job
@@ -29,7 +30,8 @@
       - Makefile
       - config.log
 
-coverage-check:
+# check coverage job
+.check-coverage-job:
   extends:
     - .coverage-job
   variables:
@@ -77,10 +79,23 @@ coverage-check:
     - pycobertura show coverage.xml | tail -n 1 > coverage.txt
     # show coverage summary
     - !reference [.coverage-job, script]
+
+coverage-check:
+  extends:
+    - .check-coverage-job
+  artifacts:
+    expire_in: 18h
   rules:
     # check coverage for merge requests
     - if: >-
         $LCI_PIPE_TYPE == "merge"
+
+coverage-store:
+  extends:
+    - .check-coverage-job
+  artifacts:
+    expire_in: never
+  rules:
     # store coverage data on the main branch at lscsoft/lalsuite
     - if: >-
         $LCI_PIPE_TYPE == "postmerge"
@@ -93,9 +108,11 @@ coverage-emit:
     - |
       ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
           ${CI_SERVER_URL} lscsoft/lalsuite \
-          get-artifacts ${CI_DEFAULT_BRANCH} coverage-check
+          get-artifacts ${CI_DEFAULT_BRANCH} coverage-store
     # show coverage summary
     - !reference [.coverage-job, script]
+  artifacts:
+    expire_in: never
   rules:
     # do not run in the post-merge request pipeline, which runs coverage-check
     - if: >-
