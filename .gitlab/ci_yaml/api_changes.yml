@@ -2,8 +2,8 @@
 # LALSuite GitLab-CI: track API changes
 # ----------------------------------------------------------------------
 
-# dump API job
-.dump-api-job:
+# base API job
+.api-job:
   stage: code-quality
   extends:
     - .generic-job
@@ -15,10 +15,17 @@
     # version number of API dump tarball
     API_DUMP_VERSION: 3
 
+# dump API job
+.dump-api-job:
+  extends:
+    - .api-job
+  artifacts:
+    expire_in: never
+
 # compare API job:
 .cmp-api-job:
   extends:
-    - .dump-api-job
+    - .api-job
   variables:
     # Library files matching this regular expression are considered to be source
     # files (as opposed to e.g. build system-related or other auxilliary files).
