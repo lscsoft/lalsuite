@@ -89,6 +89,10 @@ coverage-check:
     # check coverage for merge requests
     - if: >-
         $LCI_PIPE_TYPE == "merge"
+    # for debugging
+    - if: >-
+        $LCI_PIPE_TYPE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci debug coverage\]/i
 
 coverage-store:
   extends:
@@ -99,6 +103,10 @@ coverage-store:
     # store coverage data on the main branch at lscsoft/lalsuite
     - if: >-
         $LCI_PIPE_TYPE == "postmerge"
+    # for debugging
+    - if: >-
+        $LCI_PIPE_TYPE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci debug coverage\]/i
 
 coverage-emit:
   extends:
@@ -123,3 +131,7 @@ coverage-emit:
     - if: >-
         $CI_PROJECT_PATH == "lscsoft/lalsuite"
         && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    # for debugging
+    - if: >-
+        $LCI_PIPE_TYPE == "push"
+        && $CI_COMMIT_MESSAGE =~ /\[ci debug coverage\]/i

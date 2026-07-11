@@ -381,6 +381,12 @@ how to trigger then:
                 Commit message: <code>[ci debug api]</code>
             </td>
         </tr>
+        <tr>
+            <td>Debug jobs that check test coverage</td>
+            <td>
+                Commit message: <code>[ci debug coverage]</code>
+            </td>
+        </tr>
     </tbody>
 </table>
 
