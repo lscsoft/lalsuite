@@ -30,6 +30,7 @@ args.tags = sorted(set(args.tags))
 build = {
     "context": ".",
     "dockerfile": str(args.file),
+    "no_cache": True,
 }
 if len(args.build_args) > 0:
     build["args"] = {}
