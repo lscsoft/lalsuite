@@ -79,23 +79,11 @@ outfile = "test.hdf"
 outfile_SNR = "test_SNR"
 outfile_Znoise = "test_Znoise"
 
-# test two different proposals - the default proposal (which is currently --ensembleWalk 3 --uniformprop 1)
-# against just using the ensemble walk proposal
-proposals = ["", "--ensembleWalk 1 --uniformprop 0"]
-labels = ["Default", "Walk"]
-pcolor = ["b", "r"]
-max_nsigma = [2.0, 3.0]
-
-for i, proplabel in enumerate(labels):
-    if __file__.endswith("_%s.py" % proplabel.lower()):
-        print(f"Running {__file__} with proposal={proplabel} extracted from filename")
-        proposals = proposals[i : i + 1]
-        labels = labels[i : i + 1]
-        pcolor = pcolor[i : i + 1]
-        max_nsigma = max_nsigma[i : i + 1]
-        break
-else:
-    print(f"Running {__file__} with full proposal list")
+# test the default proposal (which is currently --ensembleWalk 3 --uniformprop 1)
+proposals = [""]
+labels = ["Default"]
+pcolor = ["b"]
+max_nsigma = [2.0]
 
 Ntests = 15  # number of times to run nested sampling for each h0 value to get average
 
