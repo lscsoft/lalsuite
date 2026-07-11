@@ -4,13 +4,13 @@ ARG DEB_VERSION
 
 FROM debian:${DEB_VERSION}-slim
 
-ARG CLANG_VERSION_NAME
-ARG CLANG_VERSION_SUFFIX
+ARG CLANG_VERSION
+ARG CLANG_VERSION_ARG
 ARG DEB_VERSION
 ARG LCI_PKGLIST_X_LALAPPS
 ARG TARBALL_NAME
 
-LABEL name="LALSuite CI Image - Clang ${CLANG_VERSION_NAME}"
+LABEL name="LALSuite CI Image - Clang ${CLANG_VERSION}"
 LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
 LABEL support="Best Effort"
 
@@ -22,8 +22,8 @@ WORKDIR /tmp
 COPY ./${TARBALL_NAME} .
 
 # set compilers
-ENV CC="clang${CLANG_VERSION_SUFFIX}"
-ENV CXX="clang++${CLANG_VERSION_SUFFIX}"
+ENV CC="/usr/bin/clang"
+ENV CXX="/usr/bin/clang++"
 
 # run debconf noninteractively
 ENV DEBIAN_FRONTEND=noninteractive
@@ -57,6 +57,7 @@ apt-get -y -q install \
     python3-pip \
     xz-utils \
     ;
+apt-cache show software-properties-common &>/dev/null && apt-get -y -q install software-properties-common
 python3 -m pip install --upgrade --force-reinstall --ignore-installed --break-system-packages pip
 
 # install Git LFS
@@ -72,11 +73,6 @@ COPY <<EOF /etc/apt/sources.list.d/lscsoft.list
 deb [signed-by=/etc/apt/trusted.gpg.d/hypatia-key.asc] https://hypatia.aei.mpg.de/debian/ ${DEB_VERSION} lvk
 EOF
 
-# add llvm repository
-COPY <<EOF /etc/apt/sources.list.d/llvm.list
-deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${DEB_VERSION}/ llvm-toolchain-${DEB_VERSION}${CLANG_VERSION_SUFFIX} main
-EOF
-
 RUN <<EOF
 set -ex
 
@@ -84,9 +80,6 @@ set -ex
 cat /etc/apt/sources.list.d/lscsoft.list
 curl -O https://hypatia.aei.mpg.de/debian/keys/hypatia-keyring.deb
 dpkg -i hypatia-keyring.deb
-
-# set up llvm repository
-curl -sSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor --yes --output /usr/share/keyrings/llvm-snapshot.gpg
 
 # update APT cache
 apt-get -y -q update
@@ -105,7 +98,30 @@ for subdir in ${LCI_PKGLIST_X_LALAPPS} lalapps; do
 done
 
 # install Clang
-apt-get -y -q install clang${CLANG_VERSION_SUFFIX}
+curl -O https://apt.llvm.org/llvm.sh
+chmod +x ./llvm.sh
+if [ "X${CLANG_VERSION_ARG}" = Xlatest ]; then
+    ./llvm.sh # install the latest stable version
+else
+    ./llvm.sh ${CLANG_VERSION_ARG}
+fi
+if test -x "/usr/bin/clang-${CLANG_VERSION}"; then
+    update-alternatives --install ${CC} clang "/usr/bin/clang-${CLANG_VERSION}" 100
+    update-alternatives --install ${CXX} clang++ "/usr/bin/clang++-${CLANG_VERSION}" 100
+else
+    CLANG_NEXT_VERSION="$((CLANG_VERSION+1))"
+    if test -x "/usr/bin/clang-${CLANG_NEXT_VERSION}"; then
+        echo "ERROR: Clang version is no longer ${CLANG_VERSION} (now ${CLANG_NEXT_VERSION})"
+        echo "ERROR: see .gitlab/ci_yaml/dev_images.yml for upgrade instructions"
+    else
+        echo "ERROR: /usr/bin/clang-${CLANG_VERSION} was not installed"
+    fi
+    exit 1
+fi
+
+# print compiler versions
+${CC} --version
+${CXX} --version
 
 # print info
 dpkg-query --list
