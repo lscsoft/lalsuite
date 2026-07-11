@@ -69,7 +69,7 @@ print("Estimated upper limit is %.4e" % (ulest))
 np.savetxt(datafile, ds, fmt="%.12e")
 
 # range of upper limits on h0 in prior file
-h0uls = [5.0 * ulest, 500.0 * ulest]
+h0uls = np.logspace(np.log10(5.0 * ulest), np.log10(500.0 * ulest), 6)
 
 # some default inputs
 dets = "H1"
@@ -97,7 +97,7 @@ for i, proplabel in enumerate(labels):
 else:
     print(f"Running {__file__} with full proposal list")
 
-Ntests = 50  # number of times to run nested sampling for each h0 value to get average
+Ntests = 15  # number of times to run nested sampling for each h0 value to get average
 
 if doplot:
     fig, ax = pl.subplots(1, 1)
