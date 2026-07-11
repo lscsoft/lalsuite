@@ -36,7 +36,11 @@ if len(args.tags) > 1:
     build["tags"] = args.tags[1:]
 
 # construct Compose configuration
-compose = {"services": {"ci_image": {"image": args.tags[0], "build": build}}}
+compose = {
+    "services": {
+        "ci_image": {"image": args.tags[0], "build": build, "pull_policy": "build"}
+    }
+}
 compose_yml = yaml.safe_dump(compose, default_flow_style=False)
 
 # show Compose configuration file
