@@ -4,12 +4,12 @@ ARG GCC_IMAGE_TAG
 
 FROM gcc:${GCC_IMAGE_TAG}
 
-ARG GCC_VERSION_NAME
+ARG GCC_VERSION
 ARG DEB_VERSION
 ARG LCI_PKGLIST_X_LALAPPS
 ARG TARBALL_NAME
 
-LABEL name="LALSuite CI Image - GCC ${GCC_VERSION_NAME}"
+LABEL name="LALSuite CI Image - GCC ${GCC_VERSION}"
 LABEL maintainer="LALSuite Maintainers <lal-discuss@ligo.org>"
 LABEL support="Best Effort"
 
@@ -94,6 +94,18 @@ for subdir in ${LCI_PKGLIST_X_LALAPPS} lalapps; do
     apt-get build-dep -y -q . || apt-get install -f || true
     popd
 done
+
+# check that GCC version is consistent with GCC_VERSION
+gcc_version=$(gcc -dumpfullversion | cut -d. -f1)
+if [ "X${gcc_version}" != "X${GCC_VERSION}" ]; then
+    echo "ERROR: GCC version is no longer ${GCC_VERSION} (now ${gcc_version})"
+    echo "ERROR: see .gitlab/ci_yaml/dev_images.yml for upgrade instructions"
+    exit 1
+fi
+
+# print compiler versions
+${CC} --version
+${CXX} --version
 
 # print info
 dpkg-query --list
