@@ -13,5 +13,5 @@ if [ "X${upstream_condas}" != X ]; then
     cp -rv ${PACKAGE_ROOT_DIR}/*/*/ ${local_channel}/
     ${LCI_SCRIPTS}/retry conda index "${local_channel}"
     conda config --add channels "${local_channel}"
-    ${LCI_SCRIPTS}/retry conda search "*lal*" --channel "${local_channel}" --override-channels
+    ${LCI_SCRIPTS}/retry conda search --quiet --channel "${local_channel}" --override-channels "*lal*"
 fi
