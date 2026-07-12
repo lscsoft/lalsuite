@@ -27,7 +27,7 @@ lalsuite:linux:
         LCI_JOB_TYPE: ["merge", "sched-devimg"]
 
       # Conda
-      - LCI_PLAT: "conda-py313"
+      - LCI_PLAT: "conda-py314"
         LCI_ENV: "LCI_BLD=make LCI_PKG=conda"
         LCI_JOB_TYPE: ["merge", "sched-devimg"]
 
