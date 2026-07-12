@@ -138,7 +138,7 @@ variables:
   LCI_DEV_TAG_SUFFIX: ""
 
   # Docker release image
-  LCI_RELEASE_IMG: "kwwette/lalsuite"   ### TOFIX ###
+  LCI_RELEASE_IMG: "igwn/lalsuite"
   LCI_RELEASE_IMG_REGISTRY: "docker.io"
   LCI_RELEASE_IMG_USERNAME: "${DOCKERHUB_USERNAME}"
   LCI_RELEASE_IMG_TOKEN: "${DOCKERHUB_TOKEN}"
