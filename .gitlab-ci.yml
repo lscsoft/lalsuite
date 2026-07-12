@@ -96,6 +96,7 @@ variables:
   # - do not cache Conda packages due to corruption issues
   CONDARC: "${LCI_TMPDIR}/conda/condarc"
   CONDA_PKGS_DIRS: "${LCI_TMPDIR}/conda/pkgs"
+  DOCKER_CONFIG: "${LCI_TMPDIR}/config"
   XDG_CONFIG_HOME: "${LCI_TMPDIR}/config"
 
   # Conda packaging system configuration variables
