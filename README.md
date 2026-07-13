@@ -123,7 +123,7 @@ development snapshot, and the most recent release, are updated weekly.
 ## Sources
 
 The LALSuite sources are located in the [LALSuite Git repository][projectrepo].
-See the following [clonerepo] on how to get started.
+See [here][clonerepo] for how to get started.
 
 ## Mailing Lists
 
