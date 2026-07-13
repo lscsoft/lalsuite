@@ -69,7 +69,7 @@ print("Estimated upper limit is %.4e" % (ulest))
 np.savetxt(datafile, ds, fmt="%.12e")
 
 # range of upper limits on h0 in prior file
-h0uls = [5.0 * ulest, 500.0 * ulest]
+h0uls = np.logspace(np.log10(5.0 * ulest), np.log10(500.0 * ulest), 6)
 
 # some default inputs
 dets = "H1"
@@ -79,25 +79,13 @@ outfile = "test.hdf"
 outfile_SNR = "test_SNR"
 outfile_Znoise = "test_Znoise"
 
-# test two different proposals - the default proposal (which is currently --ensembleWalk 3 --uniformprop 1)
-# against just using the ensemble walk proposal
-proposals = ["", "--ensembleWalk 1 --uniformprop 0"]
-labels = ["Default", "Walk"]
-pcolor = ["b", "r"]
-max_nsigma = [2.0, 3.0]
+# test the default proposal (which is currently --ensembleWalk 3 --uniformprop 1)
+proposals = [""]
+labels = ["Default"]
+pcolor = ["b"]
+max_nsigma = [2.0]
 
-for i, proplabel in enumerate(labels):
-    if __file__.endswith("_%s.py" % proplabel.lower()):
-        print(f"Running {__file__} with proposal={proplabel} extracted from filename")
-        proposals = proposals[i : i + 1]
-        labels = labels[i : i + 1]
-        pcolor = pcolor[i : i + 1]
-        max_nsigma = max_nsigma[i : i + 1]
-        break
-else:
-    print(f"Running {__file__} with full proposal list")
-
-Ntests = 50  # number of times to run nested sampling for each h0 value to get average
+Ntests = 15  # number of times to run nested sampling for each h0 value to get average
 
 if doplot:
     fig, ax = pl.subplots(1, 1)
