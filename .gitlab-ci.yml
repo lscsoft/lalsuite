@@ -386,7 +386,7 @@ workflow:
     # - the trigger is a commit push
     # - the branch is the main branch at lscsoft/lalsuite
     - if: >-
-        $CI_PIPELINE_SOURCE == "push"
+        ( $CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "web" )
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
         && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: always
