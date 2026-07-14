@@ -80,6 +80,8 @@ dump-main-api:
     # dump API of the main branch at lscsoft/lalsuite
     - if: >-
         $LCI_PIPE_TYPE == "postmerge"
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-devimg"
     # for debugging
     - if: >-
         $LCI_PIPE_TYPE == "push"
@@ -162,6 +164,8 @@ cmp-merge-request-api:
     # compare API to the main branch at lscsoft/lalsuite for merge requests
     - if: >-
         $LCI_PIPE_TYPE == "merge"
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-devimg"
     # for debugging
     - if: >-
         $LCI_PIPE_TYPE == "push"
