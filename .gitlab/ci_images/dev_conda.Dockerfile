@@ -156,8 +156,8 @@ conda create --quiet --name lalsuite-ci-upgrade
 if ! conda install --quiet --name lalsuite-ci-upgrade \
     ${LCI_PKGLIST_X_LALAPPS} lalapps
 then
-    echo 'WARNING: no LALSuite release available' > /no-lalsuite
-    cat /no-lalsuite
+    echo X > /no-lalsuite
+    echo 'WARNING: no LALSuite release available, will skip package upgrade test'
 fi
 
 # print info

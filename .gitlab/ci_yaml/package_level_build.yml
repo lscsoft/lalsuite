@@ -343,7 +343,7 @@ upgrade:
     # check for a LALSuite release to upgrade
     - |
       if test -f /no-lalsuite; then
-          cat /no-lalsuite
+          echo 'WARNING: no LALSuite release available, skipping package upgrade test'
           exit 77
       fi
     # upgrade packages
