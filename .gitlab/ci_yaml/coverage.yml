@@ -89,6 +89,8 @@ coverage-check:
     # check coverage for merge requests
     - if: >-
         $LCI_PIPE_TYPE == "merge"
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-devimg"
     # for debugging
     - if: >-
         $LCI_PIPE_TYPE == "push"
