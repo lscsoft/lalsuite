@@ -83,6 +83,7 @@ cat ./conda-dev-env.yml
 
 # create environment for CI jobs and install LALSuite build dependencies
 conda env create --quiet --name lalsuite-ci --file ./conda-dev-env.yml
+conda activate lalsuite-ci
 
 # pin LALSuite build dependencies to prevent aggressive upgrades
 yq -r '.dependencies[] | select(type == "string")' ./conda-dev-env.yml | while IFS= read -r pkg_dep; do
