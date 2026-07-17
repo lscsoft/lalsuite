@@ -19,9 +19,9 @@ import os
 import sys
 
 import igwn_segments as segments
-from lal.utils import CacheEntry
 
 from lal import LIGOTimeGPS, iterutils, pipeline
+from lal.utils import CacheEntry
 from lalburst import cafe, power
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
