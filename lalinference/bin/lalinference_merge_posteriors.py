@@ -5,10 +5,10 @@
 import sys
 from optparse import OptionParser
 
-from lalinference.nest2pos import draw_N_posterior, draw_posterior
 from numpy import log, vstack
 
 from lalinference import bayespputils as bppu
+from lalinference.nest2pos import draw_N_posterior, draw_posterior
 
 usage='''%prog [-N NPOS]-o output.dat -p pos1.dat -w weight1 [-p pos2.dat -w weight2 ...]
 %prog takes a list of posterior files and weights and draws samples from the combined,
