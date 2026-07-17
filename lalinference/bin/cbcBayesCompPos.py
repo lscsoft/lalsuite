@@ -35,12 +35,12 @@ from numpy import floor
 
 mpl.use("AGG")
 #local application/library specific imports
-import lalinference.bayespputils as bppu
 from matplotlib import cm as mpl_cm
 from matplotlib import colors as mpl_colors
 from matplotlib import pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 
+import lalinference.bayespputils as bppu
 from lalinference import git_version
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Will M. Farr <will.farr@ligo.org>"
