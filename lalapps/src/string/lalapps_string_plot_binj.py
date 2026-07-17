@@ -36,8 +36,8 @@ from optparse import OptionParser
 import igwn_segments as segments
 from igwn_ligolw import dbtables
 from igwn_ligolw import utils as ligolw_utils
-from lal.utils import CacheEntry
 
+from lal.utils import CacheEntry
 from lalburst import SimBurstUtils, SnglBurstUtils, git_version, rate
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
