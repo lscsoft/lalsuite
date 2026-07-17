@@ -20,6 +20,7 @@ from lal import MSUN_SI, MTSUN_SI
 matplotlib.use('Agg')
 
 from astropy.table import Column, Table, hstack
+
 from lalinference.bayespputils import mc2ms
 from lalinference.io.hdf5 import extract_metadata, read_samples, write_samples
 
