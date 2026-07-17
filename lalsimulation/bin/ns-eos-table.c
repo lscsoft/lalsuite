@@ -66,19 +66,19 @@ int main(int argc, char *argv[])
         double dedp;
         double vsound;
         if (global_geom) {      /* output in geometric units */
-            p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometerized(h,
+            p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpyGeometrized(h,
                 global_eos);
             epsilon =
-                XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometerized
+                XLALSimNeutronStarEOSEnergyDensityOfPseudoEnthalpyGeometrized
                 (h, global_eos);
             rho =
-                XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometerized
+                XLALSimNeutronStarEOSRestMassDensityOfPseudoEnthalpyGeometrized
                 (h, global_eos);
             dedp =
-                XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometerized
+                XLALSimNeutronStarEOSEnergyDensityDerivOfPressureGeometrized
                 (p, global_eos);
             vsound =
-                XLALSimNeutronStarEOSSpeedOfSoundGeometerized(h, global_eos);
+                XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpyGeometrized(h, global_eos);
         } else {        /* output in SI units by default */
             p = XLALSimNeutronStarEOSPressureOfPseudoEnthalpy(h, global_eos);
             epsilon =
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
             dedp =
                 XLALSimNeutronStarEOSEnergyDensityDerivOfPressure(p,
                 global_eos);
-            vsound = XLALSimNeutronStarEOSSpeedOfSound(h, global_eos);
+            vsound = XLALSimNeutronStarEOSSpeedOfSoundOfPseudoEnthalpy(h, global_eos);
             if (global_cgs) {   /* output in cgs units by converting from SI units */
                 p /= DYNE_PER_CENTIMETER_SQUARED_SI;
                 epsilon /= DYNE_PER_CENTIMETER_SQUARED_SI;      /* same as ERG_PER_CENTIMETER_CUBED_SI */

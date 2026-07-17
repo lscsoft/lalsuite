@@ -42,23 +42,42 @@ int main(int argc, char *argv[])
 
     parseargs(argc, argv);
 
-    fam = XLALCreateSimNeutronStarFamily(global_eos);
-    printf("Equation of State: %s\n", XLALSimNeutronStarEOSName(global_eos));
+    fam = XLALCreateSimNeutronStarFamily(global_eos, 0);
+    char *eos_name = XLALSimNeutronStarEOSName(global_eos);
+    printf("Equation of State: %s\n", eos_name);
+    XLALFree(eos_name);
+    int nb_branches = XLALSimNeutronStarFamNumberOfBranches(fam);
+    printf("Number of stable branches = %d\n",
+        nb_branches);
     printf("Maximum Mass (solar) = %g\n",
-        XLALSimNeutronStarMaximumMass(fam) / LAL_MSUN_SI);
+        XLALSimNeutronStarFamMinMass(fam) / LAL_MSUN_SI);
     if (global_mass != 0.0) {
-        double m = global_mass * LAL_MSUN_SI;
-        double p = XLALSimNeutronStarCentralPressure(m, fam);
-        double r = XLALSimNeutronStarRadius(m, fam);
-        double k = XLALSimNeutronStarLoveNumberK2(m, fam);
-        double c = global_mass * LAL_MRSUN_SI / r;
-        double l = (2.0 / 3.0) * k / pow(c, 5);
-        printf("Parameters for Neutron Star Mass (solar) = %g\n", global_mass);
-        printf("- Central Pressure (Pa) = %g\n", p);
-        printf("- Radius (km) = %g\n", r / 1000.0);
-        printf("- Compactness (dimensionless) = %g\n", c);
-        printf("- Love Number (dimensionless) = %g\n", k);
-        printf("- Tidal Parameter (dimensionless) = %g\n", l);
+        for (int i = 0; i < nb_branches; i++){
+            printf("Stable branch number = %d\n", i);
+            double m = global_mass * LAL_MSUN_SI;
+            double mb = XLALSimNeutronStarFamBaryonicMassOfMassPerBranch(m, fam, i);
+            double p = XLALSimNeutronStarFamCentralPressureOfMassPerBranch(m, fam, i);
+            double r = XLALSimNeutronStarFamRadiusOfMassPerBranch(m, fam, i);
+            double k2 = XLALSimNeutronStarFamLoveNumberK2OfMassPerBranch(m, fam, i);
+            double k3 = XLALSimNeutronStarFamLoveNumberK3OfMassPerBranch(m, fam, i);
+            double k4 = XLALSimNeutronStarFamLoveNumberK4OfMassPerBranch(m, fam, i);
+            double c = global_mass * LAL_MRSUN_SI / r;
+            double l2 = (2.0 / 3.0) * k2 / pow(c, 5);
+            double l3 = (2.0 / 3.0) * k3 / pow(c, 5);
+            double l4 = (2.0 / 3.0) * k4 / pow(c, 5);
+            printf("Parameters for Neutron Star Mass (solar) = %g\n", global_mass);
+            printf("- Central Pressure (Pa) = %g\n", p);
+            printf("- Radius (km) = %g\n", r / 1000.0);
+            printf("- Compactness (dimensionless) = %g\n", c);
+            printf("- Baryonic Mass (solar) = %g\n", mb / LAL_MSUN_SI);
+            printf("- Love Number order 2 (dimensionless) = %g\n", k2);
+            printf("- Tidal Parameter order 2 (dimensionless) = %g\n", l2);
+            printf("- Love Number order 3 (dimensionless) = %g\n", k3);
+            printf("- Tidal Parameter order 3 (dimensionless) = %g\n", l3);
+            printf("- Love Number order 4 (dimensionless) = %g\n", k4);
+            printf("- Tidal Parameter order 4 (dimensionless) = %g\n", l4);
+        }
+        //TODO test all of this and do the help thing ??
     }
 
     XLALDestroySimNeutronStarFamily(fam);
