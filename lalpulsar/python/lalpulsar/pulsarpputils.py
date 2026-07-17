@@ -2833,9 +2833,8 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
         e.g. if cosiota and iota exist then iota will be removed.
     """
 
-    from lalinference.bayespputils import replace_column
-
     from lalinference import bayespputils as bppu
+    from lalinference.bayespputils import replace_column
 
     fe = os.path.splitext(postfile)[-1].lower()  # file extension
 
@@ -2844,9 +2843,8 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
         if nestedsamples:
             # use functions from lalapps_nest2pos to read values from nested sample files i.e. not a posterior file created by lalapps_nest2pos
             try:
-                from lalinference.io import read_samples
-
                 from lalinference import LALInferenceHDF5NestedSamplesDatasetName
+                from lalinference.io import read_samples
 
                 samples = read_samples(
                     postfile, tablename=LALInferenceHDF5NestedSamplesDatasetName
