@@ -35,11 +35,11 @@ import time
 
 import igwn_segments as segments
 from igwn_segments import utils as segmentsUtils
-from lal.utils import CacheEntry
 
 import lal
 import lalburst
 from lal import iterutils, pipeline
+from lal.utils import CacheEntry
 
 from . import cafe
 
