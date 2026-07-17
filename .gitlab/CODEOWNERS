@@ -2,9 +2,9 @@
 # https://git.ligo.org/lscsoft/lalsuite (with at least Developer
 # permissions) in order to be able to approve merge requests.
 
-# ----------------------------- maintainer override
+# ----------------------------- maintainers
 
-^[Maintainer override]          @adam-mercer @duncanmmacleod @karl-wette
+[Maintainers]                   @adam-mercer @duncanmmacleod @karl-wette
 *
 
 # ----------------------------- packages
