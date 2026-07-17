@@ -2,46 +2,46 @@
 # https://git.ligo.org/lscsoft/lalsuite (with at least Developer
 # permissions) in order to be able to approve merge requests.
 
-# ----------------------------- maintainers
+# all files ------- maintainers
 
-*                               @adam-mercer @duncanmmacleod @karl-wette
+*                   @adam-mercer @duncanmmacleod @karl-wette
 
-# ----------------------------- packages
+# packages -------- maintainers ---------------------------------package maintainers
 
-[LAL]                           @jolien-creighton @kipp
+[LAL][2]            @adam-mercer @duncanmmacleod @karl-wette     @jolien-creighton @kipp
 /lal/
 
-[LALFrame]                      @ed-maros @jolien-creighton
+[LALFrame][2]       @adam-mercer @duncanmmacleod @karl-wette     @ed-maros @jolien-creighton
 /lalframe/
 
-[LALMetaIO]                     @jolien-creighton @kipp
+[LALMetaIO][2]      @adam-mercer @duncanmmacleod @karl-wette     @jolien-creighton @kipp
 /lalmetaio/
 
-[LALSimulation]                 @jolien-creighton @kipp @waveforms
+[LALSimulation][2]  @adam-mercer @duncanmmacleod @karl-wette     @jolien-creighton @kipp @waveforms
 /lalsimulation/
 
-[LALBurst]                      @kipp @marco-drago
+[LALBurst][2]       @adam-mercer @duncanmmacleod @karl-wette     @kipp @marco-drago
 /lalburst/
 
-[LALInspiral]                   @ian-harry @jolien-creighton @kipp
+[LALInspiral][2]    @adam-mercer @duncanmmacleod @karl-wette     @ian-harry @jolien-creighton @kipp
 /lalinspiral/
 
-[LALInference]                  @bfarr @cjhaster @john-veitch @vivien
+[LALInference][2]   @adam-mercer @duncanmmacleod @karl-wette     @bfarr @cjhaster @john-veitch @vivien
 /lalinference/
 
-[LALPulsar]                     @david-keitel @evan-goetz @john-whelan @karl-wette @matthew-pitkin
+[LALPulsar][2]      @adam-mercer @duncanmmacleod @karl-wette     @david-keitel @evan-goetz @john-whelan @karl-wette @matthew-pitkin
 /lalpulsar/
 
-[LALApps]                       @ed-maros @florent-robinet @ian-harry @jolien-creighton @kipp
+[LALApps][2]        @adam-mercer @duncanmmacleod @karl-wette     @ed-maros @florent-robinet @ian-harry @jolien-creighton @kipp
 /lalapps/
 
-# ----------------------------- build / packaging / support files
+# build fiiles ---- maintainers
 
-[Authors]                       @karl-wette
+[Authors]           @adam-mercer @duncanmmacleod @karl-wette
 AUTHORS
 .mailmap
 
-[Build system]                  @adam-mercer @duncanmmacleod @karl-wette
+[Build system]      @adam-mercer @duncanmmacleod @karl-wette
 *.pc.in
 00boot
 Makefile.am
@@ -49,45 +49,45 @@ configure.ac
 gnuscripts/
 include/
 
-[Conda packaging]               @duncanmmacleod
+[Conda packaging]   @adam-mercer @duncanmmacleod @karl-wette
 conda-dev-env.yml
 conda/
 
-[Debian packaging]              @adam-mercer @karl-wette
+[Debian packaging]  @adam-mercer @duncanmmacleod @karl-wette
 debian/
 
-[Documentation]                 @adam-mercer @duncanmmacleod @karl-wette
+[Documentation]     @adam-mercer @duncanmmacleod @karl-wette
 *.md
 doxygen/
 
-[Git files]                     @adam-mercer @duncanmmacleod @karl-wette
+[Git files]         @adam-mercer @duncanmmacleod @karl-wette
 .gitignore
 .gitattributes
 
-[GitLab files]                  @adam-mercer @duncanmmacleod @karl-wette
+[GitLab files]      @adam-mercer @duncanmmacleod @karl-wette
 .gitlab-ci.yml
 .gitlab/
 
-[License]                       @adam-mercer
+[License]           @adam-mercer @duncanmmacleod @karl-wette
 COPYING
 
-[Pre-commit hooks]              @adam-mercer @duncanmmacleod @karl-wette
+[Pre-commit hooks]  @adam-mercer @duncanmmacleod @karl-wette
 .pre-commit-config.yaml
 .ruff.toml
 .astyle.yaml
 
-[Python test suite]             @duncanmmacleod
+[Python test suite] @adam-mercer @duncanmmacleod @karl-wette
 exclude-modules.txt
 exclude-scripts.txt
 test_python_imports.py.in
 test_python_scripts.py.in
 
-[RPM packaging]                 @adam-mercer
+[RPM packaging]     @adam-mercer @duncanmmacleod @karl-wette
 *.spec.in
 rpmlintrc
 
-[SWIG bindings]                 @karl-wette
+[SWIG bindings]     @adam-mercer @duncanmmacleod @karl-wette
 swig/
 
-[Wheel packaging]               @leo-singer
+[Wheel packaging]   @adam-mercer @duncanmmacleod @karl-wette @leo-singer
 /wheel/
