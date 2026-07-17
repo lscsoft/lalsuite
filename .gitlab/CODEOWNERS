@@ -2,9 +2,6 @@
 # https://git.ligo.org/lscsoft/lalsuite (with at least Developer
 # permissions) in order to be able to approve merge requests.
 
-[All other files]               @adam-mercer @duncanmmacleod @karl-wette
-*
-
 # ----------------------------- packages
 
 [LAL]                           @jolien-creighton @kipp
