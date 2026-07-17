@@ -52,11 +52,11 @@ import numpy
 from igwn_ligolw import dbtables
 from igwn_ligolw.utils import process as ligolwprocess
 from igwn_segments import utils as segmentsUtils
-from lal.utils import CacheEntry
 from matplotlib import patches
 from scipy import interpolate, optimize
 
 import lal
+from lal.utils import CacheEntry
 from lalburst import (
 	SimBurstUtils,
 	SnglBurstUtils,
