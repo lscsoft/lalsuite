@@ -31,9 +31,9 @@ import igwn_segments as segments
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import segments as ligolw_segments
-from lal.utils import CacheEntry
 
 from lal import LIGOTimeGPS, pipeline
+from lal.utils import CacheEntry
 from lalapps import cosmicstring
 from lalburst import offsetvector, power
 
