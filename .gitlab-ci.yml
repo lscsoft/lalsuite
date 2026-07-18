@@ -170,6 +170,8 @@ workflow:
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
         && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: always
+      auto_cancel:
+        on_new_commit: none   # do not cancel scheduled pipelines
       variables:
         LCI_PIPE_NAME: "Build and test Docker development images"
         # - test the new Docker development image tags
@@ -203,6 +205,8 @@ workflow:
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
         && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: always
+      auto_cancel:
+        on_new_commit: none   # do not cancel scheduled pipelines
       variables:
         LCI_PIPE_NAME: "Build snapshot Docker images and wheels"
         # - add shapshot version number based on day
@@ -242,6 +246,8 @@ workflow:
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
         && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: always
+      auto_cancel:
+        on_new_commit: none   # do not cancel scheduled pipelines
       variables:
         LCI_PIPE_NAME: "Rebuild release Docker images"
         # - execute deployment actions
@@ -277,6 +283,8 @@ workflow:
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
         && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: always
+      auto_cancel:
+        on_new_commit: none   # do not cancel scheduled pipelines
       variables:
         LCI_PIPE_NAME: "Build and deploy Doxygen documentation"
         # - execute deployment actions
