@@ -10,31 +10,55 @@
 # packages -------- maintainers -------------------------------- package maintainers
 
 [LAL][2]            @adam-mercer @duncanmmacleod @karl-wette     @jolien-creighton @kipp
-/lal/
+/lal/bin/
+/lal/lib/
+/lal/python/
+/lal/test/
 
 [LALFrame][2]       @adam-mercer @duncanmmacleod @karl-wette     @ed-maros @jolien-creighton
-/lalframe/
+/lalframe/bin/
+/lalframe/lib/
+/lalframe/python/
+/lalframe/test/
 
 [LALMetaIO][2]      @adam-mercer @duncanmmacleod @karl-wette     @jolien-creighton @kipp
-/lalmetaio/
+/lalmetaio/bin/
+/lalmetaio/lib/
+/lalmetaio/python/
+/lalmetaio/test/
 
 [LALSimulation][2]  @adam-mercer @duncanmmacleod @karl-wette     @jolien-creighton @kipp @lami.suleiman @waveforms
-/lalsimulation/
+/lalsimulation/bin/
+/lalsimulation/lib/
+/lalsimulation/python/
+/lalsimulation/test/
 
 [LALBurst][2]       @adam-mercer @duncanmmacleod @karl-wette     @kipp @marco-drago
-/lalburst/
+/lalburst/bin/
+/lalburst/lib/
+/lalburst/python/
+/lalburst/test/
 
 [LALInspiral][2]    @adam-mercer @duncanmmacleod @karl-wette     @ian-harry @jolien-creighton @kipp
-/lalinspiral/
+/lalinspiral/bin/
+/lalinspiral/lib/
+/lalinspiral/python/
+/lalinspiral/test/
 
 [LALInference][2]   @adam-mercer @duncanmmacleod @karl-wette     @bfarr @cjhaster @john-veitch @vivien
-/lalinference/
+/lalinference/bin/
+/lalinference/lib/
+/lalinference/python/
+/lalinference/test/
 
 [LALPulsar][2]      @adam-mercer @duncanmmacleod @karl-wette     @david-keitel @evan-goetz @john-whelan @karl-wette @matthew-pitkin
-/lalpulsar/
+/lalpulsar/bin/
+/lalpulsar/lib/
+/lalpulsar/python/
+/lalpulsar/test/
 
 [LALApps][2]        @adam-mercer @duncanmmacleod @karl-wette     @ed-maros @florent-robinet @ian-harry @jolien-creighton @kipp
-/lalapps/
+/lalapps/src/
 
 # build files ----- maintainers
 
