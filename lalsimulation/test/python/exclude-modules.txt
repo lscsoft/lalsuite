@@ -11,7 +11,10 @@ lalsimulation/gwsignal/core/parameter_conventions
 lalsimulation/gwsignal/core/utils
 lalsimulation/gwsignal/core/waveform
 lalsimulation/gwsignal/core/waveform_conditioning
+lalsimulation/gwsignal/core/eccentricity_utils
+lalsimulation/gwsignal/core/teobresums
 lalsimulation/gwsignal/docs/source/conf
 lalsimulation/gwsignal/models
 lalsimulation/gwsignal/models/pyseobnr_model
+lalsimulation/gwsignal/models/teobresums
 lalsimulation/gwsignal/tests

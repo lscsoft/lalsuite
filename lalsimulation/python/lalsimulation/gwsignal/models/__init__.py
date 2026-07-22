@@ -1,16 +1,22 @@
+import sys
+from importlib import import_module
+
 import lalsimulation as lalsim
 
 from ..core.waveform import LALCompactBinaryCoalescenceGenerator
-from . import pyseobnr_model
 
+GWSIGNAL_APPROXIMANTS = {
+    "SEOBNRv5HM": ('pyseobnr_model', 'SEOBNRv5HM'),
+    "SEOBNRv5PHM": ('pyseobnr_model', 'SEOBNRv5PHM'),
+    "SEOBNRv5EHM": ('pyseobnr_model', 'SEOBNRv5EHM'),
+    "TEOBResumSDALI": ('teobresums', 'TEOBResumSDALI'),
+}
 
 def gwsignal_get_waveform_generator(waveform_approximant):
-    if waveform_approximant == "SEOBNRv5HM":
-        wf_gen = pyseobnr_model.SEOBNRv5HM()
-    elif waveform_approximant == "SEOBNRv5EHM":
-        wf_gen = pyseobnr_model.SEOBNRv5EHM()
-    elif waveform_approximant == "SEOBNRv5PHM":
-        wf_gen = pyseobnr_model.SEOBNRv5PHM()
+    if waveform_approximant in GWSIGNAL_APPROXIMANTS:
+        module_name, class_name = GWSIGNAL_APPROXIMANTS[waveform_approximant]
+        module = import_module(f'.{module_name}', package=sys.modules[__name__].__package__)
+        wf_gen = module.__getattribute__(class_name)()
     else:
         try:
             lal_approx = lalsim.SimInspiralGetApproximantFromString(

@@ -16,6 +16,7 @@ pymodule_PYTHON = \
 	gw.py \
 	errors.py \
 	conditioning_subroutines.py \
+	eccentricity_utils.py \
 	$(END_OF_LIST)
 
 endif

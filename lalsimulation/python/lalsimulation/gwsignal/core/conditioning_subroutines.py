@@ -6,6 +6,9 @@ from astropy import units as u
 from gwpy.timeseries import TimeSeries
 from scipy.signal import butter, sosfiltfilt
 
+import lal
+from lalsimulation import SimInspiralREAL8WaveTaper
+
 # Routine to high-pass time series
 
 def high_pass_time_series(time_series, dt, fmin, attenuation, N):
@@ -82,10 +85,18 @@ def time_array_condition_stage1(hp, hc, dt, t_extra, fmin):
     hc = high_pass_time_series(hc, dt, fmin, 0.99, 8.)
 
     # Remove trailing zeroes from array
-    np.trim_zeros(hp, trim='b')
-    np.trim_zeros(hc, trim='b')
+    hp_values = np.trim_zeros(hp.value, trim='b')
+    hc_values = np.trim_zeros(hc.value, trim='b')
 
-    return hp, hc
+    hp_trimmed = TimeSeries(hp_values)
+    hp_trimmed.t0 = hp.t0
+    hp_trimmed.dt = hp.dt
+    hc_trimmed = TimeSeries(hc_values)
+    hc_trimmed.t0 = hc.t0
+    hc_trimmed.dt = hc.dt
+
+    return hp_trimmed, hc_trimmed
+
 
 
 def time_array_condition_stage2(hp, hc, dt, fmin, fmax):
@@ -195,3 +206,35 @@ def resize_gwpy_timeseries(hp, start_id, new_length):
     hp_out.times = times_new
 
     return hp_out
+
+def taper_gwpy_timeseries(h, taper_kind):
+    """
+    Wrapper of the XLALSimInspiralREAL8WaveTaper routine from LALSuite.
+    Tapering will not be performed if the waveform is shorter than 3 points.
+
+    Parameters
+    ----------
+    h: gwpy.TimeSeries
+        TimeSeries object to be tapered
+
+    taper_kind: str
+        Kind of taper to be applied. Choose from 'start', 'end', 'startend', 'none'
+
+    Returns
+    -------
+    h: gwpy.TimeSeries
+        Tapered TimeSeries object
+    """
+
+    string_to_taper = {
+                       'start'   : 1,
+                       'end'     : 2,
+                       'startend': 3,
+                       'none'    : 0
+                       }
+    # Create the LAL vector and apply the taper
+    h_real8      = lal.CreateREAL8Vector(len(h))
+    np.copyto(h_real8.data, h.data)
+    SimInspiralREAL8WaveTaper(h_real8, string_to_taper[taper_kind])
+    h.data = h_real8.data
+    return h

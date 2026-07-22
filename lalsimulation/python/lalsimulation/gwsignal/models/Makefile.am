@@ -10,6 +10,7 @@ pymoduledir = $(pkgpythondir)/gwsignal/models
 pymodule_PYTHON = \
 	__init__.py \
 	pyseobnr_model.py \
+	teobresums.py \
 	$(END_OF_LIST)
 
 endif
