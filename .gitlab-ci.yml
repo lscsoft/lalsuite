@@ -244,7 +244,6 @@ workflow:
         ($CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web")
         && $LCI_PIPE_TYPE == "sched-release"
         && $CI_PROJECT_PATH == "lscsoft/lalsuite"
-        && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: always
       auto_cancel:
         on_new_commit: none   # do not cancel scheduled pipelines

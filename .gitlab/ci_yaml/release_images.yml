@@ -103,23 +103,7 @@ release-image:
     - .release-image-matrix
     - .generic-job
   script:
-    # download packages from latest release tag
-    - |
-      for pkg in ${LCI_PKGLIST}; do
-        ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/gitlab_server_tasks \
-            ${CI_SERVER_URL} lscsoft/lalsuite \
-            get-artifacts --latest-tag lalsuite-v --write-ref-name LALSUITE_TAG "${pkg}: [${LCI_PLAT}, ${LCI_ENV}, lalsuite-tag]"
-      done
-    # parse the LALSuite version number from the latest release tag
-    - version=$(sed 's/^lalsuite-v//' LALSUITE_TAG)
-    # export the major version
-    - echo "LALSUITE_MAJOR=$(echo ${version} | cut -d. -f1)" > lalsuite_tag.env
-    # export the minor version
-    - echo "LALSUITE_MINOR=$(echo ${version} | cut -d. -f2)" >> lalsuite_tag.env
-    # export the patch version
-    - echo "LALSUITE_PATCH=$(echo ${version} | cut -d. -f3)" >> lalsuite_tag.env
-    # show exported environment
-    - cat lalsuite_tag.env
+    - exit 0
   artifacts:
     paths:
       # packages
@@ -160,6 +144,8 @@ release-image:deploy:
       ${LCI_RELEASE_IMG}:${LALSUITE_MAJOR}.${LALSUITE_MINOR}-${LCI_PLAT}
       ${LCI_RELEASE_IMG}:${LALSUITE_MAJOR}.${LALSUITE_MINOR}.${LALSUITE_PATCH}-${LCI_PLAT_BASE}
       ${LCI_RELEASE_IMG}:${LALSUITE_MAJOR}.${LALSUITE_MINOR}.${LALSUITE_PATCH}-${LCI_PLAT}
+  script:
+    - exit 0
   rules:
     # only run for building release Docker images
     - if: >-
