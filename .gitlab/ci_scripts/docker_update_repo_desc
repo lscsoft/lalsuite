@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+
+"""Update Docker repository description."""
+
+import argparse
+import logging
+import sys
+from pathlib import Path
+
+import requests
+
+# configure logging
+LOGGER = logging.getLogger(__name__.rsplit(".", 1)[-1])
+try:
+    from coloredlogs import ColoredFormatter as _Formatter
+except ImportError:
+    _Formatter = logging.Formatter
+if not LOGGER.hasHandlers():
+    _LOG_HANDLER = logging.StreamHandler()
+    _LOG_HANDLER.setFormatter(
+        _Formatter(
+            fmt="[%(asctime)s] %(levelname)+8s: %(message)s",
+        )
+    )
+    LOGGER.addHandler(_LOG_HANDLER)
+LOGGER.setLevel(logging.DEBUG)
+
+
+def parse_command_line():
+    """Parse command line"""
+
+    # Create parser
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "-R",
+        "--readme-md",
+        type=Path,
+        required=True,
+        help="LALSuite README Markdown file",
+    )
+    parser.add_argument(
+        "-D",
+        "--image-desc-md",
+        type=Path,
+        required=True,
+        help="Release image Markdown file",
+    )
+    parser.add_argument(
+        "-u", "--username", type=str, required=True, help="Docker username"
+    )
+    parser.add_argument(
+        "-p",
+        "--password",
+        type=str,
+        required=True,
+        help="Docker password or personal access token (PAT)",
+    )
+    parser.add_argument("registry", type=str, help="Docker registry")
+    parser.add_argument("image", type=str, help="Docker image")
+
+    # Parse command line
+    args = parser.parse_args()
+
+    return args
+
+
+def build_descriptions(args):
+
+    # Read Markdown files
+    with args.readme_md.open() as f:
+        readme = f.readlines()
+    with args.image_desc_md.open() as f:
+        image_desc = f.readlines()
+
+    # Build descriptions
+    description = readme[0].lstrip("#").strip()
+    full_description = "".join([readme[0], "\n"] + image_desc + readme[1:]).strip()
+
+    return description, full_description
+
+
+def update_docker_hub_repo_desc(args, description, full_description):
+    """Update Docker Hub repository descrition."""
+
+    # Authenticate with Docker Hub
+    login_url = "https://hub.docker.com/v2/users/login"
+    login_data = {"username": args.username, "password": args.password}
+    login_headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+    }
+    LOGGER.info("authenticating with Docker Hub...")
+    login_response = requests.post(login_url, json=login_data)
+    if login_response.status_code != 200:
+        LOGGER.critical(
+            f"authentication failed: status_code={login_response.status_code}, message={login_response.text}"
+        )
+        sys.exit(1)
+    token = login_response.json().get("token")
+
+    # Send PATCH request
+    patch_url = "https://hub.docker.com/v2/repositories/" + args.image
+    patch_payload = {"description": description, "full_description": full_description}
+    patch_headers = {
+        "Authorization": f"JWT {token}",
+        "Content-Type": "application/json",
+    }
+    LOGGER.info("updating Docker Hub repository description...")
+    patch_response = requests.patch(
+        patch_url, json=patch_payload, headers=patch_headers
+    )
+    if patch_response.status_code != 200:
+        LOGGER.critical(
+            f"update failed: status_code={patch_response.status_code}, message={patch_response.text}"
+        )
+        sys.exit(1)
+
+    LOGGER.info("success updating Docker Hub repository description")
+
+
+def main():
+    """Main program"""
+
+    # Parse command line
+    args = parse_command_line()
+
+    # Build descriptions
+    description, full_description = build_descriptions(args)
+
+    # Update repository description
+    LOGGER.info(f"registry is {args.registry}; image is {args.image}")
+    if args.registry == "docker.io":
+
+        # Update Docker Hub repository descrition
+        update_docker_hub_repo_desc(args, description, full_description)
+
+    else:
+        LOGGER.warning(f"not updating description for this registry")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
