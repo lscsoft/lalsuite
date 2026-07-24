@@ -117,7 +117,7 @@ code server][lalsuitesources].
 ## Docker Images
 
 Docker images of the latest development snapshot, as well as recent releases, of
-LALSuite are available from [DockerHub][dockerhub]. Images of the latest
+LALSuite are available from [Docker Hub][dockerhub]. Images of the latest
 development snapshot, and the most recent release, are updated weekly.
 
 ## Sources
