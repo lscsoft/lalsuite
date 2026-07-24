@@ -84,6 +84,7 @@ snapshot-image:deploy:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     # push release snapshot images to these (unique) tags
+    # - KEEP SYNCED WITH .gitlab/ci_src/release_images_desc.md
     IMG_PATHS: >-
       ${LCI_RELEASE_IMG}:dev${LCI_DOCKER_REF_PLAT_TAG_SUFFIX}
       ${LCI_RELEASE_IMG}:dev-${LCI_PLAT_BASE}
@@ -148,6 +149,7 @@ release-image:deploy:
             LCI_JOB_TYPE: '$[[ matrix.LCI_JOB_TYPE ]]'
   variables:
     # push release images to these (unique) tags
+    # - KEEP SYNCED WITH .gitlab/ci_src/release_images_desc.md
     IMG_PATHS: >-
       ${LCI_RELEASE_IMG}:latest${LCI_DOCKER_REF_PLAT_TAG_SUFFIX}
       ${LCI_RELEASE_IMG}:latest-${LCI_PLAT_BASE}
@@ -164,3 +166,29 @@ release-image:deploy:
         $LCI_PIPE_TYPE != "sched-release"
       when: never
     - !reference [.default-matrix-rule, rules]
+
+docker-repo:update:
+  extends:
+    - .linux-job
+    - .generic-job
+    - .deploy-job
+  needs:
+    - job: snapshot-image:deploy
+      optional: true
+    - job: release-image:deploy
+      optional: true
+  script:
+    # update repository description
+    - ${LCI_SCRIPTS}/retry ${LCI_SCRIPTS}/docker_update_repo_desc
+          -R ./README.md
+          -D .gitlab/ci_src/release_images_desc.md
+          -u ${LCI_RELEASE_IMG_USERNAME}
+          -p ${LCI_RELEASE_IMG_TOKEN}
+          ${LCI_RELEASE_IMG_REGISTRY}
+          ${LCI_RELEASE_IMG}
+  rules:
+    - !reference [.deploy-check-execute, rules]
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-snapshot"
+    - if: >-
+        $LCI_PIPE_TYPE == "sched-release"
