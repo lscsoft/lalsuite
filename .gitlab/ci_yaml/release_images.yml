@@ -54,7 +54,7 @@
     # test image
     - docker run --rm ${IMG_PATHS%% *} lalapps_version
     # push image to registry
-    - docker login
+    - ${LCI_SCRIPTS}/retry docker login
           -u ${LCI_RELEASE_IMG_USERNAME}
           -p ${LCI_RELEASE_IMG_TOKEN}
           ${LCI_RELEASE_IMG_REGISTRY}

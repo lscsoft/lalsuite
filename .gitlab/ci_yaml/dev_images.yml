@@ -145,7 +145,10 @@ dev-image:conda:
     # build image
     - ${LCI_SCRIPTS}/retry docker compose build
     # push image to registry
-    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - ${LCI_SCRIPTS}/retry docker login
+          -u gitlab-ci-token
+          -p ${CI_JOB_TOKEN}
+          ${CI_REGISTRY}
     - ${LCI_SCRIPTS}/retry docker compose push -q
 
 dev-image:other:
@@ -174,7 +177,10 @@ dev-image:other:
     # build image
     - ${LCI_SCRIPTS}/retry docker compose build
     # push image to registry
-    - docker login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - ${LCI_SCRIPTS}/retry docker login
+          -u gitlab-ci-token
+          -p ${CI_JOB_TOKEN}
+          ${CI_REGISTRY}
     - ${LCI_SCRIPTS}/retry docker compose push -q
 
 .dev-image-deploy-job:
@@ -184,7 +190,10 @@ dev-image:other:
     - .deploy-job
   dependencies: []
   script:
-    - crane auth login -u gitlab-ci-token -p ${CI_JOB_TOKEN} ${CI_REGISTRY}
+    - ${LCI_SCRIPTS}/retry crane auth login
+          -u gitlab-ci-token
+          -p ${CI_JOB_TOKEN}
+          ${CI_REGISTRY}
     # copy testing image to production image
     - ${LCI_SCRIPTS}/retry crane copy ${TESTING_IMG_PATH} ${FINAL_IMG_PATH}
     # delete testing image
