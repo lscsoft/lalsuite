@@ -88,35 +88,30 @@ conda activate lalsuite-ci
 # pin LALSuite build dependencies to prevent aggressive upgrades
 yq -r '.dependencies[] | select(type == "string")' ./conda-dev-env.yml | while IFS= read -r pkg_dep; do
     pkg_name=$(echo "${pkg_dep}" | sed 's/[ <=>].*//')
-    pkg_vers=$(echo "${pkg_dep}" | sed "s/^${pkg_name} *//")
+    pkg_verspec=$(echo "${pkg_dep}" | sed "s/^${pkg_name} *//")
+    pkg_version=$(conda list --name lalsuite-ci --full-name ${pkg_name} --json | yq -r '.[0].version')
 
-    # check if package already has a pin
-    pkg_existing_pin=$(conda config --show pinned_packages | yq -r '.pinned_packages[] | select(test("^'"${pkg_name}"'[<=>]"))')
-    if [ "X${pkg_existing_pin}" = X ]; then
-        pkg_version=$(conda list --name lalsuite-ci --full-name ${pkg_name} --json | yq -r '.[0].version')
+    # if package has not maximum version restriction, use the currently installed version as a maximum
+    case "${pkg_verspec}" in
+        '='*)          # matches =, ==
+            pkg_pin="${pkg_dep}"
+            ;;
+        *'<'*)         # matches <, <=
+            pkg_pin="${pkg_dep}"
+            ;;
+        *'>'*)         # matches >, >=
+            pkg_pin="${pkg_dep},<=${pkg_version}"
+            ;;
+        '')            # no version specifier
+            pkg_pin="${pkg_name} <=${pkg_version}"
+            ;;
+        *)
+            echo "ERROR: could not parse Conda version specifier '${pkg_verspec}'"
+            exit 1
+            ;;
+    esac
+    conda config --add pinned_packages "${pkg_pin}"
 
-        # if package has not maximum version restriction, use the currently installed version as a maximum
-        case "${pkg_vers}" in
-            '='*)          # matches =, ==
-                pkg_pin="${pkg_dep}"
-                ;;
-            *'<'*)         # matches <, <=
-                pkg_pin="${pkg_dep}"
-                ;;
-            *'>'*)         # matches >, >=
-                pkg_pin="${pkg_dep},<=${pkg_version}"
-                ;;
-            '')            # no version specifier
-                pkg_pin="${pkg_name} <=${pkg_version}"
-                ;;
-            *)
-                echo "ERROR: could not parse Conda version specifier '${pkg_vers}'"
-                exit 1
-                ;;
-        esac
-        conda config --add pinned_packages "${pkg_pin}"
-
-    fi
 done
 
 # install required CI packages
