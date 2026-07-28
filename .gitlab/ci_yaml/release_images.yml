@@ -84,6 +84,8 @@ snapshot-image:deploy:
       parallel: !reference [.pkg-level-needs, parallel]
   variables:
     # push release snapshot images to these (unique) tags
+    # - keep in sync with igwn/lalsuite repository overview:
+    #   https://hub.docker.com/r/igwn/lalsuite
     IMG_PATHS: >-
       ${LCI_RELEASE_IMG}:dev${LCI_DOCKER_REF_PLAT_TAG_SUFFIX}
       ${LCI_RELEASE_IMG}:dev-${LCI_PLAT_BASE}
@@ -148,6 +150,8 @@ release-image:deploy:
             LCI_JOB_TYPE: '$[[ matrix.LCI_JOB_TYPE ]]'
   variables:
     # push release images to these (unique) tags
+    # - keep in sync with igwn/lalsuite repository overview:
+    #   https://hub.docker.com/r/igwn/lalsuite
     IMG_PATHS: >-
       ${LCI_RELEASE_IMG}:latest${LCI_DOCKER_REF_PLAT_TAG_SUFFIX}
       ${LCI_RELEASE_IMG}:latest-${LCI_PLAT_BASE}
