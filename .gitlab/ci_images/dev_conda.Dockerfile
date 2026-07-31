@@ -89,7 +89,8 @@ conda activate lalsuite-ci
 yq -r '.dependencies[] | select(type == "string")' ./conda-dev-env.yml | while IFS= read -r pkg_dep; do
     pkg_name=$(echo "${pkg_dep}" | sed 's/[ <=>].*//')
     pkg_verspec=$(echo "${pkg_dep}" | sed "s/^${pkg_name} *//")
-    pkg_version=$(conda list --name lalsuite-ci --full-name ${pkg_name} --json | yq -r '.[0].version')
+    pkg_majvers=$(conda list --name lalsuite-ci --full-name ${pkg_name} --json | yq -r '.[0].version | split(".")[0] | tonumber | . + 1')
+    pkg_maxvers="${pkg_majvers}.0.0a0"
 
     # if package has not maximum version restriction, use the currently installed version as a maximum
     case "${pkg_verspec}" in
@@ -100,10 +101,10 @@ yq -r '.dependencies[] | select(type == "string")' ./conda-dev-env.yml | while I
             pkg_pin="${pkg_dep}"
             ;;
         *'>'*)         # matches >, >=
-            pkg_pin="${pkg_dep},<=${pkg_version}"
+            pkg_pin="${pkg_dep},<=${pkg_maxvers}"
             ;;
         '')            # no version specifier
-            pkg_pin="${pkg_name} <=${pkg_version}"
+            pkg_pin="${pkg_name} <=${pkg_maxvers}"
             ;;
         *)
             echo "ERROR: could not parse Conda version specifier '${pkg_verspec}'"
