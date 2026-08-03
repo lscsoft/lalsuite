@@ -287,7 +287,9 @@ void XLALWeaveOutputResultsDestroy(
 int XLALWeaveOutputResultsAdd(
   WeaveOutputResults *out,
   const WeaveSemiResults *semi_res,
-  const UINT4 semi_nfreqs
+  const UINT4 semi_nfreqs,
+  WeaveResultsToplistItemSelect toplist_select_fcn,
+  const void *toplist_select_extra_params
 )
 {
 
@@ -297,7 +299,7 @@ int XLALWeaveOutputResultsAdd(
 
   // Add results to toplists
   for ( size_t i = 0; i < out->ntoplists; ++i ) {
-    XLAL_CHECK( XLALWeaveResultsToplistAdd( out->toplists[i], semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveResultsToplistAdd( out->toplists[i], semi_res, semi_nfreqs, toplist_select_fcn, toplist_select_extra_params ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Add to histogram of mean multi-F-statistics
@@ -465,7 +467,9 @@ int XLALWeaveOutputResultsWrite(
 int XLALWeaveOutputResultsReadAppend(
   FITSFile *file,
   WeaveOutputResults **out,
-  UINT4 toplist_limit
+  UINT4 toplist_limit,
+  WeaveResultsToplistItemSelect toplist_select_fcn,
+  const void *toplist_select_extra_params
 )
 {
 
@@ -590,7 +594,7 @@ int XLALWeaveOutputResultsReadAppend(
 
   // Read and append to toplists
   for ( size_t i = 0; i < ( *out )->ntoplists; ++i ) {
-    XLAL_CHECK( XLALWeaveResultsToplistReadAppend( file, ( *out )->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveResultsToplistReadAppend( file, ( *out )->toplists[i], toplist_select_fcn, toplist_select_extra_params ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Read and append histogram of mean multi-F-statistics

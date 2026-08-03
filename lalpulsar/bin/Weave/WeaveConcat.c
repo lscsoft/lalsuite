@@ -29,6 +29,110 @@
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
 
+// User input choices for F-statistic consistency veto
+extern const UserChoices WeaveFstatConsistencyVetoChoices;
+
+// User help string for F-statistic consistency veto
+extern const char *const WeaveFstatConsistencyVetoHelpString;
+
+typedef struct {
+  // Statistics to apply F-stat consistency veto to
+  WeaveStatisticType apply_Fstat_consistency_veto;
+} Fstat_consistency_veto_params;
+
+static BOOLEAN Fstat_consistency_veto(
+  const REAL4 twoF,
+  const REAL4 twoF_det[PULSAR_MAX_DETECTORS]
+)
+{
+
+  // Compute maximum twoF over detectors
+  REAL4 twoF_det_max = 0.0;
+  size_t ndet = 0;
+  for ( size_t X = 0; X < PULSAR_MAX_DETECTORS; ++X ) {
+    if ( isfinite( twoF_det[X] ) && twoF_det[X] > 0 ) {
+      ++ndet;
+      if ( twoF_det[X] > twoF_det_max ) {
+        twoF_det_max = twoF_det[X];
+      }
+    }
+  }
+
+  // Always pass if there is only one detector, or no per-detector F-statistics
+  if ( ndet < 2 ) {
+    return 1;
+  }
+
+  // F-statistics are consitent if multi-detector twoF is
+  // greater than maximum of single-detector twoFs
+  return twoF > twoF_det_max;
+
+}
+
+static BOOLEAN results_toplist_item_select_Fstat_consistency_veto(
+  const WeaveResultsToplistItem *item,
+  const WeaveStatisticsParams *params,
+  const void *extra_params
+)
+{
+
+  // Unpack extra params
+  const Fstat_consistency_veto_params *par = ( const Fstat_consistency_veto_params * ) extra_params;
+  const WeaveStatisticType apply = par->apply_Fstat_consistency_veto;
+
+  // Iterate over stages
+  for ( size_t s = 0; s < 2; ++s ) {
+    const WeaveStatisticType stats = params->statistics_to_output[s];
+    const WeaveStatisticsValues *const stage = &item->stage[s];
+
+    // Apply F-stat consistency veto to coherent F-statistics
+    if (
+      ( stats & WEAVE_STATISTIC_COH2F ) &&
+      ( stats & WEAVE_STATISTIC_COH2F_DET ) &&
+      ( apply & WEAVE_STATISTIC_COH2F )
+    ) {
+      for ( UINT4 i = 0; i < params->nsegments; ++i ) {
+        REAL4 twoF = stage->coh2F[i];
+        REAL4 twoF_det[PULSAR_MAX_DETECTORS] = {0.0};
+        for ( size_t X = 0; X < PULSAR_MAX_DETECTORS; ++X ) {
+          if ( stage->coh2F_det[X] != NULL ) {
+            twoF_det[X] = stage->coh2F_det[X][i];
+          }
+        }
+        if ( !Fstat_consistency_veto( twoF, twoF_det ) ) {
+          return 0;
+        }
+      }
+    }
+
+    // Apply F-stat consistency veto to summed F-statistic
+    if (
+      ( stats & WEAVE_STATISTIC_SUM2F ) &&
+      ( stats & WEAVE_STATISTIC_SUM2F_DET ) &&
+      ( apply & WEAVE_STATISTIC_SUM2F )
+    ) {
+      if ( !Fstat_consistency_veto( stage->sum2F, stage->sum2F_det ) ) {
+        return 0;
+      }
+    }
+
+    // Apply F-stat consistency veto to mean F-statistic
+    if (
+      ( stats & WEAVE_STATISTIC_MEAN2F ) &&
+      ( stats & WEAVE_STATISTIC_MEAN2F_DET ) &&
+      ( apply & WEAVE_STATISTIC_MEAN2F )
+    ) {
+      if ( !Fstat_consistency_veto( stage->mean2F, stage->mean2F_det ) ) {
+        return 0;
+      }
+    }
+
+  }
+
+  return 1;
+
+}
+
 int main( int argc, char *argv[] )
 {
 
@@ -41,8 +145,10 @@ int main( int argc, char *argv[] )
   struct uvar_type {
     CHAR *output_result_file;
     LALStringVector *input_result_files;
+    int Fstat_consistency_veto;
     UINT4 toplist_limit;
   } uvar_struct = {
+    .Fstat_consistency_veto = WEAVE_STATISTIC_NONE,
     .toplist_limit = 0,
   };
   struct uvar_type *const uvar = &uvar_struct;
@@ -58,6 +164,12 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     output_result_file, STRING, 'o', REQUIRED,
     "Output concatenated result file. "
+  );
+
+  XLALRegisterUvarAuxDataMember(
+    Fstat_consistency_veto, UserFlag, &WeaveFstatConsistencyVetoChoices, 'F', OPTIONAL,
+    "Apply the multi-detector F-statistic consistency veto to the given statistics:\n"
+    "%s", WeaveFstatConsistencyVetoHelpString
   );
   XLALRegisterUvarMember(
     toplist_limit, UINT4, 'n', OPTIONAL,
@@ -79,6 +191,16 @@ int main( int argc, char *argv[] )
     return EXIT_FAILURE;
   }
   LogPrintf( LOG_NORMAL, "Parsed user input successfully\n" );
+
+  ////////// Set up F-statistic consistency veto //////////
+
+  WeaveResultsToplistItemSelect toplist_select_fcn = NULL;
+  Fstat_consistency_veto_params toplist_select_extra_params = {
+    .apply_Fstat_consistency_veto = uvar->Fstat_consistency_veto,
+  };
+  if ( uvar->Fstat_consistency_veto != 0 ) {
+    toplist_select_fcn = results_toplist_item_select_Fstat_consistency_veto;
+  }
 
   ////////// Concatenate output results //////////
 
@@ -124,7 +246,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK( XLALFITSHeaderReadREAL8( file, "cpu total", &cpu_total_i ) == XLAL_SUCCESS, XLAL_EFUNC );
       cpu_total += cpu_total_i;
     }
-    XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out, uvar->toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out, uvar->toplist_limit, toplist_select_fcn, &toplist_select_extra_params ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLALFITSFileClose( file );
     LogPrintf( LOG_NORMAL, "Closed input result file '%s'\n", uvar->input_result_files->data[i] );
   }
