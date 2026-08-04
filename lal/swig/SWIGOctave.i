@@ -44,9 +44,73 @@ extern "C++" {
 }
 %}
 
+// Octave version compatibility.
+//
+// Octave has progressively moved classes into the octave namespace and removed
+// the old global names. Using the new names unconditionally would break older
+// Octave versions, so alias them here and use the aliases below:
+//  - Octave 4.4 added octave::feval(); the global feval() is gone in Octave 11
+//  - Octave 6.0 added octave::mach_info and octave::stream, replacing
+//    oct_mach_info and octave_stream
+//  - Octave 7.0 replaced the Range class with the octave::range<T> template
+//
+// <cassert> is also included here: assert() is used below, and recent Octave
+// headers no longer include it transitively.
+// assert() is used by this file *and* by SWIG's own Octave runtime, which is
+// emitted before any %header block, so include <cassert> from %begin.
+%begin %{
+#include <cassert>
+%}
+%header %{
+#if SWIG_OCTAVE_PREREQ(4,4,0)
+#define swiglal_feval octave::feval
+#else
+#define swiglal_feval feval
+#endif
+#if SWIG_OCTAVE_PREREQ(6,0,0)
+typedef octave::mach_info::float_format swiglal_float_format;
+#else
+typedef oct_mach_info::float_format swiglal_float_format;
+#endif
+#if SWIG_OCTAVE_PREREQ(4,4,0)
+typedef octave::stream swiglal_stream;
+#else
+typedef octave_stream swiglal_stream;
+#endif
+#if SWIG_OCTAVE_PREREQ(7,0,0)
+typedef octave::range<double> swiglal_range;
+#else
+typedef Range swiglal_range;
+#endif
+// Octave 4.4 renamed these octave_value predicates
+#if SWIG_OCTAVE_PREREQ(4,4,0)
+#define swiglal_isempty    isempty
+#define swiglal_iscell     iscell
+#define swiglal_isreal     isreal
+#define swiglal_iscomplex  iscomplex
+#else
+#define swiglal_isempty    is_empty
+#define swiglal_iscell     is_cell
+#define swiglal_isreal     is_real_type
+#define swiglal_iscomplex  is_complex_type
+#endif
+// Octave 7.0 renamed octave_value::do_index_op() to index_op()
+#if SWIG_OCTAVE_PREREQ(7,0,0)
+#define swiglal_ov_index_op index_op
+#else
+#define swiglal_ov_index_op do_index_op
+#endif
+// Octave 9.0 renamed the octave_base_value reference counter to m_count
+#if SWIG_OCTAVE_PREREQ(9,0,0)
+#define swiglal_ov_count    m_count
+#else
+#define swiglal_ov_count    count
+#endif
+%}
+
 // Evaluates true if an octave_value is not empty, false otherwise.
 %header %{
-#define swiglal_not_empty(v)  (!(v).is_empty())
+#define swiglal_not_empty(v)  (!(v).swiglal_isempty())
 %}
 
 // Name of octave_value containing the SWIG wrapping of the struct whose members are being accessed.
@@ -89,7 +153,7 @@ SWIGINTERN int swiglal_output_stdouterr(void) {
 
   // Write standard output
   {
-    octave_value_list args = feval("stdout", octave_value_list(), 1);
+    octave_value_list args = swiglal_feval("stdout", octave_value_list(), 1);
     if (args.length() < 1) {
       return 0;
     }
@@ -98,13 +162,13 @@ SWIGINTERN int swiglal_output_stdouterr(void) {
     char buf[512];
     while (fgets(buf, sizeof(buf), swiglal_tmp_stdout) != NULL) {
       args(2) = octave_value(std::string(buf));
-      feval("fprintf", args, 0);
+      swiglal_feval("fprintf", args, 0);
     }
   }
 
   // Write standard error
   {
-    octave_value_list args = feval("stderr", octave_value_list(), 1);
+    octave_value_list args = swiglal_feval("stderr", octave_value_list(), 1);
     if (args.length() < 1) {
       return 0;
     }
@@ -113,7 +177,7 @@ SWIGINTERN int swiglal_output_stdouterr(void) {
     char buf[512];
     while (fgets(buf, sizeof(buf), swiglal_tmp_stderr) != NULL) {
       args(2) = octave_value(std::string(buf));
-      feval("fprintf", args, 0);
+      swiglal_feval("fprintf", args, 0);
     }
   }
 
@@ -205,7 +269,7 @@ SWIGINTERN int swiglal_output_stdouterr(void) {
   }
   octave_value_list retn;
   if (datenum_args.length() > 0) {
-    retn = feval("datenum", datenum_args, 1);
+    retn = swiglal_feval("datenum", datenum_args, 1);
   }
   if (retn.length() == 0) {
     %argument_fail(SWIG_ValueError, "$type", $symname, $argnum);
@@ -517,7 +581,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
           // Get the scalar index of the Octave array element, and the element itself.
           objidx.front()(0) = get_scalar_idx(idx, objdims) + 1;
-          octave_value objelem = obj.subsref(obj.is_cell() ? "{" : "(", objidx);
+          octave_value objelem = obj.subsref(obj.swiglal_iscell() ? "{" : "(", objidx);
 
           // Copy the Octave array element to the C array.
           int res = HELPER::incall(sloav_parent, objelem, sloav_get_element_ptr(idx), pelemalloc, sloav_esize, sloav_isptr, sloav_tinfo, sloav_tflags | tflags);
@@ -557,7 +621,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
           // Copy the C array element to the Octave array.
           octave_value objelem = HELPER::outcall(sloav_parent, copyobj, sloav_get_element_ptr(idx), sloav_esize, sloav_isptr, sloav_tinfo, sloav_tflags);
-          obj = obj.subsasgn(obj.is_cell() ? "{" : "(", objidx, objelem);
+          obj = obj.subsasgn(obj.swiglal_iscell() ? "{" : "(", objidx, objelem);
 
           // Increment the Octave array index.
           sloav_increment_idx(idx);
@@ -592,7 +656,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
       // Do indexing without resizing.
       octave_value do_index_op(const octave_value_list& idx, bool resize_ok) {
-        return sloav_array_out().do_index_op(idx, false);
+        return sloav_array_out().swiglal_ov_index_op(idx, false);
       }
       octave_value_list do_multi_index_op(int nargout, const octave_value_list& idx) {
         return sloav_array_out().do_multi_index_op(nargout, idx);
@@ -625,7 +689,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
           error("failed to perform indexed assignment for %s type: %s", n.c_str(), e.c_str());
           return octave_value();
         }
-        count++;
+        swiglal_ov_count++;
         return octave_value(this);
       }
 
@@ -643,7 +707,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       bool save_binary(std::ostream& os, bool& save_as_floats) {
         return sloav_array_out().save_binary(os, save_as_floats);
       }
-      bool load_binary(std::istream& is, bool swap, oct_mach_info::float_format fmt) {
+      bool load_binary(std::istream& is, bool swap, swiglal_float_format fmt) {
         octave_value obj = sloav_array_out();
         int elemalloc = 0;
         return obj.load_binary(is, swap, fmt) && SWIG_IsOK(sloav_array_in(obj, &elemalloc, 0));
@@ -714,7 +778,11 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       SLOAV_OBV_METH_FROM_CLASS_0(is_classdef_superclass_ref, bool);
       SLOAV_OBV_METH_FROM_CLASS_0(is_complex_matrix, bool);
       SLOAV_OBV_METH_FROM_CLASS_0(is_complex_scalar, bool);
+%#if SWIG_OCTAVE_PREREQ(4,4,0)
+      SLOAV_OBV_METH_FROM_CLASS_0(iscomplex, bool);
+%#else
       SLOAV_OBV_METH_FROM_CLASS_0(is_complex_type, bool);
+%#endif
       SLOAV_OBV_METH_FROM_CLASS_0(is_constant, bool);
       SLOAV_OBV_METH_FROM_CLASS_0(is_cs_list, bool);
       SLOAV_OBV_METH_FROM_CLASS_0(is_defined, bool);
@@ -743,7 +811,11 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       SLOAV_OBV_METH_FROM_CLASS_0(is_real_matrix, bool);
       SLOAV_OBV_METH_FROM_CLASS_0(is_real_nd_array, bool);
       SLOAV_OBV_METH_FROM_CLASS_0(is_real_scalar, bool);
+%#if SWIG_OCTAVE_PREREQ(4,4,0)
+      SLOAV_OBV_METH_FROM_CLASS_0(isreal, bool);
+%#else
       SLOAV_OBV_METH_FROM_CLASS_0(is_real_type, bool);
+%#endif
       SLOAV_OBV_METH_FROM_CLASS_0(is_scalar_type, bool);
       SLOAV_OBV_METH_FROM_CLASS_0(is_single_type, bool);
       SLOAV_OBV_METH_FROM_CLASS_0(is_sparse_type, bool);
@@ -826,7 +898,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       SLOAV_OBV_METH_FROM_ARRAY_0(nnz, octave_idx_type);
       SLOAV_OBV_METH_FROM_ARRAY_0(nzmax, octave_idx_type);
       SLOAV_OBV_METH_FROM_ARRAY_0(perm_matrix_value, PermMatrix);
-      SLOAV_OBV_METH_FROM_ARRAY_0(range_value, Range);
+      SLOAV_OBV_METH_FROM_ARRAY_0(range_value, swiglal_range);
       SLOAV_OBV_METH_FROM_ARRAY_0(real, octave_value);
       SLOAV_OBV_METH_FROM_ARRAY_0(round, octave_value);
       SLOAV_OBV_METH_FROM_ARRAY_0(roundb, octave_value);
@@ -905,7 +977,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       SLOAV_OBV_METH_FROM_ARRAY_2(ushort_value, unsigned short int, bool, bool);
       SLOAV_OBV_METH_FROM_ARRAY_3(convert_to_str_internal, octave_value, bool, bool, char);
       SLOAV_OBV_METH_FROM_ARRAY_3(sort, octave_value, Array<octave_idx_type>&, octave_idx_type, sortmode);
-      SLOAV_OBV_METH_FROM_ARRAY_5(write, int, octave_stream&, int, oct_data_conv::data_type, int, oct_mach_info::float_format);
+      SLOAV_OBV_METH_FROM_ARRAY_5(write, int, swiglal_stream&, int, oct_data_conv::data_type, int, swiglal_float_format);
 #undef SLOAV_OBV_METH_FROM_ARRAY_0
 #undef SLOAV_OBV_METH_FROM_ARRAY_1
 #undef SLOAV_OBV_METH_FROM_ARRAY_2
@@ -1151,7 +1223,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     // Get pointer to Octave array data, a highly complicated and dodgy process!  Usually
     // mex_get_data() does the job, apart from complex arrays where that creates a copy ...
     // in which case try data() and try to detect copying ...
-    if (obj.is_complex_type() && !obj.is_scalar_type()) {
+    if (obj.swiglal_iscomplex() && !obj.is_scalar_type()) {
       if (obj.is_double_type()) {
         Complex c;
         {
@@ -1243,14 +1315,14 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %swiglal_oct_array_asvalfrom_frags(uint64_t, octave_uint64_matrix, intNDArray<octave_int<uint64_t> >, uint64_array_value, obj.is_uint64_type());
 
 // Array conversion fragments for floating-precision real arrays.
-%swiglal_oct_array_asvalfrom_frags(float, octave_float_matrix, FloatMatrix, float_matrix_value, obj.is_real_type() && obj.is_single_type());
-%swiglal_oct_array_asvalfrom_frags(double, octave_matrix, Matrix, matrix_value, obj.is_real_type() && obj.is_double_type());
+%swiglal_oct_array_asvalfrom_frags(float, octave_float_matrix, FloatMatrix, float_matrix_value, obj.swiglal_isreal() && obj.is_single_type());
+%swiglal_oct_array_asvalfrom_frags(double, octave_matrix, Matrix, matrix_value, obj.swiglal_isreal() && obj.is_double_type());
 
 // Array conversion fragments for floating-precision complex arrays.
-%swiglal_oct_array_asvalfrom_frags(gsl_complex_float, octave_float_complex_matrix, FloatComplexMatrix, float_complex_matrix_value, obj.is_complex_type() && obj.is_single_type());
-%swiglal_oct_array_asvalfrom_frags(gsl_complex, octave_complex_matrix, ComplexMatrix, complex_matrix_value, obj.is_complex_type() && obj.is_double_type());
-%swiglal_oct_array_asvalfrom_frags(COMPLEX8, octave_float_complex_matrix, FloatComplexMatrix, float_complex_matrix_value, obj.is_complex_type() && obj.is_single_type());
-%swiglal_oct_array_asvalfrom_frags(COMPLEX16, octave_complex_matrix, ComplexMatrix, complex_matrix_value, obj.is_complex_type() && obj.is_double_type());
+%swiglal_oct_array_asvalfrom_frags(gsl_complex_float, octave_float_complex_matrix, FloatComplexMatrix, float_complex_matrix_value, obj.swiglal_iscomplex() && obj.is_single_type());
+%swiglal_oct_array_asvalfrom_frags(gsl_complex, octave_complex_matrix, ComplexMatrix, complex_matrix_value, obj.swiglal_iscomplex() && obj.is_double_type());
+%swiglal_oct_array_asvalfrom_frags(COMPLEX8, octave_float_complex_matrix, FloatComplexMatrix, float_complex_matrix_value, obj.swiglal_iscomplex() && obj.is_single_type());
+%swiglal_oct_array_asvalfrom_frags(COMPLEX16, octave_complex_matrix, ComplexMatrix, complex_matrix_value, obj.swiglal_iscomplex() && obj.is_double_type());
 
 // Local Variables:
 // mode: c
