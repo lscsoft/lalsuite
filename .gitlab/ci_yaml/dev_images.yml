@@ -38,6 +38,10 @@
     matrix:
 
       # Enterprise Linux
+      - LCI_PLAT: "el10"
+        LCI_PLAT_BASE: "el"
+        LCI_DOCKER_ARGS: "EL_VERSION=el10"
+
       - LCI_PLAT: "el8"
         LCI_PLAT_BASE: "el"
         LCI_DOCKER_ARGS: "EL_VERSION=el8"

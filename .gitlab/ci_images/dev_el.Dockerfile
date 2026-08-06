@@ -50,6 +50,7 @@ dnf -y -q install \
     git \
     git-lfs \
     igwn-packaging-tools \
+    python3-pip \
     rpm-build \
     rpmlint \
     xz \
