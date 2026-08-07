@@ -1,5 +1,5 @@
 # python
-# Copyright (C) 2013, 2014, 2020--2024 Evan Goetz
+# Copyright (C) 2013, 2014, 2020--2026 Evan Goetz
 # Copyright (C) 2011, 2021, 2022 Karl Wette
 # Copyright (C) 2005, 2007 Gregory Mendell
 #
@@ -96,6 +96,8 @@ cache_re = re.compile(r"^([A-Z])(\s+)(\w+)(\s+)(\d+)(\s+)(\d+)(\s+)(.+gwf)")
 #               remapping files
 # 03/2025  eag; Rewrite to generate cache files running lalpulsar_MakeSFTDAG
 #               enabling frame files on /home or OSDF
+# 06/2026  eag; Update CPU request to add user argument (default = 1) and add
+#               condor pool restriction option
 
 
 def sft_name_from_vars(
@@ -426,6 +428,15 @@ dag_group.add_argument(
           for lalpulsar_MakeSFTs step",
 )
 dag_group.add_argument(
+    "--request-cpus",
+    type=int,
+    default=1,
+    choices=[1],
+    help="number of CPUs needed for lalpulsar_MakeSFTs step (at present, \
+          lalpulsar_MakeSFTs is a single-thread application, CPUs should \
+          always be 1 until any new development enables such a feature)",
+)
+dag_group.add_argument(
     "-A",
     "--accounting-group",
     required=True,
@@ -449,6 +460,15 @@ dag_group.add_argument(
           frames are on /home or running on the open science grid. \
           Usually frame files are visible on CIT, LHO, LLO clusters \
           so that this does not need to be specified in that case.",
+)
+dag_group.add_argument(
+    "--condor-pools",
+    type=str,
+    required=True,
+    help="Which HTCondor pools to use. Using the open science grid \
+         means --condor-pools=IGWN, but if you only want to run on \
+         the local pool then you would need to specify CIT, LHO, or \
+         LLO",
 )
 
 datafind_group.add_argument(
@@ -890,7 +910,8 @@ with open(makesfts_sub, "w") as MakeSFTsFID:
     MakeSFTsFID.write("notification = never\n")
     MakeSFTsFID.write(f"request_memory = {args.request_memory}MB\n")
     MakeSFTsFID.write(f"request_disk = {args.request_disk}MB\n")
-    MakeSFTsFID.write("RequestCpus = 1\n")
+    MakeSFTsFID.write(f"request_cpus = {args.request_cpus}\n")
+    MakeSFTsFID.write(f'MY.POOLS = "{args.condor_pools}"\n')
     MakeSFTsFID.write("should_transfer_files = yes\n")
     if args.transfer_frame_files:
         MakeSFTsFID.write("transfer_input_files = $(cachefile),$(framefiles)\n")
@@ -922,7 +943,7 @@ with open(movesfts_sub, "w") as MoveSFTsFID:
     MoveSFTsFID.write("notification = never\n")
     MoveSFTsFID.write(f"request_memory = 1GB\n")
     MoveSFTsFID.write(f"request_disk = 10MB\n")
-    MoveSFTsFID.write("RequestCpus = 1\n")
+    MoveSFTsFID.write("request_cpus = 1\n")
     if "MOVESFTS_PATH" in os.environ and not args.movesfts_path:
         MoveSFTsFID.write("getenv = MOVESFTS_PATH\n")
     MoveSFTsFID.write("queue 1\n")

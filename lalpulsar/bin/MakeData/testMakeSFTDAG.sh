@@ -21,6 +21,7 @@ acctgtag="ligo.sim.o4.cw.explore.test"
 acctgusr="albert.einstein"
 MSFTpath="/tmp/path/to"
 cachepath="${PWD}/frames.cache"
+condorpools="CIT"
 
 ## channels names in SFT names
 chan1sft=`echo "${chan1}" | sed 's/^H1://;s/[-_]//g'`
@@ -133,7 +134,7 @@ unittest public_SFTs \
     -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
     -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
-    -e ${cachepath}
+    -e ${cachepath} --condor-pools=${condorpools}
 if [[ $? -ne 77 ]]; then
     greptest public_SFTs \
          "-O 4 -K DEV -R 1" \
@@ -147,7 +148,7 @@ unittest two_SFTs_per_job \
     -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 2 \
     -A ${acctgtag} -U ${acctgusr} \
     -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
-    -e ${cachepath}
+    -e ${cachepath} --condor-pools=${condorpools}
 if [[ $? -ne 77 ]]; then
     greptest two_SFTs_per_job \
          "-O 4 -K DEV -R 1" \
@@ -161,7 +162,7 @@ unittest two_channels \
     -N ${chan1} ${chan2} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
     -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
-    -e ${cachepath}
+    -e ${cachepath} --condor-pools=${condorpools}
 if [[ $? -ne 77 ]]; then
     greptest two_channels \
          "-O 4 -K DEV -R 1" \
@@ -175,7 +176,7 @@ unittest private_SFTs \
     -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
     -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
-    -e ${cachepath}
+    -e ${cachepath} --condor-pools=${condorpools}
 if [[ $? -ne 77 ]]; then
     greptest private_SFTs \
         "-O 0 -X private" \
@@ -189,7 +190,7 @@ unittest default_window \
     -N ${chan1} -F ${fmin} -B ${Band} -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
     -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
-    -e ${cachepath}
+    -e ${cachepath} --condor-pools=${condorpools}
 if [[ $? -ne 77 ]]; then
     greptest default_window \
         "-O 4 -K DEV -R 1" \
@@ -203,7 +204,7 @@ unittest Tukey_window \
     -N ${chan1} -F ${fmin} -B ${Band} -w tukey:0.001 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
     -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
-    -e ${cachepath}
+    -e ${cachepath} --condor-pools=${condorpools}
 if [[ $? -ne 77 ]]; then
     greptest Tukey_window \
         "-O 4 -K DEV -R 1" \
@@ -217,7 +218,7 @@ unittest Tukey_window_2 \
     -N ${chan1} -F ${fmin} -B ${Band} -w tukey:0.5 -m 1 \
     -A ${acctgtag} -U ${acctgusr} \
     -g ${segs} -J ${MSFTpath} --movesfts-path=${MSFTpath} \
-    -e ${cachepath}
+    -e ${cachepath} --condor-pools=${condorpools}
 if [[ $? -ne 77 ]]; then
     greptest Tukey_window_2 \
          "-O 4 -K DEV -R 1" \
