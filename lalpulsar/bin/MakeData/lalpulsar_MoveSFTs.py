@@ -115,13 +115,10 @@ def find_SFT_files(source_directory, channel, dest_directory):
     # find source SFT files
     for src_root, _, src_files in os.walk(source_directory):
         for src_file in src_files:
+            if not src_file.endswith(".sft"):
+                continue
             src_file_ifo = src_file.split("_")[1]
-            if (
-                src_file.endswith(".sft")
-                and chan in src_file
-                and src_file.startswith(ifo[0])
-                and src_file_ifo == ifo
-            ):
+            if chan in src_file and src_file.startswith(ifo[0]) and src_file_ifo == ifo:
                 src_path = os.path.join(src_root, src_file)
                 _, src_name = os.path.split(src_path)
 
