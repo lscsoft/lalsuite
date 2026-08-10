@@ -13,7 +13,7 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set lalburst_version = "@MIN_LALBURST_VERSION@a0" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.5.0" %}
 
 package:
   name: {{ name }}-split
@@ -37,7 +37,7 @@ requirements:
     - {{ stdlib("c") }}
     - help2man >=1.37
     - make
-    - pkg-config
+    - pkg-config >=0.18.0
     - swig >={{ swig_version }}
   host:
     - gsl
@@ -118,7 +118,7 @@ outputs:
         - {{ stdlib("c") }}
         - help2man >=1.37
         - make
-        - pkg-config
+        - pkg-config >=0.18.0
         - swig >={{ swig_version }}
         # extras for cross-compilation:
         - cross-python_{{ target_platform }}  # [build_platform != target_platform]
@@ -146,7 +146,7 @@ outputs:
         - python-lalframe >={{ lalframe_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - tqdm
+        - tqdm >=4.0.0
     test:
       requires:
         - pytest >=4.0.0a0

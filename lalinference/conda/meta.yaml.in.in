@@ -22,7 +22,7 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set python_ligo_lw_version = "@MIN_PYTHON_IGWN_LIGOLW_VERSION@" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.5.0" %}
 
 # we can build manuals when:
 # - not cross-compiling
@@ -50,7 +50,7 @@ requirements:
     - {{ compiler('c') }}
     - {{ stdlib("c") }}
     - make
-    - pkg-config
+    - pkg-config >=0.18.0
     - swig >={{ swig_version }}
   host:
     - gsl
@@ -158,7 +158,7 @@ outputs:
         - {{ compiler('c') }}
         - {{ stdlib("c") }}
         - make
-        - pkg-config
+        - pkg-config >=0.18.0
         - swig >={{ swig_version }}
         # extras for cross compiling with python
         - python                              # [build_platform != target_platform]
@@ -183,7 +183,7 @@ outputs:
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - igwn-ligolw >={{ python_ligo_lw_version }}
         - igwn-segments
-        - matplotlib-base >=1.2.0
+        - matplotlib-base >=3.0.0
         - numpy
         - python
         - python-lal >={{ lal_version }}
@@ -266,9 +266,9 @@ outputs:
         # run requirements needed for help2man (not when cross compiling)
         - astropy >=1.1.1  # [manpages]
         - h5py  # [manpages]
-        - igwn-ligolw  # [manpages]
+        - igwn-ligolw >={{ python_ligo_lw_version }}  # [manpages]
         - ligo-gracedb  # [manpages]
-        - matplotlib-base >=1.2.0  # [manpages]
+        - matplotlib-base >=3.0.0  # [manpages]
         - python-lal >={{ lal_version }}  # [manpages]
         - python-lalsimulation >={{ lalsimulation_version }}  # [manpages]
         - scipy >=0.9.0  # [manpages]
@@ -284,7 +284,7 @@ outputs:
         - liblalmetaio >={{ lalmetaio_version }}
         - ligo-gracedb
         - llvm-openmp  # [osx and mpi != 'nompi']
-        - matplotlib-base >=1.2.0
+        - matplotlib-base >=3.0.0
         - {{ mpi }}  # [mpi != 'nompi']
         - python
         - python-lal >={{ lal_version }}

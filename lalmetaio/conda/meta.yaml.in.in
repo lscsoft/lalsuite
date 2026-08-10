@@ -11,7 +11,7 @@
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set metaio_version = "@MIN_METAIO_VERSION@" %}
 {% set python_ligo_lw_version = "@MIN_PYTHON_IGWN_LIGOLW_VERSION@" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.5.0" %}
 
 package:
   name: {{ name }}-split
@@ -98,7 +98,7 @@ outputs:
         - {{ stdlib("c") }}
         - help2man >=1.37
         - make
-        - pkg-config
+        - pkg-config >=0.18.0
         - swig >={{ swig_version }}
         # extras for cross-compilation:
         - cross-python_{{ target_platform }}  # [build_platform != target_platform]

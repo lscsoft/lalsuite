@@ -13,7 +13,7 @@
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set python_ligo_lw_version = "@MIN_PYTHON_IGWN_LIGOLW_VERSION@" %}
 {% set scipy_version = "@MIN_SCIPY_VERSION@" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.5.0" %}
 
 package:
   name: {{ name }}-split
@@ -124,20 +124,20 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         - scipy >={{ scipy_version }}
         - swig-abi
-        - tqdm
+        - tqdm >=4.0.0
       run:
         - gsl
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - igwn-ligolw >={{ python_ligo_lw_version }}
         - igwn-segments
-        - matplotlib-base
+        - matplotlib-base >=3.0.0
         - numpy
         - python
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - scipy >={{ scipy_version }}
-        - tqdm
+        - tqdm >=4.0.0
     test:
       requires:
         - pytest >=4.0.0a0

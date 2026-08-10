@@ -44,12 +44,12 @@ requirements:
     - {{ compiler('c') }}
     - help2man >=1.37  # [build_platform == target_platform]
     - make
-    - pkg-config
+    - pkg-config >=0.18.0
     # extras for cross-compiling
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
     - python                              # [build_platform != target_platform]
   host:
-    - astropy
+    - astropy >=1.1.1
     - cfitsio
     - gsl
     - libframel >={{ framel_version }}
@@ -64,7 +64,7 @@ requirements:
     - python
     # extras needed for help2man (not when cross compiling)
     - h5py  # [build_platform == target_platform]
-    - igwn-ligolw  # [build_platform == target_platform]
+    - igwn-ligolw >={{ python_ligo_lw_version }}  # [build_platform == target_platform]
     - igwn-segments  # [build_platform == target_platform]
     - numpy  # [build_platform == target_platform]
     - pillow  # [build_platform == target_platform]
@@ -75,9 +75,9 @@ requirements:
     - python-lalframe >={{ lalframe_version }}  # [build_platform == target_platform]
     - python-lalmetaio >={{ lalmetaio_version }}  # [build_platform == target_platform]
     - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
-    - tqdm
+    - tqdm >=4.0.0
   run:
-    - astropy
+    - astropy >=1.1.1
     - cfitsio
     - gsl
     - h5py
@@ -102,7 +102,7 @@ requirements:
     - python-lalinspiral >={{ lalinspiral_version }}
     - python-lalmetaio >={{ lalmetaio_version }}
     - python-lalsimulation >={{ lalsimulation_version }}
-    - tqdm
+    - tqdm >=4.0.0
 
 test:
   imports:

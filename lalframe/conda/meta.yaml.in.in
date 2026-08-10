@@ -11,7 +11,7 @@
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set framel_version = "@MIN_FRAMEL_VERSION@,<@MAX_FRAMEL_VERSION@a0" %}
 {% set framecpp_version = "@MIN_FRAMECPPC_VERSION@,<@MAX_FRAMECPPC_VERSION@a0" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.5.0" %}
 
 package:
   name: {{ name }}-split
@@ -35,7 +35,7 @@ requirements:
     - {{ stdlib("c") }}
     - help2man >=1.37
     - make
-    - pkg-config
+    - pkg-config >=0.18.0
     - swig >={{ swig_version }}
   host:
     - ldas-tools-framecpp >={{ framecpp_version }}
@@ -104,7 +104,7 @@ outputs:
         - {{ stdlib("c") }}
         - help2man >=1.37
         - make
-        - pkg-config
+        - pkg-config >=0.18.0
         - swig >={{ swig_version }}
         # extras for cross compiling with python
         - python                              # [build_platform != target_platform]

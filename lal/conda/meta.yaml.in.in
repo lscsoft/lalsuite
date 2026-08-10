@@ -13,7 +13,7 @@
 {% endif %}
 
 # dependency versions
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.5.0" %}
 
 # avoid circular imports that would break migrations
 {% set migrating = False %}
@@ -148,11 +148,11 @@ outputs:
         - numpy
         - python
         - python-dateutil
-        - scipy
+        - scipy >=0.9.0
     test:
       requires:
         - freezegun
-        - lscsoft-glue
+        - lscsoft-glue >=2.0.0
         - pytest >=4.0.0a0
       source_files:
         - test/python

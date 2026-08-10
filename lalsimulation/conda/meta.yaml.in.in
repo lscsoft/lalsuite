@@ -9,7 +9,7 @@
 
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.5.0" %}
 
 package:
   name: {{ name }}-split
@@ -51,7 +51,7 @@ requirements:
     - python-lal >={{ lal_version }}
     - swig-abi
     # extras for help2man / make check
-    - astropy  # [py != 39]
+    - astropy >=1.1.1  # [py != 39]
     - gwpy  # [py != 39]
 
 outputs:
@@ -149,7 +149,7 @@ outputs:
         - numpy
         - python
       run:
-        - astropy
+        - astropy >=1.1.1
         - gwpy
         - gsl
         - liblal >={{ lal_version }}
@@ -158,7 +158,7 @@ outputs:
         - numpy
         - python
         - python-lal >={{ lal_version }}
-        - scipy
+        - scipy >=0.9.0
     files:
       # library modules
       - {{ SP_DIR }}/lalsimulation/

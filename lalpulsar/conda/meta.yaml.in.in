@@ -12,7 +12,7 @@
 {% set lalframe_version = "@MIN_LALFRAME_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set lalinference_version = "@MIN_LALINFERENCE_VERSION@a0" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.5.0" %}
 
 package:
   name: {{ name }}-split
@@ -153,7 +153,7 @@ outputs:
         - {{ stdlib("c") }}
         - help2man >=1.37
         - make
-        - pkg-config
+        - pkg-config >=0.18.0
         - swig >={{ swig_version }}
         # extras for cross-compiling:
         - cross-python_{{ target_platform }}  # [build_platform != target_platform]
@@ -171,7 +171,7 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         - swig-abi
       run:
-        - astropy
+        - astropy >=1.1.1
         - h5py
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - numpy
@@ -185,7 +185,7 @@ outputs:
       requires:
         - pytest >=4.0.0a0
         - solar_system_ephemerides
-        - tqdm
+        - tqdm >=4.0.0
       source_files:
         - test/python
         - lib/*.dat.gz
@@ -230,7 +230,7 @@ outputs:
         - make
       host:
         - bc  # [build_platform == target_platform]
-        - astropy  # [build_platform == target_platform]
+        - astropy >=1.1.1  # [build_platform == target_platform]
         - cfitsio
         - fftw
         - gsl
@@ -251,10 +251,10 @@ outputs:
         - python-lalframe >={{ lalframe_version }}
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - scipy   # [build_platform == target_platform]
+        - scipy >=0.9.0   # [build_platform == target_platform]
         - sympy   # [build_platform == target_platform]
       run:
-        - astropy
+        - astropy >=1.1.1
         - cfitsio
         - fftw
         - gsl
