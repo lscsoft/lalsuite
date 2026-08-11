@@ -1,4 +1,4 @@
-##python
+# python
 # End-to-end LALInference test pipeline
 # (C) 2014 John Veitch
 

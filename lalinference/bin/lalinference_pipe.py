@@ -1,4 +1,4 @@
-##python
+# python
 # DAG generation code for running LALInference pipeline
 # (C) 2012 John Veitch, Vivien Raymond
 
