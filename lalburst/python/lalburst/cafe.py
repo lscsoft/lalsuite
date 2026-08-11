@@ -33,9 +33,9 @@ import math
 import sys
 
 import igwn_segments as segments
-from lal.utils import CacheEntry
 
 from lal import LIGOTimeGPS
+from lal.utils import CacheEntry
 
 from . import git_version, offsetvector, packing
 

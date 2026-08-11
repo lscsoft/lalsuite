@@ -69,9 +69,9 @@ matplotlib.rcParams.update(
         })
 
 #local application/library specific imports
-import lalinference.plot
 from igwn_ligolw import lsctables, utils
 
+import lalinference.plot
 from lalinference import bayespputils as bppu
 from lalinference import git_version
 

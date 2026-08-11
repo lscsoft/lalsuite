@@ -50,9 +50,8 @@ from scipy import stats
 
 matplotlib.use("Agg")
 
-from lalinference.bayespputils import Posterior, PosteriorOneDPDF
-
 from lalinference import git_version
+from lalinference.bayespputils import Posterior, PosteriorOneDPDF
 from lalpulsar.pulsarhtmlutils import *
 from lalpulsar.pulsarpputils import *
 

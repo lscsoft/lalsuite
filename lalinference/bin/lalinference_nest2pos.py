@@ -6,16 +6,16 @@ import sys
 from functools import reduce
 from optparse import OptionParser
 
-from lalinference.nest2pos import (
-    compute_weights,
-    draw_N_posterior_many,
-    draw_posterior_many,
-)
 from numpy import loadtxt, log, logaddexp, mean
 
 from lalinference import LALInferenceHDF5NestedSamplesDatasetName as nested_dset_name
 from lalinference import (
     LALInferenceHDF5PosteriorSamplesDatasetName as posterior_dset_name,
+)
+from lalinference.nest2pos import (
+    compute_weights,
+    draw_N_posterior_many,
+    draw_posterior_many,
 )
 
 usage = '''%prog [-N Nlive] [-p posterior.hdf5] [-H header.txt] [--npos Npos] [--non-strict-versions] datafile1.hdf5 [datafile2.hdf5 ...]

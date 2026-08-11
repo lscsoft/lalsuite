@@ -18,7 +18,6 @@ import sys
 import time
 from optparse import OptionParser
 
-import lalinference.imrtgr.imrtgrutils as tgr
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,6 +26,7 @@ from matplotlib import rc
 from scipy import interpolate
 from scipy.stats import gaussian_kde  #rahul: for KDE implementation
 
+import lalinference.imrtgr.imrtgrutils as tgr
 from lalinference import git_version
 
 matplotlib.rc('text.latex', preamble=r'\usepackage{txfonts}')

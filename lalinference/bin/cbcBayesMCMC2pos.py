@@ -40,12 +40,11 @@ except ImportError:
         from scipy.integrate import trapz as trapezoid
 from optparse import OptionParser
 
-from lalinference.io import extract_metadata, read_samples, write_samples
-
 from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
 from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 from lalinference import bayespputils as bppu
 from lalinference import git_version
+from lalinference.io import extract_metadata, read_samples, write_samples
 
 __author__="Carl-Johan Haster <carl-johan.haster@ligo.org>>"
 __version__= "git id %s"%git_version.id

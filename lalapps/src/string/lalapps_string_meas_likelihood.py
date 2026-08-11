@@ -38,8 +38,8 @@ from igwn_ligolw import dbtables, ligolw
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
 from igwn_ligolw.utils import search_summary as ligolw_search_summary
-from lal.utils import CacheEntry
 
+from lal.utils import CacheEntry
 from lalburst import SnglBurstUtils, git_version, stringutils
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

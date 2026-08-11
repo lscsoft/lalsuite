@@ -42,9 +42,9 @@ from optparse import OptionParser
 
 import igwn_segments as segments
 from igwn_segments import utils as segmentsUtils
-from lal.utils import CacheEntry
 
 from lal import LIGOTimeGPS, pipeline
+from lal.utils import CacheEntry
 from lalburst import cafe, power, timeslides
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"

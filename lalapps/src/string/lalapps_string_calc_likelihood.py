@@ -33,8 +33,8 @@ import sys
 from optparse import OptionParser
 
 from igwn_ligolw import dbtables
-from lal.utils import CacheEntry
 
+from lal.utils import CacheEntry
 from lalburst import SnglBurstUtils, calc_likelihood, git_version, stringutils
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

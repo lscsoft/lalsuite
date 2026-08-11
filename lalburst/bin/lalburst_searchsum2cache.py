@@ -40,9 +40,9 @@ from optparse import OptionParser
 
 from igwn_ligolw import ligolw, lsctables
 from igwn_ligolw import utils as ligolw_utils
-from lal.utils import CacheEntry
 
 from lal import git_version
+from lal.utils import CacheEntry
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 __version__ = "git id %s" % git_version.id

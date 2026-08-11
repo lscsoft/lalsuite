@@ -29,8 +29,8 @@
 from optparse import OptionParser
 
 from igwn_ligolw import utils as ligolw_utils
-from lal.utils import CacheEntry
 
+from lal.utils import CacheEntry
 from lalburst import bucluster, git_version
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

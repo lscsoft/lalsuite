@@ -5,10 +5,10 @@ from optparse import OptionParser
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
 from igwn_ligolw.utils import process as ligolw_process
-from lalinspiral.thinca import InspiralCoincDef
 from tqdm import tqdm
 
 from lalburst import snglcoinc
+from lalinspiral.thinca import InspiralCoincDef
 
 
 def parse_command_line():

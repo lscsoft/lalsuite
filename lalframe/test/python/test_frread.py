@@ -28,9 +28,9 @@ except ImportError as exc:  # probably macports
     sys.exit(77)
 
 import pytest
-from lal.utils.cache import CacheEntry
 
 import lal
+from lal.utils.cache import CacheEntry
 from lalframe import frread
 
 try:

@@ -35,10 +35,10 @@ from optparse import OptionParser
 import igwn_segments as segments
 from igwn_ligolw import dbtables
 from igwn_ligolw import utils as ligolw_utils
-from lal.utils import CacheEntry
-from lalburst.SimBurstUtils import MW_CENTER_J2000_DEC_RAD, MW_CENTER_J2000_RA_RAD
 
+from lal.utils import CacheEntry
 from lalburst import SnglBurstUtils, burca_tailor, git_version
+from lalburst.SimBurstUtils import MW_CENTER_J2000_DEC_RAD, MW_CENTER_J2000_RA_RAD
 
 # characters allowed to appear in the description string
 T010150_letters = set(string.ascii_lowercase + string.ascii_uppercase + string.digits + "_+#")

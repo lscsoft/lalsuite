@@ -4,6 +4,7 @@ from optparse import OptionParser
 
 from igwn_ligolw import lsctables
 from igwn_ligolw import utils as ligolw_utils
+
 from lalinspiral.thinca import InspiralCoincDef
 
 

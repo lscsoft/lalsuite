@@ -24,6 +24,7 @@ import sys
 
 import numpy as np
 import pytest
+
 from lalsimulation.tilts_at_infinity import calc_tilts_at_infty_hybrid_evolve
 
 if sys.version_info[0] < 3:
