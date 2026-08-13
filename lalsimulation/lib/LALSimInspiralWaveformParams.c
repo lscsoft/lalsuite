@@ -985,10 +985,10 @@ REAL8 XLALSimInspiralGetPolarSpin_tiltFromCartesian(REAL8 spinx, REAL8 spiny, RE
 		return spin_tilt;
 }
 
-REAL8 XLALSimInspiralGetPolarSpin_phiFromCartesian(REAL8 spiny, REAL8 spinz){
+REAL8 XLALSimInspiralGetPolarSpin_phiFromCartesian(REAL8 spinx, REAL8 spiny){
 		UNREVIEWED_CODE_WARNING
 		REAL8 spin_phi;
-		spin_phi = atan(spiny / spinz);
+		spin_phi = atan2(spiny, spinx);
 		return spin_phi;
 }
 
@@ -1177,16 +1177,16 @@ REAL8 XLALSimInspiralWaveformParamsLookupSpin1tilt(LALDict *params){
 REAL8 XLALSimInspiralWaveformParamsLookupSpin1phi(LALDict *params){
 	UNREVIEWED_CODE_WARNING
         REAL8 spin1_phi = -1;
+        REAL8 spin1x;
         REAL8 spin1y;
-        REAL8 spin1z;
         if (XLALDictContains(params, "spin1_phi") == 1){
                 spin1_phi = XLALDictLookupREAL8Value(params, "spin1_phi");
         }
-        else if  ((XLALDictContains(params, "spin1y") == 1) && (XLALDictContains(params, "spin1z") == 1))
+        else if  ((XLALDictContains(params, "spin1x") == 1) && (XLALDictContains(params, "spin1y") == 1))
                {
-               spin1y =  XLALDictLookupREAL8Value(params,"spin1y");
-               spin1z = XLALDictLookupREAL8Value(params,"spin1z");
-               spin1_phi = XLALSimInspiralGetPolarSpin_phiFromCartesian(spin1y, spin1z);}
+               spin1x =  XLALDictLookupREAL8Value(params,"spin1x");
+               spin1y = XLALDictLookupREAL8Value(params,"spin1y");
+               spin1_phi = XLALSimInspiralGetPolarSpin_phiFromCartesian(spin1x, spin1y);}
         else {
         XLAL_ERROR_REAL8(XLAL_FAILURE, "Not enough information provided for spin1_phi calculation\n");
     }
@@ -1239,16 +1239,16 @@ REAL8 XLALSimInspiralWaveformParamsLookupSpin2tilt(LALDict *params){
 REAL8 XLALSimInspiralWaveformParamsLookupSpin2phi(LALDict *params){
 	UNREVIEWED_CODE_WARNING
         REAL8 spin2_phi = -1;
+        REAL8 spin2x;
         REAL8 spin2y;
-        REAL8 spin2z;
         if (XLALDictContains(params, "spin2_phi") == 1){
                 spin2_phi = XLALDictLookupREAL8Value(params, "spin2_phi");
         }
-        else if  ((XLALDictContains(params, "spin2y") == 1) && (XLALDictContains(params, "spin2z") == 1))
+        else if  ((XLALDictContains(params, "spin2x") == 1) && (XLALDictContains(params, "spin2y") == 1))
                {
-               spin2y =  XLALDictLookupREAL8Value(params,"spin2y");
-               spin2z = XLALDictLookupREAL8Value(params,"spin2z");
-               spin2_phi = XLALSimInspiralGetPolarSpin_phiFromCartesian(spin2y, spin2z);}
+               spin2x =  XLALDictLookupREAL8Value(params,"spin2x");
+               spin2y = XLALDictLookupREAL8Value(params,"spin2y");
+               spin2_phi = XLALSimInspiralGetPolarSpin_phiFromCartesian(spin2x, spin2y);}
         else {
         XLAL_ERROR_REAL8(XLAL_FAILURE, "Not enough information provided for spin2_phi calculation\n");
     }
