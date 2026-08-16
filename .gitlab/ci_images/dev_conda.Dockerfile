@@ -77,42 +77,13 @@ conda install --quiet --name base \
     conda-libmamba-solver \
     ;
 
-# pin Python version in conda-dev-env.yml to ${PYTHON_VERSION}
-yq -i -y '( .dependencies[] | select(type == "string" and match("^python .*$")) ) = "python =='"${PYTHON_VERSION}"'"' ./conda-dev-env.yml
-cat ./conda-dev-env.yml
-
-# create environment for CI jobs and install LALSuite build dependencies
-conda env create --quiet --name lalsuite-ci --file ./conda-dev-env.yml
+# create environment for CI jobs with Python version pinned to ${PYTHON_VERSION}
+conda create --quiet --name lalsuite-ci "python==${PYTHON_VERSION}"
+conda config --add pinned_packages "python==${PYTHON_VERSION}"
 conda activate lalsuite-ci
 
-# pin LALSuite build dependencies to prevent aggressive upgrades
-yq -r '.dependencies[] | select(type == "string")' ./conda-dev-env.yml | while IFS= read -r pkg_dep; do
-    pkg_name=$(echo "${pkg_dep}" | sed 's/[ <=>].*//')
-    pkg_verspec=$(echo "${pkg_dep}" | sed "s/^${pkg_name} *//")
-    pkg_version=$(conda list --name lalsuite-ci --full-name ${pkg_name} --json | yq -r '.[0].version')
-
-    # if package has not maximum version restriction, use the currently installed version as a maximum
-    case "${pkg_verspec}" in
-        '='*)          # matches =, ==
-            pkg_pin="${pkg_dep}"
-            ;;
-        *'<'*)         # matches <, <=
-            pkg_pin="${pkg_dep}"
-            ;;
-        *'>'*)         # matches >, >=
-            pkg_pin="${pkg_dep},<=${pkg_version}"
-            ;;
-        '')            # no version specifier
-            pkg_pin="${pkg_name} <=${pkg_version}"
-            ;;
-        *)
-            echo "ERROR: could not parse Conda version specifier '${pkg_verspec}'"
-            exit 1
-            ;;
-    esac
-    conda config --add pinned_packages "${pkg_pin}"
-
-done
+# install LALSuite build dependencies
+conda env update --quiet --name lalsuite-ci --file ./conda-dev-env.yml
 
 # install required CI packages
 conda install --quiet --name lalsuite-ci \
@@ -154,6 +125,10 @@ then
     echo X > /no-lalsuite
     echo 'WARNING: no LALSuite release available, will skip package upgrade test'
 fi
+
+# create file to indicate a Conda container
+# - as opposed to macOS jobs which use a restricted Conda environment
+echo X > /lalsuite-conda-container
 
 # print info
 conda info --all
